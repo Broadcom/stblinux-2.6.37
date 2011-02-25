@@ -1,0 +1,35 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2006 Steven J. Hill <sjhill@uclibc.org>
+# Copyright (C) 2000-2005 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+CSRC := __longjmp.c  brk.c setjmp_aux.c mmap.c cacheflush.c	\
+	pread_write.c sysmips.c _test_and_set.c sigaction.c
+
+SSRC := bsd-_setjmp.S bsd-setjmp.S setjmp.S clone.S syscall.S	\
+	syscall_error.S pipe.S vfork.S
+
+ARCH_HEADERS := sgidefs.h sysdep.h
+# regdef.h
+
+include $(top_srcdir)libc/sysdeps/linux/Makefile.commonarch
+
+ifeq ($(UCLIBC_PROFILING),y)
+CFLAGS-gmon-start.c = -S
+
+$(ARCH_OUT)/gmon-start.s: $(top_srcdir)libc/sysdeps/linux/common/gmon-start.c
+	$(compile.c)
+
+$(ARCH_DIR)/gmon-start.S: $(ARCH_OUT)/gmon-start.s
+	echo "#undef sp" > $@
+	echo "#define sp 29" >> $@
+	cat $< >> $@
+	rm -f $<
+endif
+
+CFLAGS-crt1.S := $(PICFLAG)
+CFLAGS-crti.S := $(PICFLAG)
+CFLAGS-crtn.S := $(PICFLAG)

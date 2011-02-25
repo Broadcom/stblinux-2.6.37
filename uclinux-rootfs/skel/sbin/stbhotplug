@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# set to '1' to enable USB thumbdrive automount
+AUTOMOUNT=0
+AUTOMOUNT_POINT="/mnt/usb"
+AUTOMOUNT_FS="vfat"
+
+HOTPLUG_FW_DIR=/lib/firmware
+
+# userspace firmware loader
+
+if [ "$1" = "firmware" ]; then
+	if [ "$ACTION" = "add" ]; then
+		echo 1 > /sys/$DEVPATH/loading
+		cat $HOTPLUG_FW_DIR/$FIRMWARE > /sys/$DEVPATH/data
+		echo 0 > /sys/$DEVPATH/loading
+	fi
+fi
+
+# network hotplug
+
+if [ "$1" = "net" ]; then
+	if [ "$ACTION" = "add" ]; then
+		/sbin/ifup $INTERFACE
+	elif [ "$ACTION" = "remove" ]; then
+		/sbin/ifdown $INTERFACE
+	fi
+fi
+
+# USB automount (only works with bash)
+
+if [ -z "$BASH_VERSION" ]; then
+	exec /sbin/mdev "$@"
+fi
+
+if [[ "$AUTOMOUNT" = "1" && "$1" = "block" && "$PHYSDEVPATH" = *usb* && \
+	"$PHYSDEVDRIVER" = "sd" && $[ ($MINOR % 16) == 1 ] ]]; then
+
+	DEV=${DEVPATH##*/}
+	mdev "$@"
+	if [ "$ACTION" = "add" ]; then
+		exec mount -t ${AUTOMOUNT_FS} /dev/${DEV} /mnt/usb
+	elif [ "$ACTION" = "remove" ]; then
+		exec umount -l ${AUTOMOUNT_POINT}
+	fi
+fi
+
+exec /sbin/mdev "$@"

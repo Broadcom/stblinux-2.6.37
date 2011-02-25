@@ -1,0 +1,12 @@
+Makefile
+config.h
+config.log
+config.status
+gdbreplay
+gdbserver
+mips-linux.c
+mips64-linux.c
+stamp-h
+stamp-xml
+version.c
+xml-builtin.c
