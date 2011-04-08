@@ -7,7 +7,6 @@
 
 #include "_stdio.h"
 
-libc_hidden_proto(write)
 
 /* Given a writing stream with no buffered output, write the
  * data in 'buf' (which may be the stream's bufstart) of size
@@ -49,7 +48,7 @@ size_t attribute_hidden __stdio_WRITE(register FILE *stream,
 			return bufsize;
 		}
 		stodo = (todo <= SSIZE_MAX) ? todo : SSIZE_MAX;
-		if ((rv = __WRITE(stream, buf, stodo)) >= 0) {
+		if ((rv = __WRITE(stream, (char *) buf, stodo)) >= 0) {
 #ifdef __UCLIBC_MJN3_ONLY__
 #warning TODO: Make custom stream write return check optional.
 #endif

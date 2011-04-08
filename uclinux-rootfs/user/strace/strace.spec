@@ -1,6 +1,6 @@
 Summary: Tracks and displays system calls associated with a running process
 Name: strace
-Version: 4.5.18
+Version: 4.5.20
 Release: 1%{?dist}
 License: BSD
 Group: Development/Debuggers
@@ -55,8 +55,15 @@ make DESTDIR=%{buildroot} install
 # remove unpackaged files from the buildroot
 rm -f %{buildroot}%{_bindir}/strace-graph
 
+%define copy64 ln
+%if 0%{?rhel}
+%if 0%{?rhel} < 6
+%endif
+%define copy64 cp -p
+%endif
+
 %ifarch %{strace64_arches}
-ln %{buildroot}%{_bindir}/strace %{buildroot}%{_bindir}/strace64
+%{copy64} %{buildroot}%{_bindir}/strace %{buildroot}%{_bindir}/strace64
 %endif
 
 %clean
@@ -64,7 +71,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc CREDITS ChangeLog COPYRIGHT NEWS PORTING README
+%doc CREDITS ChangeLog ChangeLog-CVS COPYRIGHT NEWS PORTING README
 %{_bindir}/strace
 %{_mandir}/man1/*
 
@@ -74,8 +81,21 @@ rm -rf %{buildroot}
 %{_bindir}/strace64
 %endif
 
-
 %changelog
+* Tue Apr 13 2010 Roland McGrath <roland@redhat.com> - 4.5.20-1
+- New upstream release, work mostly by Andreas Schwab and Dmitry V. Levin.
+  + fixed potential stack buffer overflow in select decoder (#556678);
+  + fixed FTBFS (#539044).
+
+* Wed Oct 21 2009 Roland McGrath <roland@redhat.com> - 4.5.19-1
+- New upstream release, work mostly by Dmitry V. Levin <ldv@altlinux.org>
+  + exit/kill strace with traced process exitcode/signal (#105371);
+  + fixed build on ARM EABI (#507576);
+  + fixed display of 32-bit argv array on 64-bit architectures (#519480);
+  + fixed display of 32-bit fcntl(F_SETLK) on 64-bit architectures (#471169);
+  + fixed several bugs in strings decoder, including potential heap
+    memory corruption (#470529, #478324, #511035).
+
 * Thu Aug 28 2008 Roland McGrath <roland@redhat.com> - 4.5.18-1
 - build fix for newer kernel headers (#457291)
 - fix CLONE_VFORK handling (#455078)

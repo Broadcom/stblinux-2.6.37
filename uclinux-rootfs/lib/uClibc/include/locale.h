@@ -39,6 +39,7 @@ __BEGIN_DECLS
 #define LC_COLLATE        __LC_COLLATE
 #define LC_MONETARY       __LC_MONETARY
 #define LC_MESSAGES       __LC_MESSAGES
+#define	LC_ALL		  __LC_ALL
 #if 0
 #define LC_PAPER	  __LC_PAPER
 #define LC_NAME		  __LC_NAME
@@ -47,8 +48,9 @@ __BEGIN_DECLS
 #define LC_MEASUREMENT	  __LC_MEASUREMENT
 #define LC_IDENTIFICATION __LC_IDENTIFICATION
 #endif
-#define	LC_ALL		  __LC_ALL
 
+
+__BEGIN_NAMESPACE_STD
 
 /* Structure giving information about numeric and monetary notation.  */
 struct lconv
@@ -121,18 +123,17 @@ struct lconv
 };
 
 
-__BEGIN_NAMESPACE_STD
-
 /* Set and/or return the current locale.  */
 extern char *setlocale (int __category, __const char *__locale) __THROW;
 
 /* Return the numeric/monetary information for the current locale.  */
 extern struct lconv *localeconv (void) __THROW;
+libc_hidden_proto(localeconv)
 
 __END_NAMESPACE_STD
 
 
-#if defined(__USE_GNU) && defined(__UCLIBC_HAS_XLOCALE__)
+#if defined __USE_GNU && defined __UCLIBC_HAS_LOCALE__
 /* The concept of one static locale per category is not very well
    thought out.  Many applications will need to process its data using
    information from several different locales.  Another application is
@@ -144,8 +145,10 @@ __END_NAMESPACE_STD
    Attention: all these functions are *not* standardized in any form.
    This is a proof-of-concept implementation.  */
 
+#ifdef __UCLIBC_HAS_XLOCALE__
 /* Get locale datatype definition.  */
 # include <xlocale.h>
+#endif
 
 typedef __locale_t locale_t;
 
@@ -155,6 +158,7 @@ typedef __locale_t locale_t;
    made by OR'ing together LC_*_MASK bits above.  */
 extern __locale_t newlocale (int __category_mask, __const char *__locale,
 			     __locale_t __base) __THROW;
+libc_hidden_proto(newlocale)
 
 /* These are the bits that can be set in the CATEGORY_MASK argument to
    `newlocale'.  In the GNU implementation, LC_FOO_MASK has the value
@@ -202,6 +206,7 @@ extern __locale_t newlocale (int __category_mask, __const char *__locale,
 /* Return a duplicate of the set of locale in DATASET.  All usage
    counters are increased if necessary.  */
 extern __locale_t duplocale (__locale_t __dataset) __THROW;
+libc_hidden_proto(duplocale)
 
 /* Free the data associated with a locale dataset previously returned
    by a call to `setlocale_r'.  */
@@ -213,6 +218,7 @@ extern void freelocale (__locale_t __dataset) __THROW;
    for all threads and can also be installed any time, meaning
    the thread uses the global settings controlled by `setlocale'.  */
 extern __locale_t uselocale (__locale_t __dataset) __THROW;
+libc_hidden_proto(uselocale)
 
 /* This value can be passed to `uselocale' and may be returned by it.
    Passing this value to any other function has undefined behavior.  */

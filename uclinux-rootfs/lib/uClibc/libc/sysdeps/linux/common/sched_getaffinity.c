@@ -19,7 +19,6 @@
 #include <features.h>
 #ifdef __USE_GNU
 
-#include <errno.h>
 #include <sched.h>
 #include <sys/types.h>
 #include <sys/syscall.h>

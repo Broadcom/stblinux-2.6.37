@@ -1,7 +1,7 @@
 #ifndef _LDSODEFS_H
 #define _LDSODEFS_H     1
 
-#include "kernel-features.h"
+#include <bits/kernel-features.h>
 
 #include <features.h>
 #include <tls.h>
@@ -63,6 +63,13 @@ extern void _dl_get_tls_static_info (size_t *sizep, size_t *alignp)
 extern void _dl_allocate_static_tls (struct link_map *map)
      internal_function attribute_hidden;
 
+/* Taken from glibc/elf/dl-reloc.c */
+#define CHECK_STATIC_TLS(sym_map)											\
+	do {																	\
+		if (__builtin_expect ((sym_map)->l_tls_offset == NO_TLS_OFFSET, 0))	\
+			_dl_allocate_static_tls (sym_map);								\
+	} while (0)
+
 /* These are internal entry points to the two halves of _dl_allocate_tls,
    only used within rtld.c itself at startup time.  */
 extern void *_dl_allocate_tls_storage (void)
@@ -109,12 +116,12 @@ EXTERN void **(*_dl_error_catch_tsd) (void) __attribute__ ((const));
 /* Number of additional slots in the dtv allocated.  */
 # define DTV_SURPLUS	(14)
 
-  /* Initial dtv of the main thread, not allocated with normal malloc.  */
-  EXTERN void *_dl_initial_dtv;
-  /* Generation counter for the dtv.  */
-  EXTERN size_t _dl_tls_generation;
+/* Initial dtv of the main thread, not allocated with normal malloc.  */
+EXTERN void *_dl_initial_dtv;
+/* Generation counter for the dtv.  */
+EXTERN size_t _dl_tls_generation;
 
-  EXTERN void (*_dl_init_static_tls) (struct link_map *);
+EXTERN void (*_dl_init_static_tls) (struct link_map *);
 
 /* We have the auxiliary vector.  */
 #define HAVE_AUX_VECTOR

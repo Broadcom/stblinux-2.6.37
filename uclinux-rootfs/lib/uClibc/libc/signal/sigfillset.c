@@ -20,20 +20,20 @@
 #include <signal.h>
 #include <string.h>
 
-libc_hidden_proto(memset)
 
 /* Set all signals in SET.  */
-libc_hidden_proto(sigfillset)
 int
 sigfillset (sigset_t *set)
 {
+#if 0 /* is it really required by standards?! */
   if (set == NULL)
     {
       __set_errno (EINVAL);
       return -1;
     }
+#endif
 
-  memset (set, 0xff, sizeof (sigset_t));
+  __sigfillset (set);
 
   /* If the implementation uses a cancellation signal don't set the bit.  */
 #ifdef SIGCANCEL

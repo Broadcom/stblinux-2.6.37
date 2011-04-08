@@ -48,6 +48,10 @@
 #include <linux/libata.h>
 #include "ahci.h"
 
+#ifdef CONFIG_BRCMSTB
+#include <asm/brcmstb/brcmstb.h>
+#endif
+
 #define DRV_NAME	"ahci"
 #define DRV_VERSION	"3.0"
 
@@ -1159,8 +1163,9 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 #if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
 	defined(CONFIG_BCM7346A0) || defined(CONFIG_BCM7231A0)
-	/* HW7425-442: NCQ broken on A0 silicon */
-	pi.flags &= ~ATA_FLAG_NCQ;
+	/* HW7425-442: NCQ broken on A0 silicon; fixed on A1 */
+	if (BRCM_CHIP_REV() == 0x00)
+		pi.flags &= ~ATA_FLAG_NCQ;
 #endif
 
 	if (hpriv->cap & HOST_CAP_PMP)
@@ -1219,8 +1224,9 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 #if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
 	defined(CONFIG_BCM7346A0) || defined(CONFIG_BCM7231A0)
-		/* HW7422-797: default to 3.0Gbps */
-		ap->link.hw_sata_spd_limit = 0x03;
+		/* HW7422-797: default to 3.0Gbps on A0; fixed on A1 */
+		if (BRCM_CHIP_REV() == 0x00)
+			ap->link.hw_sata_spd_limit = 0x03;
 #endif
 
 		/* disabled/not-implemented port */

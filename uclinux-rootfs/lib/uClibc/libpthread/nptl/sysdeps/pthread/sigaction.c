@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -17,19 +17,16 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-/* This is tricky.  GCC doesn't like #include_next in the primary
-   source file and even if it did, the first #include_next is this
-   exact file anyway.  */
 #ifndef LIBC_SIGACTION
 
 #include <pthreadP.h>
 
 /* We use the libc implementation but we tell it to not allow
    SIGCANCEL or SIGTIMER to be handled.  */
-# define LIBC_SIGACTION	1
+#define LIBC_SIGACTION	1
+#include <sigaction.c>
 
-# include <sigaction.c>
-
+extern __typeof(sigaction) __sigaction;
 int
 __sigaction (int sig, const struct sigaction *act, struct sigaction *oact)
 {
@@ -41,8 +38,9 @@ __sigaction (int sig, const struct sigaction *act, struct sigaction *oact)
 
   return __libc_sigaction (sig, act, oact);
 }
-libc_hidden_weak (__sigaction)
+libc_hidden_proto(sigaction)
 weak_alias (__sigaction, sigaction)
+libc_hidden_weak(sigaction)
 
 #else
 

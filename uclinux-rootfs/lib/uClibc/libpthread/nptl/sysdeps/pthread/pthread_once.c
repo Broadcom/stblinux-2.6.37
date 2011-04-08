@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -22,20 +22,20 @@
 
 
 
-static lll_lock_t once_lock = LLL_LOCK_INITIALIZER;
+static int once_lock = LLL_LOCK_INITIALIZER;
 
 
 int
-__pthread_once (once_control, init_routine)
-     pthread_once_t *once_control;
-     void (*init_routine) (void);
+__pthread_once (
+     pthread_once_t *once_control,
+     void (*init_routine) (void))
 {
   /* XXX Depending on whether the LOCK_IN_ONCE_T is defined use a
      global lock variable or one which is part of the pthread_once_t
      object.  */
   if (*once_control == PTHREAD_ONCE_INIT)
     {
-      lll_lock (once_lock);
+      lll_lock (once_lock, LLL_PRIVATE);
 
       /* XXX This implementation is not complete.  It doesn't take
 	 cancelation and fork into account.  */
@@ -46,7 +46,7 @@ __pthread_once (once_control, init_routine)
 	  *once_control = !PTHREAD_ONCE_INIT;
 	}
 
-      lll_unlock (once_lock);
+      lll_unlock (once_lock, LLL_PRIVATE);
     }
 
   return 0;

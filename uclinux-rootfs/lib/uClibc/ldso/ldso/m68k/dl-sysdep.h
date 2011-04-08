@@ -1,7 +1,7 @@
 /* vi: set sw=4 ts=4: */
 /*
- * Various assmbly language/system dependent hacks that are required
- * so that we can minimize the amount of platform specific code. 
+ * Various assembly language/system dependent hacks that are required
+ * so that we can minimize the amount of platform specific code.
  * Copyright (C) 2005 by Erik Andersen <andersen@codepoet.org>
  */
 
@@ -22,13 +22,11 @@ do { \
 /* Used for error messages */
 #define ELF_TARGET "m68k"
 
+/* Need bootstrap relocations */
+#define ARCH_NEEDS_BOOTSTRAP_RELOCS
+
 struct elf_resolve;
 extern unsigned long _dl_linux_resolver (struct elf_resolve *, int);
-
-/* 4096 bytes alignment */
-#define PAGE_ALIGN 0xfffff000
-#define ADDR_ALIGN 0xfff
-#define OFFS_ALIGN 0x7ffff000
 
 /* ELF_RTYPE_CLASS_PLT iff TYPE describes relocation of a PLT entry, so
    PLT entries should not be allowed to define the value.
@@ -41,26 +39,36 @@ extern unsigned long _dl_linux_resolver (struct elf_resolve *, int);
 /* Return the link-time address of _DYNAMIC.  Conveniently, this is the
    first element of the GOT.  This must be inlined in a function which
    uses global data.  */
-static inline Elf32_Addr
+static __always_inline Elf32_Addr
 elf_machine_dynamic (void)
 {
-	register Elf32_Addr *got asm ("%a5");
-	return *got;
+	Elf32_Addr got;
+
+	__asm__ ("move.l _DYNAMIC@GOT.w(%%a5), %0"
+			: "=a" (got));
+	return got;
 }
 
+#ifdef __mcoldfire__
+#define PCREL_OP(OP, SRC, DST, TMP, PC) \
+  "move.l #" SRC " - ., " TMP "\n\t" OP " (-8, " PC ", " TMP "), " DST
+#else
+#define PCREL_OP(OP, SRC, DST, TMP, PC) \
+  OP " " SRC "(" PC "), " DST
+#endif
 
 /* Return the run-time load address of the shared object.  */
-static inline Elf32_Addr
+static __always_inline Elf32_Addr
 elf_machine_load_address (void)
 {
 	Elf32_Addr addr;
-	asm ("lea _dl_start(%%pc), %0\n\t"
-	     "sub.l _dl_start@GOT.w(%%a5), %0"
-	     : "=a" (addr));
+	__asm__ (PCREL_OP ("lea", "_dl_start", "%0", "%0", "%%pc") "\n\t"
+			"sub.l _dl_start@GOT.w(%%a5), %0"
+			: "=a" (addr));
 	return addr;
 }
 
-static inline void
+static __always_inline void
 elf_machine_relative (Elf32_Addr load_off, const Elf32_Addr rel_addr,
 		      Elf32_Word relative_count)
 {

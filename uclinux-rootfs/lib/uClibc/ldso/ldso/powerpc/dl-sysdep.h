@@ -1,5 +1,5 @@
 /*
- * Various assmbly language/system dependent  hacks that are required
+ * Various assembly language/system dependent hacks that are required
  * so that we can minimize the amount of platform specific code.
  */
 
@@ -50,11 +50,11 @@
 #define OPCODE_SLWI(ra,rs,sh) OPCODE_RLWINM(ra,rs,sh,0,31-sh)
 
 
-#define PPC_DCBST(where) asm volatile ("dcbst 0,%0" : : "r"(where) : "memory")
-#define PPC_SYNC asm volatile ("sync" : : : "memory")
-#define PPC_ISYNC asm volatile ("sync; isync" : : : "memory")
-#define PPC_ICBI(where) asm volatile ("icbi 0,%0" : : "r"(where) : "memory")
-#define PPC_DIE asm volatile ("tweq 0,0")
+#define PPC_DCBST(where) __asm__ __volatile__ ("dcbst 0,%0" : : "r"(where) : "memory")
+#define PPC_SYNC __asm__ __volatile__ ("sync" : : : "memory")
+#define PPC_ISYNC __asm__ __volatile__ ("sync; isync" : : : "memory")
+#define PPC_ICBI(where) __asm__ __volatile__ ("icbi 0,%0" : : "r"(where) : "memory")
+#define PPC_DIE __asm__ __volatile__ ("tweq 0,0")
 
 /* Here we define the magic numbers that this dynamic loader should accept */
 
@@ -67,11 +67,6 @@ struct elf_resolve;
 extern unsigned long _dl_linux_resolver(struct elf_resolve * tpnt, int reloc_entry);
 void _dl_init_got(unsigned long *lpnt,struct elf_resolve *tpnt);
 
-/* 4096 bytes alignment */
-#define PAGE_ALIGN 0xfffff000
-#define ADDR_ALIGN 0xfff
-#define OFFS_ALIGN 0x7ffff000
-
 /* ELF_RTYPE_CLASS_PLT iff TYPE describes relocation of a PLT entry, so
    PLT entries should not be allowed to define the value.
    ELF_RTYPE_CLASS_NOCOPY iff TYPE should not be allowed to resolve to one
@@ -82,6 +77,8 @@ void _dl_init_got(unsigned long *lpnt,struct elf_resolve *tpnt);
 #define elf_machine_type_class(type) \
   ((((type) == R_PPC_JMP_SLOT				\
     || (type) == R_PPC_REL24				\
+    || ((type) >= R_PPC_DTPMOD32 /* contiguous TLS */	\
+	&& (type) <= R_PPC_DTPREL32)			\
     || (type) == R_PPC_ADDR24) * ELF_RTYPE_CLASS_PLT)	\
    | (((type) == R_PPC_COPY) * ELF_RTYPE_CLASS_COPY))
 
@@ -90,18 +87,18 @@ void _dl_init_got(unsigned long *lpnt,struct elf_resolve *tpnt);
 #define ELF_MACHINE_PLTREL_OVERLAP 1
 
 /* Return the value of the GOT pointer.  */
-static inline Elf32_Addr * __attribute__ ((const))
+static __always_inline Elf32_Addr * __attribute__ ((const))
 ppc_got (void)
 {
 	Elf32_Addr *got;
 #ifdef HAVE_ASM_PPC_REL16
-	asm ("	bcl 20,31,1f\n"
+	__asm__ ("	bcl 20,31,1f\n"
 	     "1:mflr %0\n"
 	     "	addis %0,%0,_GLOBAL_OFFSET_TABLE_-1b@ha\n"
 	     "	addi %0,%0,_GLOBAL_OFFSET_TABLE_-1b@l\n"
 	     : "=b" (got) : : "lr");
 #else
-	asm (" bl _GLOBAL_OFFSET_TABLE_-4@local"
+	__asm__ (" bl _GLOBAL_OFFSET_TABLE_-4@local"
 	     : "=l" (got));
 #endif
 	return got;
@@ -109,14 +106,14 @@ ppc_got (void)
 
 /* Return the link-time address of _DYNAMIC, stored as
    the first value in the GOT. */
-static inline Elf32_Addr __attribute__ ((const))
+static __always_inline Elf32_Addr __attribute__ ((const))
 elf_machine_dynamic (void)
 {
 	return *ppc_got();
 }
 
 /* Return the run-time load address of the shared object.  */
-static inline Elf32_Addr __attribute__ ((const))
+static __always_inline Elf32_Addr __attribute__ ((const))
 elf_machine_load_address (void)
 {
   Elf32_Addr *branchaddr;
@@ -130,7 +127,7 @@ elf_machine_load_address (void)
        I think this is so that machines that do bl/blr pairing don't
        get confused.
 
-     asm ("bcl 20,31,0f ;"
+     __asm__ ("bcl 20,31,0f ;"
 	  "0: mflr 0 ;"
 	  "lis %0,0b@ha;"
 	  "addi %0,%0,0b@l;"
@@ -151,7 +148,7 @@ elf_machine_load_address (void)
      the address ourselves. That gives us the following code: */
 
   /* Get address of the 'b _DYNAMIC@local'...  */
-  asm ("bcl 20,31,0f;"
+  __asm__ ("bcl 20,31,0f;"
        "b _DYNAMIC@local;"
        "0:"
        : "=l"(branchaddr));
@@ -164,13 +161,13 @@ elf_machine_load_address (void)
   return runtime_dynamic - elf_machine_dynamic ();
 }
 
-static inline void
+static __always_inline void
 elf_machine_relative (Elf32_Addr load_off, const Elf32_Addr rel_addr,
 		      Elf32_Word relative_count)
 {
 	 Elf32_Rela * rpnt = (void *)rel_addr;
 	--rpnt;
-	do {     /* PowerPC handles pre increment/decrement better */ 
+	do {     /* PowerPC handles pre increment/decrement better */
 		Elf32_Addr *const reloc_addr = (void *) (load_off + (++rpnt)->r_offset);
 
 		*reloc_addr = load_off + rpnt->r_addend;

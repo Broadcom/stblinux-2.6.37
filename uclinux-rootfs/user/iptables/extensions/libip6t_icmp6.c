@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add ICMP support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -59,7 +60,7 @@ print_icmpv6types(void)
 	unsigned int i;
 	printf("Valid ICMPv6 Types:");
 
-	for (i = 0; i < sizeof(icmpv6_codes)/sizeof(struct icmpv6_names); i++) {
+	for (i = 0; i < ARRAY_SIZE(icmpv6_codes); ++i) {
 		if (i && icmpv6_codes[i].type == icmpv6_codes[i-1].type) {
 			if (icmpv6_codes[i].code_min == icmpv6_codes[i-1].code_min
 			    && (icmpv6_codes[i].code_max
@@ -84,14 +85,14 @@ static void icmp6_help(void)
 }
 
 static const struct option icmp6_opts[] = {
-	{ "icmpv6-type", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "icmpv6-type", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
 parse_icmpv6(const char *icmpv6type, u_int8_t *type, u_int8_t code[])
 {
-	unsigned int limit = sizeof(icmpv6_codes)/sizeof(struct icmpv6_names);
+	static const unsigned int limit = ARRAY_SIZE(icmpv6_codes);
 	unsigned int match = limit;
 	unsigned int i;
 
@@ -158,8 +159,8 @@ static int icmp6_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags == 1)
 			xtables_error(PARAMETER_PROBLEM,
 				   "icmpv6 match: only use --icmpv6-type once!");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_icmpv6(argv[optind-1], &icmpv6info->type, 
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_icmpv6(optarg, &icmpv6info->type, 
 			     icmpv6info->code);
 		if (invert)
 			icmpv6info->invflags |= IP6T_ICMP_INV;
@@ -181,16 +182,13 @@ static void print_icmpv6type(u_int8_t type,
 	if (!numeric) {
 		unsigned int i;
 
-		for (i = 0;
-		     i < sizeof(icmpv6_codes)/sizeof(struct icmpv6_names);
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(icmpv6_codes); ++i)
 			if (icmpv6_codes[i].type == type
 			    && icmpv6_codes[i].code_min == code_min
 			    && icmpv6_codes[i].code_max == code_max)
 				break;
-		}
 
-		if (i != sizeof(icmpv6_codes)/sizeof(struct icmpv6_names)) {
+		if (i != ARRAY_SIZE(icmpv6_codes)) {
 			printf("%s%s ",
 			       invert ? "!" : "",
 			       icmpv6_codes[i].name);

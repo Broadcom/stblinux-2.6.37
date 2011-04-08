@@ -23,9 +23,10 @@
 
 
 int
-__pthread_attr_setschedpolicy (attr, policy)
-     pthread_attr_t *attr;
-     int policy;
+attribute_protected
+__pthread_attr_setschedpolicy (
+     pthread_attr_t *attr,
+     int policy)
 {
   struct pthread_attr *iattr;
 

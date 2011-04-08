@@ -7,19 +7,16 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <utime.h>
 #include <sys/time.h>
 
-libc_hidden_proto(utimes)
 
 #ifdef __NR_utimes
-_syscall2(int, utimes, const char *, file, const struct timeval *, tvp);
+_syscall2(int, utimes, const char *, file, const struct timeval *, tvp)
 #else
 #include <stdlib.h>
-#include <sys/time.h>
 
-libc_hidden_proto(utime)
 
 int utimes(const char *file, const struct timeval tvp[2])
 {

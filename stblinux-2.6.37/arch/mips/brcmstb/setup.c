@@ -54,7 +54,9 @@
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/map.h>
 
-/* Extra SPI flash chip selects to scan at boot time (configurable) */
+/* Default SPI flash chip selects to scan at boot time
+   Can be overriden with spics=N kernel boot argument
+*/
 #define EXTRA_SPI_CS		0x00
 
 /***********************************************************************
@@ -66,7 +68,7 @@
 	{ \
 		.mapbase = BPHYSADDR(uart_addr), \
 		.irq = (uart_irq), \
-		.uartclk = BASE_BAUD * 16, \
+		.uartclk = BRCM_BASE_BAUD * 16, \
 		.regshift = 2, \
 		.iotype = UPIO_MEM32, \
 		.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP, \
@@ -328,7 +330,10 @@ static void __init brcm_register_genet(int id, uintptr_t base,
 		pdata.phy_id = BRCM_PHY_ID_NONE;
 		break;
 	default:
-		pdata.phy_id = BRCM_PHY_ID_AUTO;
+		if (brcm_enet_no_mdio)
+			pdata.phy_id = BRCM_PHY_ID_NONE;
+		else
+			pdata.phy_id = BRCM_PHY_ID_AUTO;
 	}
 	brcm_alloc_macaddr(pdata.macaddr);
 
@@ -364,7 +369,8 @@ static void __init brcm_register_moca(int enet_id)
 	pdata.enet_id = enet_id;
 	pdata.bcm3450_i2c_addr = 0x70;
 	pdata.bcm3450_i2c_base = brcm_moca_i2c_base;
-	pdata.hw_rev = (BRCM_CHIP_ID() << 16) | (BRCM_CHIP_REV() + 0xa0);
+	pdata.chip_id = (BRCM_CHIP_ID() << 16) | (BRCM_CHIP_REV() + 0xa0);
+	pdata.hw_rev = CONFIG_BRCM_MOCA_VERS;
 	pdata.rf_band = brcm_moca_rf_band;
 
 	if (brcm_moca_i2c_base == 0) {
@@ -421,6 +427,12 @@ static int __init platform_devices_setup(void)
 
 		bchip_usb_init();
 
+#if defined(CONFIG_BCM7231A0) || defined(CONFIG_BCM7344A0)
+		/* SWLINUX-1790: disable USB1 on these chips */
+		if (BRCM_PROD_ID() == 0x7230 || BRCM_PROD_ID() == 0x7418)
+			usb_disable_mask |= 0x0c;
+#endif
+
 #if defined(BCHP_USB_EHCI_REG_START)
 		ADD_USB(ehci, USB_EHCI, EHCI0_0);
 #endif
@@ -464,7 +476,7 @@ static int __init platform_devices_setup(void)
 #endif
 
 #if defined(CONFIG_BRCM_HAS_EMAC_1)
-	if (brcm_emac_1_enabled) {
+	if (brcm_enet1_enabled) {
 		brcm_alloc_macaddr(bcmemac_1_plat_data.macaddr);
 		if (brcm_enet_no_mdio)
 			bcmemac_1_plat_data.phy_id = BRCM_PHY_ID_NONE;
@@ -500,9 +512,12 @@ static int __init platform_devices_setup(void)
 			brcm_register_moca(id);
 		}
 #endif
-#if defined(CONFIG_BCMGENET_0_GPHY)
-		phy_type = brcm_ext_mii_mode;
+
+#if !defined(CONFIG_BCMGENET_0_GPHY)
+		if (brcm_enet0_force_ext_mii)
 #endif
+			phy_type = brcm_ext_mii_mode;
+
 		brcm_register_genet(id++, BCHP_GENET_0_SYS_REG_START,
 			BRCM_IRQ_GENET_0_A, BRCM_IRQ_GENET_0_B, phy_type);
 #endif /* defined(CONFIG_BRCM_HAS_GENET_0) */
@@ -520,7 +535,7 @@ static int __init platform_devices_setup(void)
 #if defined(CONFIG_BCMGENET_1_GPHY)
 		phy_type = brcm_ext_mii_mode;
 #endif
-		if (brcm_emac_1_enabled)
+		if (brcm_enet1_enabled)
 			brcm_register_genet(id++, BCHP_GENET_1_SYS_REG_START,
 				BRCM_IRQ_GENET_1_A, BRCM_IRQ_GENET_1_B,
 				phy_type);
@@ -555,8 +570,14 @@ arch_initcall(platform_devices_setup);
  * Flash device setup
  ***********************************************************************/
 
-#ifdef BCHP_EBI_CS_BASE_5
+#if defined(BCHP_EBI_CS_BASE_5)
 #define NUM_CS			6
+#elif defined(BCHP_EBI_CS_BASE_4)
+#define NUM_CS			5
+#elif defined(BCHP_EBI_CS_BASE_3)
+#define NUM_CS			4
+#elif defined(BCHP_EBI_CS_BASE_2)
+#define NUM_CS			3
 #else
 #define NUM_CS			2
 #endif
@@ -647,6 +668,7 @@ static int __init brcm_setup_spi_master(int cs, int bus_id)
 	pdev = platform_device_alloc("spi_brcmstb", bus_id);
 	if (!pdev ||
 	    platform_device_add_resources(pdev, res, 4) ||
+	    platform_device_add_data(pdev, &pdata, sizeof(pdata)) ||
 	    platform_device_add(pdev)) {
 		platform_device_put(pdev);
 		return -ENODEV;
@@ -654,6 +676,19 @@ static int __init brcm_setup_spi_master(int cs, int bus_id)
 	return 0;
 }
 #endif
+
+static int __initdata extra_spi_cs = EXTRA_SPI_CS;
+
+static int __init spics_setup(char *str)
+{
+	if (!*str || !*(str+1))
+		return 0;
+	str++;
+	get_option(&str, &extra_spi_cs);
+	return 0;
+}
+
+__setup("spics", spics_setup);
 
 static void __init brcm_setup_cs(int cs, int nr_parts,
 	struct mtd_partition *parts)
@@ -709,7 +744,10 @@ static void __init brcm_setup_cs(int cs, int nr_parts,
 		int ret;
 
 		if (!spi_master_registered) {
-			ret = brcm_setup_spi_master(cs, bus_num);
+			/* spi master must know about all CSs used by
+			   spi interface */
+			int spi_cs = (1 << cs) | extra_spi_cs;
+			ret = brcm_setup_spi_master(spi_cs, bus_num);
 			if (ret) {
 				printk(KERN_WARNING
 					"%s: can't register SPI master "
@@ -809,7 +847,7 @@ static int __init brcmstb_mtd_setup(void)
 		 * should be set at compile time for multiple SPI flashes.
 		 */
 		if ((BDEV_RD(BCHP_EBI_CS_SPI_SELECT) & (0x101 << i)) ||
-				(EXTRA_SPI_CS & (0x01 << i)))
+				(extra_spi_cs & (0x01 << i)))
 			cs_info[i].type = TYPE_SPI;
 #endif
 #ifdef BCHP_NAND_CS_NAND_SELECT

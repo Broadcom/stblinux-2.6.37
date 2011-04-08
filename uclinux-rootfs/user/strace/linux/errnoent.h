@@ -56,7 +56,11 @@
 	"ENOANO", /* 55 */
 	"EBADRQC", /* 56 */
 	"EBADSLT", /* 57 */
+#ifdef POWERPC
+	"EDEADLOCK", /* 58 */
+#else
 	"ERRNO_58", /* 58 */
+#endif
 	"EBFONT", /* 59 */
 	"ENOSTR", /* 60 */
 	"ENODATA", /* 61 */
@@ -130,7 +134,7 @@
 	"EKEYREJECTED", /* 129 */
 	"EOWNERDEAD", /* 130 */
 	"ENOTRECOVERABLE", /* 131 */
-	"ERRNO_132", /* 132 */
+	"ERFKILL", /* 132 */
 	"ERRNO_133", /* 133 */
 	"ERRNO_134", /* 134 */
 	"ERRNO_135", /* 135 */

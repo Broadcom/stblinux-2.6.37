@@ -3,6 +3,7 @@
  *
  * Sam Johnston <samj@samj.net>
  */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,27 +13,27 @@
 #include <linux/netfilter/xt_quota.h>
 
 static const struct option quota_opts[] = {
-	{"quota", 1, NULL, '1'},
-	{ .name = NULL }
+	{.name = "quota", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void quota_help(void)
 {
 	printf("quota match options:\n"
-	       " --quota quota			quota (bytes)\n");
+	       "[!] --quota quota		quota (bytes)\n");
 }
 
 static void
 quota_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_quota_info *q = (struct xt_quota_info *) match->data;
+	const struct xt_quota_info *q = (const void *)match->data;
 	printf("quota: %llu bytes", (unsigned long long) q->quota);
 }
 
 static void
 quota_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_quota_info *q = (struct xt_quota_info *) match->data;
+	const struct xt_quota_info *q = (const void *)match->data;
 	printf("--quota %llu ", (unsigned long long) q->quota);
 }
 
@@ -60,11 +61,15 @@ quota_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM, "quota: unexpected '!'");
 		if (!parse_quota(optarg, &info->quota))
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad quota: '%s'", optarg);
+
+		if (invert)
+			info->flags |= XT_QUOTA_INVERT;
+
 		break;
 
 	default:
@@ -74,11 +79,11 @@ quota_parse(int c, char **argv, int invert, unsigned int *flags,
 }
 
 static struct xtables_match quota_match = {
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "quota",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof (struct xt_quota_info)),
-	.userspacesize	= offsetof(struct xt_quota_info, quota),
+	.userspacesize	= offsetof(struct xt_quota_info, master),
 	.help		= quota_help,
 	.parse		= quota_parse,
 	.print		= quota_print,

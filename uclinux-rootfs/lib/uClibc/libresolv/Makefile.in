@@ -1,17 +1,19 @@
 # Makefile for uClibc
 #
-# Copyright (C) 2000-2005 Erik Andersen <andersen@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
 #
 # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
 #
 
+subdirs += libresolv
+
 CFLAGS-libresolv := -DNOT_IN_libc -DIS_IN_libresolv $(SSP_ALL_CFLAGS)
 
-LDFLAGS-libresolv.so := $(LDFLAGS)
+LDFLAGS-libresolv.so := $(LDFLAGS) $(call link.asneeded,-lc)
 
 LIBS-libresolv.so := $(LIBS)
 
-libresolv_FULL_NAME := libresolv-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so
+libresolv_FULL_NAME := libresolv-$(VERSION).so
 
 libresolv_DIR := $(top_srcdir)libresolv
 libresolv_OUT := $(top_builddir)libresolv
@@ -26,27 +28,25 @@ libresolv-a-y := $(libresolv_OBJ)
 endif
 libresolv-so-y := $(libresolv_OBJ:.o=.os)
 
-lib-a-y += $(top_builddir)lib/libresolv.a
-lib-so-y += $(top_builddir)lib/libresolv.so
-objclean-y += libresolv_clean
+lib-a-$(UCLIBC_HAS_LIBRESOLV_STUB)  += $(top_builddir)lib/libresolv.a
+lib-so-$(UCLIBC_HAS_LIBRESOLV_STUB) += $(top_builddir)lib/libresolv.so
+objclean-y += CLEAN_libresolv
 
 ifeq ($(DOPIC),y)
-$(top_builddir)lib/libresolv.so: $(top_builddir)lib/libresolv.a $(libc)
+$(top_builddir)lib/libresolv.so: $(top_builddir)lib/libresolv.a $(libc.depend)
 else
-$(top_builddir)lib/libresolv.so: $(libresolv_OUT)/libresolv_so.a $(libc)
+$(top_builddir)lib/libresolv.so: $(libresolv_OUT)/libresolv_so.a $(libc.depend)
 endif
-	$(call link.so,$(libresolv_FULL_NAME),$(MAJOR_VERSION))
+	$(call link.so,$(libresolv_FULL_NAME),$(ABI_VERSION))
 
 $(libresolv_OUT)/libresolv_so.a: $(libresolv-so-y)
 	$(Q)$(RM) $@
-	$(do_strip)
 	$(do_ar)
 
 $(top_builddir)lib/libresolv.a: $(libresolv-a-y)
 	$(Q)$(INSTALL) -d $(dir $@)
 	$(Q)$(RM) $@
-	$(do_strip)
 	$(do_ar)
 
-libresolv_clean:
-	$(RM) $(libresolv_OUT)/*.{o,os,a}
+CLEAN_libresolv:
+	$(do_rm) $(addprefix $(libresolv_OUT)/*., o os a)

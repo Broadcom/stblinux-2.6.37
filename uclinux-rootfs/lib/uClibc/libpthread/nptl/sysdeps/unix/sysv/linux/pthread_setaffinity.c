@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2003, 2004, 2006, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2003.
 
@@ -24,13 +24,14 @@
 #include <sys/types.h>
 
 
-size_t __kernel_cpumask_size;
+size_t __kernel_cpumask_size attribute_hidden;
 
 
 /* Determine the current affinity.  As a side affect we learn
    about the size of the cpumask_t in the kernel.  */
-int
-__determine_cpumask_size (pid_t tid)
+extern int __determine_cpumask_size (pid_t tid);
+libpthread_hidden_proto(__determine_cpumask_size)
+int __determine_cpumask_size (pid_t tid)
 {
   INTERNAL_SYSCALL_DECL (err);
   int res;
@@ -50,10 +51,10 @@ __determine_cpumask_size (pid_t tid)
 
   return 0;
 }
-
+libpthread_hidden_def(__determine_cpumask_size)
 
 int
-__pthread_setaffinity_new (pthread_t th, size_t cpusetsize,
+pthread_setaffinity_np (pthread_t th, size_t cpusetsize,
 			   const cpu_set_t *cpuset)
 {
   const struct pthread *pd = (const struct pthread *) th;
@@ -79,8 +80,13 @@ __pthread_setaffinity_new (pthread_t th, size_t cpusetsize,
 
   res = INTERNAL_SYSCALL (sched_setaffinity, err, 3, pd->tid, cpusetsize,
 			  cpuset);
+
+#ifdef RESET_VGETCPU_CACHE
+  if (!INTERNAL_SYSCALL_ERROR_P (res, err))
+    RESET_VGETCPU_CACHE ();
+#endif
+
   return (INTERNAL_SYSCALL_ERROR_P (res, err)
 	  ? INTERNAL_SYSCALL_ERRNO (res, err)
 	  : 0);
 }
-weak_alias(__pthread_setaffinity_new, pthread_setaffinity_np)

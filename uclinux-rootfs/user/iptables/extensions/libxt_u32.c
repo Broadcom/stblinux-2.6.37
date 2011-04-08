@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <netdb.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,8 +24,8 @@
 #include <linux/netfilter/xt_u32.h>
 
 static const struct option u32_opts[] = {
-	{"u32", 1, NULL, 'u'},
-	{ .name = NULL }
+	{.name = "u32", .has_arg = true, .val = 'u'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void u32_help(void)
@@ -107,7 +108,7 @@ static int u32_parse(int c, char **argv, int invert, unsigned int *flags,
 	struct xt_u32 *data = (void *)(*match)->data;
 	unsigned int testind = 0, locind = 0, valind = 0;
 	struct xt_u32_test *ct = &data->tests[testind]; /* current test */
-	char *arg = argv[optind-1]; /* the argument string */
+	char *arg = optarg; /* the argument string */
 	char *start = arg;
 	int state = 0;
 
@@ -267,7 +268,7 @@ static void u32_save(const void *ip, const struct xt_entry_match *match)
 
 static struct xtables_match u32_match = {
 	.name          = "u32",
-	.family        = AF_UNSPEC,
+	.family        = NFPROTO_UNSPEC,
 	.version       = XTABLES_VERSION,
 	.size          = XT_ALIGN(sizeof(struct xt_u32)),
 	.userspacesize = XT_ALIGN(sizeof(struct xt_u32)),

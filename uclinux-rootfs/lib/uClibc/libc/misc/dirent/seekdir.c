@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include "dirstream.h"
 
-libc_hidden_proto(lseek)
 
 void seekdir(DIR * dir, long int offset)
 {
@@ -17,8 +16,8 @@ void seekdir(DIR * dir, long int offset)
 		__set_errno(EBADF);
 		return;
 	}
-	__PTHREAD_MUTEX_LOCK(&(dir->dd_lock));
+	__UCLIBC_MUTEX_LOCK(dir->dd_lock);
 	dir->dd_nextoff = lseek(dir->dd_fd, offset, SEEK_SET);
 	dir->dd_size = dir->dd_nextloc = 0;
-	__PTHREAD_MUTEX_UNLOCK(&(dir->dd_lock));
+	__UCLIBC_MUTEX_UNLOCK(dir->dd_lock);
 }

@@ -21,15 +21,10 @@
 #include <string.h>
 #include "memcopy.h"
 
-libc_hidden_proto(memcmp)
 
 #include <endian.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-# define WORDS_BIGENDIAN
-#endif
-
-#ifdef WORDS_BIGENDIAN
 # define CMP_LT_OR_GT(a, b) ((a) > (b) ? 1 : -1)
 #else
 # define CMP_LT_OR_GT(a, b) memcmp_bytes ((a), (b))
@@ -48,19 +43,13 @@ libc_hidden_proto(memcmp)
 
    3. Compare the few remaining bytes.  */
 
-#ifndef WORDS_BIGENDIAN
+#if __BYTE_ORDER != __BIG_ENDIAN
 /* memcmp_bytes -- Compare A and B bytewise in the byte order of the machine.
    A and B are known to be different.
    This is needed only on little-endian machines.  */
 
-static int memcmp_bytes __P((op_t, op_t));
-
-# ifdef  __GNUC__
-__inline
-# endif
-static int
-memcmp_bytes (a, b)
-     op_t a, b;
+static __inline__ int
+memcmp_bytes (op_t a, op_t b)
 {
   long int srcp1 = (long int) &a;
   long int srcp2 = (long int) &b;
@@ -78,16 +67,11 @@ memcmp_bytes (a, b)
 }
 #endif
 
-static int memcmp_common_alignment __P((long, long, size_t));
-
 /* memcmp_common_alignment -- Compare blocks at SRCP1 and SRCP2 with LEN `op_t'
    objects (not LEN bytes!).  Both SRCP1 and SRCP2 should be aligned for
    memory operations on `op_t's.  */
 static int
-memcmp_common_alignment (srcp1, srcp2, len)
-     long int srcp1;
-     long int srcp2;
-     size_t len;
+memcmp_common_alignment (long int srcp1, long int srcp2, size_t len)
 {
   op_t a0, a1;
   op_t b0, b1;
@@ -165,16 +149,11 @@ memcmp_common_alignment (srcp1, srcp2, len)
   return 0;
 }
 
-static int memcmp_not_common_alignment __P((long, long, size_t));
-
 /* memcmp_not_common_alignment -- Compare blocks at SRCP1 and SRCP2 with LEN
    `op_t' objects (not LEN bytes!).  SRCP2 should be aligned for memory
    operations on `op_t', but SRCP1 *should be unaligned*.  */
 static int
-memcmp_not_common_alignment (srcp1, srcp2, len)
-     long int srcp1;
-     long int srcp2;
-     size_t len;
+memcmp_not_common_alignment (long int srcp1, long int srcp2, size_t len)
 {
   op_t a0, a1, a2, a3;
   op_t b0, b1, b2, b3;
@@ -330,7 +309,7 @@ memcmp (const __ptr_t s1, const __ptr_t s2, size_t len)
 
   return 0;
 }
-libc_hidden_def(memcmp)
+libc_hidden_weak(memcmp)
 #ifdef __UCLIBC_SUSV3_LEGACY__
 strong_alias(memcmp,bcmp)
 #endif

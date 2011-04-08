@@ -18,8 +18,6 @@
 
 #include <string.h>
 
-libc_hidden_proto(strcspn)
-libc_hidden_proto(strchr)
 
 /* Return the length of the maximum initial segment of S
    which contains no characters from REJECT.  */

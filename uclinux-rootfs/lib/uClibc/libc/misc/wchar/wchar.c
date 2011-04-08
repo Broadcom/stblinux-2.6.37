@@ -97,7 +97,7 @@
  *
  * Manuel
  */
-
+#ifdef _LIBC
 #include <errno.h>
 #include <stddef.h>
 #include <limits.h>
@@ -119,7 +119,7 @@
 #endif
 #endif /* __UCLIBC_MJN3_ONLY__ */
 
-#define ENCODING		((__UCLIBC_CURLOCALE_DATA).encoding)
+#define ENCODING		(__UCLIBC_CURLOCALE->encoding)
 
 #define Cc2wc_IDX_SHIFT		__LOCALE_DATA_Cc2wc_IDX_SHIFT
 #define Cc2wc_ROW_LEN		__LOCALE_DATA_Cc2wc_ROW_LEN
@@ -170,13 +170,11 @@ extern size_t _wchar_utf8sntowcs(wchar_t *__restrict pwc, size_t wn,
 
 extern size_t _wchar_wcsntoutf8s(char *__restrict s, size_t n,
 					const wchar_t **__restrict src, size_t wn) attribute_hidden;
-
+#endif
 /**********************************************************************/
 #ifdef L_btowc
 
-libc_hidden_proto(mbrtowc)
 
-libc_hidden_proto(btowc)
 wint_t btowc(int c)
 {
 #ifdef __CTYPE_HAS_8_BIT_LOCALES
@@ -188,24 +186,24 @@ wint_t btowc(int c)
 	if (c != EOF) {
 		*buf = (unsigned char) c;
 		mbstate.__mask = 0;		/* Initialize the mbstate. */
-		if (mbrtowc(&wc, buf, 1, &mbstate) <= 1) {
+		if (mbrtowc(&wc, (char*) buf, 1, &mbstate) <= 1) {
 			return wc;
 		}
 	}
 	return WEOF;
 
-#else  /*  __CTYPE_HAS_8_BIT_LOCALES */
+#else  /* !__CTYPE_HAS_8_BIT_LOCALES */
 
 #ifdef __UCLIBC_HAS_LOCALE__
 	assert((ENCODING == __ctype_encoding_7_bit)
 		   || (ENCODING == __ctype_encoding_utf8));
-#endif /* __UCLIBC_HAS_LOCALE__ */
+#endif
 
 	/* If we don't have 8-bit locale support, then this is trivial since
 	 * anything outside of 0-0x7f is illegal in C/POSIX and UTF-8 locales. */
 	return (((unsigned int)c) < 0x80) ? c : WEOF;
 
-#endif /*  __CTYPE_HAS_8_BIT_LOCALES */
+#endif /* !__CTYPE_HAS_8_BIT_LOCALES */
 }
 libc_hidden_def(btowc)
 
@@ -215,7 +213,6 @@ libc_hidden_def(btowc)
 
 /* Note: We completely ignore ps in all currently supported conversions. */
 
-libc_hidden_proto(wcrtomb)
 
 int wctob(wint_t c)
 {
@@ -223,7 +220,7 @@ int wctob(wint_t c)
 
 	unsigned char buf[MB_LEN_MAX];
 
-	return (wcrtomb(buf, c, NULL) == 1) ? *buf : EOF;
+	return (wcrtomb((char*) buf, c, NULL) == 1) ? *buf : EOF;
 
 #else  /*  __CTYPE_HAS_8_BIT_LOCALES */
 
@@ -234,7 +231,7 @@ int wctob(wint_t c)
 
 	/* If we don't have 8-bit locale support, then this is trivial since
 	 * anything outside of 0-0x7f is illegal in C/POSIX and UTF-8 locales. */
-	
+
 	/* TODO: need unsigned version of wint_t... */
 /*  	return (((unsigned int)c) < 0x80) ? c : WEOF; */
 	return ((c >= 0) && (c < 0x80)) ? c : EOF;
@@ -246,7 +243,6 @@ int wctob(wint_t c)
 /**********************************************************************/
 #ifdef L_mbsinit
 
-libc_hidden_proto(mbsinit)
 int mbsinit(const mbstate_t *ps)
 {
 	return !ps || !ps->__mask;
@@ -257,9 +253,7 @@ libc_hidden_def(mbsinit)
 /**********************************************************************/
 #ifdef L_mbrlen
 
-libc_hidden_proto(mbrtowc)
 
-libc_hidden_proto(mbrlen)
 size_t mbrlen(const char *__restrict s, size_t n, mbstate_t *__restrict ps)
 {
 	static mbstate_t mbstate;	/* Rely on bss 0-init. */
@@ -272,9 +266,7 @@ libc_hidden_def(mbrlen)
 /**********************************************************************/
 #ifdef L_mbrtowc
 
-libc_hidden_proto(mbsnrtowcs)
 
-libc_hidden_proto(mbrtowc)
 size_t mbrtowc(wchar_t *__restrict pwc, const char *__restrict s,
 			   size_t n, mbstate_t *__restrict ps)
 {
@@ -293,10 +285,19 @@ size_t mbrtowc(wchar_t *__restrict pwc, const char *__restrict s,
 		empty_string[0] = 0;	/* Init the empty string when necessary. */
 		s = empty_string;
 		n = 1;
+	} else if (*s == '\0') {
+		if (pwc)
+			*pwc = '\0';
+	/* According to the ISO C 89 standard this is the expected behaviour.  */
+		return 0;
 	} else if (!n) {
 		/* TODO: change error code? */
+#if 0
 		return (ps->__mask && (ps->__wc == 0xffffU))
 			? ((size_t) -1) : ((size_t) -2);
+#else
+		return 0;
+#endif
 	}
 
 	p = s;
@@ -331,12 +332,10 @@ libc_hidden_def(mbrtowc)
 /**********************************************************************/
 #ifdef L_wcrtomb
 
-libc_hidden_proto(wcsnrtombs)
 
 /* Note: We completely ignore ps in all currently supported conversions. */
 /* TODO: Check for valid state anyway? */
 
-libc_hidden_proto(wcrtomb)
 size_t wcrtomb(register char *__restrict s, wchar_t wc,
 			   mbstate_t *__restrict ps)
 {
@@ -365,9 +364,7 @@ libc_hidden_def(wcrtomb)
 /**********************************************************************/
 #ifdef L_mbsrtowcs
 
-libc_hidden_proto(mbsnrtowcs)
 
-libc_hidden_proto(mbsrtowcs)
 size_t mbsrtowcs(wchar_t *__restrict dst, const char **__restrict src,
 				 size_t len, mbstate_t *__restrict ps)
 {
@@ -386,9 +383,7 @@ libc_hidden_def(mbsrtowcs)
 
  * TODO: Check for valid state anyway? */
 
-libc_hidden_proto(wcsnrtombs)
 
-libc_hidden_proto(wcsrtombs)
 size_t wcsrtombs(char *__restrict dst, const wchar_t **__restrict src,
 				 size_t len, mbstate_t *__restrict ps)
 {
@@ -481,7 +476,8 @@ size_t attribute_hidden _wchar_utf8sntowcs(wchar_t *__restrict pwc, size_t wn,
 #ifdef __UCLIBC_MJN3_ONLY__
 #warning TODO: Fix range for 16 bit wchar_t case.
 #endif
-			if ( ((unsigned char)(s[-1] - 0xc0)) < (0xfe - 0xc0) ) {
+			if (( ((unsigned char)(s[-1] - 0xc0)) < (0xfe - 0xc0) ) &&
+			(((unsigned char)s[-1] != 0xc0 ) && ((unsigned char)s[-1] != 0xc1 ))) {
 				goto START;
 			}
 		BAD:
@@ -606,7 +602,7 @@ size_t attribute_hidden _wchar_wcsntoutf8s(char *__restrict s, size_t n,
 		if (!s) {
 			n = SIZE_MAX;
 		}
-	    s = buf;
+		s = buf;
 		store = 0;
 	}
 
@@ -692,7 +688,6 @@ size_t attribute_hidden _wchar_wcsntoutf8s(char *__restrict s, size_t n,
 
 /* WARNING: We treat len as SIZE_MAX when dst is NULL! */
 
-libc_hidden_proto(mbsnrtowcs)
 size_t mbsnrtowcs(wchar_t *__restrict dst, const char **__restrict src,
 					size_t NMC, size_t len, mbstate_t *__restrict ps)
 {
@@ -744,8 +739,8 @@ size_t mbsnrtowcs(wchar_t *__restrict dst, const char **__restrict src,
 		while (count) {
 			if ((wc = ((unsigned char)(*s))) >= 0x80) {	/* Non-ASCII... */
 				wc -= 0x80;
-				wc = __UCLIBC_CURLOCALE_DATA.tbl8c2wc[
-						  (__UCLIBC_CURLOCALE_DATA.idx8c2wc[wc >> Cc2wc_IDX_SHIFT]
+				wc = __UCLIBC_CURLOCALE->tbl8c2wc[
+						  (__UCLIBC_CURLOCALE->idx8c2wc[wc >> Cc2wc_IDX_SHIFT]
 						   << Cc2wc_IDX_SHIFT) + (wc & (Cc2wc_ROW_LEN - 1))];
 				if (!wc) {
 					goto BAD;
@@ -802,7 +797,6 @@ libc_hidden_def(mbsnrtowcs)
 /* Note: We completely ignore ps in all currently supported conversions.
  * TODO: Check for valid state anyway? */
 
-libc_hidden_proto(wcsnrtombs)
 size_t wcsnrtombs(char *__restrict dst, const wchar_t **__restrict src,
 					size_t NWC, size_t len, mbstate_t *__restrict ps)
 {
@@ -855,17 +849,16 @@ size_t wcsnrtombs(char *__restrict dst, const wchar_t **__restrict src,
 			} else {
 				u = 0;
 				if (wc <= Cwc2c_DOMAIN_MAX) {
-					u = __UCLIBC_CURLOCALE_DATA.idx8wc2c[wc >> (Cwc2c_TI_SHIFT
+					u = __UCLIBC_CURLOCALE->idx8wc2c[wc >> (Cwc2c_TI_SHIFT
 														+ Cwc2c_TT_SHIFT)];
-					u = __UCLIBC_CURLOCALE_DATA.tbl8wc2c[(u << Cwc2c_TI_SHIFT)
+					u = __UCLIBC_CURLOCALE->tbl8wc2c[(u << Cwc2c_TI_SHIFT)
 									+ ((wc >> Cwc2c_TT_SHIFT)
 									   & ((1 << Cwc2c_TI_SHIFT)-1))];
-					u = __UCLIBC_CURLOCALE_DATA.tbl8wc2c[Cwc2c_TI_LEN
+					u = __UCLIBC_CURLOCALE->tbl8wc2c[Cwc2c_TI_LEN
 									+ (u << Cwc2c_TT_SHIFT)
 									+ (wc & ((1 << Cwc2c_TT_SHIFT)-1))];
 				}
 
-#define __WCHAR_REPLACEMENT_CHAR '?'
 #ifdef __WCHAR_REPLACEMENT_CHAR
 				*dst = (unsigned char) ( u ? u : __WCHAR_REPLACEMENT_CHAR );
 #else  /* __WCHAR_REPLACEMENT_CHAR */
@@ -917,7 +910,6 @@ libc_hidden_def(wcsnrtombs)
 /**********************************************************************/
 #ifdef L_wcswidth
 
-libc_hidden_proto(wcswidth)
 
 #ifdef __UCLIBC_MJN3_ONLY__
 #warning REMINDER: If we start doing translit, wcwidth and wcswidth will need updating.
@@ -928,124 +920,123 @@ libc_hidden_proto(wcswidth)
 ( defined(__CTYPE_HAS_8_BIT_LOCALES) || defined(__CTYPE_HAS_UTF_8_LOCALES) )
 
 static const unsigned char new_idx[] = {
-	0,    5,    5,    6,   10,   15,   28,   39, 
-	48,   48,   71,   94,  113,  128,  139,  154, 
-	175,  186,  188,  188,  188,  188,  188,  188, 
-	203,  208,  208,  208,  208,  208,  208,  208, 
-	208,  219,  219,  219,  222,  222,  222,  222, 
-	222,  222,  222,  222,  222,  222,  222,  224, 
-	224,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  231,  231,  231, 
-	231,  231,  231,  231,  231,  233,  233,  233, 
-	233,  233,  233,  233,  234,  234,  234,  234, 
-	234,  234,  234,  234,  234,  234,  234,  234, 
-	234,  234,  234,  234,  234,  234,  234,  234, 
-	234,  234,  234,  234,  234,  234,  234,  234, 
-	234,  234,  234,  234,  234,  234,  234,  234, 
-	234,  234,  234,  234,  234,  234,  234,  234, 
-	236,  236,  236,  236,  236,  236,  236,  236, 
-	236,  236,  236,  236,  236,  236,  236,  236, 
-	236,  236,  236,  236,  236,  236,  236,  236, 
-	236,  236,  236,  236,  236,  236,  236,  236, 
-	236,  237,  237,  238,  241,  241,  242,  249, 
-	255, 
+	0,    5,    5,    6,   10,   15,   28,   39,
+	48,   48,   71,   94,  113,  128,  139,  154,
+	175,  186,  188,  188,  188,  188,  188,  188,
+	203,  208,  208,  208,  208,  208,  208,  208,
+	208,  219,  219,  219,  222,  222,  222,  222,
+	222,  222,  222,  222,  222,  222,  222,  224,
+	224,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  231,  231,  231,
+	231,  231,  231,  231,  231,  233,  233,  233,
+	233,  233,  233,  233,  234,  234,  234,  234,
+	234,  234,  234,  234,  234,  234,  234,  234,
+	234,  234,  234,  234,  234,  234,  234,  234,
+	234,  234,  234,  234,  234,  234,  234,  234,
+	234,  234,  234,  234,  234,  234,  234,  234,
+	234,  234,  234,  234,  234,  234,  234,  234,
+	236,  236,  236,  236,  236,  236,  236,  236,
+	236,  236,  236,  236,  236,  236,  236,  236,
+	236,  236,  236,  236,  236,  236,  236,  236,
+	236,  236,  236,  236,  236,  236,  236,  236,
+	236,  237,  237,  238,  241,  241,  242,  249,
+	255,
 };
 
 static const unsigned char new_tbl[] = {
-	0x00, 0x01, 0x20, 0x7f, 0xa0, 0x00, 0x00, 0x50, 
-	0x60, 0x70, 0x00, 0x83, 0x87, 0x88, 0x8a, 0x00, 
-	0x91, 0xa2, 0xa3, 0xba, 0xbb, 0xbe, 0xbf, 0xc0, 
-	0xc1, 0xc3, 0xc4, 0xc5, 0x00, 0x4b, 0x56, 0x70, 
-	0x71, 0xd6, 0xe5, 0xe7, 0xe9, 0xea, 0xee, 0x00, 
-	0x0f, 0x10, 0x11, 0x12, 0x30, 0x4b, 0xa6, 0xb1, 
-	0x00, 0x01, 0x03, 0x3c, 0x3d, 0x41, 0x49, 0x4d, 
-	0x4e, 0x51, 0x55, 0x62, 0x64, 0x81, 0x82, 0xbc, 
-	0xbd, 0xc1, 0xc5, 0xcd, 0xce, 0xe2, 0xe4, 0x00, 
-	0x02, 0x03, 0x3c, 0x3d, 0x41, 0x43, 0x47, 0x49, 
-	0x4b, 0x4e, 0x70, 0x72, 0x81, 0x83, 0xbc, 0xbd, 
-	0xc1, 0xc6, 0xc7, 0xc9, 0xcd, 0xce, 0x00, 0x01, 
-	0x02, 0x3c, 0x3d, 0x3f, 0x40, 0x41, 0x44, 0x4d, 
-	0x4e, 0x56, 0x57, 0x82, 0x83, 0xc0, 0xc1, 0xcd, 
-	0xce, 0x00, 0x3e, 0x41, 0x46, 0x49, 0x4a, 0x4e, 
-	0x55, 0x57, 0xbf, 0xc0, 0xc6, 0xc7, 0xcc, 0xce, 
-	0x00, 0x41, 0x44, 0x4d, 0x4e, 0xca, 0xcb, 0xd2, 
-	0xd5, 0xd6, 0xd7, 0x00, 0x31, 0x32, 0x34, 0x3b, 
-	0x47, 0x4f, 0xb1, 0xb2, 0xb4, 0xba, 0xbb, 0xbd, 
-	0xc8, 0xce, 0x00, 0x18, 0x1a, 0x35, 0x36, 0x37, 
-	0x38, 0x39, 0x3a, 0x71, 0x7f, 0x80, 0x85, 0x86, 
-	0x88, 0x90, 0x98, 0x99, 0xbd, 0xc6, 0xc7, 0x00, 
-	0x2d, 0x31, 0x32, 0x33, 0x36, 0x38, 0x39, 0x3a, 
-	0x58, 0x5a, 0x00, 0x60, 0x00, 0x12, 0x15, 0x32, 
-	0x35, 0x52, 0x54, 0x72, 0x74, 0xb7, 0xbe, 0xc6, 
-	0xc7, 0xc9, 0xd4, 0x00, 0x0b, 0x0f, 0xa9, 0xaa, 
-	0x00, 0x0b, 0x10, 0x2a, 0x2f, 0x60, 0x64, 0x6a, 
-	0x70, 0xd0, 0xeb, 0x00, 0x29, 0x2b, 0x00, 0x80, 
-	0x00, 0x2a, 0x30, 0x3f, 0x40, 0x99, 0x9b, 0x00, 
-	0xd0, 0x00, 0x00, 0xa4, 0x00, 0x00, 0x00, 0x1e, 
-	0x1f, 0x00, 0x00, 0x10, 0x20, 0x24, 0x30, 0x70, 
-	0xff, 0x00, 0x61, 0xe0, 0xe7, 0xf9, 0xfc, 
+	0x00, 0x01, 0x20, 0x7f, 0xa0, 0x00, 0x00, 0x50,
+	0x60, 0x70, 0x00, 0x83, 0x87, 0x88, 0x8a, 0x00,
+	0x91, 0xa2, 0xa3, 0xba, 0xbb, 0xbe, 0xbf, 0xc0,
+	0xc1, 0xc3, 0xc4, 0xc5, 0x00, 0x4b, 0x56, 0x70,
+	0x71, 0xd6, 0xe5, 0xe7, 0xe9, 0xea, 0xee, 0x00,
+	0x0f, 0x10, 0x11, 0x12, 0x30, 0x4b, 0xa6, 0xb1,
+	0x00, 0x01, 0x03, 0x3c, 0x3d, 0x41, 0x49, 0x4d,
+	0x4e, 0x51, 0x55, 0x62, 0x64, 0x81, 0x82, 0xbc,
+	0xbd, 0xc1, 0xc5, 0xcd, 0xce, 0xe2, 0xe4, 0x00,
+	0x02, 0x03, 0x3c, 0x3d, 0x41, 0x43, 0x47, 0x49,
+	0x4b, 0x4e, 0x70, 0x72, 0x81, 0x83, 0xbc, 0xbd,
+	0xc1, 0xc6, 0xc7, 0xc9, 0xcd, 0xce, 0x00, 0x01,
+	0x02, 0x3c, 0x3d, 0x3f, 0x40, 0x41, 0x44, 0x4d,
+	0x4e, 0x56, 0x57, 0x82, 0x83, 0xc0, 0xc1, 0xcd,
+	0xce, 0x00, 0x3e, 0x41, 0x46, 0x49, 0x4a, 0x4e,
+	0x55, 0x57, 0xbf, 0xc0, 0xc6, 0xc7, 0xcc, 0xce,
+	0x00, 0x41, 0x44, 0x4d, 0x4e, 0xca, 0xcb, 0xd2,
+	0xd5, 0xd6, 0xd7, 0x00, 0x31, 0x32, 0x34, 0x3b,
+	0x47, 0x4f, 0xb1, 0xb2, 0xb4, 0xba, 0xbb, 0xbd,
+	0xc8, 0xce, 0x00, 0x18, 0x1a, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x71, 0x7f, 0x80, 0x85, 0x86,
+	0x88, 0x90, 0x98, 0x99, 0xbd, 0xc6, 0xc7, 0x00,
+	0x2d, 0x31, 0x32, 0x33, 0x36, 0x38, 0x39, 0x3a,
+	0x58, 0x5a, 0x00, 0x60, 0x00, 0x12, 0x15, 0x32,
+	0x35, 0x52, 0x54, 0x72, 0x74, 0xb7, 0xbe, 0xc6,
+	0xc7, 0xc9, 0xd4, 0x00, 0x0b, 0x0f, 0xa9, 0xaa,
+	0x00, 0x0b, 0x10, 0x2a, 0x2f, 0x60, 0x64, 0x6a,
+	0x70, 0xd0, 0xeb, 0x00, 0x29, 0x2b, 0x00, 0x80,
+	0x00, 0x2a, 0x30, 0x3f, 0x40, 0x99, 0x9b, 0x00,
+	0xd0, 0x00, 0x00, 0xa4, 0x00, 0x00, 0x00, 0x1e,
+	0x1f, 0x00, 0x00, 0x10, 0x20, 0x24, 0x30, 0x70,
+	0xff, 0x00, 0x61, 0xe0, 0xe7, 0xf9, 0xfc,
 };
 
 static const signed char new_wtbl[] = {
-	0,   -1,    1,   -1,    1,    1,    0,    1, 
-	0,    1,    1,    0,    1,    0,    1,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    0,    1,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    0,    1,    0,    1,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    1,    0,    1,    0,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    1, 
-	0,    1,    0,    1,    0,    1,    0,    1, 
-	0,    1,    2,    0,    1,    0,    1,    0, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    1,    0,    1,    0,    1, 
-	1,    0,    1,    0,    1,    0,    1,    0, 
-	1,    0,    1,    1,    2,    1,    1,    2, 
-	2,    0,    2,    1,    2,    0,    2,    2, 
-	1,    1,    2,    1,    1,    2,    1,    0, 
-	1,    1,    0,    1,    0,    1,    2,    1, 
-	0,    2,    1,    2,    1,    0,    1, 
+	0,   -1,    1,   -1,    1,    1,    0,    1,
+	0,    1,    1,    0,    1,    0,    1,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    0,    1,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    0,    1,    0,    1,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    1,    0,    1,    0,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    1,
+	0,    1,    0,    1,    0,    1,    0,    1,
+	0,    1,    2,    0,    1,    0,    1,    0,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    1,    0,    1,    0,    1,
+	1,    0,    1,    0,    1,    0,    1,    0,
+	1,    0,    1,    1,    2,    1,    1,    2,
+	2,    0,    2,    1,    2,    0,    2,    2,
+	1,    1,    2,    1,    1,    2,    1,    0,
+	1,    1,    0,    1,    0,    1,    2,    1,
+	0,    2,    1,    2,    1,    0,    1,
 };
 
-libc_hidden_proto(wcsnrtombs)
 
 int wcswidth(const wchar_t *pwcs, size_t n)
 {
-    int h, l, m, count;
-    wchar_t wc;
-    unsigned char b;
+	int h, l, m, count;
+	wchar_t wc;
+	unsigned char b;
 
 	if (ENCODING == __ctype_encoding_7_bit) {
 		size_t i;
-		
+
 		for (i = 0 ; (i < n) && pwcs[i] ; i++) {
-			if (pwcs[i] != ((unsigned char)(pwcs[i]))) {
+			if (pwcs[i] != (pwcs[i] & 0x7f)) {
 				return -1;
 			}
 		}
@@ -1064,7 +1055,7 @@ int wcswidth(const wchar_t *pwcs, size_t n)
 	/* For stricter handling of allowed unicode values... see comments above. */
 	else if (ENCODING == __ctype_encoding_utf8) {
 		size_t i;
-		
+
 		for (i = 0 ; (i < n) && pwcs[i] ; i++) {
 			if ( (((__uwchar_t)((pwcs[i]) - 0xfffeU)) < 2)
 				 || (((__uwchar_t)((pwcs[i]) - 0xd800U)) < (0xe000U - 0xd800U))
@@ -1075,7 +1066,7 @@ int wcswidth(const wchar_t *pwcs, size_t n)
 	}
 #endif /* __CTYPE_HAS_UTF_8_LOCALES */
 
-    for (count = 0 ; n && (wc = *pwcs++) ; n--) {
+	for (count = 0 ; n && (wc = *pwcs++) ; n--) {
 		if (wc <= 0xff) {
 			/* If we're here, wc != 0. */
 			if ((wc < 32) || ((wc >= 0x7f) && (wc < 0xa0))) {
@@ -1125,9 +1116,9 @@ int wcswidth(const wchar_t *pwcs, size_t n)
 		}
 
 		++count;
-    }
+	}
 
-    return count;
+	return count;
 }
 
 #else  /*  __UCLIBC_HAS_LOCALE__ */
@@ -1136,8 +1127,15 @@ int wcswidth(const wchar_t *pwcs, size_t n)
 {
 	int count;
 	wchar_t wc;
+	size_t i;
 
-    for (count = 0 ; n && (wc = *pwcs++) ; n--) {
+	for (i = 0 ; (i < n) && pwcs[i] ; i++) {
+		if (pwcs[i] != (pwcs[i] & 0x7f)) {
+			return -1;
+		}
+	}
+
+	for (count = 0 ; n && (wc = *pwcs++) ; n--) {
 		if (wc <= 0xff) {
 			/* If we're here, wc != 0. */
 			if ((wc < 32) || ((wc >= 0x7f) && (wc < 0xa0))) {
@@ -1161,11 +1159,10 @@ libc_hidden_def(wcswidth)
 /**********************************************************************/
 #ifdef L_wcwidth
 
-libc_hidden_proto(wcswidth)
 
 int wcwidth(wchar_t wc)
 {
-    return wcswidth(&wc, 1);
+	return wcswidth(&wc, 1);
 }
 
 #endif
@@ -1185,13 +1182,62 @@ typedef struct {
 	int skip_invalid_input;		/* To support iconv -c option. */
 } _UC_iconv_t;
 
+/* For the multibyte
+ * bit 0 means swap endian
+ * bit 1 means 2 byte
+ * bit 2 means 4 byte
+ *
+ */
+
+#if defined L_iconv && defined _LIBC
+/* Used externally only by iconv utility */
+extern const unsigned char __iconv_codesets[];
+libc_hidden_proto(__iconv_codesets)
+#endif
+
+#if defined L_iconv || defined L_iconv_main
+const unsigned char __iconv_codesets[] =
+	"\x0a\xe0""WCHAR_T\x00"		/* superset of UCS-4 but platform-endian */
+#if __BYTE_ORDER == __BIG_ENDIAN
+	"\x08\xec""UCS-4\x00"		/* always BE */
+	"\x0a\xec""UCS-4BE\x00"
+	"\x0a\xed""UCS-4LE\x00"
+	"\x09\xe4""UTF-32\x00"		/* platform endian with BOM */
+	"\x0b\xe4""UTF-32BE\x00"
+	"\x0b\xe5""UTF-32LE\x00"
+	"\x08\xe2""UCS-2\x00"		/* always BE */
+	"\x0a\xe2""UCS-2BE\x00"
+	"\x0a\xe3""UCS-2LE\x00"
+	"\x09\xea""UTF-16\x00"		/* platform endian with BOM */
+	"\x0b\xea""UTF-16BE\x00"
+	"\x0b\xeb""UTF-16LE\x00"
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+	"\x08\xed""UCS-4\x00"		/* always BE */
+	"\x0a\xed""UCS-4BE\x00"
+	"\x0a\xec""UCS-4LE\x00"
+	"\x09\xf4""UTF-32\x00"		/* platform endian with BOM */
+	"\x0b\xe5""UTF-32BE\x00"
+	"\x0b\xe4""UTF-32LE\x00"
+	"\x08\xe3""UCS-2\x00"		/* always BE */
+	"\x0a\xe3""UCS-2BE\x00"
+	"\x0a\xe2""UCS-2LE\x00"
+	"\x09\xfa""UTF-16\x00"		/* platform endian with BOM */
+	"\x0b\xeb""UTF-16BE\x00"
+	"\x0b\xea""UTF-16LE\x00"
+#endif
+	"\x08\x02""UTF-8\x00"
+	"\x0b\x01""US-ASCII\x00"
+	"\x07\x01""ASCII";			/* Must be last! (special case to save a nul) */
+#endif
+#if defined L_iconv && defined _LIBC
+libc_hidden_data_def(__iconv_codesets)
+#endif
 
 
 #ifdef L_iconv
 
 #include <iconv.h>
 #include <string.h>
-#include <strings.h>
 #include <endian.h>
 #include <byteswap.h>
 
@@ -1225,58 +1271,14 @@ enum {
 	IC_ASCII = 1
 };
 
-/* For the multibyte
- * bit 0 means swap endian
- * bit 1 means 2 byte
- * bit 2 means 4 byte
- *
- */
-
-extern const unsigned char __iconv_codesets[];
-libc_hidden_proto(__iconv_codesets)
-const unsigned char __iconv_codesets[] =
-	"\x0a\xe0""WCHAR_T\x00"		/* superset of UCS-4 but platform-endian */
-#if __BYTE_ORDER == __BIG_ENDIAN
-	"\x08\xec""UCS-4\x00"		/* always BE */
-	"\x0a\xec""UCS-4BE\x00"
-	"\x0a\xed""UCS-4LE\x00"
-	"\x09\fe4""UTF-32\x00"		/* platform endian with BOM */
-	"\x0b\xe4""UTF-32BE\x00"
-	"\x0b\xe5""UTF-32LE\x00"
-	"\x08\xe2""UCS-2\x00"		/* always BE */
-	"\x0a\xe2""UCS-2BE\x00"
-	"\x0a\xe3""UCS-2LE\x00"
-	"\x09\xea""UTF-16\x00"		/* platform endian with BOM */
-	"\x0b\xea""UTF-16BE\x00"
-	"\x0b\xeb""UTF-16LE\x00"
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-	"\x08\xed""UCS-4\x00"		/* always BE */
-	"\x0a\xed""UCS-4BE\x00"
-	"\x0a\xec""UCS-4LE\x00"
-	"\x09\xf4""UTF-32\x00"		/* platform endian with BOM */
-	"\x0b\xe5""UTF-32BE\x00"
-	"\x0b\xe4""UTF-32LE\x00"
-	"\x08\xe3""UCS-2\x00"		/* always BE */
-	"\x0a\xe3""UCS-2BE\x00"
-	"\x0a\xe2""UCS-2LE\x00"
-	"\x09\xfa""UTF-16\x00"		/* platform endian with BOM */
-	"\x0b\xeb""UTF-16BE\x00"
-	"\x0b\xea""UTF-16LE\x00"
-#endif
-	"\x08\x02""UTF-8\x00"
-	"\x0b\x01""US-ASCII\x00"
-	"\x07\x01""ASCII";			/* Must be last! (special case to save a nul) */
-libc_hidden_data_def(__iconv_codesets)
-
-libc_hidden_proto(strcasecmp)
 
 static int find_codeset(const char *name)
 {
 	const unsigned char *s;
 	int codeset;
 
-	for (s = __iconv_codesets ; *s ; s += *s) {
-		if (!strcasecmp(s+2, name)) {
+	for (s = __iconv_codesets; *s; s += *s) {
+		if (!strcasecmp((char*) (s + 2), name)) {
 			return s[1];
 		}
 	}
@@ -1286,7 +1288,7 @@ static int find_codeset(const char *name)
 	/* TODO: maybe CODESET_LIST + *s ??? */
 	/* 7bit is 1, UTF-8 is 2, 8-bit is >= 3 */
 	codeset = 2;
-	s = __LOCALE_DATA_CODESET_LIST;
+	s = (const unsigned char *) __LOCALE_DATA_CODESET_LIST;
 	do {
 		++codeset;		/* Increment codeset first. */
 		if (!strcasecmp(__LOCALE_DATA_CODESET_LIST+*s, name)) {
@@ -1453,7 +1455,7 @@ size_t weak_function iconv(iconv_t cd, char **__restrict inbuf,
 				const __codeset_8_bit_t *c8b
 					= __locale_mmap->codeset_8_bit + px->fromcodeset - 3;
 				wc -= 0x80;
-				wc = __UCLIBC_CURLOCALE_DATA.tbl8c2wc[
+				wc = __UCLIBC_CURLOCALE->tbl8c2wc[
 							 (c8b->idx8c2wc[wc >> Cc2wc_IDX_SHIFT]
 							  << Cc2wc_IDX_SHIFT) + (wc & (Cc2wc_ROW_LEN - 1))];
 				if (!wc) {
@@ -1502,7 +1504,7 @@ size_t weak_function iconv(iconv_t cd, char **__restrict inbuf,
 					}
 					wc += (wc2 << 16);
 				} else if (px->tocodeset & 1) wc = bswap_16(wc);
-			}				
+			}
 			(*outbuf)[0] = (char)((unsigned char)(wc));
 			(*outbuf)[1] = (char)((unsigned char)(wc >> 8));
 			if (inco == 4) {
@@ -1538,10 +1540,10 @@ size_t weak_function iconv(iconv_t cd, char **__restrict inbuf,
 					= __locale_mmap->codeset_8_bit + px->tocodeset - 3;
 				__uwchar_t u;
 				u = c8b->idx8wc2c[wc >> (Cwc2c_TI_SHIFT + Cwc2c_TT_SHIFT)];
-				u = __UCLIBC_CURLOCALE_DATA.tbl8wc2c[(u << Cwc2c_TI_SHIFT)
+				u = __UCLIBC_CURLOCALE->tbl8wc2c[(u << Cwc2c_TI_SHIFT)
 						 + ((wc >> Cwc2c_TT_SHIFT)
 							& ((1 << Cwc2c_TI_SHIFT)-1))];
-				wc = __UCLIBC_CURLOCALE_DATA.tbl8wc2c[Cwc2c_TI_LEN
+				wc = __UCLIBC_CURLOCALE->tbl8wc2c[Cwc2c_TI_LEN
 						 + (u << Cwc2c_TT_SHIFT)
 						 + (wc & ((1 << Cwc2c_TT_SHIFT)-1))];
 				if (wc) {
@@ -1560,175 +1562,4 @@ size_t weak_function iconv(iconv_t cd, char **__restrict inbuf,
 	}
 	return nrcount;
 }
-
 #endif
-/**********************************************************************/
-#ifdef L_iconv_main
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-#include <iconv.h>
-#include <stdarg.h>
-#include <libgen.h>
-
-extern const unsigned char __iconv_codesets[];
-
-#define IBUF BUFSIZ
-#define OBUF BUFSIZ
-
-char *progname;
-int hide_errors;
-
-static void error_msg(const char *fmt, ...) 
-	 __attribute__ ((noreturn, format (printf, 1, 2)));
-
-static void error_msg(const char *fmt, ...) 
-{
-	va_list arg;
-
-	if (!hide_errors) {
-		fprintf(stderr, "%s: ", progname);
-		va_start(arg, fmt);
-		vfprintf(stderr, fmt, arg);
-		va_end(arg);
-	}
-
-	exit(EXIT_FAILURE);
-}
-
-int main(int argc, char **argv)
-{
-	FILE *ifile;
-	FILE *ofile = stdout;
-	const char *p;
-	const char *s;
-	static const char opt_chars[] = "tfocsl";
-	                              /* 012345 */
-	const char *opts[sizeof(opt_chars)]; /* last is infile name */
-	iconv_t ic;
-	char ibuf[IBUF];
-	char obuf[OBUF];
-	char *pi;
-	char *po;
-	size_t ni, no, r, pos;
-
-	hide_errors = 0;
-
-	for (s = opt_chars ; *s ; s++) {
-		opts[ s - opt_chars ] = NULL;
-	}
-
-	progname = *argv;
-	while (--argc) {
-		p = *++argv;
-		if ((*p != '-') || (*++p == 0)) {
-			break;
-		}
-		do {
-			if ((s = strchr(opt_chars,*p)) == NULL) {
-			USAGE:
-				s = basename(progname);
-				fprintf(stderr,
-						"%s [-cs] -f fromcode -t tocode [-o outputfile] [inputfile ...]\n"
-						"  or\n%s -l\n", s, s);
-				return EXIT_FAILURE;
-			}
-			if ((s - opt_chars) < 3) {
-				if ((--argc == 0) || opts[s - opt_chars]) {
-					goto USAGE;
-				}
-				opts[s - opt_chars] = *++argv;
-			} else {
-				opts[s - opt_chars] = p;
-			}
-		} while (*++p);
-	}
-
-	if (opts[5]) {				/* -l */
-		fprintf(stderr, "Recognized codesets:\n");
-		for (s = __iconv_codesets ; *s ; s += *s) {
-			fprintf(stderr,"  %s\n", s+2);
-		}
-		s = __LOCALE_DATA_CODESET_LIST;
-		do {
-			fprintf(stderr,"  %s\n", __LOCALE_DATA_CODESET_LIST+ (unsigned char)(*s));
-		} while (*++s);
-
-		return EXIT_SUCCESS;
-	}
-
-	if (opts[4]) {
-		hide_errors = 1;
-	}
-
-	if (!opts[0] || !opts[1]) {
-		goto USAGE;
-	}
-	if ((ic = iconv_open(opts[0],opts[1])) == ((iconv_t)(-1))) {
-		error_msg( "unsupported codeset in %s -> %s conversion\n", opts[0], opts[1]);
-	}
-	if (opts[3]) {				/* -c */
-		((_UC_iconv_t *) ic)->skip_invalid_input = 1;
-	}
-
-	if ((s = opts[2]) != NULL) {
-		if (!(ofile = fopen(s, "w"))) {
-			error_msg( "couldn't open %s for writing\n", s);
-		}
-	}
-
-	pos = ni = 0;
-	do {
-		if (!argc || ((**argv == '-') && !((*argv)[1]))) {
-			ifile = stdin;		/* we don't check for duplicates */
-		} else if (!(ifile = fopen(*argv, "r"))) {
-			error_msg( "couldn't open %s for reading\n", *argv);
-		}
-
-		while ((r = fread(ibuf + ni, 1, IBUF - ni, ifile)) > 0) {
-			pos += r;
-			ni += r;
-			no = OBUF;
-			pi = ibuf;
-			po = obuf;
-			if ((r = iconv(ic, &pi, &ni, &po, &no)) == ((size_t)(-1))) {
-				if ((errno != EINVAL) && (errno != E2BIG)) {
-					error_msg( "iconv failed at pos %lu : %m\n", (unsigned long) (pos - ni));
-				}
-			}
-			if ((r = OBUF - no) > 0) {
-				if (fwrite(obuf, 1, OBUF - no, ofile) < r) {
-					error_msg( "write error\n");
-				}
-			}
-			if (ni) {			/* still bytes in buffer! */
-				memmove(ibuf, pi, ni);
-			}
-		}
-
-		if (ferror(ifile)) {
-			error_msg( "read error\n");
-		}
-
-		++argv;
-
-		if (ifile != stdin) {
-			fclose(ifile);
-		}
-
-	} while (--argc > 0);
-
-	iconv_close(ic);
-
-	if (ni) {
-		error_msg( "incomplete sequence\n");
-	}
-
-	return (((_UC_iconv_t *) ic)->skip_invalid_input < 2)
-		? EXIT_SUCCESS : EXIT_FAILURE;
-}
-
-#endif
-/**********************************************************************/

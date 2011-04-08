@@ -29,10 +29,12 @@
 #define LARGE $120000
 
         .text
-#if !BZERO_P && defined PIC && !defined NOT_IN_libc
+#if defined __PIC__ && !defined NOT_IN_libc
 ENTRY (__memset_chk)
 	cmpq	%rdx, %rcx
+#if defined __UCLIBC_HAS_SSP__
 	jb	HIDDEN_JUMPTARGET (__chk_fail)
+#endif
 END (__memset_chk)
 #endif
 ENTRY (memset)
@@ -53,15 +55,17 @@ ENTRY (memset)
 	imul	%rax,%r8
 #endif
 	test	$0x7,%edi	/* Check for alignment.  */
-	je	2f
+	jz	2f
 
-	.p2align 4
-1:	/* Align ptr to 8 byte.  */
+	/* Next 3 insns are 9 bytes total, make sure we decode them in one go */
+	.p2align 4,,9
+1:
+	/* Align ptr to 8 byte.  */
 	mov	%sil,(%rcx)
 	dec	%rdx
 	inc	%rcx
-	test	$0x7,%ecx
-	jne	1b
+	test	$0x7,%cl
+	jnz	1b
 
 2:	/* Check for really large regions.  */
 	mov	%rdx,%rax
@@ -70,8 +74,10 @@ ENTRY (memset)
 	cmp	LARGE, %rdx
 	jae	11f
 
-	.p2align 4
-3:	/* Copy 64 bytes.  */
+	/* Next 3 insns are 11 bytes total, make sure we decode them in one go */
+	.p2align 4,,11
+3:
+	/* Fill 64 bytes.  */
 	mov	%r8,(%rcx)
 	mov	%r8,0x8(%rcx)
 	mov	%r8,0x10(%rcx)
@@ -84,7 +90,7 @@ ENTRY (memset)
 	dec	%rax
 	jne	3b
 
-4:	/* Copy final bytes.  */
+4:	/* Fill final bytes.  */
 	and	$0x3f,%edx
 	mov	%rdx,%rax
 	shr	$0x3,%rax
@@ -107,16 +113,18 @@ ENTRY (memset)
 	jne	8b
 9:
 #if BZERO_P
-	nop
+	/* nothing */
 #else
 	/* Load result (only if used as memset).  */
 	mov	%rdi,%rax	/* start address of destination is result */
 #endif
 	retq
 
-	.p2align 4
-11:	/* Copy 64 bytes without polluting the cache.  */
-	/* We could use	movntdq    %xmm0,(%rcx) here to further
+	/* Next 3 insns are 14 bytes total, make sure we decode them in one go */
+	.p2align 4,,14
+11:
+	/* Fill 64 bytes without polluting the cache.  */
+	/* We could use	movntdq %xmm0,(%rcx) here to further
 	   speed up for large cases but let's not use XMM registers.  */
 	movnti	%r8,(%rcx)
 	movnti  %r8,0x8(%rcx)
@@ -136,6 +144,6 @@ END (memset)
 libc_hidden_def(memset)
 #endif
 
-#if !BZERO_P && defined PIC && !defined NOT_IN_libc
+#if !BZERO_P && defined __PIC__ && !defined NOT_IN_libc
 strong_alias (__memset_chk, __memset_zero_constant_len_parameter)
 #endif

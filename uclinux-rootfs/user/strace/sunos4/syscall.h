@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscall.h,v 1.1.1.1 1999/02/19 00:23:39 wichert Exp $
+ *	$Id$
  */
 #include "dummy.h"
 
@@ -172,4 +172,3 @@ int	sys_putmsg();
 int	sys_poll();
 
 int	sys_vpixsys();		/* VP/ix system calls */
-

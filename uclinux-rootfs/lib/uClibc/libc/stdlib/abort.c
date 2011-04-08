@@ -19,7 +19,6 @@ Cambridge, MA 02139, USA.  */
 /* Hacked up for uClibc by Erik Andersen */
 
 #include <features.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,13 +26,7 @@ Cambridge, MA 02139, USA.  */
 #include <signal.h>
 #include <errno.h>
 
-libc_hidden_proto(abort)
 
-libc_hidden_proto(memset)
-libc_hidden_proto(sigaction)
-libc_hidden_proto(sigprocmask)
-libc_hidden_proto(raise)
-libc_hidden_proto(_exit)
 
 /* Our last ditch effort to commit suicide */
 #ifdef __UCLIBC_ABORT_INSTRUCTION__
@@ -46,15 +39,11 @@ libc_hidden_proto(_exit)
 #ifdef __UCLIBC_HAS_STDIO_SHUTDOWN_ON_ABORT__
 extern void weak_function _stdio_term(void) attribute_hidden;
 #endif
-static int been_there_done_that = 0;
+static smallint been_there_done_that = 0;
 
 /* Be prepared in case multiple threads try to abort() */
-#ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
-static pthread_mutex_t mylock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-#endif
-#define LOCK	__PTHREAD_MUTEX_LOCK(&mylock)
-#define UNLOCK	__PTHREAD_MUTEX_UNLOCK(&mylock)
+#include <bits/uClibc_mutex.h>
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP);
 
 /* Cause an abnormal program termination with core-dump */
 void abort(void)
@@ -62,12 +51,12 @@ void abort(void)
 	sigset_t sigs;
 
 	/* Make sure we acquire the lock before proceeding */
-	LOCK;
+	__UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE(mylock);
 
 	/* Unmask SIGABRT to be sure we can get it */
-	if (__sigemptyset(&sigs) == 0 && __sigaddset(&sigs, SIGABRT) == 0) {
-		sigprocmask(SIG_UNBLOCK, &sigs, (sigset_t *) NULL);
-	}
+	__sigemptyset(&sigs);
+	__sigaddset(&sigs, SIGABRT);
+	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
 	while (1) {
 		/* Try to suicide with a SIGABRT */
@@ -85,9 +74,9 @@ void abort(void)
 #endif
 
 abort_it:
-			UNLOCK;
+			__UCLIBC_MUTEX_UNLOCK_CANCEL_UNSAFE(mylock);
 			raise(SIGABRT);
-			LOCK;
+			__UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE(mylock);
 		}
 
 		/* Still here?  Try to remove any signal handlers */
@@ -96,9 +85,9 @@ abort_it:
 
 			been_there_done_that++;
 			memset(&act, '\0', sizeof(struct sigaction));
-			act.sa_handler = SIG_DFL;
+			if (SIG_DFL) /* if it's constant zero, already done */
+				act.sa_handler = SIG_DFL;
 			__sigfillset(&act.sa_mask);
-			act.sa_flags = 0;
 			sigaction(SIGABRT, &act, NULL);
 
 			goto abort_it;

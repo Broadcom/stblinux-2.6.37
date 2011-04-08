@@ -7,11 +7,11 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/stat.h>
 
 #define __NR___syscall_umask __NR_umask
-static inline _syscall1(__kernel_mode_t, __syscall_umask, __kernel_mode_t, mode);
+static __inline__ _syscall1(__kernel_mode_t, __syscall_umask, __kernel_mode_t, mode)
 
 mode_t umask(mode_t mode)
 {

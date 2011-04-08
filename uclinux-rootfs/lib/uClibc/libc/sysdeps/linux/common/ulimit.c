@@ -5,12 +5,12 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 
 #ifdef __NR_ulimit
 
 extern long int ulimit(int cmd, long arg);
-_syscall2(long, ulimit, int, cmd, long, arg);
+_syscall2(long, ulimit, int, cmd, long, arg)
 
 #else
 
@@ -19,9 +19,6 @@ _syscall2(long, ulimit, int, cmd, long, arg);
 #include <ulimit.h>
 #include <sys/resource.h>
 
-libc_hidden_proto(sysconf)
-libc_hidden_proto(getrlimit)
-libc_hidden_proto(setrlimit)
 
 long int ulimit(int cmd, ...)
 {

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -40,20 +41,20 @@ enum rateest_options {
 };
 
 static const struct option rateest_opts[] = {
-	{ "rateest1",		1, NULL, OPT_RATEEST1 },
-	{ "rateest",		1, NULL, OPT_RATEEST1 }, /* alias for absolute mode */
-	{ "rateest2",		1, NULL, OPT_RATEEST2 },
-	{ "rateest-bps1",	0, NULL, OPT_RATEEST_BPS1 },
-	{ "rateest-pps1",	0, NULL, OPT_RATEEST_PPS1 },
-	{ "rateest-bps2",	0, NULL, OPT_RATEEST_BPS2 },
-	{ "rateest-pps2",	0, NULL, OPT_RATEEST_PPS2 },
-	{ "rateest-bps",	0, NULL, OPT_RATEEST_BPS2 }, /* alias for absolute mode */
-	{ "rateest-pps",	0, NULL, OPT_RATEEST_PPS2 }, /* alias for absolute mode */
-	{ "rateest-delta",	0, NULL, OPT_RATEEST_DELTA },
-	{ "rateest-lt",		0, NULL, OPT_RATEEST_LT },
-	{ "rateest-gt",		0, NULL, OPT_RATEEST_GT },
-	{ "rateest-eq",		0, NULL, OPT_RATEEST_EQ },
-	{ .name = NULL }
+	{.name = "rateest1",      .has_arg = true,  .val = OPT_RATEEST1},
+	{.name = "rateest",       .has_arg = true,  .val = OPT_RATEEST1}, /* alias for absolute mode */
+	{.name = "rateest2",      .has_arg = true,  .val = OPT_RATEEST2},
+	{.name = "rateest-bps1",  .has_arg = false, .val = OPT_RATEEST_BPS1},
+	{.name = "rateest-pps1",  .has_arg = false, .val = OPT_RATEEST_PPS1},
+	{.name = "rateest-bps2",  .has_arg = false, .val = OPT_RATEEST_BPS2},
+	{.name = "rateest-pps2",  .has_arg = false, .val = OPT_RATEEST_PPS2},
+	{.name = "rateest-bps",   .has_arg = false, .val = OPT_RATEEST_BPS2}, /* alias for absolute mode */
+	{.name = "rateest-pps",   .has_arg = false, .val = OPT_RATEEST_PPS2}, /* alias for absolute mode */
+	{.name = "rateest-delta", .has_arg = false, .val = OPT_RATEEST_DELTA},
+	{.name = "rateest-lt",    .has_arg = false, .val = OPT_RATEEST_LT},
+	{.name = "rateest-gt",    .has_arg = false, .val = OPT_RATEEST_GT},
+	{.name = "rateest-eq",    .has_arg = false, .val = OPT_RATEEST_EQ},
+	XT_GETOPT_TABLEEND,
 };
 
 /* Copied from iproute. See http://physics.nist.gov/cuu/Units/binary.html */
@@ -79,7 +80,7 @@ static const struct rate_suffix {
 	{ "GBps",	8000000000. },
 	{ "TiBps",	8.*1024.*1024.*1024.*1024. },
 	{ "TBps",	8000000000000. },
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static int
@@ -118,7 +119,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case OPT_RATEEST1:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest can't be inverted");
@@ -132,7 +133,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST2:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest can't be inverted");
@@ -147,7 +148,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_BPS1:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest-bps can't be inverted");
@@ -171,7 +172,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_PPS1:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest-pps can't be inverted");
@@ -196,7 +197,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_BPS2:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest-bps can't be inverted");
@@ -220,7 +221,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_PPS2:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest-pps can't be inverted");
@@ -245,7 +246,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_DELTA:
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   "rateest: rateest-delta can't be inverted");
@@ -259,7 +260,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_EQ:
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (*flags & (1 << c))
 			xtables_error(PARAMETER_PROBLEM,
@@ -272,7 +273,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_LT:
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (*flags & (1 << c))
 			xtables_error(PARAMETER_PROBLEM,
@@ -285,7 +286,7 @@ rateest_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case OPT_RATEEST_GT:
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (*flags & (1 << c))
 			xtables_error(PARAMETER_PROBLEM,
@@ -332,7 +333,8 @@ rateest_print_rate(u_int32_t rate, int numeric)
 }
 
 static void
-rateest_print_mode(struct xt_rateest_match_info *info, const char *prefix)
+rateest_print_mode(const struct xt_rateest_match_info *info,
+                   const char *prefix)
 {
 	if (info->flags & XT_RATEEST_MATCH_INVERT)
 		printf("! ");
@@ -355,7 +357,7 @@ rateest_print_mode(struct xt_rateest_match_info *info, const char *prefix)
 static void
 rateest_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_rateest_match_info *info = (void *)match->data;
+	const struct xt_rateest_match_info *info = (const void *)match->data;
 
 	printf("rateest match ");
 
@@ -405,7 +407,7 @@ rateest_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void
 rateest_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_rateest_match_info *info = (void *)match->data;
+	const struct xt_rateest_match_info *info = (const void *)match->data;
 
 	if (info->flags & XT_RATEEST_MATCH_REL) {
 		printf("--rateest1 %s ", info->name1);
@@ -418,9 +420,11 @@ rateest_save(const void *ip, const struct xt_entry_match *match)
 	} else {
 		printf("--rateest %s ", info->name1);
 		if (info->flags & XT_RATEEST_MATCH_BPS) {
-			printf("--rateest-bps ");
-			rateest_print_mode(info, "--rateest-");
+			printf("--rateest-bps1 ");
+			rateest_print_rate(info->bps1, 0);
+			printf("--rateest-bps2 ");
 			rateest_print_rate(info->bps2, 0);
+			rateest_print_mode(info, "--rateest-");
 		}
 		if (info->flags & XT_RATEEST_MATCH_PPS) {
 			printf("--rateest-pps ");
@@ -431,7 +435,7 @@ rateest_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match rateest_mt_reg = {
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "rateest",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_rateest_match_info)),

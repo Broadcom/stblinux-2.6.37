@@ -57,27 +57,30 @@
 # include <wchar.h>
 # include <libio/iolibio.h>
 # define fputs(s, f) _IO_fputs (s, f)
-libc_hidden_proto(fwprintf)
 #endif
 
-libc_hidden_proto(memcpy)
-libc_hidden_proto(fputs)
-libc_hidden_proto(lseek)
 
-static bool_t xdrrec_getlong (XDR *, long *);
-static bool_t xdrrec_putlong (XDR *, const long *);
 static bool_t xdrrec_getbytes (XDR *, caddr_t, u_int);
 static bool_t xdrrec_putbytes (XDR *, const char *, u_int);
+static bool_t xdrrec_getint32 (XDR *, int32_t *);
+static bool_t xdrrec_putint32 (XDR *, const int32_t *);
+#if ULONG_MAX != 0xffffffff
+static bool_t xdrrec_getlong (XDR *, long *);
+static bool_t xdrrec_putlong (XDR *, const long *);
+#endif
 static u_int xdrrec_getpos (const XDR *);
 static bool_t xdrrec_setpos (XDR *, u_int);
 static int32_t *xdrrec_inline (XDR *, u_int);
 static void xdrrec_destroy (XDR *);
-static bool_t xdrrec_getint32 (XDR *, int32_t *);
-static bool_t xdrrec_putint32 (XDR *, const int32_t *);
 
 static const struct xdr_ops xdrrec_ops = {
+#if ULONG_MAX == 0xffffffff
+  (bool_t (*)(XDR *, long *)) xdrrec_getint32,
+  (bool_t (*)(XDR *, const long *)) xdrrec_putint32,
+#else
   xdrrec_getlong,
   xdrrec_putlong,
+#endif
   xdrrec_getbytes,
   xdrrec_putbytes,
   xdrrec_getpos,
@@ -146,7 +149,6 @@ static bool_t get_input_bytes (RECSTREAM *, caddr_t, int) internal_function;
  * write respectively.   They are like the system
  * calls expect that they take an opaque handle rather than an fd.
  */
-libc_hidden_proto(xdrrec_create)
 void
 xdrrec_create (XDR *xdrs, u_int sendsize,
 	       u_int recvsize, caddr_t tcp_handle,
@@ -218,35 +220,46 @@ libc_hidden_def(xdrrec_create)
  */
 
 static bool_t
-xdrrec_getlong (XDR *xdrs, long *lp)
+xdrrec_getint32 (XDR *xdrs, int32_t *ip)
 {
   RECSTREAM *rstrm = (RECSTREAM *) xdrs->x_private;
-  int32_t *buflp = (int32_t *) rstrm->in_finger;
+  int32_t *bufip = (int32_t *) rstrm->in_finger;
   int32_t mylong;
 
   /* first try the inline, fast case */
   if (rstrm->fbtbc >= BYTES_PER_XDR_UNIT &&
-      rstrm->in_boundry - (char *) buflp >= BYTES_PER_XDR_UNIT)
+      rstrm->in_boundry - (char *) bufip >= BYTES_PER_XDR_UNIT)
     {
-      *lp = (int32_t) ntohl (*buflp);
+      *ip = ntohl (*bufip);
       rstrm->fbtbc -= BYTES_PER_XDR_UNIT;
       rstrm->in_finger += BYTES_PER_XDR_UNIT;
     }
   else
     {
-      if (!xdrrec_getbytes (xdrs, (caddr_t) & mylong,
+      if (!xdrrec_getbytes (xdrs, (caddr_t) &mylong,
 			    BYTES_PER_XDR_UNIT))
 	return FALSE;
-      *lp = (int32_t) ntohl (mylong);
+      *ip = ntohl (mylong);
     }
   return TRUE;
 }
 
+#if ULONG_MAX != 0xffffffff
 static bool_t
-xdrrec_putlong (XDR *xdrs, const long *lp)
+xdrrec_getlong (XDR *xdrs, long *lp)
+{
+  int32_t v;
+  bool_t r = xdrrec_getint32 (xdrs, &v);
+  *lp = v;
+  return r;
+}
+#endif
+
+static bool_t
+xdrrec_putint32 (XDR *xdrs, const int32_t *ip)
 {
   RECSTREAM *rstrm = (RECSTREAM *) xdrs->x_private;
-  int32_t *dest_lp = (int32_t *) rstrm->out_finger;
+  int32_t *dest_ip = (int32_t *) rstrm->out_finger;
 
   if ((rstrm->out_finger += BYTES_PER_XDR_UNIT) > rstrm->out_boundry)
     {
@@ -258,12 +271,21 @@ xdrrec_putlong (XDR *xdrs, const long *lp)
       rstrm->frag_sent = TRUE;
       if (!flush_out (rstrm, FALSE))
 	return FALSE;
-      dest_lp = (int32_t *) rstrm->out_finger;
+      dest_ip = (int32_t *) rstrm->out_finger;
       rstrm->out_finger += BYTES_PER_XDR_UNIT;
     }
-  *dest_lp = htonl (*lp);
+  *dest_ip = htonl (*ip);
   return TRUE;
 }
+
+#if ULONG_MAX != 0xffffffff
+static bool_t
+xdrrec_putlong (XDR *xdrs, const long *lp)
+{
+  int32_t v = *lp;
+  return xdrrec_putint32 (xdrs, &v);
+}
+#endif
 
 static bool_t	   /* must manage buffers, fragments, and records */
 xdrrec_getbytes (XDR *xdrs, caddr_t addr, u_int len)
@@ -425,54 +447,6 @@ xdrrec_destroy (XDR *xdrs)
   mem_free ((caddr_t) rstrm, sizeof (RECSTREAM));
 }
 
-static bool_t
-xdrrec_getint32 (XDR *xdrs, int32_t *ip)
-{
-  RECSTREAM *rstrm = (RECSTREAM *) xdrs->x_private;
-  int32_t *bufip = (int32_t *) rstrm->in_finger;
-  int32_t mylong;
-
-  /* first try the inline, fast case */
-  if (rstrm->fbtbc >= BYTES_PER_XDR_UNIT &&
-      rstrm->in_boundry - (char *) bufip >= BYTES_PER_XDR_UNIT)
-    {
-      *ip = ntohl (*bufip);
-      rstrm->fbtbc -= BYTES_PER_XDR_UNIT;
-      rstrm->in_finger += BYTES_PER_XDR_UNIT;
-    }
-  else
-    {
-      if (!xdrrec_getbytes (xdrs, (caddr_t) &mylong,
-			    BYTES_PER_XDR_UNIT))
-	return FALSE;
-      *ip = ntohl (mylong);
-    }
-  return TRUE;
-}
-
-static bool_t
-xdrrec_putint32 (XDR *xdrs, const int32_t *ip)
-{
-  RECSTREAM *rstrm = (RECSTREAM *) xdrs->x_private;
-  int32_t *dest_ip = (int32_t *) rstrm->out_finger;
-
-  if ((rstrm->out_finger += BYTES_PER_XDR_UNIT) > rstrm->out_boundry)
-    {
-      /*
-       * this case should almost never happen so the code is
-       * inefficient
-       */
-      rstrm->out_finger -= BYTES_PER_XDR_UNIT;
-      rstrm->frag_sent = TRUE;
-      if (!flush_out (rstrm, FALSE))
-	return FALSE;
-      dest_ip = (int32_t *) rstrm->out_finger;
-      rstrm->out_finger += BYTES_PER_XDR_UNIT;
-    }
-  *dest_ip = htonl (*ip);
-  return TRUE;
-}
-
 /*
  * Exported routines to manage xdr records
  */
@@ -481,7 +455,6 @@ xdrrec_putint32 (XDR *xdrs, const int32_t *ip)
  * Before reading (deserializing from the stream, one should always call
  * this procedure to guarantee proper record alignment.
  */
-libc_hidden_proto(xdrrec_skiprecord)
 bool_t
 xdrrec_skiprecord (XDR *xdrs)
 {
@@ -505,7 +478,6 @@ libc_hidden_def(xdrrec_skiprecord)
  * Returns TRUE iff there is no more input in the buffer
  * after consuming the rest of the current record.
  */
-libc_hidden_proto(xdrrec_eof)
 bool_t
 xdrrec_eof (XDR *xdrs)
 {
@@ -531,7 +503,6 @@ libc_hidden_def(xdrrec_eof)
  * (output) tcp stream.  (This lets the package support batched or
  * pipelined procedure calls.)  TRUE => immediate flush to tcp connection.
  */
-libc_hidden_proto(xdrrec_endofrecord)
 bool_t
 xdrrec_endofrecord (XDR *xdrs, bool_t sendnow)
 {

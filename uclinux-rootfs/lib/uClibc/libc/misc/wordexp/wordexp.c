@@ -35,55 +35,15 @@
 #include <glob.h>
 #include <wordexp.h>
 
-libc_hidden_proto(mempcpy)
-libc_hidden_proto(stpcpy)
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strdup)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strndup)
-libc_hidden_proto(strspn)
-libc_hidden_proto(strcspn)
-libc_hidden_proto(setenv)
-libc_hidden_proto(unsetenv)
-libc_hidden_proto(waitpid)
-libc_hidden_proto(kill)
-libc_hidden_proto(getuid)
-libc_hidden_proto(getpwnam_r)
-libc_hidden_proto(getpwuid_r)
-libc_hidden_proto(execve)
-libc_hidden_proto(dup2)
-libc_hidden_proto(atoi)
-libc_hidden_proto(fnmatch)
-libc_hidden_proto(pipe)
-libc_hidden_proto(fork)
-libc_hidden_proto(open)
-libc_hidden_proto(close)
-libc_hidden_proto(read)
-libc_hidden_proto(getenv)
-libc_hidden_proto(getpid)
-libc_hidden_proto(sprintf)
-libc_hidden_proto(fprintf)
-libc_hidden_proto(abort)
-libc_hidden_proto(glob)
-libc_hidden_proto(globfree)
-libc_hidden_proto(wordfree)
-#ifdef __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(__ctype_b_loc)
-#elif __UCLIBC_HAS_CTYPE_TABLES__
-libc_hidden_proto(__ctype_b)
-#endif
-
 #define __WORDEXP_FULL
-//#undef __WORDEXP_FULL
 
 /*
  * This is a recursive-descent-style word expansion routine.
  */
 
 /* These variables are defined and initialized in the startup code.  */
-//extern int __libc_argc;
-//extern char **__libc_argv;
+/*extern int __libc_argc;*/
+/*extern char **__libc_argv;*/
 
 /* FIXME!!!! */
 int attribute_hidden __libc_argc;
@@ -110,14 +70,14 @@ static int parse_dquote(char **word, size_t * word_length,
 #define W_CHUNK	(100)
 
 /* Result of w_newword will be ignored if it's the last word. */
-static inline char *w_newword(size_t * actlen, size_t * maxlen)
+static __inline__ char *w_newword(size_t * actlen, size_t * maxlen)
 {
 	*actlen = *maxlen = 0;
 	return NULL;
 }
 
 /* Add a character to the buffer, allocating room for it if needed.  */
-static inline char *w_addchar(char *buffer, size_t * actlen,
+static __inline__ char *w_addchar(char *buffer, size_t * actlen,
 							  size_t * maxlen, char ch)
 	 /* (lengths exclude trailing zero) */
 {
@@ -138,8 +98,9 @@ static inline char *w_addchar(char *buffer, size_t * actlen,
 
 	return buffer;
 }
-
+#ifndef MAX
 #define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
+#endif
 static char *w_addmem(char *buffer, size_t * actlen, size_t * maxlen,
 					  const char *str, size_t len)
 {
@@ -325,8 +286,8 @@ parse_tilde(char **word, size_t * word_length, size_t * max_length,
 			uid = getuid();
 			buffer = alloca(buflen);
 
-			while ((result = getpwuid_r(uid, &pwd, buffer, buflen, &tpwd)) 
-					!= 0 && errno == ERANGE) 
+			while ((result = getpwuid_r(uid, &pwd, buffer, buflen, &tpwd))
+					!= 0 && errno == ERANGE)
 			{
 				buflen += 1000;
 				buffer = alloca(buflen);
@@ -373,8 +334,8 @@ parse_tilde(char **word, size_t * word_length, size_t * max_length,
 
 static int
 do_parse_glob(const char *glob_word, char **word, size_t * word_length,
-			  size_t * max_length, wordexp_t * pwordexp, const char *ifs,
-			  const char *ifs_white)
+			  size_t * max_length, wordexp_t * pwordexp, const char *ifs
+			  /*, const char *ifs_white*/)
 {
 	int error;
 	int match;
@@ -497,7 +458,7 @@ parse_glob(char **word, size_t * word_length, size_t * max_length,
 	*word = w_newword(word_length, max_length);
 	for (i = 0; error == 0 && i < glob_list.we_wordc; i++)
 		error = do_parse_glob(glob_list.we_wordv[i], word, word_length,
-							  max_length, pwordexp, ifs, ifs_white);
+				max_length, pwordexp, ifs /*, ifs_white*/);
 
 	/* Now tidy up */
   tidy_up:
@@ -784,9 +745,10 @@ parse_arith(char **word, size_t * word_length, size_t * max_length,
 }
 
 /* Function called by child process in exec_comm() */
-static void
+static void attribute_noreturn
 exec_comm_child(char *comm, int *fildes, int showerr, int noexec)
 {
+	int fd;
 	const char *args[4] = { _PATH_BSHELL, "-c", comm, NULL };
 
 	/* Execute the command, or just check syntax? */
@@ -794,13 +756,14 @@ exec_comm_child(char *comm, int *fildes, int showerr, int noexec)
 		args[1] = "-nc";
 
 	/* Redirect output.  */
-	dup2(fildes[1], 1);
-	close(fildes[1]);
+	fd = fildes[1];
+	if (fd != 1) {
+		dup2(fd, 1);
+		close(fd);
+	}
 
 	/* Redirect stderr to /dev/null if we have to.  */
 	if (showerr == 0) {
-		int fd;
-
 		close(2);
 		fd = open(_PATH_DEVNULL, O_WRONLY);
 		if (fd >= 0 && fd != 2) {
@@ -812,7 +775,8 @@ exec_comm_child(char *comm, int *fildes, int showerr, int noexec)
 	/* Make sure the subshell doesn't field-split on our behalf. */
 	unsetenv("IFS");
 
-	close(fildes[0]);
+	if (fildes[0] != 1)
+		close(fildes[0]);
 	execve(_PATH_BSHELL, (char *const *) args, __environ);
 
 	/* Bad.  What now?  */
@@ -1076,8 +1040,7 @@ parse_comm(char **word, size_t * word_length, size_t * max_length,
 	}
 
 	/* Premature end */
-	if (comm)
-		free(comm);
+	free(comm);
 
 	return WRDE_SYNTAX;
 }
@@ -1370,8 +1333,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 							   &buffer[20]);
 			*word = w_addstr(*word, word_length, max_length, value);
 			free(env);
-			if (pattern)
-				free(pattern);
+			free(pattern);
 			return *word ? 0 : WRDE_NOSPACE;
 		}
 		/* Is it `$*' or `$@' (unquoted) ? */
@@ -1483,28 +1445,28 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 			size_t exp_len;
 			size_t exp_maxl;
 			char *p;
-			int quoted = 0;		/* 1: single quotes; 2: double */
+			int quotes = 0;		/* 1: single quotes; 2: double */
 
 			expanded = w_newword(&exp_len, &exp_maxl);
 			for (p = pattern; p && *p; p++) {
-				size_t offset;
+				size_t _offset;
 
 				switch (*p) {
 				case '"':
-					if (quoted == 2)
-						quoted = 0;
-					else if (quoted == 0)
-						quoted = 2;
+					if (quotes == 2)
+						quotes = 0;
+					else if (quotes == 0)
+						quotes = 2;
 					else
 						break;
 
 					continue;
 
 				case '\'':
-					if (quoted == 1)
-						quoted = 0;
-					else if (quoted == 0)
-						quoted = 1;
+					if (quotes == 1)
+						quotes = 0;
+					else if (quotes == 0)
+						quotes = 1;
 					else
 						break;
 
@@ -1512,7 +1474,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 
 				case '*':
 				case '?':
-					if (quoted) {
+					if (quotes) {
 						/* Convert quoted wildchar to escaped wildchar. */
 						expanded = w_addchar(expanded, &exp_len,
 											 &exp_maxl, '\\');
@@ -1523,40 +1485,38 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 					break;
 
 				case '$':
-					offset = 0;
+					_offset = 0;
 					error = parse_dollars(&expanded, &exp_len, &exp_maxl, p,
-									  &offset, flags, NULL, NULL, NULL, 1);
+									  &_offset, flags, NULL, NULL, NULL, 1);
 					if (error) {
 						if (free_value)
 							free(value);
 
-						if (expanded)
-							free(expanded);
+						free(expanded);
 
 						goto do_error;
 					}
 
-					p += offset;
+					p += _offset;
 					continue;
 
 				case '~':
-					if (quoted || exp_len)
+					if (quotes || exp_len)
 						break;
 
-					offset = 0;
+					_offset = 0;
 					error = parse_tilde(&expanded, &exp_len, &exp_maxl, p,
-										&offset, 0);
+										&_offset, 0);
 					if (error) {
 						if (free_value)
 							free(value);
 
-						if (expanded)
-							free(expanded);
+						free(expanded);
 
 						goto do_error;
 					}
 
-					p += offset;
+					p += _offset;
 					continue;
 
 				case '\\':
@@ -1573,8 +1533,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 					goto no_space;
 			}
 
-			if (pattern)
-				free(pattern);
+			free(pattern);
 
 			pattern = expanded;
 		}
@@ -1723,7 +1682,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 				/* Substitute parameter */
 				break;
 
-			if (free_value && value)
+			if (free_value)
 				free(value);
 
 			if (!colon_seen && value)
@@ -1740,7 +1699,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 
 		case ACT_NONNULL_SUBST:
 			if (value && (*value || !colon_seen)) {
-				if (free_value && value)
+				if (free_value)
 					free(value);
 
 				value = pattern ? strdup(pattern) : pattern;
@@ -1769,7 +1728,7 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 				goto success;
 			}
 
-			if (free_value && value)
+			if (free_value)
 				free(value);
 
 			value = pattern ? strdup(pattern) : pattern;
@@ -1895,16 +1854,14 @@ parse_param(char **word, size_t * word_length, size_t * max_length,
 	error = WRDE_SYNTAX;
 
   do_error:
-	if (env)
-		free(env);
+	free(env);
 
-	if (pattern)
-		free(pattern);
+	free(pattern);
 
 	return error;
 }
 #else
-static inline int
+static __inline__ int
 parse_backtick(char **word, size_t * word_length, size_t * max_length,
 			   const char *words, size_t * offset, int flags,
 			   wordexp_t * pwordexp, const char *ifs,
@@ -2269,8 +2226,7 @@ int wordexp(const char *words, wordexp_t * we, int flags)
 	 *  set we members back to what they were.
 	 */
 
-	if (word != NULL)
-		free(word);
+	free(word);
 
 	if (error == WRDE_NOSPACE)
 		return WRDE_NOSPACE;

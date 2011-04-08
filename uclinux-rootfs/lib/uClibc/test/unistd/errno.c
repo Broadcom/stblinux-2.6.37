@@ -6,7 +6,8 @@
 #include <sched.h>
 #include "clone_cruft.h"
 
-int child_fn(void *arg)
+__attribute__ ((__noreturn__))
+static int child_fn(void *arg)
 {
 	fprintf(stderr, "in child_fn\n");
 	exit(1);
@@ -16,7 +17,7 @@ int main(void)
 {
 	int r_clone, ret_errno;
 
-	r_clone = do_clone(child_fn, NULL, (int) NULL, NULL);
+	r_clone = do_clone(child_fn, NULL, 0, NULL);
 	ret_errno = errno;
 	if (ret_errno != EINVAL || r_clone != -1) {
 		fprintf(stderr, "clone: res=%d (wanted -1) errno=%d (wanted %d)\n",

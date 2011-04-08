@@ -6,6 +6,7 @@ on whether they contain certain headers */
 
 #include <getopt.h>
 #include <xtables.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +78,7 @@ proto_to_name(u_int8_t proto, int nolookup)
                         return pent->p_name;
         }
 
-        for (i = 0; i < sizeof(chain_protos)/sizeof(struct pprot); i++)
+        for (i = 0; i < ARRAY_SIZE(chain_protos); ++i)
                 if (chain_protos[i].num == proto)
                         return chain_protos[i].name;
 
@@ -94,16 +95,13 @@ name_to_proto(const char *s)
         	proto = pent->p_proto;
         else {
         	unsigned int i;
-        	for (i = 0;
-        		i < sizeof(chain_protos)/sizeof(struct pprot);
-        		i++) {
+        	for (i = 0; i < ARRAY_SIZE(chain_protos); ++i)
         		if (strcmp(s, chain_protos[i].name) == 0) {
         			proto = chain_protos[i].num;
         			break;
         		}
-        	}
 
-        	if (i == sizeof(chain_protos)/sizeof(struct pprot))
+		if (i == ARRAY_SIZE(chain_protos))
 			xtables_error(PARAMETER_PROBLEM,
         			"unknown header `%s' specified",
         			s);
@@ -116,16 +114,13 @@ static unsigned int
 add_proto_to_mask(int proto){
 	unsigned int i=0, flag=0;
 
-	for (i = 0;
-		i < sizeof(chain_flags)/sizeof(struct numflag);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(chain_flags); ++i)
 			if (proto == chain_flags[i].proto){
 				flag = chain_flags[i].flag;
 				break;
 			}
-	}
 
-	if (i == sizeof(chain_flags)/sizeof(struct numflag))
+	if (i == ARRAY_SIZE(chain_flags))
 		xtables_error(PARAMETER_PROBLEM,
 		"unknown header `%d' specified",
 		proto);
@@ -146,9 +141,9 @@ static void ipv6header_help(void)
 }
 
 static const struct option ipv6header_opts[] = {
-	{ "header", 1, NULL, '1' },
-	{ "soft", 0, NULL, '2' },
-	{ .name = NULL }
+	{.name = "header", .has_arg = true,  .val = '1'},
+	{.name = "soft",   .has_arg = false, .val = '2'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void ipv6header_init(struct xt_entry_match *m)
@@ -191,9 +186,9 @@ ipv6header_parse(int c, char **argv, int invert, unsigned int *flags,
 				xtables_error(PARAMETER_PROBLEM,
 					"Only one `--header' allowed");
 
-			xtables_check_inverse(optarg, &invert, &optind, 0);
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
-			if (! (info->matchflags = parse_header(argv[optind-1])) )
+			if (! (info->matchflags = parse_header(optarg)) )
 				xtables_error(PARAMETER_PROBLEM, "ip6t_ipv6header: cannot parse header names");
 
 			if (invert) 

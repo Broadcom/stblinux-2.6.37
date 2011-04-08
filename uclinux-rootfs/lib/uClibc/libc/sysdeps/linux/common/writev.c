@@ -2,13 +2,12 @@
 /*
  * writev() for uClibc
  *
- * Copyright (C) 2006 by Steven J. Hill <sjhill@realitydiluted.com>
- * Copyright (C) 2000-2004 by Erik Andersen <andersen@codepoet.org>
+ * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
  *
- * GNU Library General Public License (LGPL) version 2 or later.
+ * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/uio.h>
 
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
@@ -27,7 +26,7 @@ static ssize_t __writev (int fd, const struct iovec *vector, int count)
     return bytes_written;
 
   /* glibc tries again, but we do not. */
-  //return __atomic_writev_replacement (fd, vector, count);
+  /* return __atomic_writev_replacement (fd, vector, count); */
 
   return -1;
 }
@@ -47,5 +46,5 @@ ssize_t writev (int fd, const struct iovec *vector, int count)
 }
 #else
 _syscall3(ssize_t, writev, int, filedes, const struct iovec *, vector,
-		  int, count);
+		  int, count)
 #endif

@@ -7,7 +7,7 @@
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License.  See the file COPYING.LIB in the main
  * directory of this archive for more details.
- * 
+ *
  * Written by Miles Bader <miles@gnu.org>
  */
 
@@ -15,9 +15,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
-libc_hidden_proto(vfprintf)
-libc_hidden_proto(fprintf)
 
 #include "malloc.h"
 #include "heap.h"
@@ -29,10 +28,10 @@ int __heap_debug = 0;
 
 
 static void
-__heap_dump_freelist (struct heap *heap)
+__heap_dump_freelist (struct heap_free_area *heap)
 {
   struct heap_free_area *fa;
-  for (fa = heap->free_areas; fa; fa = fa->next)
+  for (fa = heap; fa; fa = fa->next)
     __malloc_debug_printf (0,
 			   "0x%lx:  0x%lx - 0x%lx  (%d)\tP=0x%lx, N=0x%lx",
 			   (long)fa,
@@ -45,9 +44,9 @@ __heap_dump_freelist (struct heap *heap)
 
 /* Output a text representation of HEAP to stderr, labelling it with STR.  */
 void
-__heap_dump (struct heap *heap, const char *str)
+__heap_dump (struct heap_free_area *heap, const char *str)
 {
-  static int recursed = 0;
+  static smallint recursed;
 
   if (! recursed)
     {
@@ -66,8 +65,8 @@ __heap_dump (struct heap *heap, const char *str)
 
 /* Output an error message to stderr, and exit.  STR is printed with the
    failure message.  */
-static void
-__heap_check_failure (struct heap *heap, struct heap_free_area *fa,
+static void attribute_noreturn
+__heap_check_failure (struct heap_free_area *heap, struct heap_free_area *fa,
 		      const char *str, char *fmt, ...)
 {
   va_list val;
@@ -81,23 +80,23 @@ __heap_check_failure (struct heap *heap, struct heap_free_area *fa,
   vfprintf (stderr, fmt, val);
   va_end (val);
 
-  __putc ('\n', stderr);
+  fprintf (stderr, "\n");
 
   __malloc_debug_set_indent (0);
   __malloc_debug_printf (1, "heap dump:");
   __heap_dump_freelist (heap);
 
-  __exit (22);
+  _exit (22);
 }
 
 /* Do some consistency checks on HEAP.  If they fail, output an error
    message to stderr, and exit.  STR is printed with the failure message.  */
 void
-__heap_check (struct heap *heap, const char *str)
+__heap_check (struct heap_free_area *heap, const char *str)
 {
   typedef unsigned long ul_t;
   struct heap_free_area *fa, *prev;
-  struct heap_free_area *first_fa = heap->free_areas;
+  struct heap_free_area *first_fa = heap;
 
   if (first_fa && first_fa->prev)
     __heap_check_failure (heap, first_fa, str,

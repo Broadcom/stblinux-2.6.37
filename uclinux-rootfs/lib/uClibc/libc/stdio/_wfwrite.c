@@ -16,8 +16,6 @@
 #warning TODO: Fix prototype.
 #endif
 
-libc_hidden_proto(wmemcpy)
-libc_hidden_proto(wcsnrtombs)
 
 size_t attribute_hidden _wstdio_fwrite(const wchar_t *__restrict ws, size_t n,
 					  register FILE *__restrict stream)
@@ -38,7 +36,7 @@ size_t attribute_hidden _wstdio_fwrite(const wchar_t *__restrict ws, size_t n,
 		}
 		if (count) {
 			wmemcpy((wchar_t *)(stream->__bufpos), ws, count);
-			stream->__bufpos = (char *)(((wchar_t *)(stream->__bufpos)) + count);
+			stream->__bufpos = (unsigned char *)(((wchar_t *)(stream->__bufpos)) + count);
 		}
 		__STDIO_STREAM_VALIDATE(stream);
 		return n;
@@ -59,7 +57,7 @@ size_t attribute_hidden _wstdio_fwrite(const wchar_t *__restrict ws, size_t n,
 					++r;		  /* 0 is returned when nul is reached. */
 					pw = ws + count + r; /* pw was set to NULL, so correct. */
 				}
-				if (__stdio_fwrite(buf, r, stream) == r) {
+				if (__stdio_fwrite((const unsigned char *)buf, r, stream) == r) {
 					count = pw - ws;
 					continue;
 				}

@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add CLASSIFY target support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,12 +16,12 @@ CLASSIFY_help(void)
 {
 	printf(
 "CLASSIFY target options:\n"
-"  --set-class [MAJOR:MINOR]    Set skb->priority value\n");
+"--set-class MAJOR:MINOR    Set skb->priority value (always hexadecimal!)\n");
 }
 
 static const struct option CLASSIFY_opts[] = {
-	{ "set-class", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "set-class", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static int CLASSIFY_string_to_priority(const char *s, unsigned int *p)
@@ -96,7 +97,7 @@ CLASSIFY_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target classify_target = { 
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "CLASSIFY",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_classify_target_info)),

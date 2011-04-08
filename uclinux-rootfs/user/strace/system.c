@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: system.c,v 1.43 2007/01/16 15:10:08 ldv Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -66,11 +66,11 @@
 
 #include <sys/syscall.h>
 
-#ifdef SYS_capget
+#ifdef HAVE_LINUX_CAPABILITY_H
 #include <linux/capability.h>
 #endif
 
-#ifdef SYS_cacheflush
+#ifdef HAVE_ASM_CACHECTL_H
 #include <asm/cachectl.h>
 #endif
 
@@ -78,7 +78,7 @@
 #include <linux/utsname.h>
 #endif
 
-#ifdef MIPS
+#ifdef HAVE_ASM_SYSMIPS_H
 #include <asm/sysmips.h>
 #endif
 
@@ -292,6 +292,33 @@ struct tcb *tcp;
 	return 0;
 }
 #endif /* M68K */
+
+#ifdef BFIN
+
+#include <bfin_sram.h>
+
+static const struct xlat sram_alloc_flags[] = {
+	{ L1_INST_SRAM,		"L1_INST_SRAM" },
+	{ L1_DATA_A_SRAM,	"L1_DATA_A_SRAM" },
+	{ L1_DATA_B_SRAM,	"L1_DATA_B_SRAM" },
+	{ L1_DATA_SRAM,		"L1_DATA_SRAM" },
+	{ L2_SRAM,		"L2_SRAM" },
+	{ 0,			NULL },
+};
+
+int
+sys_sram_alloc(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		/* size */
+		tprintf("%lu, ", tcp->u_arg[0]);
+		/* flags */
+		printxval(sram_alloc_flags, tcp->u_arg[1], "???_SRAM");
+	}
+	return 1;
+}
+
+#endif
 
 #endif /* LINUX */
 
@@ -1480,6 +1507,21 @@ static const struct xlat capabilities[] = {
 	{ 1<<CAP_SYS_RESOURCE,	"CAP_SYS_RESOURCE"},
 	{ 1<<CAP_SYS_TIME,	"CAP_SYS_TIME"	},
 	{ 1<<CAP_SYS_TTY_CONFIG,"CAP_SYS_TTY_CONFIG"},
+#ifdef CAP_MKNOD
+	{ 1<<CAP_MKNOD,		"CAP_MKNOD"	},
+#endif
+#ifdef CAP_LEASE
+	{ 1<<CAP_LEASE,		"CAP_LEASE"	},
+#endif
+#ifdef CAP_AUDIT_WRITE
+	{ 1<<CAP_AUDIT_WRITE,	"CAP_AUDIT_WRITE"},
+#endif
+#ifdef CAP_AUDIT_CONTROL
+	{ 1<<CAP_AUDIT_CONTROL,	"CAP_AUDIT_CONTROL"},
+#endif
+#ifdef CAP_SETFCAP
+	{ 1<<CAP_SETFCAP,	"CAP_SETFCAP"	},
+#endif
 	{ 0,                    NULL            },
 };
 

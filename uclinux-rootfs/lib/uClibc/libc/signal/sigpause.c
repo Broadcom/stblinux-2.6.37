@@ -27,29 +27,24 @@
 #include <sysdep-cancel.h>
 #endif
 
-libc_hidden_proto(sigprocmask)
-libc_hidden_proto(sigdelset)
-libc_hidden_proto(sigsuspend)
-
 #include "sigset-cvt-mask.h"
 
 /* Set the mask of blocked signals to MASK,
    wait for a signal to arrive, and then restore the mask.  */
-libc_hidden_proto(__sigpause)
 int __sigpause (int sig_or_mask, int is_sig)
 {
   sigset_t set;
 
-  if (is_sig != 0)
+  if (is_sig)
     {
       /* The modern X/Open implementation is requested.  */
-      if (sigprocmask (0, NULL, &set) < 0
-	  /* Yes, we call `sigdelset' and not `__sigdelset'.  */
-	  || sigdelset (&set, sig_or_mask) < 0)
+      sigprocmask (SIG_BLOCK, NULL, &set);
+      /* Bound-check sig_or_mask, remove it from the set.  */
+      if (sigdelset (&set, sig_or_mask) < 0)
 	return -1;
     }
-  else if (sigset_set_old_mask (&set, sig_or_mask) < 0)
-    return -1;
+  else
+    sigset_set_old_mask (&set, sig_or_mask);
 
   /* Note the sigpause() is a cancellation point.  But since we call
      sigsuspend() which itself is a cancellation point we do not have
@@ -63,7 +58,6 @@ libc_hidden_def(__sigpause)
 /* We have to provide a default version of this function since the
    standards demand it.  The version which is a bit more reasonable is
    the BSD version.  So make this the default.  */
-libc_hidden_proto(sigpause)
 int sigpause (int mask)
 {
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
@@ -81,4 +75,3 @@ int sigpause (int mask)
   return __sigpause (mask, 0);
 #endif
 }
-libc_hidden_def(sigpause)

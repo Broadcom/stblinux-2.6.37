@@ -18,6 +18,8 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#include <features.h>
+
 #ifndef _MATH_H
 # error "Never use <bits/mathinline.h> directly; include <math.h> instead."
 #endif
@@ -146,7 +148,7 @@ __NTH (__ieee754_sqrt (double __x))
   {
     /* Volatile is required to prevent the compiler from moving the
        fsqrt instruction above the branch.  */
-     __asm __volatile (
+     __asm__ __volatile__ (
 	"	fsqrt	%0,%1\n"
 		: "=f" (__z)
 		: "f" (__x));
@@ -168,7 +170,7 @@ __NTH (__ieee754_sqrtf (float __x))
   {
     /* Volatile is required to prevent the compiler from moving the
        fsqrts instruction above the branch.  */
-     __asm __volatile (
+     __asm__ __volatile__ (
 	"	fsqrts	%0,%1\n"
 		: "=f" (__z)
 		: "f" (__x));
@@ -180,3 +182,4 @@ __NTH (__ieee754_sqrtf (float __x))
 }
 #endif /* __LIBC_INTERNAL_MATH_INLINES */
 #endif /* __GNUC__ && !_SOFT_FLOAT */
+

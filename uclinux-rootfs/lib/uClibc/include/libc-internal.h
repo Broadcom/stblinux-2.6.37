@@ -27,7 +27,7 @@
 # define attribute_relro
 #endif
 
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+#ifdef __UCLIBC_HAS_TLS__
 # define attribute_tls_model_ie __attribute__ ((tls_model ("initial-exec")))
 #endif
 
@@ -46,8 +46,10 @@
 /* sources are built w/ _GNU_SOURCE, this gets undefined */
 #ifdef __USE_GNU
 extern int __xpg_strerror_r (int __errnum, char *__buf, size_t __buflen);
+libc_hidden_proto(__xpg_strerror_r)
 #else
 extern char *__glibc_strerror_r (int __errnum, char *__buf, size_t __buflen);
+libc_hidden_proto(__glibc_strerror_r)
 #endif
 
 /* #include <pthread.h> */
@@ -65,36 +67,14 @@ extern const char *__uclibc_progname attribute_hidden;
 
 # endif /* IS_IN_libc */
 
-/* #include <alloca.h> */
-#include <bits/stackinfo.h>
-#if _STACK_GROWS_DOWN
-# define extend_alloca(buf, len, newlen) \
-  (__typeof (buf)) ({ size_t __newlen = (newlen);			      \
-		      char *__newbuf = alloca (__newlen);		      \
-		      if (__newbuf + __newlen == (char *) buf)		      \
-			len += __newlen;				      \
-		      else						      \
-			len = __newlen;					      \
-		      __newbuf; })
-#elif _STACK_GROWS_UP
-# define extend_alloca(buf, len, newlen) \
-  (__typeof (buf)) ({ size_t __newlen = (newlen);			      \
-		      char *__newbuf = alloca (__newlen);		      \
-		      char *__buf = (buf);				      \
-		      if (__buf + __newlen == __newbuf)			      \
-			{						      \
-			  len += __newlen;				      \
-			  __newbuf = __buf;				      \
-			}						      \
-		      else						      \
-			len = __newlen;					      \
-		      __newbuf; })
-#else
-# warning unknown stack
-# define extend_alloca(buf, len, newlen) \
-  alloca (((len) = (newlen)))
-#endif
-
 #endif /* __ASSEMBLER__ */
+
+/* Some people like to build up uClibc with *-elf toolchains, so
+ * a little grease here until we drop '#ifdef __linux__' checks
+ * from our source code.
+ */
+#ifndef __linux__
+# define __linux__ 1
+#endif
 
 #endif /* _LIBC_INTERNAL_H */

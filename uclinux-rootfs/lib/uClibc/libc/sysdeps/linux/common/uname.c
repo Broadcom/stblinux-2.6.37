@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/utsname.h>
 
-libc_hidden_proto(uname)
 
-_syscall1(int, uname, struct utsname *, buf);
+_syscall1(int, uname, struct utsname *, buf)
 libc_hidden_def(uname)

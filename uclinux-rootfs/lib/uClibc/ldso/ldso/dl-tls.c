@@ -33,27 +33,24 @@
 void *(*_dl_calloc_function) (size_t __nmemb, size_t __size) = NULL;
 void *(*_dl_realloc_function) (void *__ptr, size_t __size) = NULL;
 void *(*_dl_memalign_function) (size_t __boundary, size_t __size) = NULL;
-void (*_dl_free_function) (void *__ptr) = NULL;
 
+void (*_dl_free_function) (void *__ptr);
 void *_dl_memalign (size_t __boundary, size_t __size);
 struct link_map *_dl_update_slotinfo (unsigned long int req_modid);
+
+/* Round up N to the nearest multiple of P, where P is a power of 2
+   --- without using libgcc division routines.  */
+#define roundup_pow2(n, p) (((n) + (p) - 1) & ~((p) - 1))
 
 void *
 _dl_calloc (size_t __nmemb, size_t __size)
 {
 	void *result;
-	size_t size = (__size * __nmemb); 
+	size_t size = (__size * __nmemb);
 
 	if (_dl_calloc_function)
 		return (*_dl_calloc_function) (__nmemb, __size);
 
-	if (__nmemb && __size != (size / __nmemb)) {
-			_dl_dprintf(2, "%si:%i: unaligned structures\n",
-				__FUNCTION__, __LINE__);
-			_dl_exit(1);
-	}
-	
-	/* THT 9/07/07 PR34405: iperf fails when LD_LIBRARY_PATH is too long */
 	if ((result = _dl_malloc(size)) != NULL) {
 		_dl_memset(result, 0, size);
 	}
@@ -70,18 +67,6 @@ _dl_realloc (void * __ptr, size_t __size)
 	_dl_debug_early("NOT IMPLEMENTED PROPERLY!!!\n");
 	return NULL;
 }
-
-void
-_dl_free (void *__ptr)
-{
-	if (_dl_free_function)
-		(*_dl_free_function) (__ptr);
-
-#if 0
-	_dl_debug_early("NOT IMPLEMENTED PROPERLY!!!\n");
-#endif
-}
-
 
 /* The __tls_get_addr function has two basic forms which differ in the
    arguments.  The IA-64 form takes two parameters, the module ID and
@@ -109,13 +94,6 @@ _dl_free (void *__ptr)
 /* Value used for dtv entries for which the allocation is delayed. */
 #define TLS_DTV_UNALLOCATED	((void *) -1l)
 
-/* Taken from glibc/elf/dl-reloc.c */
-#define CHECK_STATIC_TLS(sym_map)											\
-	do {																	\
-		if (__builtin_expect ((sym_map)->l_tls_offset == NO_TLS_OFFSET, 0))	\
-			_dl_allocate_static_tls (sym_map);								\
-	} while (0)
-
 /*
  * We are trying to perform a static TLS relocation in MAP, but it was
  * dynamically loaded.  This can only work if there is enough surplus in
@@ -138,7 +116,7 @@ fail:
 		_dl_exit(30);
 	}
 
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
 	size_t freebytes;
 	size_t n;
 	size_t blsize;
@@ -149,17 +127,17 @@ fail:
 	if (freebytes < blsize)
 		goto fail;
 
-	n = (freebytes - blsize) / map->l_tls_align;
+	n = (freebytes - blsize) & ~(map->l_tls_align - 1);
 
-	size_t offset = _dl_tls_static_used + (freebytes - n * map->l_tls_align
+	size_t offset = _dl_tls_static_used + (freebytes - n
 		- map->l_tls_firstbyte_offset);
 
 	map->l_tls_offset = _dl_tls_static_used = offset;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
 	size_t used;
 	size_t check;
 
-	size_t offset = roundup (_dl_tls_static_used, map->l_tls_align);
+	size_t offset = roundup_pow2 (_dl_tls_static_used, map->l_tls_align);
 	used = offset + map->l_tls_blocksize;
 	check = used;
 
@@ -193,16 +171,17 @@ fail:
 		map->l_need_tls_init = 1;
 }
 
+#ifdef SHARED
 /* Initialize static TLS area and DTV for current (only) thread.
    libpthread implementations should provide their own hook
    to handle all threads.  */
 void
-internal_function __attribute_noinline__
+attribute_hidden __attribute_noinline__
 _dl_nothread_init_static_tls (struct link_map *map)
 {
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
 	void *dest = (char *) THREAD_SELF - map->l_tls_offset;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
 	void *dest = (char *) THREAD_SELF + map->l_tls_offset + TLS_PRE_TCB_SIZE;
 # else
 #  error "Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined"
@@ -222,6 +201,7 @@ _dl_nothread_init_static_tls (struct link_map *map)
 	_dl_memset((dest + map->l_tls_initimage_size), '\0',
 		map->l_tls_blocksize - map->l_tls_initimage_size);
 }
+#endif
 
 /* Taken from glibc/sysdeps/generic/dl-tls.c */
 static void
@@ -335,11 +315,11 @@ _dl_determine_tlsoffset (void)
      memory requirement for the next TLS block is smaller than the
      gap.  */
 
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
   /* We simply start with zero.  */
-  size_t offset = 0;
+  size_t cnt, offset = 0;
 
-  for (size_t cnt = 0; slotinfo[cnt].map != NULL; ++cnt)
+  for (cnt = 1; slotinfo[cnt].map != NULL; ++cnt)
     {
       _dl_assert (cnt < _dl_tls_dtv_slotinfo_list->len);
 
@@ -350,8 +330,8 @@ _dl_determine_tlsoffset (void)
 
       if (freebottom - freetop >= slotinfo[cnt].map->l_tls_blocksize)
 	{
-	  off = roundup (freetop + slotinfo[cnt].map->l_tls_blocksize
-			 - firstbyte, slotinfo[cnt].map->l_tls_align)
+	  off = roundup_pow2 (freetop + slotinfo[cnt].map->l_tls_blocksize
+                          - firstbyte, slotinfo[cnt].map->l_tls_align)
 		+ firstbyte;
 	  if (off <= freebottom)
 	    {
@@ -364,8 +344,9 @@ _dl_determine_tlsoffset (void)
 	    }
 	}
 
-      off = roundup (offset + slotinfo[cnt].map->l_tls_blocksize - firstbyte,
-		     slotinfo[cnt].map->l_tls_align) + firstbyte;
+      off = roundup_pow2 (offset + slotinfo[cnt].map->l_tls_blocksize
+                          - firstbyte, slotinfo[cnt].map->l_tls_align)
+            + firstbyte;
       if (off > offset + slotinfo[cnt].map->l_tls_blocksize
 		+ (freebottom - freetop))
 	{
@@ -380,14 +361,14 @@ _dl_determine_tlsoffset (void)
     }
 
   _dl_tls_static_used = offset;
-  _dl_tls_static_size = (roundup (offset + TLS_STATIC_SURPLUS, max_align)
+  _dl_tls_static_size = (roundup_pow2 (offset + TLS_STATIC_SURPLUS, max_align)
 			    + TLS_TCB_SIZE);
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   /* The TLS blocks start right after the TCB.  */
   size_t offset = TLS_TCB_SIZE;
   size_t cnt;
 
-  for (cnt = 0; slotinfo[cnt].map != NULL; ++cnt)
+  for (cnt = 1; slotinfo[cnt].map != NULL; ++cnt)
     {
       _dl_assert (cnt < _dl_tls_dtv_slotinfo_list->len);
 
@@ -398,7 +379,7 @@ _dl_determine_tlsoffset (void)
 
       if (slotinfo[cnt].map->l_tls_blocksize <= freetop - freebottom)
 	{
-	  off = roundup (freebottom, slotinfo[cnt].map->l_tls_align);
+	  off = roundup_pow2 (freebottom, slotinfo[cnt].map->l_tls_align);
 	  if (off - freebottom < firstbyte)
 	    off += slotinfo[cnt].map->l_tls_align;
 	  if (off + slotinfo[cnt].map->l_tls_blocksize - firstbyte <= freetop)
@@ -410,7 +391,7 @@ _dl_determine_tlsoffset (void)
 	    }
 	}
 
-      off = roundup (offset, slotinfo[cnt].map->l_tls_align);
+      off = roundup_pow2 (offset, slotinfo[cnt].map->l_tls_align);
       if (off - offset < firstbyte)
 	off += slotinfo[cnt].map->l_tls_align;
 
@@ -425,8 +406,8 @@ _dl_determine_tlsoffset (void)
     }
 
   _dl_tls_static_used = offset;
-  _dl_tls_static_size = roundup (offset + TLS_STATIC_SURPLUS,
-				    TLS_TCB_ALIGN);
+  _dl_tls_static_size = roundup_pow2 (offset + TLS_STATIC_SURPLUS,
+                                      TLS_TCB_ALIGN);
 # else
 #  error "Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined"
 # endif
@@ -438,6 +419,7 @@ _dl_determine_tlsoffset (void)
 /* This is called only when the data structure setup was skipped at startup,
    when there was no need for it then.  Now we have dynamically loaded
    something needing TLS, or libpthread needs it.  */
+rtld_hidden_proto(_dl_tls_setup)
 int
 internal_function
 _dl_tls_setup (void)
@@ -511,7 +493,7 @@ _dl_allocate_tls_storage (void)
   void *result;
   size_t size = _dl_tls_static_size;
 
-# if TLS_DTV_AT_TP
+# if defined(TLS_DTV_AT_TP)
   /* Memory layout is:
      [ TLS_PRE_TCB_SIZE ] [ TLS_TCB_SIZE ] [ TLS blocks ]
 			  ^ This should be returned.  */
@@ -526,14 +508,14 @@ _dl_allocate_tls_storage (void)
       /* Allocate the DTV.  */
       void *allocated = result;
 
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
       /* The TCB follows the TLS blocks.  */
       result = (char *) result + size - TLS_TCB_SIZE;
 
       /* Clear the TCB data structure.  We can't ask the caller (i.e.
 	 libpthread) to do it, because we will initialize the DTV et al.  */
       _dl_memset (result, '\0', TLS_TCB_SIZE);
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
       result = (char *) result + size - _dl_tls_static_size;
 
       /* Clear the TCB data structure and TLS_PRE_TCB_SIZE bytes before it.
@@ -601,10 +583,10 @@ _dl_allocate_tls_init (void *result)
 
 	  _dl_assert (map->l_tls_modid == cnt);
 	  _dl_assert (map->l_tls_blocksize >= map->l_tls_initimage_size);
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
 	  _dl_assert ((size_t) map->l_tls_offset >= map->l_tls_blocksize);
 	  dest = (char *) result - map->l_tls_offset;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
 	  dest = (char *) result + map->l_tls_offset;
 # else
 #  error "Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined"
@@ -661,10 +643,10 @@ _dl_deallocate_tls (void *tcb, bool dealloc_tcb)
 
   if (dealloc_tcb)
     {
-# if TLS_TCB_AT_TP
+# ifdef TLS_TCB_AT_TP
       /* The TCB follows the TLS blocks.  Back up to free the whole block.  */
       tcb -= _dl_tls_static_size - TLS_TCB_SIZE;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
       /* Back up the TLS_PRE_TCB_SIZE bytes.  */
       tcb -= (TLS_PRE_TCB_SIZE + _dl_tls_static_align - 1)
 	     & ~(_dl_tls_static_align - 1);
@@ -860,7 +842,10 @@ __tls_get_addr (GET_ADDR_ARGS)
   void *p;
 
   if (__builtin_expect (dtv[0].counter != _dl_tls_generation, 0))
-    the_map = _dl_update_slotinfo (GET_ADDR_MODULE);
+    {
+      the_map = _dl_update_slotinfo (GET_ADDR_MODULE);
+      dtv = THREAD_DTV ();
+    }
 
   p = dtv[GET_ADDR_MODULE].pointer.val;
 
@@ -951,6 +936,11 @@ _dl_add_to_slotinfo (struct link_map  *l)
   /* Add the information into the slotinfo data structure.  */
   listp->slotinfo[idx].map = l;
   listp->slotinfo[idx].gen = _dl_tls_generation + 1;
+  /* ??? ideally this would be done once per call to dlopen.  However there's
+     no easy way to indicate whether a library used TLS, so do it here
+	 instead. */
+  /* Bump the TLS generation number.  */
+  _dl_tls_generation++;
 }
 
 /* Taken from glibc/elf/rtld.c */
@@ -965,6 +955,12 @@ _dl_initial_error_catch_tsd (void)
 	return &data;
 }
 
+#ifdef SHARED
+void*
+internal_function
+init_tls (void);
+
+rtld_hidden_proto(init_tls)
 void *
 internal_function
 init_tls (void)
@@ -983,6 +979,7 @@ init_tls (void)
 	size_t nelem = _dl_tls_max_dtv_idx + 1 + TLS_SLOTINFO_SURPLUS;
 
 	/* Allocate.  */
+	_dl_assert (_dl_tls_dtv_slotinfo_list == NULL);
 	_dl_tls_dtv_slotinfo_list = (struct dtv_slotinfo_list *)
 		_dl_calloc (sizeof (struct dtv_slotinfo_list)
 			+ nelem * sizeof (struct dtv_slotinfo), 1);
@@ -1002,9 +999,9 @@ init_tls (void)
 		{
 			/* This is a module with TLS data.  Store the map reference.
 			   The generation counter is zero.  */
-			slotinfo[i].map = l;
-			/* slotinfo[i].gen = 0; */
-		++i;
+
+			/* Skeep slot[0]: it will be never used */
+			slotinfo[++i].map = l;
 		}
 	_dl_assert (i == _dl_tls_max_dtv_idx);
 
@@ -1037,3 +1034,6 @@ init_tls (void)
 
 	return tcbp;
 }
+rtld_hidden_def (init_tls)
+#endif
+

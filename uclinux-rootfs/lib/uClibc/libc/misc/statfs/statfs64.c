@@ -23,17 +23,14 @@
 #include <stddef.h>
 #include <sys/statfs.h>
 
-
-libc_hidden_proto(memcpy)
-libc_hidden_proto(statfs)
+extern __typeof(statfs) __libc_statfs;
 
 /* Return information about the filesystem on which FILE resides.  */
-libc_hidden_proto(statfs64)
 int statfs64 (const char *file, struct statfs64 *buf)
 {
     struct statfs buf32;
 
-    if (statfs (file, &buf32) < 0)
+    if (__libc_statfs (file, &buf32) < 0)
 	return -1;
 
     buf->f_type = buf32.f_type;

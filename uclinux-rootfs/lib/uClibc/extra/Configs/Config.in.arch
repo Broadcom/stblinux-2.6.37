@@ -16,6 +16,7 @@ config UCLIBC_FORMAT_ELF
 config UCLIBC_FORMAT_FDPIC_ELF
 	bool "FDPIC ELF"
 	depends on !ARCH_USE_MMU
+	select DOPIC
 config UCLIBC_FORMAT_FLAT
 	bool "STATIC FLAT"
 	depends on !ARCH_USE_MMU
@@ -94,7 +95,7 @@ endif
 
 config ARCH_HAS_MMU
 	bool "Target CPU has a memory management unit (MMU)"
-	depends !ARCH_HAS_NO_MMU
+	depends on !ARCH_HAS_NO_MMU
 	default y
 	help
 	  If your target CPU does not have a memory management unit (MMU), 
@@ -123,8 +124,8 @@ config UCLIBC_HAS_FLOATS
 	  such as printf() and scanf() will still be included in the library, 
 	  but will not contain support for floating point numbers.
 
-	  Answering N to this option can reduce the size of uClibc.  Most people
-	  will answer Y.
+	  Answering N to this option can reduce the size of uClibc.
+	  Most people will answer Y.
 
 config UCLIBC_HAS_FPU
 	bool "Target CPU has a floating point unit (FPU)"
@@ -159,24 +160,53 @@ config DO_C99_MATH
 	  If your applications require the newer C99 math library functions, 
 	  then answer Y.
 
+config DO_XSI_MATH
+	bool "Enable XSI math extensions to the ISO C standard (bessel)"
+	depends on UCLIBC_HAS_FLOATS
+	default n
+	help
+	  X/Open System Interfaces extensions to ISO C math functions
+	  (differential equation functions):
+
+	  j0, j1, jn - Bessel functions of the first kind
+	  y0, y1, yn - Bessel functions of the second kind
+
+config UCLIBC_HAS_FENV
+	bool "Enable C99 Floating-point environment"
+	depends on UCLIBC_HAS_FLOATS
+	default n
+	help
+	  If you want the uClibc math library to contain the C99 floating
+	  point environment, rounding and exception handling functions then
+	  say Y here.
+
+	  NOTE: Supported architectures currently include:
+	        i386
+
+config UCLIBC_HAS_LONG_DOUBLE_MATH
+	bool "Enable long double support"
+	depends on DO_C99_MATH
+	depends on TARGET_i386 || TARGET_m68k || TARGET_sparc || TARGET_x86_64 || TARGET_powerpc || TARGET_sh
+	default y
+	help
+	  If you want the uClibc math library to contain the full set of C99
+	  long double math library features, then answer Y. Don't enable it
+	  for sparc w/ 32bit ABI.
+
 config KERNEL_HEADERS
 	string "Linux kernel header location"
-	default "/usr/src/linux/include"
+	default "/usr/include"
 	help
-	  The kernel source you use to compile with should be the same as the
-	  Linux kernel you run your apps on.  uClibc doesn't even try to achieve binary
-	  compatibility across kernel versions.  So don't expect, for example, uClibc
-	  compiled with Linux kernel 2.0.x to implement lchown properly, since 2.0.x
-	  can't do that. Similarly, if you compile uClibc vs Linux 2.4.x kernel headers,
-	  but then run on Linux 2.0.x, lchown will be compiled into uClibc, but won't
-	  work at all.  You have been warned.
+	  The kernel source you use to compile with should be the same
+	  as the Linux kernel you run your apps on.  uClibc doesn't even
+	  try to achieve binary compatibility across kernel versions.
+	  So don't expect, for example, uClibc compiled with Linux kernel
+	  2.0.x to implement lchown properly, since 2.0.x can't do that.
+	  Similarly, if you compile uClibc vs Linux 2.4.x kernel headers,
+	  but then run on Linux 2.0.x, lchown will be compiled into uClibc,
+	  but won't work at all.  You have been warned.
 
 config UCLIBC_UCLINUX_BROKEN_MUNMAP
-	bool
-	depends on !ARCH_USE_MMU
-	default y
-
-config EXCLUDE_BRK
 	bool
 	depends on !ARCH_USE_MMU
 	default y

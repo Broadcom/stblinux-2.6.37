@@ -15,26 +15,17 @@
 # define Wstrnlen strnlen
 #endif
 
-libc_hidden_proto(Wstrnlen)
-
 size_t Wstrnlen(const Wchar *s, size_t max)
 {
 	register const Wchar *p = s;
-#ifdef __BCC__
-	/* bcc can optimize the counter if it thinks it is a pointer... */
-	register const char *maxp = (const char *) max;
-#else
-# define maxp max
-#endif
 
-	while (maxp && *p) {
+	while (max && *p) {
 		++p;
-		--maxp;
+		--max;
 	}
 
 	return p - s;
 }
-#undef maxp
 
 libc_hidden_def(Wstrnlen)
 #endif

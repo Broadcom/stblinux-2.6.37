@@ -26,7 +26,7 @@ static void re_compile_fastmap_iter (regex_t *bufp,
 static reg_errcode_t init_dfa (re_dfa_t *dfa, size_t pat_len);
 #ifdef RE_ENABLE_I18N
 static void free_charset (re_charset_t *cset);
-#endif /* RE_ENABLE_I18N */
+#endif
 static void free_workarea_compile (regex_t *preg);
 static reg_errcode_t create_initial_state (re_dfa_t *dfa);
 #ifdef RE_ENABLE_I18N
@@ -120,13 +120,13 @@ static bin_tree_t *duplicate_tree (const bin_tree_t *src, re_dfa_t *dfa);
 static void free_token (re_token_t *node);
 static reg_errcode_t free_tree (void *extra, bin_tree_t *node);
 static reg_errcode_t mark_opt_subexp (void *extra, bin_tree_t *node);
-
+
 /* This table gives an error message for each of the error codes listed
    in regex.h.  Obviously the order here has to be same as there.
    POSIX doesn't require that we do anything for REG_NOERROR,
    but why not be nice?  */
 
-const char __re_error_msgid[] attribute_hidden =
+static const char __re_error_msgid[] =
   {
 #define REG_NOERROR_IDX	0
     gettext_noop ("Success")	/* REG_NOERROR */
@@ -180,7 +180,7 @@ const char __re_error_msgid[] attribute_hidden =
     gettext_noop ("Unmatched ) or \\)") /* REG_ERPAREN */
   };
 
-const size_t __re_error_msgid_idx[] attribute_hidden =
+static const uint16_t __re_error_msgid_idx[] =
   {
     REG_NOERROR_IDX,
     REG_NOMATCH_IDX,
@@ -200,7 +200,7 @@ const size_t __re_error_msgid_idx[] attribute_hidden =
     REG_ESIZE_IDX,
     REG_ERPAREN_IDX
   };
-
+
 /* Entry points for GNU code.  */
 
 /* re_compile_pattern is the GNU regular expression compiler: it
@@ -211,10 +211,9 @@ const size_t __re_error_msgid_idx[] attribute_hidden =
    are set in BUFP on entry.  */
 
 const char *
-re_compile_pattern (pattern, length, bufp)
-    const char *pattern;
-    size_t length;
-    struct re_pattern_buffer *bufp;
+re_compile_pattern (const char *pattern,
+		size_t length,
+		struct re_pattern_buffer *bufp)
 {
   reg_errcode_t ret;
 
@@ -232,9 +231,6 @@ re_compile_pattern (pattern, length, bufp)
     return NULL;
   return gettext (__re_error_msgid + __re_error_msgid_idx[(int) ret]);
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_compile_pattern, re_compile_pattern)
-#endif
 
 /* Set by `re_set_syntax' to the current regexp syntax to recognize.  Can
    also be assigned to arbitrarily: each pattern buffer stores its own
@@ -252,21 +248,16 @@ reg_syntax_t re_syntax_options;
    defined in regex.h.  We return the old syntax.  */
 
 reg_syntax_t
-re_set_syntax (syntax)
-    reg_syntax_t syntax;
+re_set_syntax (reg_syntax_t syntax)
 {
   reg_syntax_t ret = re_syntax_options;
 
   re_syntax_options = syntax;
   return ret;
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_set_syntax, re_set_syntax)
-#endif
 
 int
-re_compile_fastmap (bufp)
-    struct re_pattern_buffer *bufp;
+re_compile_fastmap (struct re_pattern_buffer *bufp)
 {
   re_dfa_t *dfa = (re_dfa_t *) bufp->buffer;
   char *fastmap = bufp->fastmap;
@@ -282,17 +273,15 @@ re_compile_fastmap (bufp)
   bufp->fastmap_accurate = 1;
   return 0;
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_compile_fastmap, re_compile_fastmap)
-#endif
+libc_hidden_def(re_compile_fastmap)
 
-static inline void
+static __inline__ void
 __attribute ((always_inline))
 re_set_fastmap (char *fastmap, int icase, int ch)
 {
   fastmap[ch] = 1;
   if (icase)
-    fastmap[__tolower (ch)] = 1;
+    fastmap[tolower (ch)] = 1;
 }
 
 /* Helper function for re_compile_fastmap.
@@ -355,7 +344,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
 	  if (cset->non_match || cset->ncoll_syms || cset->nequiv_classes
 	      || cset->nranges || cset->nchar_classes)
 	    {
-# ifdef _LIBC
+# if 0
 	      if (_NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES) != 0)
 		{
 		  /* In this case we want to catch the bytes which are
@@ -375,7 +364,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
 		for (i = 0; i < SBC_MAX; ++i)
 		  if (__btowc (i) == WEOF)
 		    re_set_fastmap (fastmap, icase, i);
-# endif /* not _LIBC */
+# endif
 	    }
 	  for (i = 0; i < cset->nmbchars; ++i)
 	    {
@@ -396,7 +385,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
       else if (type == OP_PERIOD
 #ifdef RE_ENABLE_I18N
 	       || type == OP_UTF8_PERIOD
-#endif /* RE_ENABLE_I18N */
+#endif
 	       || type == END_OF_RE)
 	{
 	  memset (fastmap, '\1', sizeof (char) * SBC_MAX);
@@ -406,7 +395,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
 	}
     }
 }
-
+
 /* Entry point for POSIX code.  */
 /* regcomp takes a regular expression as a string and compiles it.
 
@@ -444,10 +433,9 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
    the return codes and their meanings.)  */
 
 int
-regcomp (preg, pattern, cflags)
-    regex_t *__restrict preg;
-    const char *__restrict pattern;
-    int cflags;
+regcomp (regex_t *__restrict preg,
+		const char *__restrict pattern,
+		int cflags)
 {
   reg_errcode_t ret;
   reg_syntax_t syntax = ((cflags & REG_EXTENDED) ? RE_SYNTAX_POSIX_EXTENDED
@@ -498,19 +486,15 @@ regcomp (preg, pattern, cflags)
 
   return (int) ret;
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__regcomp, regcomp)
-#endif
 
 /* Returns a message corresponding to an error code, ERRCODE, returned
    from either regcomp or regexec.   We don't use PREG here.  */
 
 size_t
-regerror (errcode, preg, errbuf, errbuf_size)
-    int errcode;
-    const regex_t *__restrict preg;
-    char *__restrict errbuf;
-    size_t errbuf_size;
+regerror (int errcode,
+		const regex_t *__restrict preg,
+		char *__restrict errbuf,
+		size_t errbuf_size)
 {
   const char *msg;
   size_t msg_size;
@@ -532,12 +516,8 @@ regerror (errcode, preg, errbuf, errbuf_size)
     {
       if (BE (msg_size > errbuf_size, 0))
 	{
-#if (defined HAVE_MEMPCPY || defined _LIBC) && defined __USE_GNU
-	  *((char *) __mempcpy (errbuf, msg, errbuf_size - 1)) = '\0';
-#else
 	  memcpy (errbuf, msg, errbuf_size - 1);
 	  errbuf[errbuf_size - 1] = 0;
-#endif
 	}
       else
 	memcpy (errbuf, msg, msg_size);
@@ -545,9 +525,6 @@ regerror (errcode, preg, errbuf, errbuf_size)
 
   return msg_size;
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__regerror, regerror)
-#endif
 
 
 #ifdef RE_ENABLE_I18N
@@ -614,8 +591,7 @@ free_dfa_content (re_dfa_t *dfa)
 /* Free dynamically allocated space used by PREG.  */
 
 void
-regfree (preg)
-    regex_t *preg;
+regfree (regex_t *preg)
 {
   re_dfa_t *dfa = (re_dfa_t *) preg->buffer;
   if (BE (dfa != NULL, 1))
@@ -629,79 +605,89 @@ regfree (preg)
   re_free (preg->translate);
   preg->translate = NULL;
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__regfree, regfree)
-#endif
-
+libc_hidden_def(regfree)
+
 /* Entry points compatible with 4.2 BSD regex library.  We don't define
    them unless specifically requested.  */
 
-#if defined _REGEX_RE_COMP || defined _LIBC || defined __UCLIBC__
+#if defined _REGEX_RE_COMP || defined __UCLIBC__
 
 /* BSD has one and only one pattern buffer.  */
-static struct re_pattern_buffer re_comp_buf;
+static struct re_pattern_buffer *re_comp_buf;
 
 char *
-# if defined _LIBC || defined __UCLIBC__
-/* Make these definitions weak in libc, so POSIX programs can redefine
+/* Make BCD definitions weak in libc, so POSIX programs can redefine
    these names if they don't use our functions, and still use
    regcomp/regexec above without link errors.  */
 weak_function
-# endif
-re_comp (s)
-     const char *s;
+re_comp (const char *s)
 {
   reg_errcode_t ret;
-  char *fastmap;
 
-  if (!s)
+  /* "If re_comp() is passed NULL or a null string, it returns
+   * without changing the currently compiled regular expression." */
+  if (!s || !s[0])
     {
-      if (!re_comp_buf.buffer)
+      if (!re_comp_buf)
 	return gettext ("No previous regular expression");
-      return 0;
+      return NULL;
     }
 
-  if (re_comp_buf.buffer)
+  if (!re_comp_buf)
     {
-      fastmap = re_comp_buf.fastmap;
-      re_comp_buf.fastmap = NULL;
-      __regfree (&re_comp_buf);
-      memset (&re_comp_buf, '\0', sizeof (re_comp_buf));
-      re_comp_buf.fastmap = fastmap;
+      re_comp_buf = calloc (1, sizeof(*re_comp_buf));
+      if (!re_comp_buf)
+	{
+	  ret = REG_ESPACE;
+	  goto err;
+	}
     }
 
-  if (re_comp_buf.fastmap == NULL)
+  if (re_comp_buf->buffer)
     {
-      re_comp_buf.fastmap = (char *) malloc (SBC_MAX);
-      if (re_comp_buf.fastmap == NULL)
-	return (char *) gettext (__re_error_msgid
-				 + __re_error_msgid_idx[(int) REG_ESPACE]);
+      regfree (re_comp_buf);
+      memset (re_comp_buf, '\0', sizeof(*re_comp_buf));
+    }
+
+  if (re_comp_buf->fastmap == NULL)
+    {
+      re_comp_buf->fastmap = malloc (SBC_MAX);
+      if (re_comp_buf->fastmap == NULL)
+	{
+	  ret = REG_ESPACE;
+	  goto err;
+	}
     }
 
   /* Since `re_exec' always passes NULL for the `regs' argument, we
      don't need to initialize the pattern buffer fields which affect it.  */
 
   /* Match anchors at newlines.  */
-  re_comp_buf.newline_anchor = 1;
+  re_comp_buf->newline_anchor = 1;
 
-  ret = re_compile_internal (&re_comp_buf, s, strlen (s), re_syntax_options);
+  ret = re_compile_internal (re_comp_buf, s, strlen (s), re_syntax_options);
 
   if (!ret)
     return NULL;
+  free (re_comp_buf);
+  re_comp_buf = NULL;
 
+ err:
   /* Yes, we're discarding `const' here if !HAVE_LIBINTL.  */
   return (char *) gettext (__re_error_msgid + __re_error_msgid_idx[(int) ret]);
 }
 
-#ifdef _LIBC
+#if 0
 libc_freeres_fn (free_mem)
 {
-  __regfree (&re_comp_buf);
+  regfree (re_comp_buf);
+  free (re_comp_buf);
+  re_comp_buf = NULL;
 }
 #endif
 
 #endif /* _REGEX_RE_COMP */
-
+
 /* Internal entry point.
    Compile the regular expression PATTERN, whose length is LENGTH.
    SYNTAX indicate regular expression's syntax.  */
@@ -805,15 +791,11 @@ re_compile_internal (regex_t *preg, const char * pattern, size_t length,
 /* Initialize DFA.  We use the length of the regular expression PAT_LEN
    as the initial length of some arrays.  */
 
-#ifdef __UCLIBC_HAS_WCHAR__
-libc_hidden_proto(_stdlib_mb_cur_max)
-#endif
-
 static reg_errcode_t
 init_dfa (re_dfa_t *dfa, size_t pat_len)
 {
   unsigned int table_size;
-#ifndef _LIBC
+#if 1
   char *codeset_name;
 #endif
 
@@ -842,7 +824,7 @@ init_dfa (re_dfa_t *dfa, size_t pat_len)
 #else
   dfa->mb_cur_max = 1;
 #endif
-#ifdef _LIBC
+#if 0
   if (dfa->mb_cur_max == 6
       && strcmp (_NL_CURRENT (LC_CTYPE, _NL_CTYPE_CODESET_NAME), "UTF-8") == 0)
     dfa->is_utf8 = 1;
@@ -881,7 +863,7 @@ init_dfa (re_dfa_t *dfa, size_t pat_len)
 	{
 	  int i, j, ch;
 
-	  dfa->sb_char = (re_bitset_ptr_t) calloc (sizeof (bitset_t), 1);
+	  dfa->sb_char = calloc (sizeof (bitset_t), 1);
 	  if (BE (dfa->sb_char == NULL, 0))
 	    return REG_ESPACE;
 
@@ -892,7 +874,7 @@ init_dfa (re_dfa_t *dfa, size_t pat_len)
 		wint_t wch = __btowc (ch);
 		if (wch != WEOF)
 		  dfa->sb_char[i] |= (bitset_word_t) 1 << j;
-# ifndef _LIBC
+# if 1
 		if (isascii (ch) && wch != ch)
 		  dfa->map_notascii = 1;
 # endif
@@ -1019,7 +1001,7 @@ create_initial_state (re_dfa_t *dfa)
   re_node_set_free (&init_nodes);
   return REG_NOERROR;
 }
-
+
 #ifdef RE_ENABLE_I18N
 /* If it is possible to do searching in single byte encoding instead of UTF-8
    to speed things up, set dfa->mb_cur_max to 1, clear is_utf8 and change
@@ -1089,7 +1071,7 @@ optimize_utf8 (re_dfa_t *dfa)
   dfa->has_mb_node = dfa->nbackref > 0 || has_period;
 }
 #endif
-
+
 /* Analyze the structure tree, and calculate "first", "next", "edest",
    "eclosure", and "inveclosure".  */
 
@@ -1700,7 +1682,7 @@ calc_eclosure_iter (re_node_set *new_set, re_dfa_t *dfa, int node, int root)
   *new_set = eclosure;
   return REG_NOERROR;
 }
-
+
 /* Functions for token which are used in the parser.  */
 
 /* Fetch a token from INPUT.
@@ -1975,7 +1957,7 @@ peek_token_bracket (re_token_t *token, re_string_t *input, reg_syntax_t syntax)
       token->type = CHARACTER;
       return 1;
     }
-#endif /* RE_ENABLE_I18N */
+#endif
 
   if (c == '\\' && (syntax & RE_BACKSLASH_ESCAPE_IN_LISTS)
       && re_string_cur_idx (input) + 1 < re_string_length (input))
@@ -2037,7 +2019,7 @@ peek_token_bracket (re_token_t *token, re_string_t *input, reg_syntax_t syntax)
     }
   return 1;
 }
-
+
 /* Functions for parser.  */
 
 /* Entry point of the parser.
@@ -2553,8 +2535,8 @@ parse_dup_op (bin_tree_t *elem, re_string_t *regexp, re_dfa_t *dfa,
    I'm not sure, but maybe enough.  */
 #define BRACKET_NAME_BUF_SIZE 32
 
-#ifndef _LIBC
-  /* Local function for parse_bracket_exp only used in case of NOT _LIBC.
+#if 1
+  /* Local function for parse_bracket_exp only used in case of NOT glibc.
      Build the range expression which starts from START_ELEM, and ends
      at END_ELEM.  The result are written to MBCSET and SBCSET.
      RANGE_ALLOC is the allocated size of mbcset->range_starts, and
@@ -2566,10 +2548,10 @@ internal_function
 # ifdef RE_ENABLE_I18N
 build_range_exp (bitset_t sbcset, re_charset_t *mbcset, int *range_alloc,
 		 bracket_elem_t *start_elem, bracket_elem_t *end_elem)
-# else /* not RE_ENABLE_I18N */
+# else
 build_range_exp (bitset_t sbcset, bracket_elem_t *start_elem,
 		 bracket_elem_t *end_elem)
-# endif /* not RE_ENABLE_I18N */
+# endif
 {
   unsigned int start_ch, end_ch;
   /* Equivalence Classes and Character Classes can't be a range start/end.  */
@@ -2611,7 +2593,7 @@ build_range_exp (bitset_t sbcset, bracket_elem_t *start_elem,
       return REG_ERANGE;
 
     /* Got valid collation sequence values, add them as a new entry.
-       However, for !_LIBC we have no collation elements: if the
+       However, for !glibc we have no collation elements: if the
        character set is single byte, the single byte character set
        that we build below suffices.  parse_bracket_exp passes
        no MBCSET if dfa->mb_cur_max == 1.  */
@@ -2673,10 +2655,10 @@ build_range_exp (bitset_t sbcset, bracket_elem_t *start_elem,
 # endif /* not RE_ENABLE_I18N */
   return REG_NOERROR;
 }
-#endif /* not _LIBC */
+#endif
 
-#ifndef _LIBC
-/* Helper function for parse_bracket_exp only used in case of NOT _LIBC..
+#if 1
+/* Helper function for parse_bracket_exp only used in case of NOT glibc.
    Build the collating element which is represented by NAME.
    The result are written to MBCSET and SBCSET.
    COLL_SYM_ALLOC is the allocated size of mbcset->coll_sym, is a
@@ -2687,20 +2669,17 @@ internal_function
 # ifdef RE_ENABLE_I18N
 build_collating_symbol (bitset_t sbcset, re_charset_t *mbcset,
 			int *coll_sym_alloc, const unsigned char *name)
-# else /* not RE_ENABLE_I18N */
+# else
 build_collating_symbol (bitset_t sbcset, const unsigned char *name)
-# endif /* not RE_ENABLE_I18N */
+# endif
 {
   size_t name_len = strlen ((const char *) name);
   if (BE (name_len != 1, 0))
     return REG_ECOLLATE;
-  else
-    {
-      bitset_set (sbcset, name[0]);
-      return REG_NOERROR;
-    }
+  bitset_set (sbcset, name[0]);
+  return REG_NOERROR;
 }
-#endif /* not _LIBC */
+#endif
 
 /* This function parse bracket expression like "[abc]", "[a-c]",
    "[[.a-a.]]" etc.  */
@@ -2709,7 +2688,7 @@ static bin_tree_t *
 parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 		   reg_syntax_t syntax, reg_errcode_t *err)
 {
-#ifdef _LIBC
+#if 0
   const unsigned char *collseqmb;
   const char *collseqwc;
   uint32_t nrules;
@@ -2717,15 +2696,13 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
   const int32_t *symb_table;
   const unsigned char *extra;
 
-  /* Local function for parse_bracket_exp used in _LIBC environement.
+  /* Local function for parse_bracket_exp used in glibc.
      Seek the collating symbol entry correspondings to NAME.
      Return the index of the symbol in the SYMB_TABLE.  */
 
-  auto inline int32_t
+  auto __inline__ int32_t
   __attribute ((always_inline))
-  seek_collating_symbol_entry (name, name_len)
-	 const unsigned char *name;
-	 size_t name_len;
+  seek_collating_symbol_entry (const unsigned char *name, size_t name_len)
     {
       int32_t hash = elem_hash ((const char *) name, name_len);
       int32_t elem = hash % table_size;
@@ -2755,14 +2732,13 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
       return elem;
     }
 
-  /* Local function for parse_bracket_exp used in _LIBC environement.
+  /* Local function for parse_bracket_exp used in glibc.
      Look up the collation sequence value of BR_ELEM.
      Return the value if succeeded, UINT_MAX otherwise.  */
 
-  auto inline unsigned int
+  auto __inline__ unsigned int
   __attribute ((always_inline))
-  lookup_collation_sequence_value (br_elem)
-	 bracket_elem_t *br_elem;
+  lookup_collation_sequence_value (bracket_elem_t *br_elem)
     {
       if (br_elem->type == SB_CHAR)
 	{
@@ -2820,20 +2796,20 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
       return UINT_MAX;
     }
 
-  /* Local function for parse_bracket_exp used in _LIBC environement.
+  /* Local function for parse_bracket_exp used in glibc.
      Build the range expression which starts from START_ELEM, and ends
      at END_ELEM.  The result are written to MBCSET and SBCSET.
      RANGE_ALLOC is the allocated size of mbcset->range_starts, and
      mbcset->range_ends, is a pointer argument sinse we may
      update it.  */
 
-  auto inline reg_errcode_t
+  auto __inline__ reg_errcode_t
   __attribute ((always_inline))
-  build_range_exp (sbcset, mbcset, range_alloc, start_elem, end_elem)
-	 re_charset_t *mbcset;
-	 int *range_alloc;
-	 bitset_t sbcset;
-	 bracket_elem_t *start_elem, *end_elem;
+  build_range_exp (re_charset_t *mbcset,
+		int *range_alloc,
+		bitset_t sbcset,
+		bracket_elem_t *start_elem,
+		bracket_elem_t *end_elem)
     {
       unsigned int ch;
       uint32_t start_collseq;
@@ -2904,19 +2880,18 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
       return REG_NOERROR;
     }
 
-  /* Local function for parse_bracket_exp used in _LIBC environement.
+  /* Local function for parse_bracket_exp used in glibc.
      Build the collating element which is represented by NAME.
      The result are written to MBCSET and SBCSET.
      COLL_SYM_ALLOC is the allocated size of mbcset->coll_sym, is a
      pointer argument sinse we may update it.  */
 
-  auto inline reg_errcode_t
+  auto __inline__ reg_errcode_t
   __attribute ((always_inline))
-  build_collating_symbol (sbcset, mbcset, coll_sym_alloc, name)
-	 re_charset_t *mbcset;
-	 int *coll_sym_alloc;
-	 bitset_t sbcset;
-	 const unsigned char *name;
+  build_collating_symbol (re_charset_t *mbcset,
+		int *coll_sym_alloc,
+		bitset_t sbcset,
+		const unsigned char *name)
     {
       int32_t elem, idx;
       size_t name_len = strlen ((const char *) name);
@@ -2978,12 +2953,12 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
   re_charset_t *mbcset;
   int coll_sym_alloc = 0, range_alloc = 0, mbchar_alloc = 0;
   int equiv_class_alloc = 0, char_class_alloc = 0;
-#endif /* not RE_ENABLE_I18N */
+#endif
   int non_match = 0;
   bin_tree_t *work_tree;
   int token_len;
   int first_round = 1;
-#ifdef _LIBC
+#if 0
   collseqmb = (const unsigned char *)
     _NL_CURRENT (LC_COLLATE, _NL_COLLATE_COLLSEQMB);
   nrules = _NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES);
@@ -3000,15 +2975,15 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 						   _NL_COLLATE_SYMB_EXTRAMB);
     }
 #endif
-  sbcset = (re_bitset_ptr_t) calloc (sizeof (bitset_t), 1);
+  sbcset = calloc (sizeof (bitset_t), 1);
 #ifdef RE_ENABLE_I18N
-  mbcset = (re_charset_t *) calloc (sizeof (re_charset_t), 1);
-#endif /* RE_ENABLE_I18N */
+  mbcset = calloc (sizeof (re_charset_t), 1);
+#endif
 #ifdef RE_ENABLE_I18N
   if (BE (sbcset == NULL || mbcset == NULL, 0))
 #else
   if (BE (sbcset == NULL, 0))
-#endif /* RE_ENABLE_I18N */
+#endif
     {
       *err = REG_ESPACE;
       return NULL;
@@ -3024,7 +2999,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
     {
 #ifdef RE_ENABLE_I18N
       mbcset->non_match = 1;
-#endif /* not RE_ENABLE_I18N */
+#endif
       non_match = 1;
       if (syntax & RE_HAT_LISTS_NOT_NEWLINE)
 	bitset_set (sbcset, '\0');
@@ -3104,7 +3079,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 
 	  token_len = peek_token_bracket (token, regexp, syntax);
 
-#ifdef _LIBC
+#if 0
 	  *err = build_range_exp (sbcset, mbcset, &range_alloc,
 				  &start_elem, &end_elem);
 #else
@@ -3115,7 +3090,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 # else
 	  *err = build_range_exp (sbcset, &start_elem, &end_elem);
 # endif
-#endif /* RE_ENABLE_I18N */
+#endif
 	  if (BE (*err != REG_NOERROR, 0))
 	    goto parse_bracket_exp_free_return;
 	}
@@ -3149,7 +3124,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 	      *err = build_equiv_class (sbcset,
 #ifdef RE_ENABLE_I18N
 					mbcset, &equiv_class_alloc,
-#endif /* RE_ENABLE_I18N */
+#endif
 					start_elem.opr.name);
 	      if (BE (*err != REG_NOERROR, 0))
 		goto parse_bracket_exp_free_return;
@@ -3158,7 +3133,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 	      *err = build_collating_symbol (sbcset,
 #ifdef RE_ENABLE_I18N
 					     mbcset, &coll_sym_alloc,
-#endif /* RE_ENABLE_I18N */
+#endif
 					     start_elem.opr.name);
 	      if (BE (*err != REG_NOERROR, 0))
 		goto parse_bracket_exp_free_return;
@@ -3167,7 +3142,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
 	      *err = build_charclass (regexp->trans, sbcset,
 #ifdef RE_ENABLE_I18N
 				      mbcset, &char_class_alloc,
-#endif /* RE_ENABLE_I18N */
+#endif
 				      start_elem.opr.name, syntax);
 	      if (BE (*err != REG_NOERROR, 0))
 	       goto parse_bracket_exp_free_return;
@@ -3256,7 +3231,7 @@ parse_bracket_exp (re_string_t *regexp, re_dfa_t *dfa, re_token_t *token,
   re_free (sbcset);
 #ifdef RE_ENABLE_I18N
   free_charset (mbcset);
-#endif /* RE_ENABLE_I18N */
+#endif
   return NULL;
 }
 
@@ -3353,11 +3328,11 @@ static reg_errcode_t
 #ifdef RE_ENABLE_I18N
 build_equiv_class (bitset_t sbcset, re_charset_t *mbcset,
 		   int *equiv_class_alloc, const unsigned char *name)
-#else /* not RE_ENABLE_I18N */
+#else
 build_equiv_class (bitset_t sbcset, const unsigned char *name)
-#endif /* not RE_ENABLE_I18N */
+#endif
 {
-#ifdef _LIBC
+#if 0
   uint32_t nrules = _NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES);
   if (nrules != 0)
     {
@@ -3426,7 +3401,7 @@ build_equiv_class (bitset_t sbcset, const unsigned char *name)
       mbcset->equiv_classes[mbcset->nequiv_classes++] = idx1;
     }
   else
-#endif /* _LIBC */
+#endif
     {
       if (BE (strlen ((const char *) name) != 1, 0))
 	return REG_ECOLLATE;
@@ -3446,10 +3421,10 @@ static reg_errcode_t
 build_charclass (RE_TRANSLATE_TYPE trans, bitset_t sbcset,
 		 re_charset_t *mbcset, int *char_class_alloc,
 		 const unsigned char *class_name, reg_syntax_t syntax)
-#else /* not RE_ENABLE_I18N */
+#else
 build_charclass (RE_TRANSLATE_TYPE trans, bitset_t sbcset,
 		 const unsigned char *class_name, reg_syntax_t syntax)
-#endif /* not RE_ENABLE_I18N */
+#endif
 {
   int i;
   const char *name = (const char *) class_name;
@@ -3534,21 +3509,21 @@ build_charclass_op (re_dfa_t *dfa, RE_TRANSLATE_TYPE trans,
 #ifdef RE_ENABLE_I18N
   re_charset_t *mbcset;
   int alloc = 0;
-#endif /* not RE_ENABLE_I18N */
+#endif
   reg_errcode_t ret;
   re_token_t br_token;
   bin_tree_t *tree;
 
-  sbcset = (re_bitset_ptr_t) calloc (sizeof (bitset_t), 1);
+  sbcset = calloc (sizeof (bitset_t), 1);
 #ifdef RE_ENABLE_I18N
-  mbcset = (re_charset_t *) calloc (sizeof (re_charset_t), 1);
-#endif /* RE_ENABLE_I18N */
+  mbcset = calloc (sizeof (re_charset_t), 1);
+#endif
 
 #ifdef RE_ENABLE_I18N
   if (BE (sbcset == NULL || mbcset == NULL, 0))
-#else /* not RE_ENABLE_I18N */
+#else
   if (BE (sbcset == NULL, 0))
-#endif /* not RE_ENABLE_I18N */
+#endif
     {
       *err = REG_ESPACE;
       return NULL;
@@ -3562,14 +3537,14 @@ build_charclass_op (re_dfa_t *dfa, RE_TRANSLATE_TYPE trans,
 	bitset_set(cset->sbcset, '\0');
       */
       mbcset->non_match = 1;
-#endif /* not RE_ENABLE_I18N */
+#endif
     }
 
   /* We don't care the syntax in this case.  */
   ret = build_charclass (trans, sbcset,
 #ifdef RE_ENABLE_I18N
 			 mbcset, &alloc,
-#endif /* RE_ENABLE_I18N */
+#endif
 			 class_name, 0);
 
   if (BE (ret != REG_NOERROR, 0))
@@ -3577,7 +3552,7 @@ build_charclass_op (re_dfa_t *dfa, RE_TRANSLATE_TYPE trans,
       re_free (sbcset);
 #ifdef RE_ENABLE_I18N
       free_charset (mbcset);
-#endif /* RE_ENABLE_I18N */
+#endif
       *err = ret;
       return NULL;
     }
@@ -3625,13 +3600,13 @@ build_charclass_op (re_dfa_t *dfa, RE_TRANSLATE_TYPE trans,
     }
 #else /* not RE_ENABLE_I18N */
   return tree;
-#endif /* not RE_ENABLE_I18N */
+#endif
 
  build_word_op_espace:
   re_free (sbcset);
 #ifdef RE_ENABLE_I18N
   free_charset (mbcset);
-#endif /* RE_ENABLE_I18N */
+#endif
   *err = REG_ESPACE;
   return NULL;
 }
@@ -3660,13 +3635,13 @@ fetch_number (re_string_t *input, re_token_t *token, reg_syntax_t syntax)
     }
   return num;
 }
-
+
 #ifdef RE_ENABLE_I18N
 static void
 free_charset (re_charset_t *cset)
 {
   re_free (cset->mbchars);
-# ifdef _LIBC
+# if 0
   re_free (cset->coll_syms);
   re_free (cset->equiv_classes);
   re_free (cset->range_starts);
@@ -3676,7 +3651,7 @@ free_charset (re_charset_t *cset)
   re_free (cset);
 }
 #endif /* RE_ENABLE_I18N */
-
+
 /* Functions for binary tree operation.  */
 
 /* Create a tree node.  */
@@ -3746,7 +3721,7 @@ free_token (re_token_t *node)
   if (node->type == COMPLEX_BRACKET && node->duplicated == 0)
     free_charset (node->opr.mbcset);
   else
-#endif /* RE_ENABLE_I18N */
+#endif
     if (node->type == SIMPLE_BRACKET && node->duplicated == 0)
       re_free (node->opr.sbcset);
 }

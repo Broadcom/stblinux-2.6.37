@@ -18,12 +18,11 @@
 
 #include <string.h>
 
-libc_hidden_proto(memset)
 
 /* Set memory like memset, but different argument order and no return
    value required.  */
-void
-__aeabi_memset (void *dest, size_t n, int c)
+void __aeabi_memset (void *dest, size_t n, int c);
+void __aeabi_memset (void *dest, size_t n, int c)
 {
   memset (dest, c, n);
 }

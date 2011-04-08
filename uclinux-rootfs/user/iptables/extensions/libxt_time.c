@@ -38,15 +38,15 @@ static const char *const week_days[] = {
 };
 
 static const struct option time_opts[] = {
-	{"datestart", true,  NULL, 'D'},
-	{"datestop",  true,  NULL, 'E'},
-	{"timestart", true,  NULL, 'X'},
-	{"timestop",  true,  NULL, 'Y'},
-	{"weekdays",  true,  NULL, 'w'},
-	{"monthdays", true,  NULL, 'm'},
-	{"localtz",   false, NULL, 'l'},
-	{"utc",       false, NULL, 'u'},
-	{ .name = NULL }
+	{.name = "datestart", .has_arg = true,  .val = 'D'},
+	{.name = "datestop",  .has_arg = true,  .val = 'E'},
+	{.name = "timestart", .has_arg = true,  .val = 'X'},
+	{.name = "timestop",  .has_arg = true,  .val = 'Y'},
+	{.name = "weekdays",  .has_arg = true,  .val = 'w'},
+	{.name = "monthdays", .has_arg = true,  .val = 'm'},
+	{.name = "localtz",   .has_arg = false, .val = 'l'},
+	{.name = "utc",       .has_arg = false, .val = 'u'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void time_help(void)
@@ -406,7 +406,7 @@ static inline void divide_time(unsigned int fulltime, unsigned int *hours,
 static void time_print(const void *ip, const struct xt_entry_match *match,
                        int numeric)
 {
-	struct xt_time_info *info = (void *)match->data;
+	const struct xt_time_info *info = (const void *)match->data;
 	unsigned int h, m, s;
 
 	printf("TIME ");
@@ -467,7 +467,7 @@ static void time_save(const void *ip, const struct xt_entry_match *match)
 
 static struct xtables_match time_match = {
 	.name          = "time",
-	.family        = AF_UNSPEC,
+	.family        = NFPROTO_UNSPEC,
 	.version       = XTABLES_VERSION,
 	.size          = XT_ALIGN(sizeof(struct xt_time_info)),
 	.userspacesize = XT_ALIGN(sizeof(struct xt_time_info)),

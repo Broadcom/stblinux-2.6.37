@@ -3,10 +3,9 @@
  *
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
-#define	SHELL_PATH	"/bin/sh"	/* Path of the shell.  */
-#define	SHELL_NAME	"sh"		/* Name to give it.  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stddef.h>
 #include <signal.h>
 #include <unistd.h>
@@ -15,25 +14,22 @@
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
 #include <sched.h>
 #include <errno.h>
-#include <sysdep-cancel.h>
 #include <bits/libc-lock.h>
-#endif
-
-libc_hidden_proto(_exit)
-libc_hidden_proto(wait4)
-libc_hidden_proto(execl)
-libc_hidden_proto(signal)
-libc_hidden_proto(vfork)
-
-#if !defined __UCLIBC_HAS_THREADS_NATIVE__
-/* uClinux-2.0 has vfork, but Linux 2.0 doesn't */
-#include <sys/syscall.h>
-#ifndef __NR_vfork
-# define vfork fork	
-libc_hidden_proto(fork)
+#include <sysdep-cancel.h>
 #endif
 
 extern __typeof(system) __libc_system;
+
+/* TODO: the cancellable version breaks on sparc currently,
+ * need to figure out why still
+ */
+#if !defined __UCLIBC_HAS_THREADS_NATIVE__ || defined __sparc__
+/* uClinux-2.0 has vfork, but Linux 2.0 doesn't */
+#include <sys/syscall.h>
+#ifndef __NR_vfork
+# define vfork fork
+#endif
+
 int __libc_system(const char *command)
 {
 	int wait_val, pid;
@@ -57,7 +53,7 @@ int __libc_system(const char *command)
 		signal(SIGINT, SIG_DFL);
 		signal(SIGCHLD, SIG_DFL);
 
-		execl(SHELL_PATH, SHELL_NAME, "-c", command, (char *) 0);
+		execl("/bin/sh", "sh", "-c", command, (char *) 0);
 		_exit(127);
 	}
 	/* Signals are not absolutly guarenteed with vfork */
@@ -85,6 +81,10 @@ int __libc_system(const char *command)
    return.  It might still be in the kernel when the cancellation
    request comes.  Therefore we have to use the clone() calls ability
    to have the kernel write the PID into the user-level variable.  */
+
+libc_hidden_proto(sigaction)
+libc_hidden_proto(waitpid)
+
 #if defined __ia64__
 # define FORK() \
   INLINE_SYSCALL (clone2, 6, CLONE_PARENT_SETTID | SIGCHLD, NULL, 0, \
@@ -127,9 +127,10 @@ do_system (const char *line)
   struct sigaction sa;
   sigset_t omask;
 
+  memset(&sa, 0, sizeof(sa));
   sa.sa_handler = SIG_IGN;
-  sa.sa_flags = 0;
-  __sigemptyset (&sa.sa_mask);
+  /*sa.sa_flags = 0; - done by memset */
+  /*__sigemptyset (&sa.sa_mask); - done by memset */
 
   DO_LOCK ();
   if (ADD_REF () == 0)
@@ -176,7 +177,7 @@ do_system (const char *line)
     {
       /* Child side.  */
       const char *new_argv[4];
-      new_argv[0] = SHELL_NAME;
+      new_argv[0] = "/bin/sh";
       new_argv[1] = "-c";
       new_argv[2] = line;
       new_argv[3] = NULL;
@@ -188,7 +189,7 @@ do_system (const char *line)
       INIT_LOCK ();
 
       /* Exec the shell.  */
-      (void) execve (SHELL_PATH, (char *const *) new_argv, __environ);
+      (void) execve ("/bin/sh", (char *const *) new_argv, __environ);
       _exit (127);
     }
   else if (pid < (pid_t) 0)
@@ -264,4 +265,6 @@ cancel_handler (void *arg)
   DO_UNLOCK ();
 }
 #endif
+#ifdef IS_IN_libc
 weak_alias(__libc_system,system)
+#endif

@@ -5,7 +5,7 @@
  * This program is released under the terms of GNU GPL
  * Cleanups by Stephane Ouellette <ouellettes@videotron.ca>
  */
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,8 +29,8 @@ static int hl_parse(int c, char **argv, int invert, unsigned int *flags,
 	struct ip6t_hl_info *info = (struct ip6t_hl_info *) (*match)->data;
 	u_int8_t value;
 
-	xtables_check_inverse(optarg, &invert, &optind, 0);
-	value = atoi(argv[optind-1]);
+	xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+	value = atoi(optarg);
 
 	if (*flags) 
 		xtables_error(PARAMETER_PROBLEM,
@@ -89,7 +89,7 @@ static void hl_check(unsigned int flags)
 static void hl_print(const void *ip, const struct xt_entry_match *match,
                      int numeric)
 {
-	static const char *op[] = {
+	static const char *const op[] = {
 		[IP6T_HL_EQ] = "==",
 		[IP6T_HL_NE] = "!=",
 		[IP6T_HL_LT] = "<",
@@ -116,11 +116,11 @@ static void hl_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static const struct option hl_opts[] = {
-	{ .name = "hl",    .has_arg = 1, .val = '2' },
-	{ .name = "hl-eq", .has_arg = 1, .val = '2' },
-	{ .name = "hl-lt", .has_arg = 1, .val = '3' },
-	{ .name = "hl-gt", .has_arg = 1, .val = '4' },
-	{ .name = NULL }
+	{.name = "hl",    .has_arg = true, .val = '2'},
+	{.name = "hl-eq", .has_arg = true, .val = '2'},
+	{.name = "hl-lt", .has_arg = true, .val = '3'},
+	{.name = "hl-gt", .has_arg = true, .val = '4'},
+	XT_GETOPT_TABLEEND,
 };
 
 static struct xtables_match hl_mt6_reg = {

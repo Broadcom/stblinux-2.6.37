@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: strace.c,v 1.88 2008/08/06 21:38:52 kratochvil Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -77,13 +77,34 @@
 #endif
 #endif
 #endif
+extern char **environ;
+extern int optind;
+extern char *optarg;
+
 
 int debug = 0, followfork = 0;
-int dtime = 0, cflag = 0, xflag = 0, qflag = 0;
+int dtime = 0, xflag = 0, qflag = 0;
+cflag_t cflag = CFLAG_NONE;
 static int iflag = 0, interactive = 0, pflag_seen = 0, rflag = 0, tflag = 0;
+/*
+ * daemonized_tracer supports -D option.
+ * With this option, strace forks twice.
+ * Unlike normal case, with -D *grandparent* process exec's,
+ * becoming a traced process. Child exits (this prevents traced process
+ * from having children it doesn't expect to have), and grandchild
+ * attaches to grandparent similarly to strace -p PID.
+ * This allows for more transparent interaction in cases
+ * when process and its parent are communicating via signals,
+ * wait() etc. Without -D, strace process gets lodged in between,
+ * disrupting parent<->child link.
+ */
+static bool daemonized_tracer = 0;
 
 /* Sometimes we want to print only succeeding syscalls. */
 int not_failing_only = 0;
+
+static int exit_code = 0;
+static int strace_child = 0;
 
 static char *username = NULL;
 uid_t run_uid;
@@ -93,38 +114,35 @@ int acolumn = DEFAULT_ACOLUMN;
 int max_strlen = DEFAULT_STRLEN;
 static char *outfname = NULL;
 FILE *outf;
+static int curcol;
 struct tcb **tcbtab;
 unsigned int nprocs, tcbtabsize;
 char *progname;
 extern char **environ;
 
-static int detach P((struct tcb *tcp, int sig));
-static int trace P((void));
-static void cleanup P((void));
-static void interrupt P((int sig));
+static int detach(struct tcb *tcp, int sig);
+static int trace(void);
+static void cleanup(void);
+static void interrupt(int sig);
 static sigset_t empty_set, blocked_set;
 
 #ifdef HAVE_SIG_ATOMIC_T
 static volatile sig_atomic_t interrupted;
 #else /* !HAVE_SIG_ATOMIC_T */
-#ifdef __STDC__
 static volatile int interrupted;
-#else /* !__STDC__ */
-static int interrupted;
-#endif /* !__STDC__ */
 #endif /* !HAVE_SIG_ATOMIC_T */
 
 #ifdef USE_PROCFS
 
-static struct tcb *pfd2tcb P((int pfd));
-static void reaper P((int sig));
-static void rebuild_pollv P((void));
+static struct tcb *pfd2tcb(int pfd);
+static void reaper(int sig);
+static void rebuild_pollv(void);
 static struct pollfd *pollv;
 
 #ifndef HAVE_POLLABLE_PROCFS
 
-static void proc_poll_open P((void));
-static void proc_poller P((int pfd));
+static void proc_poll_open(void);
+static void proc_poller(int pfd);
 
 struct proc_pollfd {
 	int fd;
@@ -153,7 +171,7 @@ int exitval;
 usage: strace [-dffhiqrtttTvVxx] [-a column] [-e expr] ... [-o file]\n\
               [-p pid] ... [-s strsize] [-u username] [-E var=val] ...\n\
               [command [arg ...]]\n\
-   or: strace -c [-e expr] ... [-O overhead] [-S sortby] [-E var=val] ...\n\
+   or: strace -c -D [-e expr] ... [-O overhead] [-S sortby] [-E var=val] ...\n\
               [command [arg ...]]\n\
 -c -- count time, calls, and errors for each syscall and report summary\n\
 -f -- follow forks, -ff -- with output into separate files\n\
@@ -170,6 +188,7 @@ usage: strace [-dffhiqrtttTvVxx] [-a column] [-e expr] ... [-o file]\n\
 -o file -- send trace output to FILE instead of stderr\n\
 -O overhead -- set overhead for tracing syscalls to OVERHEAD usecs\n\
 -p pid -- trace process with process id PID, may be repeated\n\
+-D -- run tracer process as a detached grandchild, not as parent\n\
 -s strsize -- limit length of print strings to STRSIZE chars (default %d)\n\
 -S sortby -- sort syscall counts by: time, calls, name, nothing (default %s)\n\
 -u username -- run command as username handling setuid and/or setgid\n\
@@ -190,6 +209,14 @@ foobar()
 }
 #endif /* MIPS */
 #endif /* SVR4 */
+
+/* Glue for systems without a MMU that cannot provide fork() */
+#ifdef HAVE_FORK
+# define strace_vforked 0
+#else
+# define strace_vforked 1
+# define fork()         vfork()
+#endif
 
 static int
 set_cloexec_flag(int fd)
@@ -330,10 +357,10 @@ static int
 newoutf(struct tcb *tcp)
 {
 	if (outfname && followfork > 1) {
-		char name[MAXPATHLEN];
+		char name[520 + sizeof(int) * 3];
 		FILE *fp;
 
-		sprintf(name, "%s.%u", outfname, tcp->pid);
+		sprintf(name, "%.512s.%u", outfname, tcp->pid);
 		if ((fp = strace_fopen(name, "w")) == NULL)
 			return -1;
 		tcp->outf = fp;
@@ -356,6 +383,23 @@ startup_attach(void)
 	if (interactive)
 		sigprocmask(SIG_BLOCK, &blocked_set, NULL);
 
+	if (daemonized_tracer) {
+		pid_t pid = fork();
+		if (pid < 0) {
+			_exit(1);
+		}
+		if (pid) { /* parent */
+			/*
+			 * Wait for child to attach to straced process
+			 * (our parent). Child SIGKILLs us after it attached.
+			 * Parent's wait() is unblocked by our death,
+			 * it proceeds to exec the straced program.
+			 */
+			pause();
+			_exit(0); /* paranoia */
+		}
+	}
+
 	for (tcbi = 0; tcbi < tcbtabsize; tcbi++) {
 		tcp = tcbtab[tcbi];
 		if (!(tcp->flags & TCB_INUSE) || !(tcp->flags & TCB_ATTACHED))
@@ -377,8 +421,8 @@ startup_attach(void)
 		}
 #else /* !USE_PROCFS */
 # ifdef LINUX
-		if (followfork) {
-			char procdir[MAXPATHLEN];
+		if (followfork && !daemonized_tracer) {
+			char procdir[sizeof("/proc/%d/task") + sizeof(int) * 3];
 			DIR *dir;
 
 			sprintf(procdir, "/proc/%d/task", tcp->pid);
@@ -388,24 +432,16 @@ startup_attach(void)
 				struct dirent *de;
 				int tid;
 				while ((de = readdir(dir)) != NULL) {
-					if (de->d_fileno == 0 ||
-					    de->d_name[0] == '.')
+					if (de->d_fileno == 0)
 						continue;
 					tid = atoi(de->d_name);
 					if (tid <= 0)
 						continue;
 					++ntid;
-					if (ptrace(PTRACE_ATTACH, tid,
-						   (char *) 1, 0) < 0)
+					if (ptrace(PTRACE_ATTACH, tid, (char *) 1, 0) < 0)
 						++nerr;
 					else if (tid != tcbtab[tcbi]->pid) {
-						if (nprocs == tcbtabsize &&
-						    expand_tcbtab())
-							tcp = NULL;
-						else
-							tcp = alloctcb(tid);
-						if (tcp == NULL)
-							exit(1);
+						tcp = alloctcb(tid);
 						tcp->flags |= TCB_ATTACHED|TCB_CLONE_THREAD|TCB_CLONE_DETACHED|TCB_FOLLOWFORK;
 						tcbtab[tcbi]->nchildren++;
 						tcbtab[tcbi]->nclone_threads++;
@@ -420,25 +456,21 @@ startup_attach(void)
 					}
 				}
 				closedir(dir);
-				if (nerr == ntid) {
+				ntid -= nerr;
+				if (ntid == 0) {
 					perror("attach: ptrace(PTRACE_ATTACH, ...)");
 					droptcb(tcp);
 					continue;
 				}
 				if (!qflag) {
-					ntid -= nerr;
-					if (ntid > 1)
-						fprintf(stderr, "\
-Process %u attached with %u threads - interrupt to quit\n",
-							tcp->pid, ntid);
-					else
-						fprintf(stderr, "\
-Process %u attached - interrupt to quit\n",
-							tcp->pid);
+					fprintf(stderr, ntid > 1
+? "Process %u attached with %u threads - interrupt to quit\n"
+: "Process %u attached - interrupt to quit\n",
+						tcbtab[tcbi]->pid, ntid);
 				}
 				continue;
-			}
-		}
+			} /* if (opendir worked) */
+		} /* if (-f) */
 # endif
 		if (ptrace(PTRACE_ATTACH, tcp->pid, (char *) 1, 0) < 0) {
 			perror("attach: ptrace(PTRACE_ATTACH, ...)");
@@ -446,6 +478,20 @@ Process %u attached - interrupt to quit\n",
 			continue;
 		}
 		/* INTERRUPTED is going to be checked at the top of TRACE.  */
+
+		if (daemonized_tracer) {
+			/*
+			 * It is our grandparent we trace, not a -p PID.
+			 * Don't want to just detach on exit, so...
+			 */
+			tcp->flags &= ~TCB_ATTACHED;
+			/*
+			 * Make parent go away.
+			 * Also makes grandparent's wait() unblock.
+			 */
+			kill(getppid(), SIGKILL);
+		}
+
 #endif /* !USE_PROCFS */
 		if (!qflag)
 			fprintf(stderr,
@@ -523,13 +569,16 @@ startup_child (char **argv)
 			progname, filename);
 		exit(1);
 	}
-	switch (pid = fork()) {
-	case -1:
+	strace_child = pid = fork();
+	if (pid < 0) {
 		perror("strace: fork");
 		cleanup();
 		exit(1);
-		break;
-	case 0: {
+	}
+	if ((pid != 0 && daemonized_tracer) /* parent: to become a traced process */
+	 || (pid == 0 && !daemonized_tracer) /* child: to become a traced process */
+	) {
+		pid = getpid();
 #ifdef USE_PROCFS
 		if (outf != stderr) close (fileno (outf));
 #ifdef MIPS
@@ -542,18 +591,20 @@ startup_child (char **argv)
 #ifndef FREEBSD
 		pause();
 #else /* FREEBSD */
-		kill(getpid(), SIGSTOP); /* stop HERE */
+		kill(pid, SIGSTOP); /* stop HERE */
 #endif /* FREEBSD */
 #else /* !USE_PROCFS */
 		if (outf!=stderr)
 			close(fileno (outf));
 
-		if (ptrace(PTRACE_TRACEME, 0, (char *) 1, 0) < 0) {
-			perror("strace: ptrace(PTRACE_TRACEME, ...)");
-			exit(1);
+		if (!daemonized_tracer) {
+			if (ptrace(PTRACE_TRACEME, 0, (char *) 1, 0) < 0) {
+				perror("strace: ptrace(PTRACE_TRACEME, ...)");
+				exit(1);
+			}
+			if (debug)
+				kill(pid, SIGSTOP);
 		}
-		if (debug)
-			kill(getpid(), SIGSTOP);
 
 		if (username != NULL || geteuid() == 0) {
 			uid_t run_euid = run_uid;
@@ -586,40 +637,58 @@ startup_child (char **argv)
 		else
 			setreuid(run_uid, run_uid);
 
-		/*
-		 * Induce an immediate stop so that the parent
-		 * will resume us with PTRACE_SYSCALL and display
-		 * this execve call normally.
-		 */
-		kill(getpid(), SIGSTOP);
+		if (!daemonized_tracer) {
+			/*
+			 * Induce an immediate stop so that the parent
+			 * will resume us with PTRACE_SYSCALL and display
+			 * this execve call normally.
+			 * Unless of course we're on a no-MMU system where
+			 * we vfork()-ed, so we cannot stop the child.
+			 */
+			if (!strace_vforked)
+				kill(getpid(), SIGSTOP);
+		} else {
+			struct sigaction sv_sigchld;
+			sigaction(SIGCHLD, NULL, &sv_sigchld);
+			/*
+			 * Make sure it is not SIG_IGN, otherwise wait
+			 * will not block.
+			 */
+			signal(SIGCHLD, SIG_DFL);
+			/*
+			 * Wait for grandchild to attach to us.
+			 * It kills child after that, and wait() unblocks.
+			 */
+			alarm(3);
+			wait(NULL);
+			alarm(0);
+			sigaction(SIGCHLD, &sv_sigchld, NULL);
+		}
 #endif /* !USE_PROCFS */
 
 		execv(pathname, argv);
 		perror("strace: exec");
 		_exit(1);
-		break;
 	}
-	default:
-		if ((tcp = alloctcb(pid)) == NULL) {
-			cleanup();
-			exit(1);
-		}
+
+	/* We are the tracer.  */
+	tcp = alloctcb(daemonized_tracer ? getppid() : pid);
+	if (daemonized_tracer) {
+		/* We want subsequent startup_attach() to attach to it.  */
+		tcp->flags |= TCB_ATTACHED;
+	}
 #ifdef USE_PROCFS
-		if (proc_open(tcp, 0) < 0) {
-			fprintf(stderr, "trouble opening proc file\n");
-			cleanup();
-			exit(1);
-		}
-#endif /* USE_PROCFS */
-		break;
+	if (proc_open(tcp, 0) < 0) {
+		fprintf(stderr, "trouble opening proc file\n");
+		cleanup();
+		exit(1);
 	}
+#endif /* USE_PROCFS */
 }
 
 int
 main(int argc, char *argv[])
 {
-	extern int optind;
-	extern char *optarg;
 	struct tcb *tcp;
 	int c, pid = 0;
 	int optF = 0;
@@ -631,11 +700,11 @@ main(int argc, char *argv[])
 
 	/* Allocate the initial tcbtab.  */
 	tcbtabsize = argc;	/* Surely enough for all -p args.  */
-	if ((tcbtab = calloc (tcbtabsize, sizeof tcbtab[0])) == NULL) {
+	if ((tcbtab = calloc(tcbtabsize, sizeof tcbtab[0])) == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
-	if ((tcbtab[0] = calloc (tcbtabsize, sizeof tcbtab[0][0])) == NULL) {
+	if ((tcbtab[0] = calloc(tcbtabsize, sizeof tcbtab[0][0])) == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
@@ -651,15 +720,37 @@ main(int argc, char *argv[])
 	qualify("verbose=all");
 	qualify("signal=all");
 	while ((c = getopt(argc, argv,
-		"+cdfFhiqrtTvVxza:e:o:O:p:s:S:u:E:")) != EOF) {
+		"+cCdfFhiqrtTvVxz"
+#ifndef USE_PROCFS
+		"D"
+#endif
+		"a:e:o:O:p:s:S:u:E:")) != EOF) {
 		switch (c) {
 		case 'c':
-			cflag++;
-			dtime++;
+			if (cflag == CFLAG_BOTH) {
+				fprintf(stderr, "%s: -c and -C are mutually exclusive options\n",
+					progname);
+				exit(1);
+			}
+			cflag = CFLAG_ONLY_STATS;
+			break;
+		case 'C':
+			if (cflag == CFLAG_ONLY_STATS) {
+				fprintf(stderr, "%s: -c and -C are mutually exclusive options\n",
+					progname);
+				exit(1);
+			}
+			cflag = CFLAG_BOTH;
 			break;
 		case 'd':
 			debug++;
 			break;
+#ifndef USE_PROCFS
+		/* Experimental, not documented in manpage yet. */
+		case 'D':
+			daemonized_tracer = 1;
+			break;
+#endif
 		case 'F':
 			optF = 1;
 			break;
@@ -720,11 +811,7 @@ main(int argc, char *argv[])
 				fprintf(stderr, "%s: I'm sorry, I can't let you do that, Dave.\n", progname);
 				break;
 			}
-			if ((tcp = alloc_tcb(pid, 0)) == NULL) {
-				fprintf(stderr, "%s: out of memory\n",
-					progname);
-				exit(1);
-			}
+			tcp = alloc_tcb(pid, 0);
 			tcp->flags |= TCB_ATTACHED;
 			pflag_seen++;
 			break;
@@ -764,7 +851,7 @@ main(int argc, char *argv[])
 
 	if (followfork > 1 && cflag) {
 		fprintf(stderr,
-			"%s: -c and -ff are mutually exclusive options\n",
+			"%s: (-c or -C) and -ff are mutually exclusive options\n",
 			progname);
 		exit(1);
 	}
@@ -873,17 +960,27 @@ main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 #endif /* USE_PROCFS */
 
-	if (pflag_seen)
+	if (pflag_seen || daemonized_tracer)
 		startup_attach();
 
 	if (trace() < 0)
 		exit(1);
 	cleanup();
-	exit(0);
+	fflush(NULL);
+	if (exit_code > 0xff) {
+		/* Child was killed by a signal, mimic that.  */
+		exit_code &= 0xff;
+		signal(exit_code, SIG_DFL);
+		raise(exit_code);
+		/* Paranoia - what if this signal is not fatal?
+		   Exit with 128 + signo then.  */
+		exit_code += 128;
+	}
+	exit(exit_code);
 }
 
-int
-expand_tcbtab()
+void
+expand_tcbtab(void)
 {
 	/* Allocate some more TCBs and expand the table.
 	   We don't want to relocate the TCBs because our
@@ -896,26 +993,25 @@ expand_tcbtab()
 						    sizeof *newtcbs);
 	int i;
 	if (newtab == NULL || newtcbs == NULL) {
-		if (newtab != NULL)
-			free(newtab);
 		fprintf(stderr, "%s: expand_tcbtab: out of memory\n",
 			progname);
-		return 1;
+		cleanup();
+		exit(1);
 	}
 	for (i = tcbtabsize; i < 2 * tcbtabsize; ++i)
 		newtab[i] = &newtcbs[i - tcbtabsize];
 	tcbtabsize *= 2;
 	tcbtab = newtab;
-
-	return 0;
 }
-
 
 struct tcb *
 alloc_tcb(int pid, int command_options_parsed)
 {
 	int i;
 	struct tcb *tcp;
+
+	if (nprocs == tcbtabsize)
+		expand_tcbtab();
 
 	for (i = 0; i < tcbtabsize; i++) {
 		tcp = tcbtab[i];
@@ -930,6 +1026,7 @@ alloc_tcb(int pid, int command_options_parsed)
 #endif
 			tcp->flags = TCB_INUSE | TCB_STARTUP;
 			tcp->outf = outf; /* Initialise to current out file */
+			tcp->curcol = 0;
 			tcp->stime.tv_sec = 0;
 			tcp->stime.tv_usec = 0;
 			tcp->pfd = -1;
@@ -939,15 +1036,14 @@ alloc_tcb(int pid, int command_options_parsed)
 			return tcp;
 		}
 	}
-	fprintf(stderr, "%s: alloc_tcb: tcb table full\n", progname);
-	return NULL;
+	fprintf(stderr, "%s: bug in alloc_tcb\n", progname);
+	cleanup();
+	exit(1);
 }
 
 #ifdef USE_PROCFS
 int
-proc_open(tcp, attaching)
-struct tcb *tcp;
-int attaching;
+proc_open(struct tcb *tcp, int attaching)
 {
 	char proc[32];
 	long arg;
@@ -1067,12 +1163,12 @@ int attaching;
 	/* just unset the PF_LINGER flag for the Run-on-Last-Close. */
 	if (ioctl(tcp->pfd, PIOCGFL, &arg) < 0) {
 	        perror("PIOCGFL");
-	        return -1;
+		return -1;
 	}
 	arg &= ~PF_LINGER;
 	if (ioctl(tcp->pfd, PIOCSFL, arg) < 0) {
-	        perror("PIOCSFL");
-	        return -1;
+		perror("PIOCSFL");
+		return -1;
 	}
 #endif /* FREEBSD */
 #endif /* !PIOCSET */
@@ -1358,10 +1454,8 @@ struct tcb *tcp;
 		tcp->parent->nclone_waiting--;
 #endif
 
-	if (ptrace(PTRACE_SYSCALL, tcp->pid, (char *) 1, 0) < 0) {
-		perror("resume: ptrace(PTRACE_SYSCALL, ...)");
+	if (ptrace_restart(PTRACE_SYSCALL, tcp, 0) < 0)
 		return -1;
-	}
 
 	if (!qflag)
 		fprintf(stderr, "Process %u resumed\n", tcp->pid);
@@ -1393,7 +1487,7 @@ resume_from_tcp (struct tcb *tcp)
 	if (tcp->parent &&
 	    (tcp->parent->flags & TCB_SUSPENDED) &&
 	    (tcp->parent->waitpid <= 0 || tcp->parent->waitpid == tcp->pid)) {
- 		error = resume(tcp->parent);
+		error = resume(tcp->parent);
 		++resumed;
 	}
 #ifdef TCB_CLONE_THREAD
@@ -1428,10 +1522,10 @@ resume_from_tcp (struct tcb *tcp)
 				}
 			}
 	}
+#endif
 
 	return error;
 }
-#endif
 
 #endif /* !USE_PROCFS */
 
@@ -1459,7 +1553,7 @@ int sig;
 #endif
 
 	if (tcp->flags & TCB_BPTSET)
-		sig = SIGKILL;
+		clearbpt(tcp);
 
 #ifdef LINUX
 	/*
@@ -1498,7 +1592,7 @@ int sig;
 	}
 	else
 		catch_sigstop = 1;
-	if (catch_sigstop)
+	if (catch_sigstop) {
 		for (;;) {
 #ifdef __WALL
 			if (wait4(tcp->pid, &status, __WALL, NULL) < 0) {
@@ -1533,22 +1627,16 @@ int sig;
 				break;
 			}
 			if (WSTOPSIG(status) == SIGSTOP) {
-				if ((error = ptrace(PTRACE_DETACH,
-				    tcp->pid, (char *) 1, sig)) < 0) {
-					if (errno != ESRCH)
-						perror("detach: ptrace(PTRACE_DETACH, ...)");
-					/* I died trying. */
-				}
+				ptrace_restart(PTRACE_DETACH, tcp, sig);
 				break;
 			}
-			if ((error = ptrace(PTRACE_CONT, tcp->pid, (char *) 1,
-			    WSTOPSIG(status) == SIGTRAP ?
-			    0 : WSTOPSIG(status))) < 0) {
-				if (errno != ESRCH)
-					perror("detach: ptrace(PTRACE_CONT, ...)");
+			error = ptrace_restart(PTRACE_CONT, tcp,
+					WSTOPSIG(status) == SIGTRAP ? 0
+					: WSTOPSIG(status));
+			if (error < 0)
 				break;
-			}
 		}
+	}
 #endif /* LINUX */
 
 #if defined(SUNOS4)
@@ -1556,8 +1644,7 @@ int sig;
 	if (sig && kill(tcp->pid, sig) < 0)
 		perror("detach: kill");
 	sig = 0;
-	if ((error = ptrace(PTRACE_DETACH, tcp->pid, (char *) 1, sig)) < 0)
-		perror("detach: ptrace(PTRACE_DETACH, ...)");
+	error = ptrace_restart(PTRACE_DETACH, tcp, sig);
 #endif /* SUNOS4 */
 
 #ifndef USE_PROCFS
@@ -1581,21 +1668,12 @@ int sig;
 
 #ifdef USE_PROCFS
 
-static void
-reaper(sig)
-int sig;
+static void reaper(int sig)
 {
 	int pid;
 	int status;
 
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-#if 0
-		struct tcb *tcp;
-
-		tcp = pid2tcb(pid);
-		if (tcp)
-			droptcb(tcp);
-#endif
 	}
 }
 
@@ -1616,8 +1694,8 @@ cleanup()
 				"cleanup: looking at pid %u\n", tcp->pid);
 		if (tcp_last &&
 		    (!outfname || followfork < 2 || tcp_last == tcp)) {
-			tprintf(" <unfinished ...>\n");
-			tcp_last = NULL;
+			tprintf(" <unfinished ...>");
+			printtrailer();
 		}
 		if (tcp->flags & TCB_ATTACHED)
 			detach(tcp, 0);
@@ -1783,7 +1861,7 @@ int pfd;
 	switch (fork()) {
 	case -1:
 		perror("fork");
-		_exit(0);
+		_exit(1);
 	case 0:
 		break;
 	default:
@@ -1807,7 +1885,7 @@ int pfd;
 
 	if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
 		perror("getrlimit(RLIMIT_NOFILE, ...)");
-		_exit(0);
+		_exit(1);
 	}
 	n = rl.rlim_cur;
 	for (i = 0; i < n; i++) {
@@ -1819,10 +1897,10 @@ int pfd;
 	pollinfo.pid = getpid();
 	for (;;) {
 #ifndef FREEBSD
-	        if (ioctl(pfd, PIOCWSTOP, NULL) < 0)
-#else /* FREEBSD */
-	        if (ioctl(pfd, PIOCWSTOP, &pfs) < 0)
-#endif /* FREEBSD */
+		if (ioctl(pfd, PIOCWSTOP, NULL) < 0)
+#else
+		if (ioctl(pfd, PIOCWSTOP, &pfs) < 0)
+#endif
 		{
 			switch (errno) {
 			case EINTR:
@@ -1984,7 +2062,7 @@ trace()
 			if (proc_poll_pipe[0] != -1)
 				ioctl_result = IOCTL_STATUS (tcp);
 			else
-			  	ioctl_result = IOCTL_WSTOP (tcp);
+				ioctl_result = IOCTL_WSTOP (tcp);
 #endif /* FREEBSD */
 			ioctl_errno = errno;
 #ifndef HAVE_POLLABLE_PROCFS
@@ -2033,6 +2111,7 @@ trace()
 
 		/* set current output file */
 		outf = tcp->outf;
+		curcol = tcp->curcol;
 
 		if (cflag) {
 			struct timeval stime;
@@ -2078,37 +2157,41 @@ trace()
 			}
 			break;
 		case PR_SIGNALLED:
-			if (!cflag && (qual_flags[what] & QUAL_SIGNAL)) {
+			if (cflag != CFLAG_ONLY_STATS
+			    && (qual_flags[what] & QUAL_SIGNAL)) {
 				printleader(tcp);
 				tprintf("--- %s (%s) ---",
 					signame(what), strsignal(what));
-				printtrailer(tcp);
+				printtrailer();
 #ifdef PR_INFO
 				if (tcp->status.PR_INFO.si_signo == what) {
 					printleader(tcp);
 					tprintf("    siginfo=");
 					printsiginfo(&tcp->status.PR_INFO, 1);
-					printtrailer(tcp);
+					printtrailer();
 				}
 #endif
 			}
 			break;
 		case PR_FAULTED:
-			if (!cflag && (qual_flags[what] & QUAL_FAULT)) {
+			if (cflag != CFLAGS_ONLY_STATS
+			    && (qual_flags[what] & QUAL_FAULT)) {
 				printleader(tcp);
 				tprintf("=== FAULT %d ===", what);
-				printtrailer(tcp);
+				printtrailer();
 			}
 			break;
 #ifdef FREEBSD
 		case 0: /* handle case we polled for nothing */
-		  	continue;
+			continue;
 #endif
 		default:
 			fprintf(stderr, "odd stop %d\n", tcp->status.PR_WHY);
 			exit(1);
 			break;
 		}
+		/* Remember current print column before continuing. */
+		tcp->curcol = curcol;
 		arg = 0;
 #ifndef FREEBSD
 		if (IOCTL (tcp->pfd, PIOCRUN, &arg) < 0) {
@@ -2136,20 +2219,25 @@ handle_group_exit(struct tcb *tcp, int sig)
 {
 	/* We need to locate our records of all the clone threads
 	   related to TCP, either its children or siblings.  */
-	struct tcb *leader = ((tcp->flags & TCB_CLONE_THREAD)
-			      ? tcp->parent
-			      : tcp->nclone_detached > 0
-			      ? tcp : NULL);
+	struct tcb *leader = NULL;
+
+	if (tcp->flags & TCB_CLONE_THREAD)
+		leader = tcp->parent;
+	else if (tcp->nclone_detached > 0)
+		leader = tcp;
 
 	if (sig < 0) {
-		if (leader != NULL && leader != tcp &&
-		    !(leader->flags & TCB_GROUP_EXITING))
+		if (leader != NULL && leader != tcp
+		 && !(leader->flags & TCB_GROUP_EXITING)
+		 && !(tcp->flags & TCB_STARTUP)
+		) {
 			fprintf(stderr,
 				"PANIC: handle_group_exit: %d leader %d\n",
 				tcp->pid, leader ? leader->pid : -1);
-		/* TCP no longer exists therefore you must not detach () it.  */
+		}
+		/* TCP no longer exists therefore you must not detach() it.  */
 #ifndef USE_PROCFS
-		resume_from_tcp (tcp);
+		resume_from_tcp(tcp);
 #endif
 		droptcb(tcp);	/* Already died.  */
 	}
@@ -2158,19 +2246,18 @@ handle_group_exit(struct tcb *tcp, int sig)
 		tcp->flags |= TCB_EXITING | TCB_GROUP_EXITING;
 		if (tcp->flags & TCB_ATTACHED) {
 			detach(tcp, sig);
-		  	if (leader != NULL && leader != tcp)
-				leader->flags |= TCB_GROUP_EXITING;
-		}
-		else if (ptrace(PTRACE_CONT, tcp->pid, (char *) 1, sig) < 0) {
-			perror("strace: ptrace(PTRACE_CONT, ...)");
-			cleanup();
-			return -1;
-		}
-		else {
-			if (leader != NULL)
-				leader->flags |= TCB_GROUP_EXITING;
 			if (leader != NULL && leader != tcp)
-				droptcb(tcp);
+				leader->flags |= TCB_GROUP_EXITING;
+		} else {
+			if (ptrace_restart(PTRACE_CONT, tcp, sig) < 0) {
+				cleanup();
+				return -1;
+			}
+			if (leader != NULL) {
+				leader->flags |= TCB_GROUP_EXITING;
+				if (leader != tcp)
+					droptcb(tcp);
+			}
 			/* The leader will report to us as parent now,
 			   and then we'll get to the SIG==-1 case.  */
 			return 0;
@@ -2241,12 +2328,6 @@ trace()
 				 * version of SunOS sometimes reports
 				 * ECHILD before sending us SIGCHILD.
 				 */
-#if 0
-				if (nprocs == 0)
-					return 0;
-				fprintf(stderr, "strace: proc miscount\n");
-				exit(1);
-#endif
 				return 0;
 			default:
 				errno = wait_errno;
@@ -2275,15 +2356,7 @@ trace()
 				   will we have the association of parent and
 				   child so that we know how to do clearbpt
 				   in the child.  */
-				if (nprocs == tcbtabsize &&
-				    expand_tcbtab())
-					tcp = NULL;
-				else
-					tcp = alloctcb(pid);
-				if (tcp == NULL) {
-					kill(pid, SIGKILL); /* XXX */
-					return 0;
-				}
+				tcp = alloctcb(pid);
 				tcp->flags |= TCB_ATTACHED | TCB_SUSPENDED;
 				if (!qflag)
 					fprintf(stderr, "\
@@ -2303,6 +2376,7 @@ Process %d attached (waiting for parent)\n",
 		}
 		/* set current output file */
 		outf = tcp->outf;
+		curcol = tcp->curcol;
 		if (cflag) {
 #ifdef LINUX
 			tv_sub(&tcp->dtime, &ru.ru_stime, &tcp->stime);
@@ -2322,7 +2396,9 @@ Process %d attached (waiting for parent)\n",
 			continue;
 		}
 		if (WIFSIGNALED(status)) {
-			if (!cflag
+			if (pid == strace_child)
+				exit_code = 0x100 | WTERMSIG(status);
+			if (cflag != CFLAG_ONLY_STATS
 			    && (qual_flags[WTERMSIG(status)] & QUAL_SIGNAL)) {
 				printleader(tcp);
 				tprintf("+++ killed by %s %s+++",
@@ -2331,7 +2407,7 @@ Process %d attached (waiting for parent)\n",
 					WCOREDUMP(status) ? "(core dumped) " :
 #endif
 					"");
-				printtrailer(tcp);
+				printtrailer();
 			}
 #ifdef TCB_GROUP_EXITING
 			handle_group_exit(tcp, -1);
@@ -2341,21 +2417,22 @@ Process %d attached (waiting for parent)\n",
 			continue;
 		}
 		if (WIFEXITED(status)) {
+			if (pid == strace_child)
+				exit_code = WEXITSTATUS(status);
 			if (debug)
-				fprintf(stderr, "pid %u exited\n", pid);
-			if ((tcp->flags & TCB_ATTACHED)
+				fprintf(stderr, "pid %u exited with %d\n", pid, WEXITSTATUS(status));
+			if ((tcp->flags & (TCB_ATTACHED|TCB_STARTUP)) == TCB_ATTACHED
 #ifdef TCB_GROUP_EXITING
-			    && !(tcp->parent && (tcp->parent->flags &
-						 TCB_GROUP_EXITING))
+			    && !(tcp->parent && (tcp->parent->flags & TCB_GROUP_EXITING))
 			    && !(tcp->flags & TCB_GROUP_EXITING)
 #endif
-				)
+			) {
 				fprintf(stderr,
-					"PANIC: attached pid %u exited\n",
-					pid);
+					"PANIC: attached pid %u exited with %d\n",
+					pid, WEXITSTATUS(status));
+			}
 			if (tcp == tcp_last) {
-				if ((tcp->flags & (TCB_INSYSCALL|TCB_REPRINT))
-				    == TCB_INSYSCALL)
+				if ((tcp->flags & (TCB_INSYSCALL|TCB_REPRINT)) == TCB_INSYSCALL)
 					tprintf(" <unfinished ... exit status %d>\n",
 						WEXITSTATUS(status));
 				tcp_last = NULL;
@@ -2381,8 +2458,11 @@ Process %d attached (waiting for parent)\n",
 		 * with STOPSIG equal to some other signal
 		 * than SIGSTOP if we happend to attach
 		 * just before the process takes a signal.
+		 * A no-MMU vforked child won't send up a signal,
+		 * so skip the first (lost) execve notification.
 		 */
-		if ((tcp->flags & TCB_STARTUP) && WSTOPSIG(status) == SIGSTOP) {
+		if ((tcp->flags & TCB_STARTUP) &&
+		    (WSTOPSIG(status) == SIGSTOP || strace_vforked)) {
 			/*
 			 * This flag is there to keep us in sync.
 			 * Next time this process stops it should
@@ -2411,15 +2491,13 @@ Process %d attached (waiting for parent)\n",
 				 * Hope we are back in control now.
 				 */
 				tcp->flags &= ~(TCB_INSYSCALL | TCB_SIGTRAPPED);
-				if (ptrace(PTRACE_SYSCALL,
-						pid, (char *) 1, 0) < 0) {
-					perror("trace: ptrace(PTRACE_SYSCALL, ...)");
+				if (ptrace_restart(PTRACE_SYSCALL, tcp, 0) < 0) {
 					cleanup();
 					return -1;
 				}
 				continue;
 			}
-			if (!cflag
+			if (cflag != CFLAG_ONLY_STATS
 			    && (qual_flags[WSTOPSIG(status)] & QUAL_SIGNAL)) {
 				unsigned long addr = 0;
 				long pc = 0;
@@ -2428,8 +2506,8 @@ Process %d attached (waiting for parent)\n",
 				struct siginfo si;
 				long psr;
 
-				upeek(pid, PT_CR_IPSR, &psr);
-				upeek(pid, PT_CR_IIP, &pc);
+				upeek(tcp, PT_CR_IPSR, &psr);
+				upeek(tcp, PT_CR_IIP, &pc);
 
 				pc += (psr >> PSR_RI) & 0x3;
 				ptrace(PT_GETSIGINFO, pid, 0, (long) &si);
@@ -2448,7 +2526,7 @@ Process %d attached (waiting for parent)\n",
 				tprintf("--- %s (%s) @ %lx (%lx) ---",
 					signame(WSTOPSIG(status)),
 					strsignal(WSTOPSIG(status)), pc, addr);
-				printtrailer(tcp);
+				printtrailer();
 			}
 			if (((tcp->flags & TCB_ATTACHED) ||
 			     tcp->nclone_threads > 0) &&
@@ -2460,9 +2538,7 @@ Process %d attached (waiting for parent)\n",
 #endif
 				continue;
 			}
-			if (ptrace(PTRACE_SYSCALL, pid, (char *) 1,
-				   WSTOPSIG(status)) < 0) {
-				perror("trace: ptrace(PTRACE_SYSCALL, ...)");
+			if (ptrace_restart(PTRACE_SYSCALL, tcp, WSTOPSIG(status)) < 0) {
 				cleanup();
 				return -1;
 			}
@@ -2472,10 +2548,25 @@ Process %d attached (waiting for parent)\n",
 		/* we handled the STATUS, we are permitted to interrupt now. */
 		if (interrupted)
 			return 0;
-		if (trace_syscall(tcp) < 0) {
-			if (tcp->flags & TCB_ATTACHED)
+		if (trace_syscall(tcp) < 0 && !tcp->ptrace_errno) {
+			/* ptrace() failed in trace_syscall() with ESRCH.
+			 * Likely a result of process disappearing mid-flight.
+			 * Observed case: exit_group() terminating
+			 * all processes in thread group. In this case, threads
+			 * "disappear" in an unpredictable moment without any
+			 * notification to strace via wait().
+			 */
+			if (tcp->flags & TCB_ATTACHED) {
+				if (tcp_last) {
+					/* Do we have dangling line "syscall(param, param"?
+					 * Finish the line then. We cannot
+					 */
+					tcp_last->flags |= TCB_REPRINT;
+					tprintf(" <unfinished ...>");
+					printtrailer();
+				}
 				detach(tcp, 0);
-			else {
+			} else {
 				ptrace(PTRACE_KILL,
 					tcp->pid, (char *) 1, SIGTERM);
 				droptcb(tcp);
@@ -2492,8 +2583,7 @@ Process %d attached (waiting for parent)\n",
 #endif
 			if (tcp->flags & TCB_ATTACHED)
 				detach(tcp, 0);
-			else if (ptrace(PTRACE_CONT, pid, (char *) 1, 0) < 0) {
-				perror("strace: ptrace(PTRACE_CONT, ...)");
+			else if (ptrace_restart(PTRACE_CONT, tcp, 0) < 0) {
 				cleanup();
 				return -1;
 			}
@@ -2505,8 +2595,9 @@ Process %d attached (waiting for parent)\n",
 			continue;
 		}
 	tracing:
-		if (ptrace(PTRACE_SYSCALL, pid, (char *) 1, 0) < 0) {
-			perror("trace: ptrace(PTRACE_SYSCALL, ...)");
+		/* Remember current print column before continuing. */
+		tcp->curcol = curcol;
+		if (ptrace_restart(PTRACE_SYSCALL, tcp, 0) < 0) {
 			cleanup();
 			return -1;
 		}
@@ -2516,34 +2607,21 @@ Process %d attached (waiting for parent)\n",
 
 #endif /* !USE_PROCFS */
 
-static int curcol;
-
-#ifdef __STDC__
 #include <stdarg.h>
-#define VA_START(a, b) va_start(a, b)
-#else
-#include <varargs.h>
-#define VA_START(a, b) va_start(a)
-#endif
 
 void
-#ifdef __STDC__
 tprintf(const char *fmt, ...)
-#else
-tprintf(fmt, va_alist)
-char *fmt;
-va_dcl
-#endif
 {
 	va_list args;
 
-	VA_START(args, fmt);
+	va_start(args, fmt);
 	if (outf) {
 		int n = vfprintf(outf, fmt, args);
-		if (n < 0 && outf != stderr)
-			perror(outfname == NULL
-			       ? "<writing to pipe>" : outfname);
-		else
+		if (n < 0) {
+			if (outf != stderr)
+				perror(outfname == NULL
+				       ? "<writing to pipe>" : outfname);
+		} else
 			curcol += n;
 	}
 	va_end(args);
@@ -2554,9 +2632,18 @@ void
 printleader(tcp)
 struct tcb *tcp;
 {
-	if (tcp_last && (!outfname || followfork < 2 || tcp_last == tcp)) {
-		tcp_last->flags |= TCB_REPRINT;
-		tprintf(" <unfinished ...>\n");
+	if (tcp_last) {
+		if (tcp_last->ptrace_errno) {
+			if (tcp_last->flags & TCB_INSYSCALL) {
+				tprintf(" <unavailable>)");
+				tabto(acolumn);
+			}
+			tprintf("= ? <unavailable>\n");
+			tcp_last->ptrace_errno = 0;
+		} else if (!outfname || followfork < 2 || tcp_last == tcp) {
+			tcp_last->flags |= TCB_REPRINT;
+			tprintf(" <unfinished ...>\n");
+		}
 	}
 	curcol = 0;
 	if ((followfork == 1 || pflag_seen > 1) && outfname)
@@ -2603,8 +2690,7 @@ int col;
 }
 
 void
-printtrailer(tcp)
-struct tcb *tcp;
+printtrailer(void)
 {
 	tprintf("\n");
 	tcp_last = NULL;
@@ -2612,8 +2698,9 @@ struct tcb *tcp;
 
 #ifdef HAVE_MP_PROCFS
 
-int mp_ioctl (int fd, int cmd, void *arg, int size) {
-
+int
+mp_ioctl(int fd, int cmd, void *arg, int size)
+{
 	struct iovec iov[2];
 	int n = 1;
 
@@ -2625,7 +2712,7 @@ int mp_ioctl (int fd, int cmd, void *arg, int size) {
 		iov[1].iov_len = size;
 	}
 
-	return writev (fd, iov, n);
+	return writev(fd, iov, n);
 }
 
 #endif

@@ -34,18 +34,17 @@
 # define __NR_shmat  __NR_osf_shmat
 #endif
 #ifdef __NR_shmat
-_syscall3(void *, shmat, int, shmid, const void *,shmaddr, int, shmflg);
+_syscall3(void *, shmat, int, shmid, const void *,shmaddr, int, shmflg)
 #else
 /* psm: don't remove this, else mips will fail */
 #include <unistd.h>
-libc_hidden_proto(getpagesize)
 
 void * shmat (int shmid, const void *shmaddr, int shmflg)
 {
     int retval;
     unsigned long raddr;
 
-    retval = __syscall_ipc(IPCOP_shmat, shmid, shmflg, (int) &raddr, (void *) shmaddr);
+    retval = __syscall_ipc(IPCOP_shmat, shmid, shmflg, (int) &raddr, (void *) shmaddr, 0);
     return ((unsigned long int) retval > -(unsigned long int) SHMLBA
 	    ? (void *) retval : (void *) raddr);
 }
@@ -56,14 +55,14 @@ void * shmat (int shmid, const void *shmaddr, int shmflg)
 /* Provide operations to control over shared memory segments.  */
 #ifdef __NR_shmctl
 #define __NR___libc_shmctl __NR_shmctl
-static inline _syscall3(int, __libc_shmctl, int, shmid, int, cmd, struct shmid_ds *, buf);
+static __inline__ _syscall3(int, __libc_shmctl, int, shmid, int, cmd, struct shmid_ds *, buf);
 #endif
 int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 {
 #ifdef __NR_shmctl
 	return __libc_shmctl(shmid, cmd | __IPC_64, buf);
 #else
-    return __syscall_ipc(IPCOP_shmctl, shmid, cmd | __IPC_64, 0, buf);
+    return __syscall_ipc(IPCOP_shmctl, shmid, cmd | __IPC_64, 0, buf, 0);
 #endif
 }
 #endif
@@ -73,11 +72,11 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 /* Detach shared memory segment starting at address specified by SHMADDR
    from the caller's data segment.  */
 #ifdef __NR_shmdt
-_syscall1(int, shmdt, const void *, shmaddr);
+_syscall1(int, shmdt, const void *, shmaddr)
 #else
 int shmdt (const void *shmaddr)
 {
-    return __syscall_ipc(IPCOP_shmdt, 0, 0, 0, (void *) shmaddr);
+    return __syscall_ipc(IPCOP_shmdt, 0, 0, 0, (void *) shmaddr, 0);
 }
 #endif
 #endif
@@ -86,11 +85,11 @@ int shmdt (const void *shmaddr)
 /* Return an identifier for an shared memory segment of at least size SIZE
    which is associated with KEY.  */
 #ifdef __NR_shmget
-_syscall3(int, shmget, key_t, key, size_t, size, int, shmflg);
+_syscall3(int, shmget, key_t, key, size_t, size, int, shmflg)
 #else
 int shmget (key_t key, size_t size, int shmflg)
 {
-    return __syscall_ipc(IPCOP_shmget, key, size, shmflg, NULL);
+    return __syscall_ipc(IPCOP_shmget, key, size, shmflg, NULL, 0);
 }
 #endif
 #endif

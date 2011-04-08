@@ -1,6 +1,6 @@
 open SPARC, "syscallent.h" || die "no puedo abrir el de la sparc";
 open ALPHA, "../alpha/syscallent.h" || die "no puedo abrir el de la alpha";
-open PC, "../syscallent.h" || die "no puedo abrir PC\n";
+open PC, "../i386/syscallent.h" || die "no puedo abrir PC\n";
 
 while (<SPARC>) {
     chop;
@@ -35,4 +35,3 @@ for ($i = 0; $i < $index; $i++){
     $j++;
     print "\t{ $n\t$p\t$x\t$y },\t /* $j */\n";
 }
-

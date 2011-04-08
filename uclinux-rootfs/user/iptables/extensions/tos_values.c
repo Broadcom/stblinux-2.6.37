@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <linux/ip.h>
 
+#ifndef IPTOS_NORMALSVC
+#	define IPTOS_NORMALSVC 0
+#endif
+
 struct tos_value_mask {
 	uint8_t value, mask;
 };
@@ -16,7 +20,7 @@ static const struct tos_symbol_info {
 	{IPTOS_RELIABILITY, "Maximize-Reliability"},
 	{IPTOS_MINCOST,     "Minimize-Cost"},
 	{IPTOS_NORMALSVC,   "Normal-Service"},
-	{ .name = NULL }
+	{},
 };
 
 /*

@@ -14,13 +14,15 @@ all::
 		./configure --host=$(MACHINE)-linux \
 			--disable-shared --enable-static || exit 1 ; \
 	fi
-	$(MAKE) -f Makefile
+	$(MAKE) -f Makefile MANS=
 
 .PHONY: romfs
 romfs::
-	$(STRIP) iptables-static
+	$(STRIP) iptables-multi ip6tables-multi
 	$(ROMFSINST) -e CONFIG_USER_IPTABLES_IPTABLES \
-		iptables-static /sbin/iptables
+		iptables-multi /sbin/iptables
+	$(ROMFSINST) -e CONFIG_USER_IPTABLES_IPTABLES \
+		ip6tables-multi /sbin/ip6tables
 
 # These targets must not be passed through to the original Makefile
 .PHONY: $(BOGUS_TARGETS)

@@ -8,11 +8,9 @@
  * GNU Library General Public License (LGPL) version 2 or later.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <signal.h>
 #include <string.h>
-
-libc_hidden_proto(memcpy)
 
 #ifdef __NR_rt_sigtimedwait
 
@@ -75,7 +73,7 @@ int __sigwaitinfo(const sigset_t *set, siginfo_t *info)
 # else
 #  define __need_NULL
 #  include <stddef.h>
-#  define __NR___rt_sigwaitinfo __NR_rt_sigwaitinfo
+#  define __NR___rt_sigwaitinfo __NR_rt_sigtimedwait
 static _syscall4(int, __rt_sigwaitinfo, const sigset_t *, set,
 				 siginfo_t *, info, const struct timespec *, timeout,
 				 size_t, setsize);
@@ -95,4 +93,6 @@ int attribute_hidden __sigwaitinfo(const sigset_t * set, siginfo_t * info)
 	return -1;
 }
 #endif
-weak_alias(__sigwaitinfo,sigwaitinfo)
+libc_hidden_proto(sigwaitinfo)
+weak_alias (__sigwaitinfo, sigwaitinfo)
+libc_hidden_weak(sigwaitinfo)

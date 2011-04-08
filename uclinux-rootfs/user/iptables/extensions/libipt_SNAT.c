@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add source-NAT support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -27,13 +28,14 @@ static void SNAT_help(void)
 "SNAT target options:\n"
 " --to-source <ipaddr>[-<ipaddr>][:port-port]\n"
 "				Address to map source to.\n"
-"[--random]\n");
+"[--random] [--persistent]\n");
 }
 
 static const struct option SNAT_opts[] = {
-	{ "to-source", 1, NULL, '1' },
-	{ "random", 0, NULL, '2' },
-	{ .name = NULL }
+	{.name = "to-source",  .has_arg = true,  .val = '1'},
+	{.name = "random",     .has_arg = false, .val = '2'},
+	{.name = "persistent", .has_arg = false, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static struct ipt_natinfo *
@@ -153,7 +155,7 @@ static int SNAT_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --to-source");
 
@@ -177,6 +179,10 @@ static int SNAT_parse(int c, char **argv, int invert, unsigned int *flags,
 			*flags |= IPT_SNAT_OPT_RANDOM;
 		} else
 			*flags |= IPT_SNAT_OPT_RANDOM;
+		return 1;
+
+	case '3':
+		info->mr.range[0].flags |= IP_NAT_RANGE_PERSISTENT;
 		return 1;
 
 	default:
@@ -214,7 +220,7 @@ static void print_range(const struct nf_nat_range *r)
 static void SNAT_print(const void *ip, const struct xt_entry_target *target,
                        int numeric)
 {
-	struct ipt_natinfo *info = (void *)target;
+	const struct ipt_natinfo *info = (const void *)target;
 	unsigned int i = 0;
 
 	printf("to:");
@@ -223,12 +229,14 @@ static void SNAT_print(const void *ip, const struct xt_entry_target *target,
 		printf(" ");
 		if (info->mr.range[i].flags & IP_NAT_RANGE_PROTO_RANDOM)
 			printf("random ");
+		if (info->mr.range[i].flags & IP_NAT_RANGE_PERSISTENT)
+			printf("persistent ");
 	}
 }
 
 static void SNAT_save(const void *ip, const struct xt_entry_target *target)
 {
-	struct ipt_natinfo *info = (void *)target;
+	const struct ipt_natinfo *info = (const void *)target;
 	unsigned int i = 0;
 
 	for (i = 0; i < info->mr.rangesize; i++) {
@@ -237,6 +245,8 @@ static void SNAT_save(const void *ip, const struct xt_entry_target *target)
 		printf(" ");
 		if (info->mr.range[i].flags & IP_NAT_RANGE_PROTO_RANDOM)
 			printf("--random ");
+		if (info->mr.range[i].flags & IP_NAT_RANGE_PERSISTENT)
+			printf("--persistent ");
 	}
 }
 

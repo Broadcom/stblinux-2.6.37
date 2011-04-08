@@ -23,7 +23,7 @@
 .\"
 .\"
 .SH NAME
-iptables - administration tool for IPv4 packet filtering and NAT
+iptables \(em administration tool for IPv4 packet filtering and NAT
 .SH SYNOPSIS
 \fBiptables\fP [\fB\-t\fP \fItable\fP] {\fB\-A\fP|\fB\-D\fP} \fIchain\fP \fIrule-specification\fP
 .PP
@@ -35,7 +35,7 @@ iptables - administration tool for IPv4 packet filtering and NAT
 .PP
 \fBiptables\fP [\fB\-t\fP \fItable\fP] \fB\-S\fP [\fIchain\fP [\fIrulenum\fP]]
 .PP
-\fBiptables\fP [\fB\-t\fP \fItable\fP] {\fB\-F\fP|\fB\-L\fP|\fB\-Z\fP} [\fIchain\fP] [\fIoptions...\fP]
+\fBiptables\fP [\fB\-t\fP \fItable\fP] {\fB\-F\fP|\fB\-L\fP|\fB\-Z\fP} [\fIchain\fP [\fIrulenum\fP]] [\fIoptions...\fP]
 .PP
 \fBiptables\fP [\fB\-t\fP \fItable\fP] \fB\-N\fP \fIchain\fP
 .PP
@@ -182,15 +182,16 @@ arguments given. The exact rules are suppressed until you use
 .TP
 \fB\-S\fP, \fB\-\-list\-rules\fP [\fIchain\fP]
 Print all rules in the selected chain.  If no chain is selected, all
-chains are printed like iptables\-save. Like every other iptables command,
+chains are printed like iptables-save. Like every other iptables command,
 it applies to the specified table (filter is the default).
 .TP
 \fB\-F\fP, \fB\-\-flush\fP [\fIchain\fP]
 Flush the selected chain (all the chains in the table if none is given).
 This is equivalent to deleting all the rules one by one.
 .TP
-\fB\-Z\fP, \fB\-\-zero\fP [\fIchain\fP]
-Zero the packet and byte counters in all chains.  It is legal to
+\fB\-Z\fP, \fB\-\-zero\fP [\fIchain\fP [\fIrulenum\fP]]
+Zero the packet and byte counters in all chains, or only the given chain,
+or only the given rule in a chain. It is legal to
 specify the
 \fB\-L\fP, \fB\-\-list\fP
 (list) option as well, to see the counters immediately before they are
@@ -217,7 +218,7 @@ targets.
 Rename the user specified chain to the user supplied name.  This is
 cosmetic, and has no effect on the structure of the table.
 .TP
-\fB\-\h\fP
+\fB\-h\fP
 Help.
 Give a (currently very brief) description of the command syntax.
 .SS PARAMETERS
@@ -236,19 +237,24 @@ Protocol \fBall\fP
 will match with all protocols and is taken as default when this
 option is omitted.
 .TP
-[\fB!\fP] \fB\-s\fP, \fB\-\-source\fP \fIaddress\fP[\fB/\fP\fImask\fP]
+[\fB!\fP] \fB\-s\fP, \fB\-\-source\fP \fIaddress\fP[\fB/\fP\fImask\fP][\fB,\fP\fI...\fP]
 Source specification. \fIAddress\fP
-can be either a network name, a hostname (please note that specifying
-any name to be resolved with a remote query such as DNS is a really bad idea),
-a network IP address (with \fB/\fP\fImask\fP), or a plain IP address.
+can be either a network name, a hostname, a network IP address (with
+\fB/\fP\fImask\fP), or a plain IP address. Hostnames will
+be resolved once only, before the rule is submitted to the kernel.
+Please note that specifying any name to be resolved with a remote query such as
+DNS is a really bad idea.
 The \fImask\fP
 can be either a network mask or a plain number,
 specifying the number of 1's at the left side of the network mask.
 Thus, a mask of \fI24\fP is equivalent to \fI255.255.255.0\fP.
 A "!" argument before the address specification inverts the sense of
 the address. The flag \fB\-\-src\fP is an alias for this option.
+Multiple addresses can be specified, but this will \fBexpand to multiple
+rules\fP (when adding with \-A), or will cause multiple rules to be
+deleted (with \-D).
 .TP
-[\fB!\fP] \fB\-d\fP, \fB\-\-destination\fP \fIaddress\fP[\fB/\fP\fImask\fP]
+[\fB!\fP] \fB\-d\fP, \fB\-\-destination\fP \fIaddress\fP[\fB/\fP\fImask\fP][\fB,\fP\fI...\fP]
 Destination specification. 
 See the description of the \fB\-s\fP
 (source) flag for a detailed description of the syntax.  The flag

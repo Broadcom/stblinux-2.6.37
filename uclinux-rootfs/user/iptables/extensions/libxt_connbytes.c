@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add byte tracking support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -18,10 +19,10 @@ static void connbytes_help(void)
 }
 
 static const struct option connbytes_opts[] = {
-	{ "connbytes", 1, NULL, '1' },
-	{ "connbytes-dir", 1, NULL, '2' },
-	{ "connbytes-mode", 1, NULL, '3' },
-	{ .name = NULL }
+	{.name = "connbytes",      .has_arg = true, .val = '1'},
+	{.name = "connbytes-dir",  .has_arg = true, .val = '2'},
+	{.name = "connbytes-mode", .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -52,10 +53,10 @@ connbytes_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		if (xtables_check_inverse(optarg, &invert, &optind, 0))
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv))
 			optind++;
 
-		parse_range(argv[optind-1], sinfo);
+		parse_range(optarg, sinfo);
 		if (invert) {
 			i = sinfo->count.from;
 			sinfo->count.from = sinfo->count.to;
@@ -102,7 +103,7 @@ static void connbytes_check(unsigned int flags)
 			   "`--connbytes-dir' and `--connbytes-mode'");
 }
 
-static void print_mode(struct xt_connbytes_info *sinfo)
+static void print_mode(const struct xt_connbytes_info *sinfo)
 {
 	switch (sinfo->what) {
 		case XT_CONNBYTES_PKTS:
@@ -120,7 +121,7 @@ static void print_mode(struct xt_connbytes_info *sinfo)
 	}
 }
 
-static void print_direction(struct xt_connbytes_info *sinfo)
+static void print_direction(const struct xt_connbytes_info *sinfo)
 {
 	switch (sinfo->direction) {
 		case XT_CONNBYTES_DIR_ORIGINAL:
@@ -141,7 +142,7 @@ static void print_direction(struct xt_connbytes_info *sinfo)
 static void
 connbytes_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_connbytes_info *sinfo = (struct xt_connbytes_info *)match->data;
+	const struct xt_connbytes_info *sinfo = (const void *)match->data;
 
 	if (sinfo->count.from > sinfo->count.to) 
 		printf("connbytes ! %llu:%llu ",
@@ -161,7 +162,7 @@ connbytes_print(const void *ip, const struct xt_entry_match *match, int numeric)
 
 static void connbytes_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_connbytes_info *sinfo = (struct xt_connbytes_info *)match->data;
+	const struct xt_connbytes_info *sinfo = (const void *)match->data;
 
 	if (sinfo->count.from > sinfo->count.to) 
 		printf("! --connbytes %llu:%llu ",
@@ -180,21 +181,7 @@ static void connbytes_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match connbytes_match = {
-	.family		= NFPROTO_IPV4,
-	.name 		= "connbytes",
-	.version 	= XTABLES_VERSION,
-	.size 		= XT_ALIGN(sizeof(struct xt_connbytes_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_connbytes_info)),
-	.help		= connbytes_help,
-	.parse		= connbytes_parse,
-	.final_check	= connbytes_check,
-	.print		= connbytes_print,
-	.save 		= connbytes_save,
-	.extra_opts	= connbytes_opts,
-};
-
-static struct xtables_match connbytes_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name 		= "connbytes",
 	.version 	= XTABLES_VERSION,
 	.size 		= XT_ALIGN(sizeof(struct xt_connbytes_info)),
@@ -210,5 +197,4 @@ static struct xtables_match connbytes_match6 = {
 void _init(void)
 {
 	xtables_register_match(&connbytes_match);
-	xtables_register_match(&connbytes_match6);
 }

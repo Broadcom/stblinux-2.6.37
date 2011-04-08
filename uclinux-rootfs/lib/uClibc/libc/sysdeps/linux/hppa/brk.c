@@ -24,13 +24,12 @@
 /* This must be initialized data because commons can't have aliases.  */
 void *__curbrk attribute_hidden = 0;
 
-libc_hidden_proto(brk)
 int
 brk (void *addr)
 {
   void *newbrk;
 
-  __curbrk = newbrk = (void *) K_INLINE_SYSCALL (brk, 1, addr);
+  __curbrk = newbrk = (void *) INLINE_SYSCALL (brk, 1, addr);
 
   if (newbrk < addr)
     {

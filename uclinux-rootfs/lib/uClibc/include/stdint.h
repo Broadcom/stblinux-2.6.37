@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
+/* Copyright (C) 1997,1998,1999,2000,2001,2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -238,7 +238,7 @@ typedef unsigned long long int	uintmax_t;
 #  define UINTPTR_MAX		(4294967295U)
 # endif
 
-#if !defined(__H8300H__) && !defined(__H8300S__) 
+#if !defined(__H8300H__) && !defined(__H8300S__)
 /* Minimum for largest signed integral type.  */
 # define INTMAX_MIN		(-__INT64_C(9223372036854775807)-1)
 /* Maximum for largest signed integral type.  */
@@ -309,8 +309,8 @@ typedef unsigned long long int	uintmax_t;
 # endif
 
 /* Unsigned.  */
-# define UINT8_C(c)	c ## U
-# define UINT16_C(c)	c ## U
+# define UINT8_C(c)	c
+# define UINT16_C(c)	c
 # define UINT32_C(c)	c ## U
 # if __WORDSIZE == 64
 #  define UINT64_C(c)	c ## UL

@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: term.c,v 1.9 2008/07/22 00:21:43 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -178,10 +178,7 @@ static const struct xlat modem_flags[] = {
 };
 
 
-int
-term_ioctl(tcp, code, arg)
-struct tcb *tcp;
-long code, arg;
+int term_ioctl(struct tcb *tcp, long code, long arg)
 {
 	struct termios tios;
 #ifndef FREEBSD
@@ -416,14 +413,6 @@ long code, arg;
 		tprintf(", ");
 		printnum_int(tcp, arg, "%d");
 		return 1;
-
-#if 0
-	/* ioctls with an indirect parameter displayed in hex */
-
-		tprintf(", ");
-		printnum(tcp, arg, "%#x");
-		return 1;
-#endif
 
 	/* ioctls with an indirect parameter displayed as a char */
 

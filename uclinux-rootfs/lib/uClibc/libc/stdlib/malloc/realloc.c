@@ -7,7 +7,7 @@
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License.  See the file COPYING.LIB in the main
  * directory of this archive for more details.
- * 
+ *
  * Written by Miles Bader <miles@gnu.org>
  */
 
@@ -15,7 +15,6 @@
 #include <string.h>
 #include <errno.h>
 
-libc_hidden_proto(memcpy)
 
 #include "malloc.h"
 #include "heap.h"
@@ -35,6 +34,9 @@ realloc (void *mem, size_t new_size)
     }
   if (! mem)
     return malloc (new_size);
+  /* This matches the check in malloc() */
+  if (unlikely(((unsigned long)new_size > (unsigned long)(MALLOC_HEADER_SIZE*-2))))
+    return NULL;
 
   /* Normal realloc.  */
 
@@ -46,6 +48,11 @@ realloc (void *mem, size_t new_size)
      allocation unit (SIZE is already guaranteed to be so).*/
   new_size = HEAP_ADJUST_SIZE (new_size + MALLOC_HEADER_SIZE);
 
+  if (new_size < sizeof (struct heap_free_area))
+    /* Because we sometimes must use a freed block to hold a free-area node,
+       we must make sure that every allocated block can hold one.  */
+    new_size = HEAP_ADJUST_SIZE (sizeof (struct heap_free_area));
+
   MALLOC_DEBUG (1, "realloc: 0x%lx, %d (base = 0x%lx, total_size = %d)",
 		(long)mem, new_size, (long)base_mem, size);
 
@@ -54,9 +61,9 @@ realloc (void *mem, size_t new_size)
     {
       size_t extra = new_size - size;
 
-      __heap_lock (&__malloc_heap);
+      __heap_lock (&__malloc_heap_lock);
       extra = __heap_alloc_at (&__malloc_heap, base_mem + size, extra);
-      __heap_unlock (&__malloc_heap);
+      __heap_unlock (&__malloc_heap_lock);
 
       if (extra)
 	/* Record the changed size.  */
@@ -77,9 +84,9 @@ realloc (void *mem, size_t new_size)
   else if (new_size + MALLOC_REALLOC_MIN_FREE_SIZE <= size)
     /* Shrink the block.  */
     {
-      __heap_lock (&__malloc_heap);
+      __heap_lock (&__malloc_heap_lock);
       __heap_free (&__malloc_heap, base_mem + new_size, size - new_size);
-      __heap_unlock (&__malloc_heap);
+      __heap_unlock (&__malloc_heap_lock);
       MALLOC_SET_SIZE (base_mem, new_size);
     }
 

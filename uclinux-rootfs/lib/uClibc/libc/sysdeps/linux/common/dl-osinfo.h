@@ -21,10 +21,6 @@
 
 #  ifdef IS_IN_libc
 #include <fcntl.h>
-libc_hidden_proto(open)
-libc_hidden_proto(read)
-libc_hidden_proto(close)
-libc_hidden_proto(gettimeofday)
 #   define OPEN open
 #   define READ read
 #   define CLOSE close
@@ -54,7 +50,7 @@ static __always_inline uintptr_t _dl_setup_stack_chk_guard(void)
 	/* Start with the "terminator canary". */
 	ret = 0xFF0A0D00UL;
 
-	/* Everything failed? Or we are using a weakened model of the 
+	/* Everything failed? Or we are using a weakened model of the
 	 * terminator canary */
 	{
 		struct timeval tv;

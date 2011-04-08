@@ -7,8 +7,8 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/mman.h>
 #if defined __ARCH_USE_MMU__ && defined __NR_mlockall
-_syscall1(int, mlockall, int, flags);
+_syscall1(int, mlockall, int, flags)
 #endif

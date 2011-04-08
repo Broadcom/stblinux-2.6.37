@@ -1,7 +1,7 @@
 /* Shared library add-on to iptables to add static NAT support.
    Author: Svenning Soerensen <svenning@post5.tele.dk>
 */
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -13,8 +13,8 @@
 #define MODULENAME "NETMAP"
 
 static const struct option NETMAP_opts[] = {
-	{ "to", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "to", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void NETMAP_help(void)
@@ -117,7 +117,7 @@ static int NETMAP_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --%s", NETMAP_opts[0].name);
 
@@ -140,9 +140,8 @@ static void NETMAP_check(unsigned int flags)
 static void NETMAP_print(const void *ip, const struct xt_entry_target *target,
                          int numeric)
 {
-	struct nf_nat_multi_range *mr
-		= (struct nf_nat_multi_range *)target->data;
-	struct nf_nat_range *r = &mr->range[0];
+	const struct nf_nat_multi_range *mr = (const void *)target->data;
+	const struct nf_nat_range *r = &mr->range[0];
 	struct in_addr a;
 	int bits;
 

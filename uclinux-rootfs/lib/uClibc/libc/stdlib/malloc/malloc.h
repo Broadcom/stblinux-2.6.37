@@ -11,8 +11,13 @@
  * Written by Miles Bader <miles@gnu.org>
  */
 
-/* The alignment we guarantee for malloc return values.  */
-#define MALLOC_ALIGNMENT	(__alignof__ (double))
+/* The alignment we guarantee for malloc return values.  We prefer this
+   to be at least sizeof (size_t) bytes because (a) we have to allocate
+   that many bytes for the header anyway and (b) guaranteeing word
+   alignment can be a significant win on targets like m68k and Coldfire,
+   where __alignof__(double) == 2.  */
+#define MALLOC_ALIGNMENT \
+  __alignof__ (double __attribute_aligned__ (sizeof (size_t)))
 
 /* The system pagesize... */
 extern size_t __pagesize;
@@ -65,21 +70,20 @@ struct malloc_mmb
   struct malloc_mmb *next;
 };
 
-/* A list of all malloc_mmb structures describing blocsk that malloc has
+/* A list of all malloc_mmb structures describing blocks that malloc has
    mmapped, ordered by the block address.  */
 extern struct malloc_mmb *__malloc_mmapped_blocks;
 
 /* A heap used for allocating malloc_mmb structures.  We could allocate
    them from the main heap, but that tends to cause heap fragmentation in
    annoying ways.  */
-extern struct heap __malloc_mmb_heap;
+extern struct heap_free_area *__malloc_mmb_heap;
 
 /* Define MALLOC_MMB_DEBUGGING to cause malloc to emit debugging info about
    about mmap block allocation/freeing by the `uclinux broken munmap' code
    to stderr, when the variable __malloc_mmb_debug is set to true. */
 #ifdef MALLOC_MMB_DEBUGGING
 # include <stdio.h>
-extern int __putc(int c, FILE *stream) attribute_hidden;
 
 extern int __malloc_mmb_debug;
 # define MALLOC_MMB_DEBUG(indent, fmt, args...)				      \
@@ -98,17 +102,20 @@ extern int __malloc_mmb_debug;
 
 
 /* The size of a malloc allocation is stored in a size_t word
-   MALLOC_ALIGNMENT bytes prior to the start address of the allocation:
+   MALLOC_HEADER_SIZE bytes prior to the start address of the allocation:
 
      +--------+---------+-------------------+
      | SIZE   |(unused) | allocation  ...   |
      +--------+---------+-------------------+
      ^ BASE             ^ ADDR
-     ^ ADDR - MALLOC_ALIGN
+     ^ ADDR - MALLOC_HEADER_SIZE
 */
 
 /* The amount of extra space used by the malloc header.  */
-#define MALLOC_HEADER_SIZE	MALLOC_ALIGNMENT
+#define MALLOC_HEADER_SIZE			\
+  (MALLOC_ALIGNMENT < sizeof (size_t)		\
+   ? sizeof (size_t)				\
+   : MALLOC_ALIGNMENT)
 
 /* Set up the malloc header, and return the user address of a malloc block. */
 #define MALLOC_SETUP(base, size)  \
@@ -125,12 +132,12 @@ extern int __malloc_mmb_debug;
 /* Locking for multithreaded apps.  */
 #ifdef __UCLIBC_HAS_THREADS__
 
-# include <pthread.h>
+# include <bits/uClibc_mutex.h>
 
 # define MALLOC_USE_LOCKING
 
-typedef pthread_mutex_t malloc_mutex_t;
-# define MALLOC_MUTEX_INIT	PTHREAD_MUTEX_INITIALIZER
+typedef __UCLIBC_MUTEX_TYPE malloc_mutex_t;
+# define MALLOC_MUTEX_INIT	__UCLIBC_MUTEX_INITIALIZER
 
 # ifdef MALLOC_USE_SBRK
 /* This lock is used to serialize uses of the `sbrk' function (in both
@@ -138,8 +145,8 @@ typedef pthread_mutex_t malloc_mutex_t;
    things will break if these multiple calls are interleaved with another
    thread's use of sbrk!).  */
 extern malloc_mutex_t __malloc_sbrk_lock;
-#  define __malloc_lock_sbrk()	__PTHREAD_MUTEX_LOCK (&__malloc_sbrk_lock)
-#  define __malloc_unlock_sbrk() __PTHREAD_MUTEX_UNLOCK (&__malloc_sbrk_lock)
+#  define __malloc_lock_sbrk()	__UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE (__malloc_sbrk_lock)
+#  define __malloc_unlock_sbrk() __UCLIBC_MUTEX_UNLOCK_CANCEL_UNSAFE (__malloc_sbrk_lock)
 # endif /* MALLOC_USE_SBRK */
 
 #else /* !__UCLIBC_HAS_THREADS__ */
@@ -213,4 +220,10 @@ extern void __malloc_debug_printf (int indent, const char *fmt, ...);
 
 
 /* The malloc heap.  */
-extern struct heap __malloc_heap;
+extern struct heap_free_area *__malloc_heap;
+#ifdef __UCLIBC_HAS_THREADS__
+extern malloc_mutex_t __malloc_heap_lock;
+#ifdef __UCLIBC_UCLINUX_BROKEN_MUNMAP__
+extern malloc_mutex_t __malloc_mmb_heap_lock;
+#endif
+#endif

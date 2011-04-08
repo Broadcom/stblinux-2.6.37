@@ -7,18 +7,17 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 
 #if defined __UCLIBC_HAS_LFS__ && defined __NR_fstat64
 #include <unistd.h>
 #include <sys/stat.h>
 #include "xstatconv.h"
 
-libc_hidden_proto(fstat64)
 
 #define __NR___syscall_fstat64 __NR_fstat64
-static inline _syscall2(int, __syscall_fstat64,
-		int, filedes, struct kernel_stat64 *, buf);
+static __inline__ _syscall2(int, __syscall_fstat64,
+		int, filedes, struct kernel_stat64 *, buf)
 
 int fstat64(int fd, struct stat64 *buf)
 {

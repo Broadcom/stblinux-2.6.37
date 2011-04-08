@@ -22,7 +22,7 @@
 #include <alloca.h>
 #include <assert.h>
 #include <errno.h>
-/*#include <ifaddrs.h>*/
+#include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netpacket/packet.h>
@@ -39,17 +39,6 @@
 
 #include "netlinkaccess.h"
 
-libc_hidden_proto(socket)
-libc_hidden_proto(close)
-libc_hidden_proto(time)
-libc_hidden_proto(sendto)
-libc_hidden_proto(recvmsg)
-libc_hidden_proto(bind)
-libc_hidden_proto(memset)
-libc_hidden_proto(mempcpy)
-libc_hidden_proto(getsockname)
-libc_hidden_proto(fclose)
-libc_hidden_proto(abort)
 
 #ifndef __libc_use_alloca
 # define __libc_use_alloca(x) (x < __MAX_ALLOCA_CUTOFF)
@@ -57,7 +46,7 @@ libc_hidden_proto(abort)
 
 
 #if __ASSUME_NETLINK_SUPPORT
-#if 0 /* unused code */
+#ifdef __UCLIBC_SUPPORT_AI_ADDRCONFIG__
 /* struct to hold the data for one ifaddrs entry, so we can allocate
    everything at once.  */
 struct ifaddrs_storage
@@ -74,14 +63,13 @@ struct ifaddrs_storage
   } addr, netmask, broadaddr;
   char name[IF_NAMESIZE + 1];
 };
-#endif /* unused code */
+#endif /* __UCLIBC_SUPPORT_AI_ADDRCONFIG__ */
 
 
 void
 __netlink_free_handle (struct netlink_handle *h)
 {
   struct netlink_res *ptr;
-  int saved_errno = errno;
 
   ptr = h->nlm_list;
   while (ptr != NULL)
@@ -89,11 +77,9 @@ __netlink_free_handle (struct netlink_handle *h)
       struct netlink_res *tmpptr;
 
       tmpptr = ptr->next;
-      free (ptr);
+      free (ptr); /* doesn't affect errno */
       ptr = tmpptr;
     }
-
-  __set_errno (saved_errno);
 }
 
 
@@ -308,9 +294,6 @@ __netlink_open (struct netlink_handle *h)
     close_and_out:
       __netlink_close (h);
     out:
-#if __ASSUME_NETLINK_SUPPORT == 0
-      __no_netlink_support = 1;
-#endif
       return -1;
     }
   /* Determine the ID the kernel assigned for this netlink connection.
@@ -324,7 +307,7 @@ __netlink_open (struct netlink_handle *h)
 }
 
 
-#if 0 /* unused code */
+#ifdef __UCLIBC_SUPPORT_AI_ADDRCONFIG__
 /* We know the number of RTM_NEWLINK entries, so we reserve the first
    # of entries for this type. All RTM_NEWADDR entries have an index
    pointer to the RTM_NEWLINK entry.  To find the entry, create
@@ -333,7 +316,7 @@ __netlink_open (struct netlink_handle *h)
    that a RTM_NEWADDR index is not known to this map.  */
 static int
 internal_function
-map_newlink (int index, struct ifaddrs_storage *ifas, int *map, int max)
+map_newlink (int idx, struct ifaddrs_storage *ifas, int *map, int max)
 {
   int i;
 
@@ -341,12 +324,12 @@ map_newlink (int index, struct ifaddrs_storage *ifas, int *map, int max)
     {
       if (map[i] == -1)
 	{
-	  map[i] = index;
+	  map[i] = idx;
 	  if (i > 0)
 	    ifas[i - 1].ifa.ifa_next = &ifas[i].ifa;
 	  return i;
 	}
-      else if (map[i] == index)
+      else if (map[i] == idx)
 	return i;
     }
   /* This should never be reached. If this will be reached, we have
@@ -374,17 +357,10 @@ getifaddrs (struct ifaddrs **ifap)
   if (ifap)
     *ifap = NULL;
 
-  if (! __no_netlink_support && __netlink_open (&nh) < 0)
+  if (__netlink_open (&nh) < 0)
     {
-#if __ASSUME_NETLINK_SUPPORT != 0
       return -1;
-#endif
     }
-
-#if __ASSUME_NETLINK_SUPPORT == 0
-  if (__no_netlink_support)
-    return fallback_getifaddrs (ifap);
-#endif
 
   /* Tell the kernel that we wish to get a list of all
      active interfaces, collect all data for every interface.  */
@@ -462,10 +438,7 @@ getifaddrs (struct ifaddrs **ifap)
 
   /* Allocate memory for all entries we have and initialize next
      pointer.  */
-  ifas = (struct ifaddrs_storage *) calloc (1,
-					    (newlink + newaddr)
-					    * sizeof (struct ifaddrs_storage)
-					    + ifa_data_size);
+  ifas = calloc (1, (newlink + newaddr) * sizeof (ifas[0]) + ifa_data_size);
   if (ifas == NULL)
     {
       result = -1;
@@ -562,7 +535,7 @@ getifaddrs (struct ifaddrs **ifap)
 		      if ((rta_payload + 1) <= sizeof (ifas[ifa_index].name))
 			{
 			  ifas[ifa_index].ifa.ifa_name = ifas[ifa_index].name;
-			  *(char *) __mempcpy (ifas[ifa_index].name, rta_data,
+			  *(char *) mempcpy (ifas[ifa_index].name, rta_data,
 					       rta_payload) = '\0';
 			}
 		      break;
@@ -761,7 +734,7 @@ getifaddrs (struct ifaddrs **ifap)
 		      if (rta_payload + 1 <= sizeof (ifas[ifa_index].name))
 			{
 			  ifas[ifa_index].ifa.ifa_name = ifas[ifa_index].name;
-			  *(char *) __mempcpy (ifas[ifa_index].name, rta_data,
+			  *(char *) mempcpy (ifas[ifa_index].name, rta_data,
 					       rta_payload) = '\0';
 			}
 		      else
@@ -864,14 +837,12 @@ getifaddrs (struct ifaddrs **ifap)
 }
 
 
-#if __ASSUME_NETLINK_SUPPORT != 0
 void
 freeifaddrs (struct ifaddrs *ifa)
 {
   free (ifa);
 }
-#endif
 
-#endif /* unused code */
+#endif /* __UCLIBC_SUPPORT_AI_ADDRCONFIG__ */
 
 #endif /* __ASSUME_NETLINK_SUPPORT */

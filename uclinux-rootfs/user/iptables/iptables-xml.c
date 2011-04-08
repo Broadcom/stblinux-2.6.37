@@ -64,7 +64,7 @@ print_usage(const char *name, const char *version)
 static int
 parse_counters(char *string, struct ipt_counters *ctr)
 {
-	u_int64_t *pcnt, *bcnt;
+	__u64 *pcnt, *bcnt;
 
 	if (string != NULL) {
 		pcnt = &ctr->pcnt;
@@ -110,7 +110,7 @@ static int
 add_argv(char *what, int quoted)
 {
 	DEBUGP("add_argv: %d %s\n", newargc, what);
-	if (what && ((newargc + 1) < sizeof(newargv) / sizeof(char *))) {
+	if (what && newargc + 1 < ARRAY_SIZE(newargv)) {
 		newargv[newargc] = strdup(what);
 		newargvattr[newargc] = quoted;
 		newargc++;
@@ -870,6 +870,8 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (in != NULL)
+		fclose(in);
 	printf("</iptables-rules>\n");
 	free_argv();
 

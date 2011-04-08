@@ -10,19 +10,13 @@
 #ifdef WANT_WIDE
 # define Wstpcpy wcpcpy
 #else
-libc_hidden_proto(stpcpy)
+# undef stpcpy
 # define Wstpcpy stpcpy
 #endif
 
 Wchar *Wstpcpy(register Wchar * __restrict s1, const Wchar * __restrict s2)
 {
-#ifdef __BCC__
-	do {
-		*s1 = *s2++;
-	} while (*s1++ != 0);
-#else
 	while ( (*s1++ = *s2++) != 0 );
-#endif
 
 	return s1 - 1;
 }

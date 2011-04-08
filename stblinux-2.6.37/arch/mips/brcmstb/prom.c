@@ -25,7 +25,7 @@
 #include <linux/smp.h>
 #include <linux/bmoca.h>
 #include <linux/version.h>
-#include <linux/serial_8250.h>
+#include <linux/serial_reg.h>
 #include <linux/io.h>
 #include <linux/string.h>
 #include <linux/compiler.h>
@@ -178,6 +178,19 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 			brcm_docsis_platform = 1;
 		}
 	}
+	if (strncmp(buf, "BCM93380SMS", 11) == 0 ||
+	    strncmp(buf, "BCM93380VMS", 11) == 0 ||
+	    strncmp(buf, "BCM97420_MOCA_GN", 16) == 0) {
+		brcm_enet0_force_ext_mii = 1;
+		brcm_enet_no_mdio = 1;
+	}
+	if (strncmp(buf, "BCM97420_MOCA_GN_SAT", 20) == 0)
+		brcm_moca_rf_band = MOCA_BAND_MIDRF;
+#elif defined(CONFIG_BCM7425)
+	if (strncmp(buf, "BCM97425VMS", 11) == 0) {
+		brcm_enet0_force_ext_mii = 1;
+		brcm_enet_no_mdio = 1;
+	}
 #elif defined(CONFIG_BCM7344)
 	/* 7344 is normally MidRF, but the 7418 variant might not be */
 	if (strncmp(buf, "BCM97418SAT", 11) == 0)
@@ -274,28 +287,33 @@ static void __init __maybe_unused cfe_read_configuration(void)
  * Early printk
  ***********************************************************************/
 
+static unsigned long brcm_early_uart;
+
+#define UART_REG(x)		(brcm_early_uart + ((x) << 2))
+
+static void __init init_port(void)
+{
+	unsigned int divisor;
+
+	BDEV_WR(UART_REG(UART_LCR), 0x3);	/* 8n1 */
+	BDEV_WR(UART_REG(UART_IER), 0);		/* no interrupt */
+	BDEV_WR(UART_REG(UART_FCR), 0);		/* no fifo */
+	BDEV_WR(UART_REG(UART_MCR), 0x3);	/* DTR + RTS */
+
+	divisor = BRCM_BASE_BAUD / 115200;
+#if !defined(CONFIG_BRCM_IKOS) && !defined(CONFIG_BRCM_HAS_PCU_UARTS)
+	BDEV_SET(UART_REG(UART_LCR), UART_LCR_DLAB);
+	BDEV_WR(UART_REG(UART_DLL), divisor & 0xff);
+	BDEV_WR(UART_REG(UART_DLM), (divisor >> 8) & 0xff);
+#endif
+	BDEV_UNSET(UART_REG(UART_LCR), UART_LCR_DLAB);
+}
+
 void prom_putchar(char x)
 {
-	/* not used */
-}
-
-static inline void __init setup_early_3250(unsigned long base_pa)
-{
-	extern void __init bcm3250_early_console(unsigned long);
-
-	bcm3250_early_console(base_pa);
-}
-
-static inline void __init setup_early_16550(unsigned long base_pa)
-{
-	char args[64];
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-	sprintf(args, "uart,mmio32,0x%08lx,115200n8", base_pa);
-#else
-	sprintf(args, "uart,mmio,0x%08lx,115200n8", base_pa);
-#endif
-	setup_early_serial8250_console(args);
+	while (!(BDEV_RD(UART_REG(UART_LSR)) & UART_LSR_THRE))
+		;
+	BDEV_WR(UART_REG(UART_TX), x);
 }
 
 #ifdef CONFIG_BRCM_HAS_PCU_UARTS
@@ -305,7 +323,6 @@ static inline void __init setup_early_16550(unsigned long base_pa)
 
 static void __init brcm_setup_early_printk(void)
 {
-#ifdef CONFIG_EARLY_PRINTK
 	char *arg = strstr(arcs_cmdline, "console=");
 	int dev = CONFIG_BRCM_CONSOLE_DEVICE;
 	const unsigned long base[] = {
@@ -331,13 +348,8 @@ static void __init brcm_setup_early_printk(void)
 		}
 		arg++;
 	}
-
-#if   defined(CONFIG_BRCM_HAS_3250)
-	setup_early_3250(BCHP_PHYSICAL_OFFSET + base[dev]);
-#elif defined(CONFIG_BRCM_HAS_16550)
-	setup_early_16550(BCHP_PHYSICAL_OFFSET + base[dev]);
-#endif
-#endif /* CONFIG_EARLY_PRINTK */
+	brcm_early_uart = base[dev];
+	init_port();
 }
 
 /***********************************************************************
@@ -381,12 +393,13 @@ void __init prom_init(void)
 	if (ptr)
 		brcm_dram1_linux_mb = memparse(ptr + 6, &ptr) >> 20;
 
-	printk(KERN_INFO "Options: sata=%d enet=%d emac_1=%d no_mdio=%d "
-		"docsis=%d pci=%d smp=%d moca=%d usb=%d\n",
-		brcm_sata_enabled, brcm_enet_enabled, brcm_emac_1_enabled,
-		brcm_enet_no_mdio, brcm_docsis_platform,
-		brcm_pci_enabled, brcm_smp_enabled, brcm_moca_enabled,
-		brcm_usb_enabled);
+	printk(KERN_INFO "Options: enet_en=%d enet0_mii=%d enet_no_mdio=%d "
+		"enet1_en=%d moca=%d\n",
+		brcm_enet_enabled, brcm_enet0_force_ext_mii,
+		brcm_enet_no_mdio, brcm_enet1_enabled, brcm_moca_enabled);
+	printk(KERN_INFO "         sata=%d docsis=%d pci=%d smp=%d usb=%d\n",
+		brcm_sata_enabled, brcm_docsis_platform, brcm_pci_enabled,
+		brcm_smp_enabled, brcm_usb_enabled);
 
 	bchip_early_setup();
 
@@ -403,6 +416,12 @@ void __init prom_init(void)
 			break;
 
 #ifdef CONFIG_BRCM_UPPER_MEMORY
+#if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0)
+		/* HW7425-451: broken in A0, fixed in A1 */
+		if (BRCM_CHIP_REV() == 0x00)
+			mb = min(dram0_mb, 512UL);
+		else
+#endif
 		mb = min(dram0_mb, BRCM_MAX_UPPER_MB);
 		dram0_mb -= mb;
 

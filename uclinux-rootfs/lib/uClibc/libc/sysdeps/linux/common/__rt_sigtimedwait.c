@@ -8,11 +8,9 @@
  * GNU Library General Public License (LGPL) version 2 or later.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <signal.h>
 #include <string.h>
-
-libc_hidden_proto(memcpy)
 
 #ifdef __NR_rt_sigtimedwait
 
@@ -58,8 +56,8 @@ static int do_sigtimedwait(const sigset_t *set, siginfo_t *info,
 }
 
 /* Return any pending signal or wait for one for the given time.  */
-int __sigtimedwait(const sigset_t *set, siginfo_t *info,
-				   const struct timespec *timeout)
+int attribute_hidden __sigtimedwait(const sigset_t *set, siginfo_t *info,
+				    const struct timespec *timeout)
 {
 	if(SINGLE_THREAD_P)
 		return do_sigtimedwait(set, info, timeout);
@@ -87,7 +85,7 @@ int attribute_hidden __sigtimedwait(const sigset_t * set, siginfo_t * info,
 {
 	return __rt_sigtimedwait(set, info, timeout, _NSIG / 8);
 }
-# endif
+# endif /* !__UCLIBC_HAS_THREADS_NATIVE__ */
 #else
 int attribute_hidden __sigtimedwait(const sigset_t * set, siginfo_t * info,
 									const struct timespec *timeout)
@@ -100,3 +98,4 @@ int attribute_hidden __sigtimedwait(const sigset_t * set, siginfo_t * info,
 }
 #endif
 weak_alias(__sigtimedwait,sigtimedwait)
+libc_hidden_weak(sigtimedwait)

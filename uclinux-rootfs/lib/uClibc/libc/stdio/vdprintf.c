@@ -11,10 +11,7 @@
 #include "_stdio.h"
 #include <stdarg.h>
 
-libc_hidden_proto(vfprintf)
-libc_hidden_proto(fflush_unlocked)
 
-libc_hidden_proto(vdprintf)
 int vdprintf(int filedes, const char * __restrict format, va_list arg)
 {
 	FILE f;
@@ -22,8 +19,8 @@ int vdprintf(int filedes, const char * __restrict format, va_list arg)
 #ifdef __STDIO_BUFFERS
 	char buf[64];				/* TODO: provide _optional_ buffering? */
 
-	f.__bufend = buf + sizeof(buf);
-	f.__bufstart = buf;
+	f.__bufend = (unsigned char *) buf + sizeof(buf);
+	f.__bufstart = (unsigned char *) buf;
 	__STDIO_STREAM_DISABLE_GETC(&f);
 	__STDIO_STREAM_DISABLE_PUTC(&f);
 	__STDIO_STREAM_INIT_BUFREAD_BUFPOS(&f);
@@ -43,22 +40,24 @@ int vdprintf(int filedes, const char * __restrict format, va_list arg)
 
 #ifdef __UCLIBC_HAS_WCHAR__
 	f.__ungot_width[0] = 0;
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 #ifdef __STDIO_MBSTATE
 	__INIT_MBSTATE(&(f.__state));
-#endif /* __STDIO_MBSTATE */
-
-#ifdef __UCLIBC_HAS_THREADS__
-	f.__user_locking = 1;		/* Set user locking. */
-#ifdef __USE_STDIO_FUTEXES__
-	_IO_lock_init (f._lock);
-#else
-	__stdio_init_mutex(&f.__lock);
 #endif
+
+/* _vfprintf_internal doesn't do any locking, locking init is here
+ * only because of fflush_unlocked. TODO? */
+#if (defined(__STDIO_BUFFERS) || defined(__USE_OLD_VFPRINTF__)) && defined(__UCLIBC_HAS_THREADS__)
+	f.__user_locking = 1;		/* Set user locking. */
+	STDIO_INIT_MUTEX(f.__lock);
 #endif
 	f.__nextopen = NULL;
 
+#ifdef __USE_OLD_VFPRINTF__
 	rv = vfprintf(&f, format, arg);
+#else
+	rv = _vfprintf_internal(&f, format, arg);
+#endif
 
 #ifdef __STDIO_BUFFERS
 	/* If not buffering, then fflush is unnecessary. */

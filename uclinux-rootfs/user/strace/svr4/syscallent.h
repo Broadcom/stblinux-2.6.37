@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscallent.h,v 1.11 2005/07/05 03:25:36 roland Exp $
+ *	$Id$
  */
 
 #ifdef MIPS
@@ -823,5 +823,5 @@
 	{ -1,	TF,	sys_aioaread64,		"aioaread64"	}, /* 417 */
 	{ -1,	TF,	sys_aioawrite64,	"aioawrite64"	}, /* 418 */
 	{ -1,	TF,	sys_aiocancel64,	"aiocancel64"	}, /* 419 */
-	{ -1,	TF,	sys_aiofsync,		"aiofsync"	}, /* 420 */ 
+	{ -1,	TF,	sys_aiofsync,		"aiofsync"	}, /* 420 */
 #endif

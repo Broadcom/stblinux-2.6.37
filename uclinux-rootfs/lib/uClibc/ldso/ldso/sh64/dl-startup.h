@@ -1,9 +1,9 @@
-/* Any assmbly language/system dependent hacks needed to setup boot1.c so it
+/* Any assembly language/system dependent hacks needed to setup boot1.c so it
  * will work as expected and cope with whatever platform specific wierdness is
  * needed for this architecture.
  */
 
-asm("" \
+__asm__("" \
 "	.section .text..SHmedia32,\"ax\"\n"				\
 "	.globl _start\n"						\
 "	.type _start, @function\n"					\
@@ -32,7 +32,7 @@ asm("" \
 
 /*
  * Get a pointer to the argv array.  On many platforms this can be just
- * the address if the first argument, on other platforms we need to
+ * the address of the first argument, on other platforms we need to
  * do something a little more subtle here.
  */
 #define GET_ARGV(ARGVP, ARGS) ARGVP = (((unsigned long *)ARGS)+1)

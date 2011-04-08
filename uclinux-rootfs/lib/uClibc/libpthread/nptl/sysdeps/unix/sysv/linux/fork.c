@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2007, 2008 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -19,7 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <syscall.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sysdep.h>
@@ -29,7 +29,6 @@
 #include <ldsodefs.h>
 #include <atomic.h>
 #include <errno.h>
-
 
 unsigned long int *__fork_generation_pointer;
 
@@ -45,7 +44,7 @@ fresetlockfiles (void)
   FILE *fp;
 #ifdef __USE_STDIO_FUTEXES__
   for (fp = _stdio_openlist; fp != NULL; fp = fp->__nextopen)
-    _IO_lock_init(fp->_lock);
+    STDIO_INIT_MUTEX(fp->__lock);
 #else
   pthread_mutexattr_t attr;
 
@@ -60,7 +59,8 @@ fresetlockfiles (void)
 }
 
 extern __typeof(fork) __libc_fork;
-pid_t __libc_fork (void)
+pid_t
+__libc_fork (void)
 {
   pid_t pid;
   struct used_handler
@@ -74,6 +74,9 @@ pid_t __libc_fork (void)
   struct fork_handler *runp;
   while ((runp = __fork_handlers) != NULL)
     {
+      /* Make sure we read from the current RUNP pointer.  */
+      atomic_full_barrier ();
+
       unsigned int oldval = runp->refcntr;
 
       if (oldval == 0)
@@ -121,11 +124,7 @@ pid_t __libc_fork (void)
       break;
     }
 
-#ifdef __USE_STDIO_FUTEXES__
-  _IO_lock_lock (_stdio_openlist_lock);
-#else
-  __PTHREAD_MUTEX_LOCK(&_stdio_openlist_lock);
-#endif
+  __UCLIBC_IO_MUTEX_LOCK_CANCEL_UNSAFE(_stdio_openlist_add_lock);
 
 #ifndef NDEBUG
   pid_t ppid = THREAD_GETMEM (THREAD_SELF, tid);
@@ -169,11 +168,9 @@ pid_t __libc_fork (void)
       fresetlockfiles ();
 
       /* Reset locks in the I/O code.  */
-#ifdef __USE_STDIO_FUTEXES__
-      _IO_lock_init (_stdio_openlist_lock);
-#else
-      __stdio_init_mutex(&_stdio_openlist_lock);
-#endif
+      STDIO_INIT_MUTEX(_stdio_openlist_add_lock);
+
+      /* XXX reset any locks in dynamic loader */
 
       /* Run the handlers registered for the child.  */
       while (allp != NULL)
@@ -182,8 +179,11 @@ pid_t __libc_fork (void)
 	    allp->handler->child_handler ();
 
 	  /* Note that we do not have to wake any possible waiter.
-	     This is the only thread in the new process.  */
-	  --allp->handler->refcntr;
+ 	     This is the only thread in the new process.  The count
+ 	     may have been bumped up by other threads doing a fork.
+ 	     We reset it to 1, to avoid waiting for non-existing
+ 	     thread(s) to release the count.  */
+	  allp->handler->refcntr = 1;
 
 	  /* XXX We could at this point look through the object pool
 	     and mark all objects not on the __fork_handlers list as
@@ -195,7 +195,7 @@ pid_t __libc_fork (void)
 	}
 
       /* Initialize the fork lock.  */
-      __fork_lock = (lll_lock_t) LLL_LOCK_INITIALIZER;
+      __fork_lock = LLL_LOCK_INITIALIZER;
     }
   else
     {
@@ -205,11 +205,7 @@ pid_t __libc_fork (void)
       THREAD_SETMEM (THREAD_SELF, pid, parentpid);
 
       /* We execute this even if the 'fork' call failed.  */
-#ifdef __USE_STDIO_FUTEXES__
-      _IO_lock_unlock(_stdio_openlist_lock);
-#else
-      __PTHREAD_MUTEX_UNLOCK(&_stdio_openlist_lock);
-#endif
+      __UCLIBC_IO_MUTEX_UNLOCK_CANCEL_UNSAFE(_stdio_openlist_add_lock);
 
       /* Run the handlers registered for the parent.  */
       while (allp != NULL)
@@ -219,7 +215,7 @@ pid_t __libc_fork (void)
 
 	  if (atomic_decrement_and_test (&allp->handler->refcntr)
 	      && allp->handler->need_signal)
-	    lll_futex_wake (allp->handler->refcntr, 1);
+	    lll_futex_wake (allp->handler->refcntr, 1, LLL_PRIVATE);
 
 	  allp = allp->next;
 	}
@@ -227,6 +223,7 @@ pid_t __libc_fork (void)
 
   return pid;
 }
+weak_alias(__libc_fork,__fork)
 libc_hidden_proto(fork)
 weak_alias(__libc_fork,fork)
 libc_hidden_weak(fork)

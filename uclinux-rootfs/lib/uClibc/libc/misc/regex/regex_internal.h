@@ -27,72 +27,47 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined HAVE_LANGINFO_H || defined HAVE_LANGINFO_CODESET || defined _LIBC
+#if defined HAVE_LANGINFO_H || defined HAVE_LANGINFO_CODESET
 # include <langinfo.h>
-libc_hidden_proto(nl_langinfo)
 #endif
-#if defined HAVE_LOCALE_H || defined _LIBC
+#if defined HAVE_LOCALE_H
 # include <locale.h>
 #endif
-#if defined HAVE_WCHAR_H || defined _LIBC
+#if defined HAVE_WCHAR_H
 # include <wchar.h>
-#endif /* HAVE_WCHAR_H || _LIBC */
-#if defined HAVE_WCTYPE_H || defined _LIBC
+#endif
+#if defined HAVE_WCTYPE_H
 # include <wctype.h>
-#endif /* HAVE_WCTYPE_H || _LIBC */
-#if defined HAVE_STDBOOL_H || defined _LIBC
+#endif
+#if defined HAVE_STDBOOL_H
 # include <stdbool.h>
-#endif /* HAVE_STDBOOL_H || _LIBC */
-#if defined HAVE_STDINT_H || defined _LIBC
+#endif
+#if defined HAVE_STDINT_H
 # include <stdint.h>
-#endif /* HAVE_STDINT_H || _LIBC */
-#if defined _LIBC
-# include <bits/libc-lock.h>
+#endif
+
+#ifdef __UCLIBC_HAS_THREADS__
+#include <bits/libc-lock.h>
 #else
-# define __libc_lock_define(CLASS,NAME)
-# define __libc_lock_init(NAME) do { } while (0)
-# define __libc_lock_lock(NAME) do { } while (0)
-# define __libc_lock_unlock(NAME) do { } while (0)
+#define __libc_lock_define(CLASS, NAME)
+#define __libc_lock_init(NAME)   do { } while (0)
+#define __libc_lock_lock(NAME)   do { } while (0)
+#define __libc_lock_unlock(NAME) do { } while (0)
 #endif
 
-/* In case that the system doesn't have isblank().  */
-#if !defined _LIBC && !defined HAVE_ISBLANK && !defined isblank && !defined __UCLIBC__
-# define isblank(ch) ((ch) == ' ' || (ch) == '\t')
-#endif
+#undef gettext
+#undef gettext_noop
+#define gettext(msgid)       (msgid)
+#define gettext_noop(String) String
 
-#if defined _LIBC && !defined __UCLIBC__
-# ifndef _RE_DEFINE_LOCALE_FUNCTIONS
-#  define _RE_DEFINE_LOCALE_FUNCTIONS 1
-#   include <locale/localeinfo.h>
-#   include <locale/elem-hash.h>
-#   include <locale/coll-lookup.h>
-# endif
-#endif
-
-/* This is for other GNU distributions with internationalized messages.  */
-#if (HAVE_LIBINTL_H && ENABLE_NLS) || defined _LIBC
-# include <libintl.h>
-# ifdef _LIBC
-#  undef gettext
-#  define gettext(msgid) \
-  INTUSE(__dcgettext) (_libc_intl_domainname, msgid, LC_MESSAGES)
-# endif
-#else
-# define gettext(msgid) (msgid)
-#endif
-
-#ifndef gettext_noop
-/* This define is so xgettext can find the internationalizable
-   strings.  */
-# define gettext_noop(String) String
-#endif
-
-#if (defined MB_CUR_MAX && HAVE_LOCALE_H && HAVE_WCTYPE_H && HAVE_WCHAR_H && HAVE_WCRTOMB && HAVE_MBRTOWC && HAVE_WCSCOLL) || _LIBC
+#if (defined MB_CUR_MAX && HAVE_LOCALE_H && HAVE_WCTYPE_H && HAVE_WCHAR_H && HAVE_WCRTOMB && HAVE_MBRTOWC && HAVE_WCSCOLL)
 # define RE_ENABLE_I18N
 #endif
 
 #if __GNUC__ >= 3
-# define BE(expr, val) __builtin_expect (expr, val)
+/* uclibc: lean towards smaller size a bit:
+ * OFF: # define BE(expr, val) __builtin_expect (expr, val) */
+# define BE(expr, val) (expr)
 #else
 # define BE(expr, val) (expr)
 # define inline
@@ -107,25 +82,11 @@ libc_hidden_proto(nl_langinfo)
 #define NEWLINE_CHAR '\n'
 #define WIDE_NEWLINE_CHAR L'\n'
 
-/* Rename to standard API for using out of glibc.  */
-#if !defined _LIBC && !defined __UCLIBC__
-# define __wctype wctype
-# define __iswctype iswctype
-# define __btowc btowc
-# define __mempcpy mempcpy
-# define __wcrtomb wcrtomb
-# define __regfree regfree
-# define attribute_hidden
-#endif /* not _LIBC */
-
 #ifdef __GNUC__
 # define __attribute(arg) __attribute__ (arg)
 #else
 # define __attribute(arg)
 #endif
-
-extern const char __re_error_msgid[] attribute_hidden;
-extern const size_t __re_error_msgid_idx[] attribute_hidden;
 
 /* An integer used to represent a set of bits.  It must be unsigned,
    and must be at least as wide as unsigned int.  */
@@ -240,23 +201,23 @@ typedef struct
   wchar_t *mbchars;
 
   /* Collating symbols.  */
-# ifdef _LIBC
+# if 0
   int32_t *coll_syms;
 # endif
 
   /* Equivalence classes. */
-# ifdef _LIBC
+# if 0
   int32_t *equiv_classes;
 # endif
 
   /* Range expressions. */
-# ifdef _LIBC
+# if 0
   uint32_t *range_starts;
   uint32_t *range_ends;
-# else /* not _LIBC */
+# else
   wchar_t *range_starts;
   wchar_t *range_ends;
-# endif /* not _LIBC */
+# endif
 
   /* Character classes. */
   wctype_t *char_classes;
@@ -369,24 +330,15 @@ struct re_string_t
 };
 typedef struct re_string_t re_string_t;
 
-
 struct re_dfa_t;
 typedef struct re_dfa_t re_dfa_t;
-
-#if !defined _LIBC && !defined __UCLIBC__
-# ifdef __i386__
-#  define internal_function   __attribute ((regparm (3), stdcall))
-# else
-#  define internal_function
-# endif
-#endif
 
 static reg_errcode_t re_string_realloc_buffers (re_string_t *pstr,
 						int new_buf_len)
      internal_function;
 #ifdef RE_ENABLE_I18N
 static void build_wcs_buffer (re_string_t *pstr) internal_function;
-static int build_wcs_upper_buffer (re_string_t *pstr) internal_function;
+static reg_errcode_t build_wcs_upper_buffer (re_string_t *pstr) internal_function;
 #endif /* RE_ENABLE_I18N */
 static void build_upper_buffer (re_string_t *pstr) internal_function;
 static void re_string_translate_buffer (re_string_t *pstr) internal_function;
@@ -412,8 +364,8 @@ static unsigned int re_string_context_at (const re_string_t *input, int idx,
 
 #include <alloca.h>
 
-#ifndef _LIBC
-# if HAVE_ALLOCA
+#if 1
+# ifdef HAVE_ALLOCA
 /* The OS usually guarantees only one guard page at the bottom of the stack,
    and a page size can be as small as 4096 bytes.  So we cannot safely
    allocate anything larger than 4096 bytes.  Also care for the possibility
@@ -557,11 +509,7 @@ typedef struct
 {
   /* The string object corresponding to the input string.  */
   re_string_t input;
-#if defined _LIBC || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L)
-  const re_dfa_t *const dfa;
-#else
   const re_dfa_t *dfa;
-#endif
   /* EFLAGS of the argument of regexec.  */
   int eflags;
   /* Where the matching ends.  */
@@ -656,7 +604,7 @@ struct re_dfa_t
   (re_node_set_remove_at (set, re_node_set_contains (set, id) - 1))
 #define re_node_set_empty(p) ((p)->nelem = 0)
 #define re_node_set_free(set) re_free ((set)->elems)
-
+
 
 typedef enum
 {
@@ -682,7 +630,7 @@ typedef struct
 
 
 /* Inline functions for bitset operation.  */
-static inline void
+static __inline__ void
 bitset_not (bitset_t set)
 {
   int bitset_i;
@@ -690,7 +638,7 @@ bitset_not (bitset_t set)
     set[bitset_i] = ~set[bitset_i];
 }
 
-static inline void
+static __inline__ void
 bitset_merge (bitset_t dest, const bitset_t src)
 {
   int bitset_i;
@@ -698,7 +646,7 @@ bitset_merge (bitset_t dest, const bitset_t src)
     dest[bitset_i] |= src[bitset_i];
 }
 
-static inline void
+static __inline__ void
 bitset_mask (bitset_t dest, const bitset_t src)
 {
   int bitset_i;
@@ -708,7 +656,7 @@ bitset_mask (bitset_t dest, const bitset_t src)
 
 #ifdef RE_ENABLE_I18N
 /* Inline functions for re_string.  */
-static inline int
+static __inline__ int
 internal_function __attribute ((pure))
 re_string_char_size_at (const re_string_t *pstr, int idx)
 {
@@ -721,7 +669,7 @@ re_string_char_size_at (const re_string_t *pstr, int idx)
   return byte_idx;
 }
 
-static inline wint_t
+static __inline__ wint_t
 internal_function __attribute ((pure))
 re_string_wchar_at (const re_string_t *pstr, int idx)
 {
@@ -734,7 +682,7 @@ static int
 internal_function __attribute ((pure))
 re_string_elem_size_at (const re_string_t *pstr, int idx)
 {
-# ifdef _LIBC
+# if 0
   const unsigned char *p, *extra;
   const int32_t *table, *indirect;
   int32_t tmp;
@@ -752,9 +700,8 @@ re_string_elem_size_at (const re_string_t *pstr, int idx)
       tmp = findidx (&p);
       return p - pstr->mbs - idx;
     }
-  else
-# endif /* _LIBC */
-    return 1;
+# endif
+  return 1;
 }
 #endif /* RE_ENABLE_I18N */
 

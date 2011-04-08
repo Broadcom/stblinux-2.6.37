@@ -45,9 +45,6 @@ static char sccsid[] = "@(#)svc_raw.c 1.15 87/08/11 Copyr 1984 Sun Micro";
 #include "rpc_private.h"
 #include <rpc/svc.h>
 
-libc_hidden_proto(xdrmem_create)
-libc_hidden_proto(xdr_callmsg)
-libc_hidden_proto(xdr_replymsg)
 
 /*
  * This is the "network" that we will be moving data over
@@ -108,9 +105,7 @@ svcraw_stat (SVCXPRT *xprt attribute_unused)
 }
 
 static bool_t
-svcraw_recv (xprt, msg)
-     SVCXPRT *xprt attribute_unused;
-     struct rpc_msg *msg;
+svcraw_recv (SVCXPRT *xprt attribute_unused, struct rpc_msg *msg)
 {
   struct svcraw_private_s *srp = svcraw_private;
   XDR *xdrs;

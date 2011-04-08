@@ -11,11 +11,8 @@ link_warning(gets, "the 'gets' function is dangerous and should not be used.")
 
 /* UNSAFE FUNCTION -- do not bother optimizing */
 
-libc_hidden_proto(getchar_unlocked)
-libc_hidden_proto(__fgetc_unlocked)
-#ifndef __STDIO_GETC_MACRO
-#define __stdin stdin
-#endif
+/* disable macro, force actual function call */
+#undef getchar_unlocked
 
 char *gets(char *s)
 {

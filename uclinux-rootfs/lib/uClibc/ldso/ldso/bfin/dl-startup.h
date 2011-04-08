@@ -17,14 +17,11 @@ You should have received a copy of the GNU Lesser General Public
 License along with uClibc; see the file COPYING.LIB.  If not, write to
 the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
 USA.  */
-	
+
 /* Any assembly language/system dependent hacks needed to setup
  * boot1.c so it will work as expected and cope with whatever platform
  * specific wierdness is needed for this architecture.
-
- * We override the default _dl_boot function, and replace it with a
- * bit of asm.  Then call the real _dl_boot function, which is now
- * named _dl_boot2.  */
+ */
 
 /* At program start-up, p0 contains a pointer to a
    elf32_fdpic_loadmap that describes how the executable was loaded
@@ -41,9 +38,9 @@ USA.  */
 
 __asm__(
     "	.text\n"			\
-    "	.global	__dl_boot\n"		\
-    "	.type	__dl_boot,@function\n"	\
-    "__dl_boot:\n"			\
+    "	.global	__start\n"		\
+    "	.type	__start,@function\n"	\
+    "__start:\n"			\
     "	call	.Lcall\n"		\
     ".Lcall:\n"				\
     "	R4 = RETS;\n"			\
@@ -83,10 +80,11 @@ __asm__(
     "	P0 = R5;\n"			\
     "   SP += 32;\n"			\
     "   JUMP (P4);\n"			\
-    "	.size	__dl_boot,.-__dl_boot\n"
+    "	.size	__start,.-__start\n"
 );
 
-#define DL_BOOT(X)   \
+#undef DL_START
+#define DL_START(X)   \
 static void  __attribute__ ((used)) \
 _dl_start (Elf32_Addr dl_boot_got_pointer, \
 	   struct elf32_fdpic_loadmap *dl_boot_progmap, \
@@ -99,21 +97,10 @@ struct elf32_fdpic_loadmap;
 
 /*
  * Get a pointer to the argv array.  On many platforms this can be just
- * the address if the first argument, on other platforms we need to
+ * the address of the first argument, on other platforms we need to
  * do something a little more subtle here.
  */
 #define GET_ARGV(ARGVP, ARGS) ARGVP = (((unsigned long*) ARGS) + 1)
-
-/*
- * Compute the GOT address.  On several platforms, we use assembly
- * here.  on FR-V FDPIC, there's no way to compute the GOT address,
- * since the offset between text and data is not fixed, so we arrange
- * for the assembly _dl_boot to pass this value as an argument to
- * _dl_boot.  */
-#define DL_BOOT_COMPUTE_GOT(got) ((got) = dl_boot_got_pointer)
-
-#define DL_BOOT_COMPUTE_DYN(dpnt, got, load_addr) \
-  ((dpnt) = dl_boot_ldso_dyn_pointer)
 
 /*
  * Here is a macro to perform a relocation.  This is only used when
@@ -124,7 +111,7 @@ struct elf32_fdpic_loadmap;
  */
 #define PERFORM_BOOTSTRAP_RELOC(RELP,REL,SYMBOL,LOAD,SYMTAB) \
 	switch(ELF32_R_TYPE((RELP)->r_info)){				\
-	case R_BFIN_byte4_data:							\
+	case R_BFIN_BYTE4_DATA:							\
 	  *(REL) += (SYMBOL);						\
 	  break;							\
 	case R_BFIN_FUNCDESC_VALUE:					\

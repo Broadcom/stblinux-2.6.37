@@ -3,7 +3,7 @@
  * Jérôme de Vivie   <devivie@info.enserb.u-bordeaux.fr>
  * Hervé Eychenne    <rv@wallfire.org>
  */
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,9 +29,9 @@ XT_LIMIT_BURST);
 }
 
 static const struct option limit_opts[] = {
-	{ "limit", 1, NULL, '%' },
-	{ "limit-burst", 1, NULL, '$' },
-	{ .name = NULL }
+	{.name = "limit",       .has_arg = true, .val = '%'},
+	{.name = "limit-burst", .has_arg = true, .val = '$'},
+	XT_GETOPT_TABLEEND,
 };
 
 static
@@ -94,14 +94,14 @@ limit_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch(c) {
 	case '%':
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!parse_rate(optarg, &r->avg))
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad rate `%s'", optarg);
 		break;
 
 	case '$':
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, 10000))
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad --limit-burst `%s'", optarg);
@@ -132,11 +132,10 @@ static void print_rate(u_int32_t period)
 {
 	unsigned int i;
 
-	for (i = 1; i < sizeof(rates)/sizeof(struct rates); i++) {
+	for (i = 1; i < ARRAY_SIZE(rates); ++i)
 		if (period > rates[i].mult
             || rates[i].mult/period < rates[i].mult%period)
 			break;
-	}
 
 	printf("%u/%s ", rates[i-1].mult / period, rates[i-1].name);
 }
@@ -144,14 +143,14 @@ static void print_rate(u_int32_t period)
 static void
 limit_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_rateinfo *r = (struct xt_rateinfo *)match->data;
+	const struct xt_rateinfo *r = (const void *)match->data;
 	printf("limit: avg "); print_rate(r->avg);
 	printf("burst %u ", r->burst);
 }
 
 static void limit_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_rateinfo *r = (struct xt_rateinfo *)match->data;
+	const struct xt_rateinfo *r = (const void *)match->data;
 
 	printf("--limit "); print_rate(r->avg);
 	if (r->burst != XT_LIMIT_BURST)
@@ -159,7 +158,7 @@ static void limit_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match limit_match = {
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "limit",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_rateinfo)),

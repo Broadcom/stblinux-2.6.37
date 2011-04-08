@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2002-2004,2006-2007,2009,2010 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -18,20 +18,11 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
-#include <shlib-compat.h>
+#include <lowlevellock.h>
 #include <lowlevelcond.h>
 #include <pthread-errnos.h>
-
-#ifdef UP
-# define LOCK
-#else
-# define LOCK lock
-#endif
-
-#define SYS_gettimeofday	__NR_gettimeofday
-#define SYS_futex		240
-#define FUTEX_WAIT		0
-#define FUTEX_WAKE		1
+#include <pthread-pi-defines.h>
+#include <bits/kernel-features.h>
 
 
 	.text
@@ -40,17 +31,32 @@
 			       const struct timespec *abstime)  */
 	.globl	__pthread_cond_timedwait
 	.type	__pthread_cond_timedwait, @function
+	.protected	__pthread_cond_timedwait
 	.align	16
 __pthread_cond_timedwait:
 .LSTARTCODE:
+	cfi_startproc
+#ifdef SHARED
+	cfi_personality(DW_EH_PE_pcrel | DW_EH_PE_sdata4 | DW_EH_PE_indirect,
+			DW.ref.__gcc_personality_v0)
+	cfi_lsda(DW_EH_PE_pcrel | DW_EH_PE_sdata4, .LexceptSTART)
+#else
+	cfi_personality(DW_EH_PE_udata4, __gcc_personality_v0)
+	cfi_lsda(DW_EH_PE_udata4, .LexceptSTART)
+#endif
+
 	pushl	%ebp
-.Lpush_ebp:
+	cfi_adjust_cfa_offset(4)
+	cfi_rel_offset(%ebp, 0)
 	pushl	%edi
-.Lpush_edi:
+	cfi_adjust_cfa_offset(4)
+	cfi_rel_offset(%edi, 0)
 	pushl	%esi
-.Lpush_esi:
+	cfi_adjust_cfa_offset(4)
+	cfi_rel_offset(%esi, 0)
 	pushl	%ebx
-.Lpush_ebx:
+	cfi_adjust_cfa_offset(4)
+	cfi_rel_offset(%ebx, 0)
 
 	movl	20(%esp), %ebx
 	movl	28(%esp), %ebp
@@ -87,11 +93,12 @@ __pthread_cond_timedwait:
 	addl	$1, total_seq(%ebx)
 	adcl	$0, total_seq+4(%ebx)
 	addl	$1, cond_futex(%ebx)
-	addl	$(1 << clock_bits), cond_nwaiters(%ebx)
+	addl	$(1 << nwaiters_shift), cond_nwaiters(%ebx)
 
-#define FRAME_SIZE 24
+#define FRAME_SIZE 32
 	subl	$FRAME_SIZE, %esp
-.Lsubl:
+	cfi_adjust_cfa_offset(FRAME_SIZE)
+	cfi_remember_state
 
 	/* Get and store current wakeup_seq value.  */
 	movl	wakeup_seq(%ebx), %edi
@@ -101,12 +108,14 @@ __pthread_cond_timedwait:
 	movl	%edx, 16(%esp)
 	movl	%eax, 20(%esp)
 
+	/* Reset the pi-requeued flag.  */
+8:	movl	$0, 24(%esp)
 	/* Get the current time.  */
-8:	movl	%ebx, %edx
+	movl	%ebx, %edx
 #ifdef __NR_clock_gettime
 	/* Get the clock number.  */
 	movl	cond_nwaiters(%ebx), %ebx
-	andl	$((1 << clock_bits) - 1), %ebx
+	andl	$((1 << nwaiters_shift) - 1), %ebx
 	/* Only clocks 0 and 1 are allowed so far.  Both are handled in the
 	   kernel.  */
 	leal	4(%esp), %ecx
@@ -127,7 +136,7 @@ __pthread_cond_timedwait:
 	/* Get the current time.  */
 	leal	4(%esp), %ebx
 	xorl	%ecx, %ecx
-	movl	$SYS_gettimeofday, %eax
+	movl	$__NR_gettimeofday, %eax
 	ENTER_KERNEL
 	movl	%edx, %ebx
 
@@ -152,6 +161,7 @@ __pthread_cond_timedwait:
 	movl	%edx, 8(%esp)
 
 	movl	cond_futex(%ebx), %edi
+	movl	%edi, 28(%esp)
 
 	/* Unlock.  */
 	LOCK
@@ -166,9 +176,60 @@ __pthread_cond_timedwait:
 4:	call	__pthread_enable_asynccancel
 	movl	%eax, (%esp)
 
+#if FUTEX_PRIVATE_FLAG > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	sete	%cl
+	je	40f
+
+	movl	dep_mutex(%ebx), %edi
+	/* Requeue to a non-robust PI mutex if the PI bit is set and
+	   the robust bit is not set.  */
+	movl	MUTEX_KIND(%edi), %eax
+	andl	$(ROBUST_BIT|PI_BIT), %eax
+	cmpl	$PI_BIT, %eax
+	jne	40f
+
+	movl	$(FUTEX_WAIT_REQUEUE_PI|FUTEX_PRIVATE_FLAG), %ecx
+	/* The following only works like this because we only support
+	   two clocks, represented using a single bit.  */
+	testl	$1, cond_nwaiters(%ebx)
+	/* XXX Need to implement using sete instead of a jump.  */
+	jne	42f
+	orl	$FUTEX_CLOCK_REALTIME, %ecx
+
+	/* Requeue-PI uses absolute timeout */
+42:	leal	(%ebp), %esi
+	movl	28(%esp), %edx
+	addl	$cond_futex, %ebx
+	movl	$SYS_futex, %eax
+	ENTER_KERNEL
+	subl	$cond_futex, %ebx
+	movl	%eax, %esi
+	/* Set the pi-requeued flag only if the kernel has returned 0. The
+	   kernel does not hold the mutex on ETIMEDOUT or any other error.  */
+	cmpl	$0, %eax
+	sete	24(%esp)
+	je	41f
+
+	/* Normal and PI futexes dont mix. Use normal futex functions only
+	   if the kernel does not support the PI futex functions.  */
+	cmpl	$-ENOSYS, %eax
+	jne	41f
+	xorl	%ecx, %ecx
+
+40:	subl	$1, %ecx
+#ifdef __ASSUME_PRIVATE_FUTEX
+	andl	$FUTEX_PRIVATE_FLAG, %ecx
+#else
+	andl	%gs:PRIVATE_FUTEX, %ecx
+#endif
+#if FUTEX_WAIT != 0
+	addl	$FUTEX_WAIT, %ecx
+#endif
 	leal	4(%esp), %esi
-	xorl	%ecx, %ecx	/* movl $FUTEX_WAIT, %ecx */
-	movl	%edi, %edx
+	movl	28(%esp), %edx
 	addl	$cond_futex, %ebx
 .Ladd_cond_futex:
 	movl	$SYS_futex, %eax
@@ -177,7 +238,7 @@ __pthread_cond_timedwait:
 .Lsub_cond_futex:
 	movl	%eax, %esi
 
-	movl	(%esp), %eax
+41:	movl	(%esp), %eax
 	call	__pthread_disable_asynccancel
 .LcleanupEND:
 
@@ -228,7 +289,7 @@ __pthread_cond_timedwait:
 14:	addl	$1, woken_seq(%ebx)
 	adcl	$0, woken_seq+4(%ebx)
 
-24:	subl	$(1 << clock_bits), cond_nwaiters(%ebx)
+24:	subl	$(1 << nwaiters_shift), cond_nwaiters(%ebx)
 
 	/* Wake up a thread which wants to destroy the condvar object.  */
 	movl	total_seq(%ebx), %eax
@@ -236,12 +297,23 @@ __pthread_cond_timedwait:
 	cmpl	$0xffffffff, %eax
 	jne	25f
 	movl	cond_nwaiters(%ebx), %eax
-	andl	$~((1 << clock_bits) - 1), %eax
+	andl	$~((1 << nwaiters_shift) - 1), %eax
 	jne	25f
 
 	addl	$cond_nwaiters, %ebx
 	movl	$SYS_futex, %eax
-	movl	$FUTEX_WAKE, %ecx
+#if FUTEX_PRIVATE_FLAG > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex-cond_nwaiters(%ebx)
+	sete	%cl
+	subl	$1, %ecx
+#ifdef __ASSUME_PRIVATE_FUTEX
+	andl	$FUTEX_PRIVATE_FLAG, %ecx
+#else
+	andl	%gs:PRIVATE_FUTEX, %ecx
+#endif
+	addl	$FUTEX_WAKE, %ecx
 	movl	$1, %edx
 	ENTER_KERNEL
 	subl	$cond_nwaiters, %ebx
@@ -254,11 +326,15 @@ __pthread_cond_timedwait:
 #endif
 	jne	10f
 
-	/* Remove cancellation handler.  */
 11:	movl	24+FRAME_SIZE(%esp), %eax
+	/* With requeue_pi, the mutex lock is held in the kernel.  */
+	movl	24(%esp), %ecx
+	testl	%ecx, %ecx
+	jnz	27f
+
 	call	__pthread_mutex_cond_lock
-	addl	$FRAME_SIZE, %esp
-.Laddl:
+26:	addl	$FRAME_SIZE, %esp
+	cfi_adjust_cfa_offset(-FRAME_SIZE);
 
 	/* We return the result of the mutex_lock operation if it failed.  */
 	testl	%eax, %eax
@@ -271,61 +347,49 @@ __pthread_cond_timedwait:
 #endif
 
 18:	popl	%ebx
-.Lpop_ebx:
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%ebx)
 	popl	%esi
-.Lpop_esi:
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%esi)
 	popl	%edi
-.Lpop_edi:
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%edi)
 	popl	%ebp
-.Lpop_ebp:
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%ebp)
 
 	ret
 
+	cfi_restore_state
+
+27:	call	__pthread_mutex_cond_lock_adjust
+	xorl	%eax, %eax
+	jmp	26b
+
+	cfi_adjust_cfa_offset(-FRAME_SIZE);
 	/* Initial locking failed.  */
 1:
-.LSbl1:
 #if cond_lock == 0
-	movl	%ebx, %ecx
+	movl	%ebx, %edx
 #else
-	leal	cond_lock(%ebx), %ecx
+	leal	cond_lock(%ebx), %edx
 #endif
-	call	__lll_mutex_lock_wait
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_lock_wait
 	jmp	2b
-
-	/* Unlock in loop requires wakeup.  */
-3:
-.LSbl2:
-#if cond_lock == 0
-	movl	%ebx, %eax
-#else
-	leal	cond_lock(%ebx), %eax
-#endif
-	call	__lll_mutex_unlock_wake
-	jmp	4b
-
-	/* Locking in loop failed.  */
-5:
-#if cond_lock == 0
-	movl	%ebx, %ecx
-#else
-	leal	cond_lock(%ebx), %ecx
-#endif
-	call	__lll_mutex_lock_wait
-	jmp	6b
-
-	/* Unlock after loop requires wakeup.  */
-10:
-#if cond_lock == 0
-	movl	%ebx, %eax
-#else
-	leal	cond_lock(%ebx), %eax
-#endif
-	call	__lll_mutex_unlock_wake
-	jmp	11b
 
 	/* The initial unlocking of the mutex failed.  */
 16:
-.LSbl3:
 	LOCK
 #if cond_lock == 0
 	subl	$1, (%ebx)
@@ -340,17 +404,88 @@ __pthread_cond_timedwait:
 #else
 	leal	cond_lock(%ebx), %eax
 #endif
-	call	__lll_mutex_unlock_wake
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_unlock_wake
 
 	movl	%esi, %eax
 	jmp	18b
 
+	cfi_adjust_cfa_offset(FRAME_SIZE)
+
+	/* Unlock in loop requires wakeup.  */
+3:
+#if cond_lock == 0
+	movl	%ebx, %eax
+#else
+	leal	cond_lock(%ebx), %eax
+#endif
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_unlock_wake
+	jmp	4b
+
+	/* Locking in loop failed.  */
+5:
+#if cond_lock == 0
+	movl	%ebx, %edx
+#else
+	leal	cond_lock(%ebx), %edx
+#endif
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_lock_wait
+	jmp	6b
+
+	/* Unlock after loop requires wakeup.  */
+10:
+#if cond_lock == 0
+	movl	%ebx, %eax
+#else
+	leal	cond_lock(%ebx), %eax
+#endif
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_unlock_wake
+	jmp	11b
+
 #if defined __NR_clock_gettime && !defined __ASSUME_POSIX_TIMERS
 	/* clock_gettime not available.  */
-.LSbl4:
 19:	leal	4(%esp), %ebx
 	xorl	%ecx, %ecx
-	movl	$SYS_gettimeofday, %eax
+	movl	$__NR_gettimeofday, %eax
 	ENTER_KERNEL
 	movl	%edx, %ebx
 
@@ -371,14 +506,12 @@ __pthread_cond_timedwait:
 	jmp	21b
 #endif
 	.size	__pthread_cond_timedwait, .-__pthread_cond_timedwait
-versioned_symbol (libpthread, __pthread_cond_timedwait, pthread_cond_timedwait,
-		  GLIBC_2_3_2)
+weak_alias(__pthread_cond_timedwait, pthread_cond_timedwait)
 
 
 	.type	__condvar_tw_cleanup2, @function
 __condvar_tw_cleanup2:
 	subl	$cond_futex, %ebx
-.LSbl5:
 	.size	__condvar_tw_cleanup2, .-__condvar_tw_cleanup2
 	.type	__condvar_tw_cleanup, @function
 __condvar_tw_cleanup:
@@ -396,25 +529,45 @@ __condvar_tw_cleanup:
 	jz	1f
 
 #if cond_lock == 0
-	movl	%ebx, %ecx
+	movl	%ebx, %edx
 #else
-	leal	cond_lock(%ebx), %ecx
+	leal	cond_lock(%ebx), %edx
 #endif
-	call	__lll_mutex_lock_wait
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_lock_wait
 
 1:	movl	broadcast_seq(%ebx), %eax
 	cmpl	20(%esp), %eax
 	jne	3f
 
-	addl	$1, wakeup_seq(%ebx)
-	adcl	$0, wakeup_seq+4(%ebx)
+	/* We increment the wakeup_seq counter only if it is lower than
+	   total_seq.  If this is not the case the thread was woken and
+	   then canceled.  In this case we ignore the signal.  */
+	movl	total_seq(%ebx), %eax
+	movl	total_seq+4(%ebx), %edi
+	cmpl	wakeup_seq+4(%ebx), %edi
+	jb	6f
+	ja	7f
+	cmpl	wakeup_seq(%ebx), %eax
+	jbe	7f
 
+6:	addl	$1, wakeup_seq(%ebx)
+	adcl	$0, wakeup_seq+4(%ebx)
 	addl	$1, cond_futex(%ebx)
 
-	addl	$1, woken_seq(%ebx)
+7:	addl	$1, woken_seq(%ebx)
 	adcl	$0, woken_seq+4(%ebx)
 
-3:	subl	$(1 << clock_bits), cond_nwaiters(%ebx)
+3:	subl	$(1 << nwaiters_shift), cond_nwaiters(%ebx)
 
 	/* Wake up a thread which wants to destroy the condvar object.  */
 	xorl	%edi, %edi
@@ -423,12 +576,23 @@ __condvar_tw_cleanup:
 	cmpl	$0xffffffff, %eax
 	jne	4f
 	movl	cond_nwaiters(%ebx), %eax
-	andl	$~((1 << clock_bits) - 1), %eax
+	andl	$~((1 << nwaiters_shift) - 1), %eax
 	jne	4f
 
 	addl	$cond_nwaiters, %ebx
 	movl	$SYS_futex, %eax
-	movl	$FUTEX_WAKE, %ecx
+#if FUTEX_PRIVATE_FLAG > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex-cond_nwaiters(%ebx)
+	sete	%cl
+	subl	$1, %ecx
+#ifdef __ASSUME_PRIVATE_FUTEX
+	andl	$FUTEX_PRIVATE_FLAG, %ecx
+#else
+	andl	%gs:PRIVATE_FUTEX, %ecx
+#endif
+	addl	$FUTEX_WAKE, %ecx
 	movl	$1, %edx
 	ENTER_KERNEL
 	subl	$cond_nwaiters, %ebx
@@ -447,13 +611,34 @@ __condvar_tw_cleanup:
 #else
 	leal	cond_lock(%ebx), %eax
 #endif
-	call	__lll_mutex_unlock_wake
+#if (LLL_SHARED-LLL_PRIVATE) > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex(%ebx)
+	setne	%cl
+	subl	$1, %ecx
+	andl	$(LLL_SHARED-LLL_PRIVATE), %ecx
+#if LLL_PRIVATE != 0
+	addl	$LLL_PRIVATE, %ecx
+#endif
+	call	__lll_unlock_wake
 
 	/* Wake up all waiters to make sure no signal gets lost.  */
 2:	testl	%edi, %edi
 	jnz	5f
 	addl	$cond_futex, %ebx
-	movl	$FUTEX_WAKE, %ecx
+#if FUTEX_PRIVATE_FLAG > 255
+	xorl	%ecx, %ecx
+#endif
+	cmpl	$-1, dep_mutex-cond_futex(%ebx)
+	sete	%cl
+	subl	$1, %ecx
+#ifdef __ASSUME_PRIVATE_FUTEX
+	andl	$FUTEX_PRIVATE_FLAG, %ecx
+#else
+	andl	%gs:PRIVATE_FUTEX, %ecx
+#endif
+	addl	$FUTEX_WAKE, %ecx
 	movl	$SYS_futex, %eax
 	movl	$0x7fffffff, %edx
 	ENTER_KERNEL
@@ -463,17 +648,22 @@ __condvar_tw_cleanup:
 
 	movl	%esi, (%esp)
 .LcallUR:
-	call	_Unwind_Resume
+#ifdef __PIC__
+	call	__i686.get_pc_thunk.bx
+	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
+#endif
+	call	_Unwind_Resume@PLT
 	hlt
 .LENDCODE:
+	cfi_endproc
 	.size	__condvar_tw_cleanup, .-__condvar_tw_cleanup
 
 
 	.section .gcc_except_table,"a",@progbits
 .LexceptSTART:
-	.byte	0xff				# @LPStart format (omit)
-	.byte	0xff				# @TType format (omit)
-	.byte	0x0b				# call-site format
+	.byte	DW_EH_PE_omit			# @LPStart format (omit)
+	.byte	DW_EH_PE_omit			# @TType format (omit)
+	.byte	DW_EH_PE_sdata4			# call-site format
 						# DW_EH_PE_sdata4
 	.uleb128 .Lcstend-.Lcstbegin
 .Lcstbegin:
@@ -496,142 +686,13 @@ __condvar_tw_cleanup:
 .Lcstend:
 
 
-	.section .eh_frame,"a",@progbits
-.LSTARTFRAME:
-	.long	L(ENDCIE)-L(STARTCIE)		# Length of the CIE.
-.LSTARTCIE:
-	.long	0				# CIE ID.
-	.byte	1				# Version number.
-#ifdef SHARED
-	.string	"zPLR"				# NUL-terminated augmentation
-						# string.
-#else
-	.string	"zPL"				# NUL-terminated augmentation
-						# string.
-#endif
-	.uleb128 1				# Code alignment factor.
-	.sleb128 -4				# Data alignment factor.
-	.byte	8				# Return address register
-						# column.
-#ifdef SHARED
-	.uleb128 7				# Augmentation value length.
-	.byte	0x9b				# Personality: DW_EH_PE_pcrel
-						# + DW_EH_PE_sdata4
-						# + DW_EH_PE_indirect
-	.long	DW.ref.__gcc_personality_v0-.
-	.byte	0x1b				# LSDA Encoding: DW_EH_PE_pcrel
-						# + DW_EH_PE_sdata4.
-	.byte	0x1b				# FDE Encoding: DW_EH_PE_pcrel
-						# + DW_EH_PE_sdata4.
-#else
-	.uleb128 6				# Augmentation value length.
-	.byte	0x0				# Personality: absolute
-	.long	__gcc_personality_v0
-	.byte	0x0				# LSDA Encoding: absolute
-#endif
-	.byte 0x0c				# DW_CFA_def_cfa
-	.uleb128 4
-	.uleb128 4
-	.byte	0x88				# DW_CFA_offset, column 0x8
-	.uleb128 1
-	.align 4
-.LENDCIE:
-
-	.long	.LENDFDE-.LSTARTFDE		# Length of the FDE.
-.LSTARTFDE:
-	.long	.LSTARTFDE-.LSTARTFRAME		# CIE pointer.
-#ifdef SHARED
-	.long	.LSTARTCODE-.			# PC-relative start address
-						# of the code
-#else
-	.long	.LSTARTCODE			# Start address of the code.
-#endif
-	.long	.LENDCODE-.LSTARTCODE		# Length of the code.
-	.uleb128 4				# Augmentation size
-#ifdef SHARED
-	.long	.LexceptSTART-.
-#else
-	.long	.LexceptSTART
-#endif
-	.byte	0x40+.Lpush_ebp-.LSTARTCODE	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 8
-	.byte	0x85				# DW_CFA_offset %ebp
-	.uleb128 2
-	.byte	0x40+ .Lpush_edi-.Lpush_ebp	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 12
-	.byte	0x87				# DW_CFA_offset %edi
-	.uleb128 3
-	.byte	0x40+.Lpush_esi-.Lpush_edi	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 16
-	.byte	0x86				# DW_CFA_offset %esi
-	.uleb128 4
-	.byte	0x40+.Lpush_ebx-.Lpush_esi	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20
-	.byte	0x83				# DW_CFA_offset %ebx
-	.uleb128 5
-	.byte	2				# DW_CFA_advance_loc1
-	.byte	.Lsubl-.Lpush_ebx
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20+FRAME_SIZE
-	.byte	3				# DW_CFA_advance_loc2
-	.2byte	.Laddl-.Lsubl
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20
-	.byte	0x40+.Lpop_ebx-.Laddl		# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 16
-	.byte	0xc3				# DW_CFA_restore %ebx
-	.byte	0x40+.Lpop_esi-.Lpop_ebx	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 12
-	.byte	0xc6				# DW_CFA_restore %esi
-	.byte	0x40+.Lpop_edi-.Lpop_esi	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 8
-	.byte	0xc7				# DW_CFA_restore %edi
-	.byte	0x40+.Lpop_ebp-.Lpop_edi	# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 4
-	.byte	0xc5				# DW_CFA_restore %ebp
-	.byte	0x40+.LSbl1-.Lpop_edi		# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20
-	.byte	0x40+.LSbl2-.LSbl1		# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20+FRAME_SIZE
-	.byte	0x85				# DW_CFA_offset %ebp
-	.uleb128 2
-	.byte	0x87				# DW_CFA_offset %edi
-	.uleb128 3
-	.byte	0x86				# DW_CFA_offset %esi
-	.uleb128 4
-	.byte	0x83				# DW_CFA_offset %ebx
-	.uleb128 5
-	.byte	0x40+.LSbl3-.LSbl2		# DW_CFA_advance_loc+N
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20
-#if defined __NR_clock_gettime && !defined __ASSUME_POSIX_TIMERS
-	.byte	0x40+.LSbl4-.LSbl3		# DW_CFA_advance_loc+N
-#else
-	.byte	4				# DW_CFA_advance_loc4
-	.long	.LSbl5-.LSbl3
-#endif
-	.byte	14				# DW_CFA_def_cfa_offset
-	.uleb128 20+FRAME_SIZE
-	.align	4
-.LENDFDE:
-
 #ifdef SHARED
 	.hidden DW.ref.__gcc_personality_v0
-	.weak   DW.ref.__gcc_personality_v0
+	.weak	DW.ref.__gcc_personality_v0
 	.section .gnu.linkonce.d.DW.ref.__gcc_personality_v0,"aw",@progbits
-	.align 4
-	.type   DW.ref.__gcc_personality_v0, @object
-	.size   DW.ref.__gcc_personality_v0, 4
+	.align	4
+	.type	DW.ref.__gcc_personality_v0, @object
+	.size	DW.ref.__gcc_personality_v0, 4
 DW.ref.__gcc_personality_v0:
 	.long   __gcc_personality_v0
 #endif

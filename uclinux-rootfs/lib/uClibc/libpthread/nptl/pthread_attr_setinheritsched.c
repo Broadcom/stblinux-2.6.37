@@ -23,9 +23,10 @@
 
 
 int
-__pthread_attr_setinheritsched (attr, inherit)
-     pthread_attr_t *attr;
-     int inherit;
+attribute_protected
+__pthread_attr_setinheritsched (
+     pthread_attr_t *attr,
+     int inherit)
 {
   struct pthread_attr *iattr;
 

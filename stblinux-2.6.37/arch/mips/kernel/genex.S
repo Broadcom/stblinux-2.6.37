@@ -195,6 +195,17 @@ NESTED(handle_int, PT_SIZE, sp)
 1:
 	.set pop
 #endif
+#if defined(CONFIG_BMIPS3300) || defined(CONFIG_BMIPS4380)
+/* CRBMIPS438X-166: data bus errors may use the special IRQ vector */
+	mfc0	k1, CP0_CAUSE
+	andi	k1, 0x7c
+	beqz	k1, 1f
+
+	PTR_L	k0, exception_handlers(k1)
+	jr	k0
+1:
+#endif
+
 	SAVE_ALL
 	CLI
 	TRACE_IRQS_OFF

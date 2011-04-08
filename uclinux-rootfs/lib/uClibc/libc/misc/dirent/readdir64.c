@@ -6,7 +6,6 @@
 
 #include <_lfs_64.h>
 
-#include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +13,6 @@
 #include <dirent.h>
 #include "dirstream.h"
 
-libc_hidden_proto(readdir64)
 struct dirent64 *readdir64(DIR * dir)
 {
 	ssize_t bytes;
@@ -25,7 +23,7 @@ struct dirent64 *readdir64(DIR * dir)
 		return NULL;
 	}
 
-	__PTHREAD_MUTEX_LOCK(&(dir->dd_lock));
+	__UCLIBC_MUTEX_LOCK(dir->dd_lock);
 
 	do {
 	    if (dir->dd_size <= dir->dd_nextloc) {
@@ -51,7 +49,7 @@ struct dirent64 *readdir64(DIR * dir)
 	} while (de->d_ino == 0);
 
 all_done:
-	__PTHREAD_MUTEX_UNLOCK(&(dir->dd_lock));
+	__UCLIBC_MUTEX_UNLOCK(dir->dd_lock);
 
 	return de;
 }

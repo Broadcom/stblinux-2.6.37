@@ -19,15 +19,12 @@
 #include <errno.h>
 #include <signal.h>
 
-libc_hidden_proto(kill)
 
 /* Send SIG to all processes in process group PGRP.
    If PGRP is zero, send SIG to all processes in
    the current process's process group.  */
 int
-killpg (pgrp, sig)
-     __pid_t pgrp;
-     int sig;
+killpg (__pid_t pgrp, int sig)
 {
   if (pgrp < 0)
     {

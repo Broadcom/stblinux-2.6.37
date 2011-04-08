@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
+/* Copyright (C) 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2003.
 
@@ -22,9 +22,22 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <sysdep.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 #include <pthreadP.h>
 #include "kernel-posix-timers.h"
+
+
+/* List of active SIGEV_THREAD timers.  */
+struct timer *__active_timer_sigev_thread;
+/* Lock for the __active_timer_sigev_thread.  */
+pthread_mutex_t __active_timer_sigev_thread_lock = PTHREAD_MUTEX_INITIALIZER;
+
+
+struct thread_start_data
+{
+  void (*thrfunc) (sigval_t);
+  sigval_t sival;
+};
 
 
 #ifdef __NR_timer_create
@@ -40,10 +53,16 @@ timer_sigev_thread (void *arg)
   INTERNAL_SYSCALL_DECL (err);
   INTERNAL_SYSCALL (rt_sigprocmask, err, 4, SIG_SETMASK, &ss, NULL, _NSIG / 8);
 
-  struct timer *tk = (struct timer *) arg;
+  struct thread_start_data *td = (struct thread_start_data *) arg;
+
+  void (*thrfunc) (sigval_t) = td->thrfunc;
+  sigval_t sival = td->sival;
+
+  /* The TD object was allocated in timer_helper_thread.  */
+  free (td);
 
   /* Call the user-provided function.  */
-  tk->thrfunc (tk->sival);
+  thrfunc (sival);
 
   return NULL;
 }
@@ -58,9 +77,6 @@ timer_helper_thread (void *arg)
   sigset_t ss;
   sigemptyset (&ss);
   __sigaddset (&ss, SIGTIMER);
-#ifdef SIGSETXID
-  __sigaddset (&ss, SIGSETXID);
-#endif
 
   /* Endless loop of waiting for signals.  The loop is only ended when
      the thread is canceled.  */
@@ -86,9 +102,35 @@ timer_helper_thread (void *arg)
 	    {
 	      struct timer *tk = (struct timer *) si.si_ptr;
 
-	      /* That the signal we are waiting for.  */
-	      pthread_t th;
-	      (void) pthread_create (&th, &tk->attr, timer_sigev_thread, tk);
+	      /* Check the timer is still used and will not go away
+		 while we are reading the values here.  */
+	      pthread_mutex_lock (&__active_timer_sigev_thread_lock);
+
+	      struct timer *runp = __active_timer_sigev_thread;
+	      while (runp != NULL)
+		if (runp == tk)
+		  break;
+		else
+		  runp = runp->next;
+
+	      if (runp != NULL)
+		{
+		  struct thread_start_data *td = malloc (sizeof (*td));
+
+		  /* There is not much we can do if the allocation fails.  */
+		  if (td != NULL)
+		    {
+		      /* This is the signal we are waiting for.  */
+		      td->thrfunc = tk->thrfunc;
+		      td->sival = tk->sival;
+
+		      pthread_t th;
+		      (void) pthread_create (&th, &tk->attr,
+					     timer_sigev_thread, td);
+		    }
+		}
+
+	      pthread_mutex_unlock (&__active_timer_sigev_thread_lock);
 	    }
 	  else if (si.si_code == SI_TKILL)
 	    /* The thread is canceled.  */
@@ -128,14 +170,12 @@ __start_helper_thread (void)
   /* Block all signals in the helper thread but SIGSETXID.  To do this
      thoroughly we temporarily have to block all signals here.  The
      helper can lose wakeups if SIGCANCEL is not blocked throughout,
-     but sigfillset omits it.  So, we add it back explicitly here.  */
+     but sigfillset omits it SIGSETXID.  So, we add SIGCANCEL back
+     explicitly here.  */
   sigset_t ss;
   sigset_t oss;
   sigfillset (&ss);
-  __sigaddset (&ss, SIGCANCEL);
-#ifdef SIGSETXID
-  __sigdelset (&ss, SIGSETXID);
-#endif
+  /*__sigaddset (&ss, SIGCANCEL); - already done by sigfillset */
   INTERNAL_SYSCALL_DECL (err);
   INTERNAL_SYSCALL (rt_sigprocmask, err, 4, SIG_SETMASK, &ss, &oss, _NSIG / 8);
 

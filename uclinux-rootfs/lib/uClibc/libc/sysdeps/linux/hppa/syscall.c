@@ -19,14 +19,15 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 /* HPPA implements syscall() in 'C'; the assembler version would
    typically be in syscall.S. Also note that we have INLINE_SYSCALL,
    INTERNAL_SYSCALL, and all the generated pure assembly syscall wrappers.
    How often the function is used is unknown. */
 
-long int 
-syscall (long int __sysno, ...) 
+long int
+syscall (long int __sysno, ...)
 {
   /* FIXME: Keep this matching INLINE_SYSCALL for hppa */
   va_list args;
@@ -42,11 +43,11 @@ syscall (long int __sysno, ...)
   arg4 = va_arg (args, long int);
   arg5 = va_arg (args, long int);
   va_end (args);
-  
+
   {
-    register unsigned long int __res asm("r28");
+    register unsigned long int __res __asm__("r28");
     K_LOAD_ARGS_6 (arg0, arg1, arg2, arg3, arg4, arg5)
-    asm volatile (K_STW_ASM_PIC
+    __asm__ __volatile__ (K_STW_ASM_PIC
 		  "	ble  0x100(%%sr2, %%r0)	\n"
 		  "	copy %1, %%r20		\n"
 		  K_LDW_ASM_PIC

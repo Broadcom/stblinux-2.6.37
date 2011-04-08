@@ -52,13 +52,13 @@ extern int errno;
 /* The full and simple forms of the name with which the program was
    invoked.  These variables are set up automatically at startup based on
    the value of ARGV[0] (this works only if you use GNU ld).  */
-extern char *program_invocation_name, *program_invocation_short_name;
+extern const char *program_invocation_name, *program_invocation_short_name;
 #endif /* __USE_GNU */
 #endif /* _ERRNO_H */
 
 __END_DECLS
 
-#if defined _LIBC && defined __UCLIBC_HAS_THREADS_NATIVE__
+#if defined _LIBC && defined __UCLIBC_HAS_TLS__
 # if !defined NOT_IN_libc || defined IS_IN_libpthread
 #  undef errno
 #  ifndef NOT_IN_libc
@@ -70,7 +70,9 @@ extern __thread int errno attribute_tls_model_ie;
 # endif
 #endif
 
+#ifndef __set_errno
 #define __set_errno(val) (errno = (val))
+#endif
 
 #ifndef __ASSEMBLER__
 extern int *__errno_location (void) __THROW __attribute__ ((__const__));
@@ -82,7 +84,7 @@ extern int *__errno_location (void) __THROW __attribute__ ((__const__));
    that printing `error_t' values in the debugger shows the names.  We
    might need this definition sometimes even if this file was included
    before.  */
-#if ( defined __USE_GNU || defined __need_error_t ) && !defined __ASSEMBLER__
+#if defined __USE_GNU || defined __need_error_t
 # ifndef __error_t_defined
 typedef int error_t;
 #  define __error_t_defined	1

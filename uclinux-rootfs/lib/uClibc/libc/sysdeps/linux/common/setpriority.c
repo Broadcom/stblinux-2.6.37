@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/resource.h>
 
-libc_hidden_proto(setpriority)
 
-_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio);
+_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio)
 libc_hidden_def(setpriority)

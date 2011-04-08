@@ -42,9 +42,6 @@
 #define BSPI_HAS_FLEX_MODE
 #endif
 
-#define	BSPI_PROBE_FLASH_ID		(1)
-
-#define BRCM_SPI_CHIP_SELECT		(0)
 #define BSPI_LR_TIMEOUT			(1000)
 
 #define BSPI_LR_INTERRUPTS_DATA \
@@ -168,6 +165,7 @@ struct bcm_bspi_hw {
 	u32			b1_status;		/* 0x01c */
 	u32			b1_ctrl;		/* 0x020 */
 	u32			strap_override_ctrl;	/* 0x024 */
+#if CONFIG_BRCM_BSPI_MAJOR_VERS >= 4
 	u32			flex_mode_enable;	/* 0x028 */
 	u32			bits_per_cycle;		/* 0x02C */
 	u32			bits_per_phase;		/* 0x030 */
@@ -178,6 +176,7 @@ struct bcm_bspi_hw {
 	u32			pio_mode_enable;	/* 0x044 */
 	u32			pio_iodir;		/* 0x048 */
 	u32			pio_data;		/* 0x04C */
+#endif
 };
 
 struct bcm_bspi_raf {
@@ -215,11 +214,15 @@ struct bcmspi_priv {
 	int			cs_change;
 	unsigned int		max_speed_hz;
 	volatile struct bcm_mspi_hw *mspi_hw;
-	volatile struct bcm_bspi_hw *bspi_hw;
 	int			irq;
 	struct tasklet_struct	tasklet;
 	wait_queue_head_t	idle_wait;
+	int			curr_cs;
+
+	/* BSPI */
+	volatile struct bcm_bspi_hw *bspi_hw;
 	int			bspi_enabled;
+	/* all chip selects controlled by BSPI */
 	int			bspi_chip_select;
 
 	/* LR */
@@ -292,7 +295,7 @@ static int bcmbspi_flash_type(struct bcmspi_priv *priv);
 static int bcmspi_set_flex_mode(struct bcmspi_priv *priv,
 	int width, int addrlen, int hp)
 {
-	int bpc, bpp = 0, command;
+	int bpc = 0, bpp = 0, command;
 	int flex_mode = 1, error = 0;
 
 	switch (width) {
@@ -388,6 +391,34 @@ static int bcmspi_set_flex_mode(struct bcmspi_priv *priv,
 static int bcmspi_set_flex_mode(struct bcmspi_priv *priv,
 	int width, int addrlen, int hp)
 {
+	u32 strap_override = priv->bspi_hw->strap_override_ctrl;
+
+	switch (width) {
+	case BSPI_WIDTH_4BIT:
+		strap_override &= ~0x2; /* clear dual mode */
+		strap_override |= 0x9; /* set quad mode + override */
+		break;
+	case BSPI_WIDTH_2BIT:
+		strap_override &= ~0x8; /* clear quad mode */
+		strap_override |= 0x3; /* set dual mode + override */
+		break;
+	case BSPI_WIDTH_1BIT:
+		strap_override &= ~0xA; /* clear quad/dual mode */
+		strap_override |= 1; /* set override */
+		break;
+	default:
+		break;
+	}
+
+	if (addrlen == BSPI_ADDRLEN_4BYTES) {
+		strap_override |= 0x5; /* set 4byte + override */
+	} else {
+		strap_override &= ~0x4; /* clear 4 byte */
+		strap_override |= 0x1; /* set override */
+	}
+
+	priv->bspi_hw->strap_override_ctrl = strap_override;
+
 	return 0;
 }
 #endif
@@ -410,7 +441,8 @@ static void bcmspi_set_mode(struct bcmspi_priv *priv,
 		priv->flex_mode.width = width;
 		priv->flex_mode.addrlen = addrlen;
 		priv->flex_mode.hp = hp;
-		dev_info(&priv->pdev->dev, "%d-lane output, %d-byte address%s\n",
+		dev_info(&priv->pdev->dev,
+			"%d-lane output, %d-byte address%s\n",
 			priv->flex_mode.width,
 			priv->flex_mode.addrlen,
 			priv->flex_mode.hp ? ", high-performance mode" : "");
@@ -418,6 +450,25 @@ static void bcmspi_set_mode(struct bcmspi_priv *priv,
 		dev_warn(&priv->pdev->dev,
 			"INVALID COMBINATION: width=%d addrlen=%d hp=%d\n",
 			width, addrlen, hp);
+}
+
+static void bcmspi_set_chip_select(struct bcmspi_priv *priv, int cs)
+{
+	if (priv->curr_cs != cs) {
+		DBG("Switching CS%1d => CS%1d\n",
+			priv->curr_cs, cs);
+		BDEV_WR_RB(BCHP_EBI_CS_SPI_SELECT,
+			(BDEV_RD(BCHP_EBI_CS_SPI_SELECT) & ~0xff) |
+			(1 << cs));
+		udelay(10);
+	}
+	priv->curr_cs = cs;
+
+}
+
+static inline int is_bspi_chip_select(struct bcmspi_priv *priv, u8 cs)
+{
+	return priv->bspi_chip_select & (1 << cs);
 }
 
 static void bcmspi_disable_bspi(struct bcmspi_priv *priv)
@@ -722,9 +773,7 @@ static void write_to_hw(struct bcmspi_priv *priv)
 			priv->mspi_hw->cdram[slot - 1] &= ~0x80;
 
 		/* tell HIF_MSPI which CS to use */
-		BDEV_WR_RB(BCHP_EBI_CS_SPI_SELECT,
-			(BDEV_RD(BCHP_EBI_CS_SPI_SELECT) & ~0xff) |
-			(1 << msg->spi->chip_select));
+		bcmspi_set_chip_select(priv, msg->spi->chip_select);
 
 #if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
 	defined(CONFIG_BCM7344A0) || defined(CONFIG_BCM7346A0) || \
@@ -756,7 +805,7 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 	struct spi_message *msg)
 {
 	struct spi_transfer *trans;
-	u32 addr, len, full_addr = 0;
+	u32 addr, len, len_in_dwords;
 	u8 *buf, *src;
 	unsigned long flags;
 	int retval, idx;
@@ -779,27 +828,27 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 		spin_unlock_irqrestore(&priv->lock, flags);
 		sleep_on(&priv->idle_wait);
 	}
-	bcmspi_enable_bspi(priv);
+	bcmspi_set_chip_select(priv, msg->spi->chip_select);
+
 	/* first transfer - OPCODE_READ + 3-byte address */
 	trans = list_entry(msg->transfers.next, struct spi_transfer,
 		transfer_list);
 	buf = (void *)trans->tx_buf;
 
 	idx = 1;
+
 #ifdef BSPI_HAS_4BYTE_ADDRESS
 	if (bcmspi_is_4_byte_mode(priv))
-		full_addr = priv->bspi_hw->flash_upper_addr_byte =
-			buf[idx++] << 24;
+		priv->bspi_hw->flash_upper_addr_byte = buf[idx++] << 24;
 	else
 		priv->bspi_hw->flash_upper_addr_byte = 0;
 #endif
 
 	/*
-	 * addr coming into this function is pure flash offset
+	 * addr coming into this function is a raw flash offset
 	 * we need to convert it to the BSPI address
 	 */
 	addr = (buf[idx] << 16) | (buf[idx+1] << 8) | buf[idx+2];
-	full_addr += addr;
 	addr = (addr + 0xc00000) & 0xffffff;
 
 	/* second transfer - read result into buffer */
@@ -807,84 +856,63 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 		transfer_list);
 
 	buf = (void *)trans->rx_buf;
+
+	if (unlikely(!DWORD_ALIGNED(addr) ||
+		     !DWORD_ALIGNED(buf) ||
+		     !priv->bspi_hw_raf)) {
+		spin_unlock_irqrestore(&priv->lock, flags);
+		return -1;
+	}
+
 	len = trans->len;
 	src = (u8 *)BSPI_BASE_ADDR + addr;
 
-	DBG("%s: dst %p src %p len %x addr BSPI [%02x]%06x FLASH %08x\n",
-		__func__, buf, src, len,
-		priv->bspi_hw->flash_upper_addr_byte>>24,
-		addr, full_addr);
+	bcmspi_enable_bspi(priv);
+
+	DBG("%s: dst %p src %p len %x addr BSPI %06x\n",
+		__func__, buf, src, len, addr);
 
 	/* We assume address will never cross 4Mbyte boundary
-	 * within one transfer. If this does not hold true
+	 * within one transfer. If it does
 	 * read might be incorrect */
 	BUG_ON(ADDR_TO_4MBYTE_SEGMENT(addr) ^
 		ADDR_TO_4MBYTE_SEGMENT(addr+len-1));
 
-	if (unlikely(!DWORD_ALIGNED(addr) || !DWORD_ALIGNED(buf))) {
-		/* copy bytes */
-		while (len > 0) {
-			*(buf++) = *(src++);
-			len--;
-		}
-	} else if (likely(priv->bspi_hw_raf)) {
-		u32 len_in_dwords = len >> 2;
-		/* initialize software parameters */
-		priv->xfer_status = 0;
-		priv->cur_xfer = trans;
-		priv->cur_xfer_idx = 0;
-		/* interface only supports 4-byte multiple transfers */
-		priv->cur_xfer_len = len_in_dwords;
-		/* setup hardware */
-		/* address must be 4-byte aligned */
-		priv->bspi_hw_raf->start_address = addr;
-		priv->bspi_hw_raf->num_words = priv->cur_xfer_len;
-		priv->bspi_hw_raf->watermark = 0;
-		DBG("READ: %08x %d (%d)\n",
-			addr, priv->cur_xfer_len, trans->len);
-		init_completion(&priv->completion);
-		bcmspi_clear_interrupt(0xffffffff);
-		bcmspi_enable_interrupt(BSPI_LR_INTERRUPTS_ALL);
-		bcmspi_lr_start(priv);
+	len_in_dwords = (len + 3) >> 2;
+	/* initialize software parameters */
+	priv->xfer_status = 0;
+	priv->cur_xfer = trans;
+	priv->cur_xfer_idx = 0;
+	priv->cur_xfer_len = len;
+	/* setup hardware */
+	/* address must be 4-byte aligned */
+	priv->bspi_hw_raf->start_address = addr;
+	priv->bspi_hw_raf->num_words = len_in_dwords;
+	priv->bspi_hw_raf->watermark = 0;
+	DBG("READ: %08x %08x (%08x)\n",
+		addr, len_in_dwords, trans->len);
+	init_completion(&priv->completion);
+	bcmspi_clear_interrupt(0xffffffff);
+	bcmspi_enable_interrupt(BSPI_LR_INTERRUPTS_ALL);
+	bcmspi_lr_start(priv);
 
+	spin_unlock_irqrestore(&priv->lock, flags);
+	retval = wait_for_completion_timeout(&priv->completion,
+			BSPI_LR_TIMEOUT);
+	spin_lock_irqsave(&priv->lock, flags);
+
+	if (!retval)
+		priv->xfer_status = -EIO;
+	priv->cur_xfer = NULL;
+	bcmspi_disable_interrupt(BSPI_LR_INTERRUPTS_ALL);
+
+	if (priv->xfer_status) {
+		bcmspi_lr_clear(priv);
 		spin_unlock_irqrestore(&priv->lock, flags);
-		retval = wait_for_completion_timeout(&priv->completion,
-				BSPI_LR_TIMEOUT);
-		spin_lock_irqsave(&priv->lock, flags);
-
-		if (!retval)
-			priv->xfer_status = -EIO;
-		priv->cur_xfer = NULL;
-		bcmspi_disable_interrupt(BSPI_LR_INTERRUPTS_ALL);
-
-		bcmspi_flush_prefetch_buffers(priv);
-		if (priv->xfer_status) {
-			bcmspi_lr_clear(priv);
-			spin_unlock_irqrestore(&priv->lock, flags);
-			return -EIO;
-		}
-		len &= 3;
-		if (len) {
-			/* copy remaining bytes */
-			buf += len_in_dwords * sizeof(u32);
-			src += len_in_dwords * sizeof(u32);
-			while (len--)
-				*(buf++) = *(src++);
-		}
-	} else {
-		/* copy aligned words */
-		while (len >= 4) {
-			*((u32 *)buf) = *((u32 *)src);
-			buf += 4;
-			src += 4;
-			len -= 4;
-		}
-		/* copy bytes */
-		while (len > 0) {
-			*(buf++) = *(src++);
-			len--;
-		}
+		return -EIO;
 	}
+	bcmspi_flush_prefetch_buffers(priv);
+
 	msg->actual_length = idx + 4 + trans->len;
 	msg->complete(msg->context);
 	msg->status = 0;
@@ -928,7 +956,7 @@ static int bcmspi_transfer(struct spi_device *spi, struct spi_message *msg)
 	struct bcmspi_priv *priv = spi_master_get_devdata(spi->master);
 	unsigned long flags;
 
-	if (msg->spi->chip_select == priv->bspi_chip_select) {
+	if (is_bspi_chip_select(priv, msg->spi->chip_select)) {
 		struct spi_transfer *trans;
 
 		trans = list_entry(msg->transfers.next,
@@ -1004,9 +1032,20 @@ static irqreturn_t bcmspi_interrupt(int irq, void *dev_id)
 		u32 *buf = (u32 *)priv->cur_xfer->rx_buf;
 		if (status & BSPI_LR_INTERRUPTS_DATA) {
 			while (!bcmspi_lr_is_fifo_empty(priv)) {
-				buf[priv->cur_xfer_idx++] =
-					bcmspi_lr_read_fifo(priv);
-				priv->cur_xfer_len--;
+				u32 data = bcmspi_lr_read_fifo(priv);
+				if (likely(priv->cur_xfer_len >= 4)) {
+					buf[priv->cur_xfer_idx++] = data;
+					priv->cur_xfer_len -= 4;
+				} else {
+					/* read out remaining bytes */
+					u8 *cbuf =
+						(u8 *)&buf[priv->cur_xfer_idx];
+					while (priv->cur_xfer_len) {
+						*cbuf++ = (u8)data;
+						data >>= 8;
+						priv->cur_xfer_len--;
+					}
+				}
 			}
 		}
 		if (status & BSPI_LR_INTERRUPTS_ERROR) {
@@ -1134,8 +1173,6 @@ static void bcmspi_hw_uninit(struct bcmspi_priv *priv)
 	bcmspi_enable_bspi(priv);
 }
 
-#ifdef BSPI_HAS_FLEX_MODE
-
 static int bcmbspi_flash_type(struct bcmspi_priv *priv)
 {
 	char tx_buf[4];
@@ -1246,17 +1283,19 @@ static int bcmspi_set_quad_mode(struct bcmspi_priv *priv, int _enable)
 
 	return 0;
 }
-#endif
 
 static int bcmspi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct brcmspi_platform_data *pdata;
 	struct bcmspi_priv *priv;
 	struct spi_master *master;
 	struct resource *res;
 	int ret;
 
 	DBG("bcmspi_probe\n");
+
+	pdata = (struct brcmspi_platform_data *)pdev->dev.platform_data;
 
 	BDEV_WR_RB(BCHP_BSPI_MAST_N_BOOT_CTRL, 1);
 	bcmspi_disable_interrupt(0xffffffff);
@@ -1340,19 +1379,16 @@ static int bcmspi_probe(struct platform_device *pdev)
 		priv->bspi_hw_raf = NULL;
 
 	bcmspi_hw_init(priv);
+	priv->curr_cs = -1;
 
-#ifdef BRCM_SPI_CHIP_SELECT
-	priv->bspi_chip_select = priv->bspi_hw ? BRCM_SPI_CHIP_SELECT : -1;
+	priv->bspi_chip_select = (priv->bspi_hw && pdata) ? pdata->flash_cs : 0;
 #ifdef BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_nand_flash_boot_MASK
 	if (BDEV_RD(BCHP_SUN_TOP_CTRL_STRAP_VALUE_0) &
 		BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_nand_flash_boot_MASK) {
 		/* BSPI is disabled if the board is strapped for NAND */
-		priv->bspi_chip_select = -1;
+		priv->bspi_chip_select = 0;
 	}
 #endif /* BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_nand_flash_boot_MASK */
-#else /* BRCM_SPI_CHIP_SELECT */
-	priv->bspi_chip_select = -1;
-#endif /* BRCM_SPI_CHIP_SELECT */
 
 
 	INIT_LIST_HEAD(&priv->msg_queue);
@@ -1376,14 +1412,12 @@ static int bcmspi_probe(struct platform_device *pdev)
 	priv->flex_mode.addrlen =
 	priv->flex_mode.hp = -1;
 
-#ifdef BSPI_HAS_FLEX_MODE
-	if (priv->bspi_chip_select != -1) {
+	if (priv->bspi_chip_select) {
 		int quad_mode = bspi_width == BSPI_WIDTH_4BIT;
 		if (bcmspi_set_quad_mode(priv, quad_mode))
 			bspi_width = BSPI_WIDTH_1BIT;
 		bcmspi_set_mode(priv, bspi_width, bspi_addrlen, bspi_hp);
 	}
-#endif
 
 	return 0;
 

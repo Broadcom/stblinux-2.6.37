@@ -16,11 +16,6 @@
 # define OFFSET_TYPE   long int
 #endif
 
-#ifdef __UCLIBC_HAS_LFS__
-libc_hidden_proto(fseeko64)
-#endif
-libc_hidden_proto(fseek)
-
 int FSEEK(register FILE *stream, OFFSET_TYPE offset, int whence)
 {
 #if defined(__UCLIBC_HAS_LFS__) && !defined(__DO_LARGEFILE)
@@ -42,7 +37,7 @@ int FSEEK(register FILE *stream, OFFSET_TYPE offset, int whence)
 
 		if ((!__STDIO_STREAM_IS_WRITING(stream)
 			  || !__STDIO_COMMIT_WRITE_BUFFER(stream))
-			&& ((whence != SEEK_CUR) 
+			&& ((whence != SEEK_CUR)
 				 || (__stdio_adjust_position(stream, &pos) >= 0))
 			&& (__SEEK(stream, &pos, whence) >= 0)
 			) {

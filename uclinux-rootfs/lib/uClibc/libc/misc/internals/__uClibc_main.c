@@ -1,4 +1,3 @@
-/* vi: set sw=4 ts=4: */
 /*
  * Copyright (C) 2006 by Steven J. Hill <sjhill@realitydiluted.com>
  * Copyright (C) 2001 by Manuel Novoa III <mjn3@uclibc.org>
@@ -15,8 +14,10 @@
  * avoided in the static library case.
  */
 
-#define	_ERRNO_H
 #include <features.h>
+#ifndef __UCLIBC_HAS_THREADS_NATIVE__
+#define	_ERRNO_H
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,34 +31,17 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
+#include <errno.h>
 #include <pthread-functions.h>
 #include <not-cancel.h>
+#include <atomic.h>
 #endif
-
-libc_hidden_proto(exit)
-
-#ifdef __UCLIBC_HAS_PROGRAM_INVOCATION_NAME__
-libc_hidden_proto(strrchr)
-#endif
-#ifdef __ARCH_USE_MMU__
-libc_hidden_proto(memcpy)
-libc_hidden_proto(getgid)
-libc_hidden_proto(getuid)
-libc_hidden_proto(getegid)
-libc_hidden_proto(geteuid)
-libc_hidden_proto(fstat)
-libc_hidden_proto(abort)
-
-extern __typeof(open) __libc_open;
-libc_hidden_proto(__libc_open)
-extern __typeof(fcntl) __libc_fcntl;
-libc_hidden_proto(__libc_fcntl)
-
-extern void internal_function _dl_aux_init(ElfW(auxv_t) *);
-#endif
+#ifdef __UCLIBC_HAS_THREADS__
+#include <pthread.h>
+#endif 
 
 #ifndef SHARED
-void *__libc_stack_end=NULL;
+void *__libc_stack_end = NULL;
 
 # ifdef __UCLIBC_HAS_SSP__
 #  include <dl-osinfo.h>
@@ -81,23 +65,81 @@ uintptr_t __guard attribute_relro;
 #  endif
 # endif
 
+/*
+ * Needed to initialize _dl_phdr when statically linked
+ */
+
+void internal_function _dl_aux_init (ElfW(auxv_t) *av);
+
+#ifdef __UCLIBC_HAS_THREADS__
+/*
+ * uClibc internal locking requires that we have weak aliases
+ * for dummy functions in case libpthread.a is not linked in.
+ * This needs to be in compilation unit that is pulled always
+ * in or linker will disregard these weaks.
+ */
+
+static int __pthread_return_0 (pthread_mutex_t *unused) { return 0; }
+weak_alias (__pthread_return_0, __pthread_mutex_lock)
+weak_alias (__pthread_return_0, __pthread_mutex_trylock)
+weak_alias (__pthread_return_0, __pthread_mutex_unlock)
+
+int weak_function
+__pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
+{
+        return 0;
+}
+
+void weak_function
+_pthread_cleanup_push_defer(struct _pthread_cleanup_buffer *__buffer,
+                            void (*__routine) (void *), void *__arg)
+{
+        __buffer->__routine = __routine;
+        __buffer->__arg = __arg;
+}
+
+void weak_function
+_pthread_cleanup_pop_restore(struct _pthread_cleanup_buffer *__buffer,
+                             int __execute)
+{
+        if (__execute)
+                __buffer->__routine(__buffer->__arg);
+}
+#endif /* __UCLIBC_HAS_THREADS__ */
+
 #endif /* !SHARED */
+
+/* Defeat compiler optimization which assumes function addresses are never NULL */
+static __always_inline int not_null_ptr(const void *p)
+{
+	const void *q;
+	__asm__ (""
+		: "=r" (q) /* output */
+		: "0" (p) /* input */
+	);
+	return q != 0;
+}
 
 /*
  * Prototypes.
  */
-extern void weak_function _stdio_init(void) attribute_hidden;
 extern int *weak_const_function __errno_location(void);
 extern int *weak_const_function __h_errno_location(void);
+extern void weak_function _stdio_init(void) attribute_hidden;
 #ifdef __UCLIBC_HAS_LOCALE__
 extern void weak_function _locale_init(void) attribute_hidden;
 #endif
 #ifdef __UCLIBC_HAS_THREADS__
+#if !defined (__UCLIBC_HAS_THREADS_NATIVE__) || defined (SHARED)
 extern void weak_function __pthread_initialize_minimal(void);
-extern void ____pthread_initialize_minimal(void);
+#else
+extern void __pthread_initialize_minimal(void);
+#endif
 #endif
 
-#ifdef __UCLIBC_CTOR_DTOR__
+/* If __UCLIBC_FORMAT_SHARED_FLAT__, all array initialisation and finalisation
+ * is handled by the routines passed to __uClibc_main().  */
+#if defined (__UCLIBC_CTOR_DTOR__) && !defined (__UCLIBC_FORMAT_SHARED_FLAT__)
 extern void _dl_app_init_array(void);
 extern void _dl_app_fini_array(void);
 # ifndef SHARED
@@ -111,20 +153,19 @@ extern void (*__fini_array_end []) (void) attribute_hidden;
 # endif
 #endif
 
-attribute_hidden const char *__uclibc_progname = NULL;
-#ifdef __UCLIBC_HAS___PROGNAME__
-strong_alias (__uclibc_progname, __progname)
-#endif
+attribute_hidden const char *__uclibc_progname = "";
 #ifdef __UCLIBC_HAS_PROGRAM_INVOCATION_NAME__
-attribute_hidden const char *__progname_full = NULL;
-strong_alias (__uclibc_progname, program_invocation_short_name)
-strong_alias (__progname_full, program_invocation_name)
+const char *program_invocation_short_name = "";
+const char *program_invocation_name = "";
+#endif
+#ifdef __UCLIBC_HAS___PROGNAME__
+weak_alias (program_invocation_short_name, __progname)
+weak_alias (program_invocation_name, __progname_full)
 #endif
 
 /*
- * Declare the __environ global variable and create a strong alias environ.
- * Note: Apparently we must initialize __environ to ensure that the strong
- * environ symbol is also included.
+ * Declare the __environ global variable and create a weak alias environ.
+ * This must be initialized; we cannot have a weak alias into bss.
  */
 char **__environ = 0;
 weak_alias(__environ, environ)
@@ -136,31 +177,22 @@ size_t __pagesize = 0;
 # define O_NOFOLLOW	0
 #endif
 
-#ifdef __ARCH_USE_MMU__
+#ifndef __ARCH_HAS_NO_LDSO__
 static void __check_one_fd(int fd, int mode)
 {
-	/* Check if the specified fd is already open */
-	if (unlikely(fcntl(fd, F_GETFD)==-1 && *(__errno_location())==EBADF))
+    /* Check if the specified fd is already open */
+    if (fcntl(fd, F_GETFD) == -1)
+    {
+	/* The descriptor is probably not open, so try to use /dev/null */
+	int nullfd = open(_PATH_DEVNULL, mode);
+	/* /dev/null is major=1 minor=3.  Make absolutely certain
+	 * that is in fact the device that we have opened and not
+	 * some other wierd file... [removed in uclibc] */
+	if (nullfd!=fd)
 	{
-		/* The descriptor is probably not open, so try to use /dev/null */
-		struct stat st;
-
-#ifndef __UCLIBC_HAS_THREADS_NATIVE__
-		int nullfd = open(_PATH_DEVNULL, mode);
-#else
-		int nullfd = open_not_cancel (_PATH_DEVNULL, mode, 0);
-#endif
-
-		/* /dev/null is major=1 minor=3.  Make absolutely certain
-		 * that is in fact the device that we have opened and not
-		 * some other wierd file... */
-		if ((nullfd != fd) || fstat(fd, &st) || !S_ISCHR(st.st_mode) ||
-			(st.st_rdev != makedev(1, 3)))
-		{
-		    /* Somebody is trying some trickery here... */
-			abort();
-		}
+		abort();
 	}
+    }
 }
 
 static int __check_suid(void)
@@ -170,13 +202,13 @@ static int __check_suid(void)
 
     uid  = getuid();
     euid = geteuid();
+    if (uid != euid)
+	return 1;
     gid  = getgid();
     egid = getegid();
-
-    if(uid == euid && gid == egid) {
-	return 0;
-    }
-    return 1;
+    if (gid != egid)
+	return 1;
+    return 0; /* we are not suid */
 }
 #endif
 
@@ -197,11 +229,9 @@ extern void __uClibc_init(void);
 libc_hidden_proto(__uClibc_init)
 void __uClibc_init(void)
 {
-    static int been_there_done_that = 0;
-
-    if (been_there_done_that)
+    /* Don't recurse */
+    if (__pagesize)
 	return;
-    been_there_done_that++;
 
     /* Setup an initial value.  This may not be perfect, but is
      * better than  malloc using __pagesize=0 for atexit, ctors, etc.  */
@@ -212,21 +242,20 @@ void __uClibc_init(void)
      * __pthread_initialize_minimal so we can use pthread_locks
      * whenever they are needed.
      */
+#if !defined (__UCLIBC_HAS_THREADS_NATIVE__) || defined (SHARED)
     if (likely(__pthread_initialize_minimal!=NULL))
-	    __pthread_initialize_minimal();
-#ifndef SHARED
-    else
-	    ____pthread_initialize_minimal();
 #endif
+	__pthread_initialize_minimal();
 #endif
 
 #ifndef SHARED
 # ifdef __UCLIBC_HAS_SSP__
     /* Set up the stack checker's canary.  */
-    stack_chk_guard = _dl_setup_stack_chk_guard();
 #  ifdef THREAD_SET_STACK_GUARD
+    uintptr_t stack_chk_guard = _dl_setup_stack_chk_guard();
     THREAD_SET_STACK_GUARD (stack_chk_guard);
 #   ifdef __UCLIBC_HAS_SSP_COMPAT__
+    stack_chk_guard = _dl_setup_stack_chk_guard();
     __guard = stack_chk_guard;
 #   endif
 #  else
@@ -240,15 +269,17 @@ void __uClibc_init(void)
 
 #ifdef __UCLIBC_HAS_LOCALE__
     /* Initialize the global locale structure. */
-    if (likely(_locale_init!=NULL))
+    if (likely(not_null_ptr(_locale_init)))
 	_locale_init();
 #endif
 
     /*
      * Initialize stdio here.  In the static library case, this will
      * be bypassed if not needed because of the weak alias above.
+     * Thus we get a nice size savings because the stdio functions
+     * won't be pulled into the final static binary unless used.
      */
-    if (likely(_stdio_init != NULL))
+    if (likely(not_null_ptr(_stdio_init)))
 	_stdio_init();
 
 }
@@ -265,9 +296,11 @@ libc_hidden_proto(__uClibc_fini)
 void __uClibc_fini(void)
 {
 #ifdef __UCLIBC_CTOR_DTOR__
+    /* If __UCLIBC_FORMAT_SHARED_FLAT__, all array finalisation is handled
+     * by __app_fini.  */
 # ifdef SHARED
     _dl_app_fini_array();
-# else
+# elif !defined (__UCLIBC_FORMAT_SHARED_FLAT__)
     size_t i = __fini_array_end - __fini_array_start;
     while (i-- > 0)
 	(*__fini_array_start [i]) ();
@@ -286,12 +319,13 @@ libc_hidden_def(__uClibc_fini)
  */
 void __uClibc_main(int (*main)(int, char **, char **), int argc,
 		    char **argv, void (*app_init)(void), void (*app_fini)(void),
-		    void (*rtld_fini)(void), void *stack_end) attribute_noreturn;
+		    void (*rtld_fini)(void),
+		    void *stack_end attribute_unused) attribute_noreturn;
 void __uClibc_main(int (*main)(int, char **, char **), int argc,
 		    char **argv, void (*app_init)(void), void (*app_fini)(void),
-		    void (*rtld_fini)(void), void *stack_end)
+		    void (*rtld_fini)(void), void *stack_end attribute_unused)
 {
-#ifdef __ARCH_USE_MMU__
+#ifndef __ARCH_HAS_NO_LDSO__
     unsigned long *aux_dat;
     ElfW(auxv_t) auxvt[AT_EGID + 1];
 #endif
@@ -317,19 +351,14 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 	__environ = &argv[argc];
     }
 
-#ifdef __ARCH_USE_MMU__
+#ifndef __ARCH_HAS_NO_LDSO__
     /* Pull stuff from the ELF header when possible */
+    memset(auxvt, 0x00, sizeof(auxvt));
     aux_dat = (unsigned long*)__environ;
     while (*aux_dat) {
 	aux_dat++;
     }
     aux_dat++;
-#ifndef SHARED
-	extern char *_dl_argv0;
-    _dl_aux_init((ElfW(auxv_t) *)aux_dat);
-	if(argc)
-		_dl_argv0 = argv[0];
-#endif
     while (*aux_dat) {
 	ElfW(auxv_t) *auxv_entry = (ElfW(auxv_t) *) aux_dat;
 	if (auxv_entry->a_type <= AT_EGID) {
@@ -337,6 +366,12 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 	}
 	aux_dat += 2;
     }
+#ifndef SHARED
+    /* Get the program headers (_dl_phdr) from the aux vector
+       It will be used into __libc_setup_tls. */
+
+    _dl_aux_init (auxvt);
+#endif
 #endif
 
     /* We need to initialize uClibc.  If we are dynamically linked this
@@ -344,7 +379,7 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
      * __uClibc_init() regardless, to be sure the right thing happens. */
     __uClibc_init();
 
-#ifdef __ARCH_USE_MMU__
+#ifndef __ARCH_HAS_NO_LDSO__
     /* Make certain getpagesize() gives the correct answer */
     __pagesize = (auxvt[AT_PAGESZ].a_un.a_val)? auxvt[AT_PAGESZ].a_un.a_val : PAGE_SIZE;
 
@@ -361,22 +396,25 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
     }
 #endif
 
-#ifdef __UCLIBC_HAS_PROGRAM_INVOCATION_NAME__
-    __progname_full = *argv;
-    __progname = strrchr(*argv, '/');
-    if (__progname != NULL)
-	++__progname;
-    else
-	__progname = __progname_full;
-#else
     __uclibc_progname = *argv;
+#ifdef __UCLIBC_HAS_PROGRAM_INVOCATION_NAME__
+    if (*argv != NULL) {
+	program_invocation_name = *argv;
+	program_invocation_short_name = strrchr(*argv, '/');
+	if (program_invocation_short_name != NULL)
+	    ++program_invocation_short_name;
+	else
+	    program_invocation_short_name = program_invocation_name;
+    }
 #endif
 
 #ifdef __UCLIBC_CTOR_DTOR__
     /* Arrange for the application's dtors to run before we exit.  */
     __app_fini = app_fini;
 
-# ifndef SHARED
+    /* If __UCLIBC_FORMAT_SHARED_FLAT__, all array initialisation is handled
+     * by __app_init.  */
+# if !defined (SHARED) && !defined (__UCLIBC_FORMAT_SHARED_FLAT__)
     /* For dynamically linked executables the preinit array is executed by
        the dynamic linker (before initializing any shared object).
        For static executables, preinit happens rights before init.  */
@@ -391,9 +429,11 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
     if (app_init!=NULL) {
 	app_init();
     }
+    /* If __UCLIBC_FORMAT_SHARED_FLAT__, all array initialisation is handled
+     * by __app_init.  */
 # ifdef SHARED
     _dl_app_init_array();
-# else
+# elif !defined (__UCLIBC_FORMAT_SHARED_FLAT__)
     {
 	const size_t size = __init_array_end - __init_array_start;
 	size_t i;
@@ -407,11 +447,11 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
      * have resulted in errno being set nonzero, so set it to 0 before
      * we call main.
      */
-    if (likely(__errno_location!=NULL))
+    if (likely(not_null_ptr(__errno_location)))
 	*(__errno_location()) = 0;
 
     /* Set h_errno to 0 as well */
-    if (likely(__h_errno_location!=NULL))
+    if (likely(not_null_ptr(__h_errno_location)))
 	*(__h_errno_location()) = 0;
 
 #if defined HAVE_CLEANUP_JMP_BUF && defined __UCLIBC_HAS_THREADS_NATIVE__
@@ -457,7 +497,7 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 
 		if (! atomic_decrement_and_test (ptr))
 			/* Not much left to do but to exit the thread, not the process.  */
-			__exit_thread (0);
+			__exit_thread_inline (0);
 	}
 
 	exit (result);

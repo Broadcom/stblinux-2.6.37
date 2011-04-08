@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add recent matching support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -9,17 +10,17 @@
 #include <linux/netfilter/xt_recent.h>
 
 static const struct option recent_opts[] = {
-	{ .name = "set",      .has_arg = 0, .val = 201 },
-	{ .name = "rcheck",   .has_arg = 0, .val = 202 },
-	{ .name = "update",   .has_arg = 0, .val = 203 },
-	{ .name = "seconds",  .has_arg = 1, .val = 204 },
-	{ .name = "hitcount", .has_arg = 1, .val = 205 },
-	{ .name = "remove",   .has_arg = 0, .val = 206 },
-	{ .name = "rttl",     .has_arg = 0, .val = 207 },
-	{ .name = "name",     .has_arg = 1, .val = 208 },
-	{ .name = "rsource",  .has_arg = 0, .val = 209 },
-	{ .name = "rdest",    .has_arg = 0, .val = 210 },
-	{ .name = NULL }
+	{.name = "set",      .has_arg = false, .val = 201},
+	{.name = "rcheck",   .has_arg = false, .val = 202},
+	{.name = "update",   .has_arg = false, .val = 203},
+	{.name = "seconds",  .has_arg = true,  .val = 204},
+	{.name = "hitcount", .has_arg = true,  .val = 205},
+	{.name = "remove",   .has_arg = false, .val = 206},
+	{.name = "rttl",     .has_arg = false, .val = 207},
+	{.name = "name",     .has_arg = true,  .val = 208},
+	{.name = "rsource",  .has_arg = false, .val = 209},
+	{.name = "rdest",    .has_arg = false, .val = 210},
+	XT_GETOPT_TABLEEND,
 };
 
 static void recent_help(void)
@@ -73,7 +74,7 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
 				xtables_error(PARAMETER_PROBLEM,
 					"recent: only one of `--set', `--rcheck' "
 					"`--update' or `--remove' may be set");
-			xtables_check_inverse(optarg, &invert, &optind, 0);
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 			info->check_set |= XT_RECENT_SET;
 			if (invert) info->invert = 1;
 			*flags |= XT_RECENT_SET;
@@ -84,7 +85,7 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
 				xtables_error(PARAMETER_PROBLEM,
 					"recent: only one of `--set', `--rcheck' "
 					"`--update' or `--remove' may be set");
-			xtables_check_inverse(optarg, &invert, &optind, 0);
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 			info->check_set |= XT_RECENT_CHECK;
 			if(invert) info->invert = 1;
 			*flags |= XT_RECENT_CHECK;
@@ -95,21 +96,10 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
 				xtables_error(PARAMETER_PROBLEM,
 					"recent: only one of `--set', `--rcheck' "
 					"`--update' or `--remove' may be set");
-			xtables_check_inverse(optarg, &invert, &optind, 0);
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 			info->check_set |= XT_RECENT_UPDATE;
 			if (invert) info->invert = 1;
 			*flags |= XT_RECENT_UPDATE;
-			break;
-
-		case 206:
-			if (*flags & RECENT_CMDS)
-				xtables_error(PARAMETER_PROBLEM,
-					"recent: only one of `--set', `--rcheck' "
-					"`--update' or `--remove' may be set");
-			xtables_check_inverse(optarg, &invert, &optind, 0);
-			info->check_set |= XT_RECENT_REMOVE;
-			if (invert) info->invert = 1;
-			*flags |= XT_RECENT_REMOVE;
 			break;
 
 		case 204:
@@ -118,6 +108,17 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
 
 		case 205:
 			info->hit_count = atoi(optarg);
+			break;
+
+		case 206:
+			if (*flags & RECENT_CMDS)
+				xtables_error(PARAMETER_PROBLEM,
+					"recent: only one of `--set', `--rcheck' "
+					"`--update' or `--remove' may be set");
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+			info->check_set |= XT_RECENT_REMOVE;
+			if (invert) info->invert = 1;
+			*flags |= XT_RECENT_REMOVE;
 			break;
 
 		case 207:
@@ -183,7 +184,7 @@ static void recent_print(const void *ip, const struct xt_entry_match *match,
 	if (info->side == XT_RECENT_SOURCE)
 		printf("side: source ");
 	if (info->side == XT_RECENT_DEST)
-		printf("side: dest");
+		printf("side: dest ");
 }
 
 static void recent_save(const void *ip, const struct xt_entry_match *match)
@@ -215,7 +216,7 @@ static void recent_save(const void *ip, const struct xt_entry_match *match)
 static struct xtables_match recent_mt_reg = {
     .name          = "recent",
     .version       = XTABLES_VERSION,
-    .family        = NFPROTO_IPV4,
+    .family        = NFPROTO_UNSPEC,
     .size          = XT_ALIGN(sizeof(struct xt_recent_mtinfo)),
     .userspacesize = XT_ALIGN(sizeof(struct xt_recent_mtinfo)),
     .help          = recent_help,
@@ -227,24 +228,7 @@ static struct xtables_match recent_mt_reg = {
     .extra_opts    = recent_opts,
 };
 
-static struct xtables_match recent_mt6_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "recent",
-	.revision      = 0,
-	.family        = NFPROTO_IPV6,
-	.size          = XT_ALIGN(sizeof(struct xt_recent_mtinfo)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_recent_mtinfo)),
-	.help          = recent_help,
-	.init          = recent_init,
-	.parse         = recent_parse,
-	.final_check   = recent_check,
-	.print         = recent_print,
-	.save          = recent_save,
-	.extra_opts    = recent_opts,
-};
-
 void _init(void)
 {
 	xtables_register_match(&recent_mt_reg);
-	xtables_register_match(&recent_mt6_reg);
 }

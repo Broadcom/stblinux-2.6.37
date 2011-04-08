@@ -20,7 +20,7 @@
 #include <sysdep.h>
 #define _ERRNO_H	1
 #include <bits/errno.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 #include <tcb-offsets.h>
 
 /* Clone the calling process, but without copying the whole address space.
@@ -51,5 +51,7 @@ ENTRY (__vfork)
 	PSEUDO_RET
 
 PSEUDO_END (__vfork)
-hidden_def (__vfork)
+libc_hidden_def (__vfork)
 weak_alias (__vfork, vfork)
+libc_hidden_weak(vfork)
+

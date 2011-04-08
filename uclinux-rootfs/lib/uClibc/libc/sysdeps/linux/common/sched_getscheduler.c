@@ -7,11 +7,12 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
 #include <sched.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
 
 #define __NR___syscall_sched_getscheduler __NR_sched_getscheduler
-static inline _syscall1(int, __syscall_sched_getscheduler, __kernel_pid_t, pid);
+static __inline__ _syscall1(int, __syscall_sched_getscheduler, __kernel_pid_t, pid)
 
 int sched_getscheduler(pid_t pid)
 {

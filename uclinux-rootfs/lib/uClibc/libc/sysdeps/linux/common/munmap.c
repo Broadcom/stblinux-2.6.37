@@ -7,11 +7,10 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 #include <sys/mman.h>
 
-libc_hidden_proto(munmap)
 
-_syscall2(int, munmap, void *, start, size_t, length);
+_syscall2(int, munmap, void *, start, size_t, length)
 libc_hidden_def(munmap)

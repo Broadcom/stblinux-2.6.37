@@ -20,7 +20,6 @@
 #include <signal.h>
 #include <string.h>	/* For the real memset prototype.  */
 
-libc_hidden_proto(sigaction)
 
 /* Tolerate non-threads versions of Posix */
 #ifndef SA_ONESHOT
@@ -35,10 +34,7 @@ libc_hidden_proto(sigaction)
 
 /* Set the handler for the signal SIG to HANDLER,
    returning the old handler, or SIG_ERR on error.  */
-__sighandler_t
-__sysv_signal (sig, handler)
-     int sig;
-     __sighandler_t handler;
+__sighandler_t __sysv_signal (int sig, __sighandler_t handler)
 {
   struct sigaction act, oact;
 
@@ -50,10 +46,9 @@ __sysv_signal (sig, handler)
     }
 
   act.sa_handler = handler;
-  if (__sigemptyset (&act.sa_mask) < 0)
-    return SIG_ERR;
-  act.sa_flags = SA_ONESHOT | SA_NOMASK | SA_INTERRUPT;
-  act.sa_flags &= ~SA_RESTART;
+  __sigemptyset (&act.sa_mask);
+  act.sa_flags = (SA_ONESHOT | SA_NOMASK | SA_INTERRUPT) & ~SA_RESTART;
+  /* In Linux (as of 2.6.25), fails only if sig is SIGKILL or SIGSTOP */
   if (sigaction (sig, &act, &oact) < 0)
     return SIG_ERR;
 

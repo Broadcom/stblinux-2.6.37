@@ -19,6 +19,9 @@
 
 #include <errno.h>
 #include <sys/sem.h>
+#include <stddef.h>
+#include <stdlib.h> /* for NULL */
+
 #include "ipc.h"
 
 
@@ -38,7 +41,7 @@ union semun {
 
 #ifdef __NR_semctl
 #define __NR___semctl __NR_semctl
-static inline _syscall4(int, __semctl, int, semid, int, semnum, int, cmd, void *, arg);
+static __inline__ _syscall4(int, __semctl, int, semid, int, semnum, int, cmd, void *, arg);
 #endif
 
 int semctl(int semid, int semnum, int cmd, ...)
@@ -53,24 +56,21 @@ int semctl(int semid, int semnum, int cmd, ...)
 #ifdef __NR_semctl
     return __semctl(semid, semnum, cmd | __IPC_64, arg.__pad);
 #else
-    return __syscall_ipc(IPCOP_semctl, semid, semnum, cmd | __IPC_64, &arg);
+    return __syscall_ipc(IPCOP_semctl, semid, semnum, cmd|__IPC_64, &arg, NULL);
 #endif
 }
 #endif
 
 #ifdef L_semget
-/* for definition of NULL */
-#include <stdlib.h>
-
 #ifdef __NR_semget
-_syscall3(int, semget, key_t, key, int, nsems, int, semflg);
+_syscall3(int, semget, key_t, key, int, nsems, int, semflg)
 
 #else
 /* Return identifier for array of NSEMS semaphores associated
  * with KEY.  */
 int semget (key_t key, int nsems, int semflg)
 {
-    return __syscall_ipc(IPCOP_semget, key, nsems, semflg, NULL);
+    return __syscall_ipc(IPCOP_semget, key, nsems, semflg, NULL, 0);
 }
 #endif
 #endif
@@ -78,13 +78,28 @@ int semget (key_t key, int nsems, int semflg)
 #ifdef L_semop
 
 #ifdef __NR_semop
-_syscall3(int, semop, int, semid, struct sembuf *, sops, size_t, nsops);
+_syscall3(int, semop, int, semid, struct sembuf *, sops, size_t, nsops)
 
 #else
 /* Perform user-defined atomical operation of array of semaphores.  */
 int semop (int semid, struct sembuf *sops, size_t nsops)
 {
-    return __syscall_ipc(IPCOP_semop, semid, (int) nsops, 0, sops);
+    return __syscall_ipc(IPCOP_semop, semid, (int) nsops, 0, sops, NULL);
+}
+#endif
+#endif
+
+#ifdef L_semtimedop
+
+#ifdef __NR_semtimedop
+_syscall4(int, semtimedop, int, semid, struct sembuf *, sops, size_t, nsops, const struct timespec *, timeout)
+
+#else
+
+int semtimedop(int semid, struct sembuf *sops, size_t nsops,
+	       const struct timespec *timeout)
+{
+    return __syscall_ipc(IPCOP_semtimedop, semid, nsops, 0, sops, (void *) timeout);
 }
 #endif
 #endif

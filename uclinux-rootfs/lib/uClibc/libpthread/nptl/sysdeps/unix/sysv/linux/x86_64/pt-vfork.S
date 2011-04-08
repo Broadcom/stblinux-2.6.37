@@ -30,4 +30,4 @@
 	movl	%esi, %fs:PID;						      \
 1:
 
-#include <../../../../../../sysdeps/unix/sysv/linux/x86_64/vfork.S>
+#include <../../../../../../../libc/sysdeps/linux/x86_64/vfork.S>

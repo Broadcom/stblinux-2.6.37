@@ -5,6 +5,7 @@
  *
  * This program is distributed under the terms of GNU GPL
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,7 +40,7 @@ static int TTL_parse(int c, char **argv, int invert, unsigned int *flags,
 		xtables_error(PARAMETER_PROBLEM,
 				"TTL: You must specify a value");
 
-	if (xtables_check_inverse(optarg, &invert, NULL, 0))
+	if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 		xtables_error(PARAMETER_PROBLEM,
 				"TTL: unexpected `!'");
 	
@@ -131,10 +132,10 @@ static void TTL_print(const void *ip, const struct xt_entry_target *target,
 }
 
 static const struct option TTL_opts[] = {
-	{ "ttl-set", 1, NULL, '1' },
-	{ "ttl-dec", 1, NULL, '2' },
-	{ "ttl-inc", 1, NULL, '3' },
-	{ .name = NULL }
+	{.name = "ttl-set", .has_arg = true, .val = '1'},
+	{.name = "ttl-dec", .has_arg = true, .val = '2'},
+	{.name = "ttl-inc", .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static struct xtables_target ttl_tg_reg = {

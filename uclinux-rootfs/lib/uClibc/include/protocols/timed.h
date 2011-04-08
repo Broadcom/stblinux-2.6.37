@@ -32,14 +32,16 @@
 #ifndef	_PROTOCOLS_TIMED_H
 #define	_PROTOCOLS_TIMED_H 1
 
+#ifdef __UCLIBC_HAS_RPC__
 #include <rpc/types.h>
+#endif
 
 /*
  * Time Synchronization Protocol
  */
 
 #define	TSPVERSION	1
-#define ANYADDR 	NULL
+#define ANYADDR		NULL
 
 struct tsp {
 	u_char	tsp_type;

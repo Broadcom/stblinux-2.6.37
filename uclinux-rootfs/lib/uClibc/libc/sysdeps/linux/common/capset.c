@@ -7,11 +7,11 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 int capset(void *header, const void *data);
 #ifdef __NR_capset
-_syscall2(int, capset, void *, header, const void *, data);
-#else
+_syscall2(int, capset, void *, header, const void *, data)
+#elif defined __UCLIBC_HAS_STUBS__
 int capset(void *header, const void *data)
 {
 	__set_errno(ENOSYS);

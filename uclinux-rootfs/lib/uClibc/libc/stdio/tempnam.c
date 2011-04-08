@@ -20,7 +20,6 @@
 #include <string.h>
 #include "../misc/internals/tempname.h"
 
-libc_hidden_proto(strdup)
 
 /* Generate a unique temporary filename using up to five characters of PFX
    if it is not NULL.  The directory to put this file in is searched for
@@ -37,7 +36,7 @@ tempnam (const char *dir, const char *pfx)
   if (__path_search (buf, FILENAME_MAX, dir, pfx, 1))
     return NULL;
 
-  if (__gen_tempname (buf, __GT_NOCREATE))
+  if (__gen_tempname (buf, __GT_NOCREATE, 0))
     return NULL;
 
   return strdup (buf);

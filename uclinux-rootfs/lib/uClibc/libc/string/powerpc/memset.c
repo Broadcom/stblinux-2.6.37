@@ -7,7 +7,7 @@
 
 /* These are carefully optimized mem*() functions for PPC written in C.
  * Don't muck around with these function without checking the generated
- * assmbler code.
+ * assembler code.
  * It is possible to optimize these significantly more by using specific
  * data cache instructions(mainly dcbz). However that requires knownledge
  * about the CPU's cache line size.
@@ -21,14 +21,13 @@
 
 #include <string.h>
 
-libc_hidden_proto(memset)
 
-static inline int expand_byte_word(int c){
-	/* this does: 
+static __inline__ int expand_byte_word(int c){
+	/* this does:
 	   c = c << 8 | c;
 	   c = c << 16 | c ;
 	*/
-	asm("rlwimi	%0,%0,8,16,23\n"
+	__asm__("rlwimi	%0,%0,8,16,23\n"
 	    "\trlwimi	%0,%0,16,0,15\n"
 	    : "=r" (c) : "0" (c));
 	return c;
@@ -66,7 +65,7 @@ void *memset(void *to, int c, size_t n)
 	do {
 		*++tmp_to = c;
 	} while (--n);
-	
+
 	return to;
  align:
 	rem = 4 - rem;

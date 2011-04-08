@@ -21,6 +21,7 @@
  *             ipt_string_info.
  */
 #define _GNU_SOURCE 1
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -44,13 +45,13 @@ static void string_help(void)
 }
 
 static const struct option string_opts[] = {
-	{ "from", 1, NULL, '1' },
-	{ "to", 1, NULL, '2' },
-	{ "algo", 1, NULL, '3' },
-	{ "string", 1, NULL, '4' },
-	{ "hex-string", 1, NULL, '5' },
-	{ "icase", 0, NULL, '6' },
-	{ .name = NULL }
+	{.name = "from",       .has_arg = true,  .val = '1'},
+	{.name = "to",         .has_arg = true,  .val = '2'},
+	{.name = "algo",       .has_arg = true,  .val = '3'},
+	{.name = "string",     .has_arg = true,  .val = '4'},
+	{.name = "hex-string", .has_arg = true,  .val = '5'},
+	{.name = "icase",      .has_arg = false, .val = '6'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void string_init(struct xt_entry_match *m)
@@ -202,8 +203,8 @@ string_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & STRING)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify multiple --string");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_string(argv[optind-1], stringinfo);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_string(optarg, stringinfo);
 		if (invert) {
 			if (revision == 0)
 				stringinfo->u.v0.invert = 1;
@@ -218,8 +219,8 @@ string_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify multiple --hex-string");
 
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_hex_string(argv[optind-1], stringinfo);  /* sets length */
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_hex_string(optarg, stringinfo);  /* sets length */
 		if (invert) {
 			if (revision == 0)
 				stringinfo->u.v0.invert = 1;
@@ -350,40 +351,40 @@ static void string_save(const void *ip, const struct xt_entry_match *match)
 }
 
 
-static struct xtables_match string_match = {
-    .name		= "string",
-    .revision		= 0,
-    .family		= AF_UNSPEC,
-    .version		= XTABLES_VERSION,
-    .size		= XT_ALIGN(sizeof(struct xt_string_info)),
-    .userspacesize	= offsetof(struct xt_string_info, config),
-    .help		= string_help,
-    .init		= string_init,
-    .parse		= string_parse,
-    .final_check	= string_check,
-    .print		= string_print,
-    .save		= string_save,
-    .extra_opts		= string_opts,
-};
-
-static struct xtables_match string_match_v1 = {
-    .name		= "string",
-    .revision		= 1,
-    .family		= AF_UNSPEC,
-    .version		= XTABLES_VERSION,
-    .size		= XT_ALIGN(sizeof(struct xt_string_info)),
-    .userspacesize	= offsetof(struct xt_string_info, config),
-    .help		= string_help,
-    .init		= string_init,
-    .parse		= string_parse,
-    .final_check	= string_check,
-    .print		= string_print,
-    .save		= string_save,
-    .extra_opts		= string_opts,
+static struct xtables_match string_mt_reg[] = {
+	{
+		.name          = "string",
+		.revision      = 0,
+		.family        = NFPROTO_UNSPEC,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_string_info)),
+		.userspacesize = offsetof(struct xt_string_info, config),
+		.help          = string_help,
+		.init          = string_init,
+		.parse         = string_parse,
+		.final_check   = string_check,
+		.print         = string_print,
+		.save          = string_save,
+		.extra_opts    = string_opts,
+	},
+	{
+		.name          = "string",
+		.revision      = 1,
+		.family        = NFPROTO_UNSPEC,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_string_info)),
+		.userspacesize = offsetof(struct xt_string_info, config),
+		.help          = string_help,
+		.init          = string_init,
+		.parse         = string_parse,
+		.final_check   = string_check,
+		.print         = string_print,
+		.save          = string_save,
+		.extra_opts    = string_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&string_match);
-	xtables_register_match(&string_match_v1);
+	xtables_register_matches(string_mt_reg, ARRAY_SIZE(string_mt_reg));
 }

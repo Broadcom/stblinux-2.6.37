@@ -78,6 +78,7 @@ static int ehci_brcm_suspend(struct usb_hcd *hcd)
 	int ret;
 
 	ret = ehci_bus_suspend(hcd);
+	ehci_prepare_ports_for_controller_suspend(hcd_to_ehci(hcd), false);
 	brcm_usb_suspend(hcd);
 
 	return ret;
@@ -88,6 +89,7 @@ static int ehci_brcm_resume(struct usb_hcd *hcd)
 	int ret = 0;
 
 	brcm_usb_resume(hcd);
+	ehci_prepare_ports_for_controller_resume(hcd_to_ehci(hcd));
 	ret = ehci_bus_resume(hcd);
 	return ret;
 }

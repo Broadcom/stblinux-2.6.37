@@ -24,28 +24,35 @@
 #if __WORDSIZE == 64
 
 #define __NR_posix_fadvise64 __NR_fadvise64_64
-_syscall4(int, posix_fadvise64, int, fd, __off64_t, offset,
-          __off64_t, len, int, advice);
+
+int posix_fadvise64(int fd, __off64_t offset, __off64_t len, int advice)
+{
+  if (len != (off_t) len)
+    return EOVERFLOW;
+  INTERNAL_SYSCALL_DECL (err);
+    int ret = INTERNAL_SYSCALL (posix_fadvise64, err, 5, fd,
+                               __LONG_LONG_PAIR ((long) (offset >> 32),
+                                                 (long) offset),
+                               (off_t) len, advice);
+  if (!INTERNAL_SYSCALL_ERROR_P (ret, err))
+    return 0;
+  return INTERNAL_SYSCALL_ERRNO (ret, err);
+}
 
 /* 32 bit implementation is kind of a pita */
 #elif __WORDSIZE == 32
 
-#ifdef _syscall6 /* workaround until everyone has _syscall6() */
-#define __NR___syscall_fadvise64_64 __NR_fadvise64_64
-static inline _syscall6(int, __syscall_fadvise64_64, int, fd,
-          unsigned long, high_offset, unsigned long, low_offset,
-          unsigned long, high_len, unsigned long, low_len,
-          int, advice);
 int posix_fadvise64(int fd, __off64_t offset, __off64_t len, int advice)
 {
-	return (__syscall_fadvise64_64(fd,
-	        __LONG_LONG_PAIR(offset >> 32, offset &  0xffffffff),
-	        __LONG_LONG_PAIR(len >> 32, len & 0xffffffff),
-	        advice));
+	INTERNAL_SYSCALL_DECL (err);
+	int ret = INTERNAL_SYSCALL (fadvise64_64, err, 6, fd,
+								__LONG_LONG_PAIR(offset >> 32, offset &  0xffffffff),
+								__LONG_LONG_PAIR(len >> 32, len & 0xffffffff),
+								advice);
+	if (!INTERNAL_SYSCALL_ERROR_P (ret, err))
+		return 0;
+	return INTERNAL_SYSCALL_ERRNO (ret, err);
 }
-#else
-#warning _syscall6 has not been defined for your machine :(
-#endif /* _syscall6 */
 
 #else
 #error your machine is neither 32 bit or 64 bit ... it must be magical
@@ -57,8 +64,8 @@ int posix_fadvise64(int fd, __off64_t offset, __off64_t len, int advice)
  */
 int posix_fadvise64(int fd, __off64_t offset, __off64_t len, int advice)
 {
-	__set_errno(ENOSYS);
-	return -1;
+#warning This is not correct as far as SUSv3 is concerned.
+	return ENOSYS;
 }
 #endif /* __NR_fadvise64_64 */
 #endif /* __UCLIBC_HAS_LFS__ */

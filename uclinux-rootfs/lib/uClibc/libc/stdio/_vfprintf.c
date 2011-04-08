@@ -35,7 +35,7 @@
 /* April 1, 2002
  * Initialize thread locks for fake files in vsnprintf and vdprintf.
  *    reported by Erik Andersen (andersen@codepoet.com)
- * Fix an arg promotion handling bug in _do_one_spec for %c. 
+ * Fix an arg promotion handling bug in _do_one_spec for %c.
  *    reported by Ilguiz Latypov <ilatypov@superbt.com>
  *
  * May 10, 2002
@@ -101,38 +101,19 @@
 #include <stdint.h>
 #include <errno.h>
 #include <locale.h>
-
-#define __PRINTF_INFO_NO_BITFIELD
 #include <printf.h>
 
 #ifdef __UCLIBC_HAS_THREADS__
-#include <stdio_ext.h>
-#include <pthread.h>
-#endif /* __UCLIBC_HAS_THREADS__ */
+# include <stdio_ext.h>
+# include <pthread.h>
+#endif
 
 #ifdef __UCLIBC_HAS_WCHAR__
-#include <wchar.h>
-#endif /* __UCLIBC_HAS_WCHAR__ */
+# include <wchar.h>
+#endif
 
 #include <bits/uClibc_uintmaxtostr.h>
 #include <bits/uClibc_va_copy.h>
-
-libc_hidden_proto(memcpy)
-libc_hidden_proto(memset)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strnlen)
-libc_hidden_proto(__glibc_strerror_r)
-libc_hidden_proto(fputs_unlocked)
-libc_hidden_proto(abort)
-#ifdef __UCLIBC_HAS_WCHAR__
-libc_hidden_proto(wcslen)
-libc_hidden_proto(wcsnlen)
-libc_hidden_proto(mbsrtowcs)
-libc_hidden_proto(wcsrtombs)
-libc_hidden_proto(btowc)
-libc_hidden_proto(wcrtomb)
-libc_hidden_proto(fputws)
-#endif
 
 /* Some older or broken gcc toolchains define LONG_LONG_MAX but not
  * LLONG_MAX.  Since LLONG_MAX is part of the standard, that's what
@@ -155,24 +136,24 @@ libc_hidden_proto(fputws)
 /**********************************************************************/
 
 #if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_FLOATS__)
-#undef __STDIO_PRINTF_FLOAT
+# undef __STDIO_PRINTF_FLOAT
 #endif
 
 #ifdef __BCC__
-#undef __STDIO_PRINTF_FLOAT
+# undef __STDIO_PRINTF_FLOAT
 #endif
 
 #ifdef __STDIO_PRINTF_FLOAT
-#include <float.h>
-#include <bits/uClibc_fpmax.h>
-#else  /* __STDIO_PRINTF_FLOAT */
-#undef L__fpmaxtostr
-#endif /* __STDIO_PRINTF_FLOAT */
+# include <float.h>
+# include <bits/uClibc_fpmax.h>
+#else
+# undef L__fpmaxtostr
+#endif
 
 
 #undef __STDIO_HAS_VSNPRINTF
 #if defined(__STDIO_BUFFERS) || defined(__USE_OLD_VFPRINTF__) || defined(__UCLIBC_HAS_GLIBC_CUSTOM_STREAMS__)
-#define __STDIO_HAS_VSNPRINTF 1
+# define __STDIO_HAS_VSNPRINTF 1
 #endif
 
 /**********************************************************************/
@@ -180,44 +161,37 @@ libc_hidden_proto(fputws)
 /* Now controlled by uClibc_stdio.h. */
 /* #define __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__ */
 
-/* TODO -- move these to a configuration section? */
-#define MAX_FIELD_WIDTH		4095
-
 #ifdef __UCLIBC_MJN3_ONLY__
-#ifdef L_register_printf_function
+# ifdef L_register_printf_function
 /* emit only once */
-#warning WISHLIST: Make MAX_USER_SPEC configurable?
-#warning WISHLIST: Make MAX_ARGS_PER_SPEC configurable?
+#  warning WISHLIST: Make MAX_USER_SPEC configurable?
+#  warning WISHLIST: Make MAX_ARGS_PER_SPEC configurable?
+# endif
 #endif
-#endif /* __UCLIBC_MJN3_ONLY__ */
 
 #ifdef __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__
-
-#define MAX_USER_SPEC       10
-#define MAX_ARGS_PER_SPEC    5
-
-#else  /* __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__ */
-
-#undef MAX_USER_SPEC
-#define MAX_ARGS_PER_SPEC    1
-
-#endif /* __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__ */
+# define MAX_USER_SPEC       10
+# define MAX_ARGS_PER_SPEC    5
+#else
+# undef MAX_USER_SPEC
+# define MAX_ARGS_PER_SPEC    1
+#endif
 
 #if MAX_ARGS_PER_SPEC < 1
-#error MAX_ARGS_PER_SPEC < 1!
-#undef MAX_ARGS_PER_SPEC
-#define MAX_ARGS_PER_SPEC    1
+# error MAX_ARGS_PER_SPEC < 1!
+# undef MAX_ARGS_PER_SPEC
+# define MAX_ARGS_PER_SPEC    1
 #endif
 
 #if defined(NL_ARGMAX) && (NL_ARGMAX < 9)
-#error NL_ARGMAX < 9!
+# error NL_ARGMAX < 9!
 #endif
 
 #if defined(NL_ARGMAX) && (NL_ARGMAX >= (MAX_ARGS_PER_SPEC + 2))
-#define MAX_ARGS        NL_ARGMAX
+# define MAX_ARGS        NL_ARGMAX
 #else
 /* N for spec itself, plus 1 each for width and precision */
-#define MAX_ARGS        (MAX_ARGS_PER_SPEC + 2)
+# define MAX_ARGS        (MAX_ARGS_PER_SPEC + 2)
 #endif
 
 /**********************************************************************/
@@ -229,21 +203,21 @@ libc_hidden_proto(fputws)
 extern printf_function _custom_printf_handler[MAX_USER_SPEC] attribute_hidden;
 extern printf_arginfo_function *_custom_printf_arginfo[MAX_USER_SPEC] attribute_hidden;
 extern char *_custom_printf_spec attribute_hidden;
-#endif /* __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__ */
+#endif
 
 /**********************************************************************/
 
 #define SPEC_FLAGS		" +0-#'I"
 enum {
-	FLAG_SPACE		=	0x01,
-	FLAG_PLUS		=	0x02,	/* must be 2 * FLAG_SPACE */
-	FLAG_ZERO		=	0x04,
-	FLAG_MINUS		=	0x08,	/* must be 2 * FLAG_ZERO */
-	FLAG_HASH		=	0x10,
-	FLAG_THOUSANDS	=	0x20,
-	FLAG_I18N		=	0x40,	/* only works for d, i, u */
-	FLAG_WIDESTREAM =   0x80
-};	  
+	FLAG_SPACE      = 0x01,
+	FLAG_PLUS       = 0x02,	/* must be 2 * FLAG_SPACE */
+	FLAG_ZERO       = 0x04,
+	FLAG_MINUS      = 0x08,	/* must be 2 * FLAG_ZERO */
+	FLAG_HASH       = 0x10,
+	FLAG_THOUSANDS  = 0x20,
+	FLAG_I18N       = 0x40,	/* only works for d, i, u */
+	FLAG_WIDESTREAM = 0x80
+};
 
 /**********************************************************************/
 
@@ -262,10 +236,10 @@ enum {
 };
 
 /*                         p   x   X  o   u   d   i */
-#define SPEC_BASE		{ 16, 16, 16, 8, 10, 10, 10 }
+#define SPEC_BASE       { 16, 16, 16, 8, 10, 10, 10 }
 
-#define SPEC_RANGES		{ CONV_n, CONV_p, CONV_i, CONV_A, \
-						  CONV_C, CONV_S, CONV_c, CONV_s, CONV_custom0 }
+#define SPEC_RANGES     { CONV_n, CONV_p, CONV_i, CONV_A, \
+                          CONV_C, CONV_S, CONV_c, CONV_s, CONV_custom0 }
 
 #define SPEC_OR_MASK		 { \
 	/* n */			(PA_FLAG_PTR|PA_INT), \
@@ -306,43 +280,43 @@ enum {
 /*  #endif */
 
 #ifdef PDS
-#error PDS already defined!
+# error PDS already defined!
 #endif
 #ifdef SS
-#error SS already defined!
+# error SS already defined!
 #endif
 #ifdef IMS
-#error IMS already defined!
+# error IMS already defined!
 #endif
 
 #if PTRDIFF_MAX == INT_MAX
-#define PDS		0
+# define PDS		0
 #elif PTRDIFF_MAX == LONG_MAX
-#define PDS		4
+# define PDS		4
 #elif defined(LLONG_MAX) && (PTRDIFF_MAX == LLONG_MAX)
-#define PDS		8
+# define PDS		8
 #else
-#error fix QUAL_CHARS ptrdiff_t entry 't'!
+# error fix QUAL_CHARS ptrdiff_t entry 't'!
 #endif
 
 #if SIZE_MAX == UINT_MAX
-#define SS		0
+# define SS		0
 #elif SIZE_MAX == ULONG_MAX
-#define SS		4
+# define SS		4
 #elif defined(LLONG_MAX) && (SIZE_MAX == ULLONG_MAX)
-#define SS		8
+# define SS		8
 #else
-#error fix QUAL_CHARS size_t entries 'z', 'Z'!
+# error fix QUAL_CHARS size_t entries 'z', 'Z'!
 #endif
 
 #if INTMAX_MAX == INT_MAX
-#define IMS		0
+# define IMS		0
 #elif INTMAX_MAX == LONG_MAX
-#define IMS		4
+# define IMS		4
 #elif defined(LLONG_MAX) && (INTMAX_MAX == LLONG_MAX)
-#define IMS		8
+# define IMS		8
 #else
-#error fix QUAL_CHARS intmax_t entry 'j'!
+# error fix QUAL_CHARS intmax_t entry 'j'!
 #endif
 
 #define QUAL_CHARS		{ \
@@ -350,51 +324,52 @@ enum {
 	/* q:long_long  Z:(s)size_t */ \
 	'h',   'l',  'L',  'j',  'z',  't',  'q', 'Z',  0, \
 	 2,     4,    8,  IMS,   SS,  PDS,    8,  SS,   0, /* TODO -- fix!!! */\
-     1,     8 \
+	 1,     8 \
 }
 
 /**********************************************************************/
 
 #ifdef __STDIO_VA_ARG_PTR
-#ifdef __BCC__
-#define __va_arg_ptr(ap,type)		(((type *)(ap += sizeof(type))) - 1)
-#endif
+# ifdef __BCC__
+#  define __va_arg_ptr(ap,type)		(((type *)(ap += sizeof(type))) - 1)
+# endif
 
-#if 1
-#ifdef __GNUC__
+# if 1
+#  ifdef __GNUC__
 /* TODO -- need other than for 386 as well! */
 
-#ifndef __va_rounded_size
-#define __va_rounded_size(TYPE)  \
-  (((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
-#endif
-#define __va_arg_ptr(AP, TYPE)						\
- (AP = (va_list) ((char *) (AP) + __va_rounded_size (TYPE)),	\
-  ((void *) ((char *) (AP) - __va_rounded_size (TYPE))))
-#endif
-#endif
+#   ifndef __va_rounded_size
+#    define __va_rounded_size(TYPE) \
+	(((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
+#   endif
+#   define __va_arg_ptr(AP, TYPE)  \
+	(AP = (va_list) ((char *) (AP) + __va_rounded_size (TYPE)),  \
+	 ((void *) ((char *) (AP) - __va_rounded_size (TYPE)))  \
+	)
+#  endif
+# endif
 #endif /* __STDIO_VA_ARG_PTR */
 
 #ifdef __va_arg_ptr
-#define GET_VA_ARG(AP,F,TYPE,ARGS)	(*(AP) = __va_arg_ptr(ARGS,TYPE))
-#define GET_ARG_VALUE(AP,F,TYPE)	(*((TYPE *)(*(AP))))
+# define GET_VA_ARG(AP,F,TYPE,ARGS)	(*(AP) = __va_arg_ptr(ARGS,TYPE))
+# define GET_ARG_VALUE(AP,F,TYPE)	(*((TYPE *)(*(AP))))
 #else
 typedef union {
 	wchar_t wc;
 	unsigned int u;
 	unsigned long ul;
-#ifdef ULLONG_MAX
+# ifdef ULLONG_MAX
 	unsigned long long ull;
-#endif
-#ifdef __STDIO_PRINTF_FLOAT
+# endif
+# ifdef __STDIO_PRINTF_FLOAT
 	double d;
 	long double ld;
-#endif /* __STDIO_PRINTF_FLOAT */
+# endif
 	void *p;
 } argvalue_t;
 
-#define GET_VA_ARG(AU,F,TYPE,ARGS)	(AU->F = va_arg(ARGS,TYPE))
-#define GET_ARG_VALUE(AU,F,TYPE)	((TYPE)((AU)->F))
+# define GET_VA_ARG(AU,F,TYPE,ARGS)	(AU->F = va_arg(ARGS,TYPE))
+# define GET_ARG_VALUE(AU,F,TYPE)	((TYPE)((AU)->F))
 #endif
 
 typedef struct {
@@ -402,7 +377,7 @@ typedef struct {
 	struct printf_info info;
 #ifdef NL_ARGMAX
 	int maxposarg;				/* > 0 if args are positional, 0 if not, -1 if unknown */
-#endif /* NL_ARGMAX */
+#endif
 	int num_data_args;			/* TODO: use sentinal??? */
 	unsigned int conv_num;
 	unsigned char argnumber[4]; /* width | prec | 1st data | unused */
@@ -458,7 +433,8 @@ size_t parse_printf_format(register const char *template,
 
 	if (_ppfs_init(&ppfs, template) >= 0) {
 #ifdef NL_ARGMAX
-		if (ppfs.maxposarg > 0)  { /* Using positional args. */
+		if (ppfs.maxposarg > 0)  {
+			/* Using positional args. */
 			count = ppfs.maxposarg;
 			if (n > count) {
 				n = count;
@@ -466,8 +442,10 @@ size_t parse_printf_format(register const char *template,
 			for (i = 0 ; i < n ; i++) {
 				*argtypes++ = ppfs.argtype[i];
 			}
-		} else {				/* Not using positional args. */
-#endif /* NL_ARGMAX */
+		} else
+#endif
+		{
+			/* Not using positional args. */
 			while (*template) {
 				if ((*template == '%') && (*++template != '%')) {
 					ppfs.fmtpos = template;
@@ -500,9 +478,7 @@ size_t parse_printf_format(register const char *template,
 					++template;
 				}
 			}
-#ifdef NL_ARGMAX
 		}
-#endif /* NL_ARGMAX */
 	}
 
 	return count;
@@ -520,14 +496,14 @@ int attribute_hidden _ppfs_init(register ppfs_t *ppfs, const char *fmt0)
 	memset(ppfs, 0, sizeof(ppfs_t)); /* TODO: nonportable???? */
 #ifdef NL_ARGMAX
 	--ppfs->maxposarg;			/* set to -1 */
-#endif /* NL_ARGMAX */
+#endif
 	ppfs->fmtpos = fmt0;
 #ifdef __UCLIBC_MJN3_ONLY__
-#warning TODO: Make checking of the format string in C locale an option.
+# warning TODO: Make checking of the format string in C locale an option.
 #endif
 #ifdef __UCLIBC_HAS_LOCALE__
 	/* To support old programs, don't check mb validity if in C locale. */
-	if (((__UCLIBC_CURLOCALE_DATA).encoding) != __ctype_encoding_7_bit) {
+	if (__UCLIBC_CURLOCALE->encoding != __ctype_encoding_7_bit) {
 		/* ANSI/ISO C99 requires format string to be a valid multibyte string
 		 * beginning and ending in its initial shift state. */
 		static const char invalid_mbs[] = "Invalid multibyte format string.";
@@ -546,7 +522,7 @@ int attribute_hidden _ppfs_init(register ppfs_t *ppfs, const char *fmt0)
 #if 1
 		/* TODO - use memset here since already "paid for"? */
 		register int *p = ppfs->argtype;
-		
+
 		r = MAX_ARGS;
 		do {
 			*p++ = __PA_NOARG;
@@ -572,7 +548,8 @@ int attribute_hidden _ppfs_init(register ppfs_t *ppfs, const char *fmt0)
 		while (*fmt) {
 			if ((*fmt == '%') && (*++fmt != '%')) {
 				ppfs->fmtpos = fmt; /* back up to the '%' */
-				if ((r = _ppfs_parsespec(ppfs)) < 0) {
+				r = _ppfs_parsespec(ppfs);
+				if (r < 0) {
 					return -1;
 				}
 				fmt = ppfs->fmtpos;	/* update to one past end of spec */
@@ -609,13 +586,14 @@ void attribute_hidden _ppfs_prepargs(register ppfs_t *ppfs, va_list arg)
 	va_copy(ppfs->arg, arg);
 
 #ifdef NL_ARGMAX
-	if ((i = ppfs->maxposarg) > 0)  { /* init for positional args */
+	i = ppfs->maxposarg; /* init for positional args */
+	if (i > 0) {
 		ppfs->num_data_args = i;
 		ppfs->info.width = ppfs->info.prec = ppfs->maxposarg = 0;
 		_ppfs_setargs(ppfs);
 		ppfs->maxposarg = i;
 	}
-#endif /* NL_ARGMAX */
+#endif
 }
 #endif
 /**********************************************************************/
@@ -632,14 +610,14 @@ void attribute_hidden _ppfs_setargs(register ppfs_t *ppfs)
 
 #ifdef NL_ARGMAX
 	if (ppfs->maxposarg == 0) {	/* initing for or no pos args */
-#endif /* NL_ARGMAX */
+#endif
 		if (ppfs->info.width == INT_MIN) {
 			ppfs->info.width =
 #ifdef __va_arg_ptr
 				*(int *)
 #endif
 				GET_VA_ARG(p,u,unsigned int,ppfs->arg);
-		} 
+		}
 		if (ppfs->info.prec == INT_MIN) {
 			ppfs->info.prec =
 #ifdef __va_arg_ptr
@@ -692,7 +670,7 @@ void attribute_hidden _ppfs_setargs(register ppfs_t *ppfs)
 				case PA_STRING:
 				case PA_WSTRING:
 					GET_VA_ARG(p,p,void *,ppfs->arg);
-					break;				
+					break;
 				case __PA_NOARG:
 					continue;
 			}
@@ -703,7 +681,7 @@ void attribute_hidden _ppfs_setargs(register ppfs_t *ppfs)
 		if (ppfs->info.width == INT_MIN) {
 			ppfs->info.width
 				= (int) GET_ARG_VALUE(p + ppfs->argnumber[0] - 1,u,unsigned int);
-		} 
+		}
 		if (ppfs->info.prec == INT_MIN) {
 			ppfs->info.prec
 				= (int) GET_ARG_VALUE(p + ppfs->argnumber[1] - 1,u,unsigned int);
@@ -730,12 +708,6 @@ void attribute_hidden _ppfs_setargs(register ppfs_t *ppfs)
 /**********************************************************************/
 #ifdef L__ppfs_parsespec
 
-#ifdef __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(__ctype_b_loc)
-#elif __UCLIBC_HAS_CTYPE_TABLES__
-libc_hidden_proto(__ctype_b)
-#endif
-
 /* Notes: argtype differs from glibc for the following:
  *         mine              glibc
  *  lc     PA_WCHAR          PA_CHAR       the standard says %lc means %C
@@ -752,7 +724,7 @@ libc_hidden_proto(__ctype_b)
 
 /* TODO -- rethink this -- perhaps we should set to largest type??? */
 
-#ifdef _OVERLAPPING_DIFFERENT_ARGS 
+#ifdef _OVERLAPPING_DIFFERENT_ARGS
 
 #define PROMOTED_SIZE_OF(X)		((sizeof(X) + sizeof(int) - 1) / sizeof(X))
 
@@ -771,7 +743,7 @@ static const short int type_codes[] = {
 	/* PA_FLOAT, */
 	PA_DOUBLE,
 	PA_DOUBLE|PA_FLAG_LONG_DOUBLE,
-#endif /* __STDIO_PRINTF_FLOAT */
+#endif
 };
 
 static const unsigned char type_sizes[] = {
@@ -794,7 +766,7 @@ static const unsigned char type_sizes[] = {
 	/* PROMOTED_SIZE_OF(float), */
 	PROMOTED_SIZE_OF(double),
 	PROMOTED_SIZE_OF(long double),
-#endif /* __STDIO_PRINTF_FLOAT */
+#endif
 };
 
 static int _promoted_size(int argtype)
@@ -853,7 +825,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	int dpoint;
 #ifdef NL_ARGMAX
 	int maxposarg;
-#endif /* NL_ARGMAX */
+#endif
 	int p_m_spec_chars;
 	int n;
 	int argtype[MAX_ARGS_PER_SPEC+2];
@@ -866,7 +838,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	static const char qual_chars[] = QUAL_CHARS;
 #ifdef __UCLIBC_HAS_WCHAR__
 	char buf[32];
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 
 	/* WIDE note: we can test against '%' here since we don't allow */
 	/* WIDE note: other mappings of '%' in the wide char set. */
@@ -877,7 +849,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	argtype[1] = __PA_NOARG;
 #ifdef NL_ARGMAX
 	maxposarg = ppfs->maxposarg;
-#endif /* NL_ARGMAX */
+#endif
 
 #ifdef __UCLIBC_HAS_WCHAR__
 	/* This is somewhat lame, but saves a lot of code.  If we're dealing with
@@ -887,27 +859,24 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	 * While there a legal specifiers that won't, the all involve duplicate
 	 * flags or outrageous field widths/precisions. */
 	width = dpoint = 0;
-	if ((flags = ppfs->info._flags & FLAG_WIDESTREAM) == 0) {
+	flags = ppfs->info._flags & FLAG_WIDESTREAM;
+	if (flags == 0) {
 		fmt = ppfs->fmtpos;
 	} else {
 		fmt = buf + 1;
 		i = 0;
 		do {
-			if(i == sizeof(buf))
-				break;
-			if ((buf[i] = (char) (((wchar_t *) ppfs->fmtpos)[i-1]))
-				!= (((wchar_t *) ppfs->fmtpos)[i-1])
-				) {
-				buf[i] = 0;
-				break;
+			buf[i] = (char) (((wchar_t *) ppfs->fmtpos)[i-1]);
+			if (buf[i] != (((wchar_t *) ppfs->fmtpos)[i-1])) {
+				return -1;
 			}
-		} while (buf[i++]);
+		} while (buf[i++] && (i < sizeof(buf)));
 		buf[sizeof(buf)-1] = 0;
 	}
 #else  /* __UCLIBC_HAS_WCHAR__ */
 	width = flags = dpoint = 0;
 	fmt = ppfs->fmtpos;
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 
 	assert(fmt[-1] == '%');
 	assert(fmt[0] != '%');
@@ -921,8 +890,11 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	}
 	i = 0;
 	while (isdigit(*fmt)) {
-		if (i < MAX_FIELD_WIDTH) { /* Avoid overflow. */
+		if (i < INT_MAX / 10
+		    || (i == INT_MAX / 10 && (*fmt - '0') <= INT_MAX % 10)) {
 			i = (i * 10) + (*fmt - '0');
+		} else {
+			i = INT_MAX; /* best we can do... */
 		}
 		++fmt;
 	}
@@ -936,22 +908,23 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 			if (maxposarg == 0) {
 				return -1;
 			}
-			if ((argnumber[2] = i) > maxposarg) {
+			argnumber[2] = i;
+			if (argnumber[2] > maxposarg) {
 				maxposarg = i;
 			}
 			/* Now fall through to check flags. */
 		} else {
 			if (maxposarg > 0) {
-#ifdef __UCLIBC_HAS_PRINTF_M_SPEC__
-#ifdef __UCLIBC_MJN3_ONLY__
-#warning TODO: Support prec and width for %m when positional args used
+# ifdef __UCLIBC_HAS_PRINTF_M_SPEC__
+#  ifdef __UCLIBC_MJN3_ONLY__
+#   warning TODO: Support prec and width for %m when positional args used
 				/* Actually, positional arg processing will fail in general
 				 * for specifiers that don't require an arg. */
-#endif /* __UCLIBC_MJN3_ONLY__ */
+#  endif
 				if (*fmt == 'm') {
 					goto PREC_WIDTH;
 				}
-#endif /* __UCLIBC_HAS_PRINTF_M_SPEC__ */
+# endif /* __UCLIBC_HAS_PRINTF_M_SPEC__ */
 				return -1;
 			}
 			maxposarg = 0;		/* Possible redundant store, but cuts size. */
@@ -979,7 +952,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	restart_flags:		/* Process flags. */
 		i = 1;
 		p = spec_flags;
-	
+
 		do {
 			if (*fmt == *p++) {
 				++fmt;
@@ -1010,7 +983,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 			}
 			argnumber[-dpoint] = i;
 		} else
-#endif /* NL_ARGMAX */
+#endif
 		if (++p != fmt) {
 			 /* Not using pos args but digits followed *. */
 			return -1;
@@ -1082,33 +1055,30 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 		if (*fmt == 'm') {
 			ppfs->conv_num = CONV_m;
 			ppfs->num_data_args = 0;
-			goto DONE;
-		}
+		} else
 #endif
-#ifdef __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__
-
-		/* Handle custom arg -- WARNING -- overwrites p!!! */
-		ppfs->conv_num = CONV_custom0;
-		p = _custom_printf_spec;
-		do {
-			if (*p == *fmt) {
-				if ((ppfs->num_data_args
-					 = ((*_custom_printf_arginfo[(int)(p-_custom_printf_spec)])
-						(&(ppfs->info), MAX_ARGS_PER_SPEC, argtype+2)))
-					> MAX_ARGS_PER_SPEC) {
-					break;		/* Error -- too many args! */
+		{
+#ifndef __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__
+			return -1;  /* Error */
+#else
+			/* Handle custom arg -- WARNING -- overwrites p!!! */
+			ppfs->conv_num = CONV_custom0;
+			p = _custom_printf_spec;
+			while (1) {
+				if (*p == *fmt) {
+					printf_arginfo_function *fp = _custom_printf_arginfo[(int)(p - _custom_printf_spec)];
+					ppfs->num_data_args = fp(&(ppfs->info), MAX_ARGS_PER_SPEC, argtype + 2);
+					if (ppfs->num_data_args > MAX_ARGS_PER_SPEC) {
+						return -1;  /* Error -- too many args! */
+					}
+					break;
 				}
-				goto DONE;
+				if (++p >= (_custom_printf_spec + MAX_USER_SPEC))
+					return -1;  /* Error */
 			}
-		} while (++p < (_custom_printf_spec + MAX_USER_SPEC));
-#endif /* __UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__ */
-		/* Otherwise error. */
-		return -1;
-	}
-		
-#if defined(__UCLIBC_HAS_GLIBC_CUSTOM_PRINTF__) || defined(__UCLIBC_HAS_PRINTF_M_SPEC__)
- DONE:
 #endif
+		}
+	}
 
 #ifdef NL_ARGMAX
 	if (maxposarg > 0) {
@@ -1119,7 +1089,8 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 				 ? (ppfs->argnumber[i] = argnumber[i])
 				 : argnumber[2] + (i-2));
 			if (n > maxposarg) {
-				if ((maxposarg = n) > NL_ARGMAX) {
+				maxposarg = n;
+				if (maxposarg > NL_ARGMAX) {
 					return -1;
 				}
 			}
@@ -1129,18 +1100,20 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 				ppfs->argtype[n] = argtype[i];
 			}
 		} while (++i < ppfs->num_data_args + 2);
-	} else {
+	} else
 #endif /* NL_ARGMAX */
+	{
 		ppfs->argnumber[2] = 1;
 		memcpy(ppfs->argtype, argtype + 2, ppfs->num_data_args * sizeof(int));
-#ifdef NL_ARGMAX
 	}
 
+#ifdef NL_ARGMAX
 	ppfs->maxposarg = maxposarg;
-#endif /* NL_ARGMAX */
+#endif
 
 #ifdef __UCLIBC_HAS_WCHAR__
-	if ((flags = ppfs->info._flags & FLAG_WIDESTREAM) == 0) {
+	flags = ppfs->info._flags & FLAG_WIDESTREAM;
+	if (flags == 0) {
 		ppfs->fmtpos = ++fmt;
 	} else {
 		ppfs->fmtpos = (const char *) (((const wchar_t *)(ppfs->fmtpos))
@@ -1148,7 +1121,7 @@ int attribute_hidden _ppfs_parsespec(ppfs_t *ppfs)
 	}
 #else  /* __UCLIBC_HAS_WCHAR__ */
 	ppfs->fmtpos = ++fmt;
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 
  	return ppfs->num_data_args + 2;
 }
@@ -1201,7 +1174,7 @@ int register_printf_function(int spec, printf_function handler,
 
 #endif
 /**********************************************************************/
-#if defined(L_vfprintf) || defined(L_vfwprintf)
+#if defined(L__vfprintf_internal) || defined(L__vfwprintf_internal)
 
 /* We only support ascii digits (or their USC equivalent codes) in
  * precision and width settings in *printf (wide) format strings.
@@ -1210,16 +1183,16 @@ int register_printf_function(int spec, printf_function handler,
 
 static size_t _charpad(FILE * __restrict stream, int padchar, size_t numpad);
 
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 
-#define VFPRINTF vfprintf
+#define VFPRINTF_internal _vfprintf_internal
 #define FMT_TYPE char
 #define OUTNSTR _outnstr
 #define STRLEN  strlen
 #define _PPFS_init _ppfs_init
 #define OUTPUT(F,S)			fputs_unlocked(S,F)
 /* #define _outnstr(stream, string, len)	__stdio_fwrite(string, len, stream) */
-#define _outnstr(stream, string, len)	((len > 0) ? __stdio_fwrite(string, len, stream) : 0)
+#define _outnstr(stream, string, len)	((len > 0) ? __stdio_fwrite((const unsigned char *)(string), len, stream) : 0)
 #define FP_OUT _fp_out_narrow
 
 #ifdef __STDIO_PRINTF_FLOAT
@@ -1230,8 +1203,10 @@ static size_t _fp_out_narrow(FILE *fp, intptr_t type, intptr_t len, intptr_t buf
 
 	if (type & 0x80) {			/* Some type of padding needed. */
 		int buflen = strlen((const char *) buf);
-		if ((len -= buflen) > 0) {
-			if ((r = _charpad(fp, (type & 0x7f), len)) != len) {
+		len -= buflen;
+		if (len > 0) {
+			r = _charpad(fp, (type & 0x7f), len);
+			if (r != len) {
 				return r;
 			}
 		}
@@ -1242,15 +1217,17 @@ static size_t _fp_out_narrow(FILE *fp, intptr_t type, intptr_t len, intptr_t buf
 
 #endif /* __STDIO_PRINTF_FLOAT */
 
-#else  /* L_vfprintf */
+#else  /* L__vfprintf_internal */
 
-#define VFPRINTF vfwprintf
+#define VFPRINTF_internal _vfwprintf_internal
 #define FMT_TYPE wchar_t
 #define OUTNSTR _outnwcs
 #define STRLEN  wcslen
 #define _PPFS_init _ppwfs_init
+/* Pulls in fseek: */
 #define OUTPUT(F,S)			fputws(S,F)
-#define _outnwcs(stream, wstring, len)	_wstdio_fwrite(wstring, len, stream)
+/* TODO: #define OUTPUT(F,S)		_wstdio_fwrite((S),wcslen(S),(F)) */
+#define _outnwcs(stream, wstring, len)	_wstdio_fwrite((const wchar_t *)(wstring), len, stream)
 #define FP_OUT _fp_out_wide
 
 static size_t _outnstr(FILE *stream, const char *s, size_t wclen)
@@ -1262,7 +1239,7 @@ static size_t _outnstr(FILE *stream, const char *s, size_t wclen)
 
 	mbstate.__mask = 0;
 	todo = wclen;
-	
+
 	while (todo) {
 		r = mbsrtowcs(wbuf, &s,
 					  ((todo <= sizeof(wbuf)/sizeof(wbuf[0]))
@@ -1300,8 +1277,10 @@ static size_t _fp_out_wide(FILE *fp, intptr_t type, intptr_t len, intptr_t buf)
 
 	if (type & 0x80) {			/* Some type of padding needed */
 		int buflen = strlen(s);
-		if ((len -= buflen) > 0) {
-			if ((r = _charpad(fp, (type & 0x7f), len)) != len) {
+		len -= buflen;
+		if (len > 0) {
+			r = _charpad(fp, (type & 0x7f), len);
+			if (r != len) {
 				return r;
 			}
 		}
@@ -1313,15 +1292,15 @@ static size_t _fp_out_wide(FILE *fp, intptr_t type, intptr_t len, intptr_t buf)
 		do {
 #ifdef __LOCALE_C_ONLY
 			wbuf[i] = s[i];
-#else  /* __LOCALE_C_ONLY */
+#else
 
-#ifdef __UCLIBC_HAS_GLIBC_DIGIT_GROUPING__
+# ifdef __UCLIBC_HAS_GLIBC_DIGIT_GROUPING__
 			if (s[i] == ',') {
-				wbuf[i] = __UCLIBC_CURLOCALE_DATA.thousands_sep_wc;
+				wbuf[i] = __UCLIBC_CURLOCALE->thousands_sep_wc;
 			} else
-#endif /* __UCLIBC_HAS_GLIBC_DIGIT_GROUPING__ */
+# endif
 			if (s[i] == '.') {
-				wbuf[i] = __UCLIBC_CURLOCALE_DATA.decimal_point_wc;
+				wbuf[i] = __UCLIBC_CURLOCALE->decimal_point_wc;
 			} else {
 				wbuf[i] = s[i];
 			}
@@ -1346,7 +1325,7 @@ static int _ppwfs_init(register ppfs_t *ppfs, const wchar_t *fmt0)
 	memset(ppfs, 0, sizeof(ppfs_t)); /* TODO: nonportable???? */
 #ifdef NL_ARGMAX
 	--ppfs->maxposarg;			/* set to -1 */
-#endif /* NL_ARGMAX */
+#endif
 	ppfs->fmtpos = (const char *) fmt0;
 	ppfs->info._flags = FLAG_WIDESTREAM;
 
@@ -1366,7 +1345,7 @@ static int _ppwfs_init(register ppfs_t *ppfs, const wchar_t *fmt0)
 #if 1
 		/* TODO - use memset here since already "paid for"? */
 		register int *p = ppfs->argtype;
-		
+
 		r = MAX_ARGS;
 		do {
 			*p++ = __PA_NOARG;
@@ -1392,7 +1371,8 @@ static int _ppwfs_init(register ppfs_t *ppfs, const wchar_t *fmt0)
 		while (*fmt) {
 			if ((*fmt == '%') && (*++fmt != '%')) {
 				ppfs->fmtpos = (const char *) fmt; /* back up to the '%' */
-				if ((r = _ppfs_parsespec(ppfs)) < 0) {
+				r = _ppfs_parsespec(ppfs);
+				if (r < 0) {
 					return -1;
 				}
 				fmt = (const wchar_t *) ppfs->fmtpos; /* update to one past end of spec */
@@ -1420,7 +1400,8 @@ static int _ppwfs_init(register ppfs_t *ppfs, const wchar_t *fmt0)
 	return 0;
 }
 
-#endif /* L_vfprintf */
+#endif /* L__vfprintf_internal */
+
 
 static size_t _charpad(FILE * __restrict stream, int padchar, size_t numpad)
 {
@@ -1430,7 +1411,7 @@ static size_t _charpad(FILE * __restrict stream, int padchar, size_t numpad)
 	FMT_TYPE pad[1];
 
 	*pad = padchar;
-	while (todo && (OUTNSTR(stream, pad, 1) == 1)) {
+	while (todo && (OUTNSTR(stream, (const char *) pad, 1) == 1)) {
 		--todo;
 	}
 
@@ -1442,12 +1423,12 @@ static int _do_one_spec(FILE * __restrict stream,
 						 register ppfs_t *ppfs, int *count)
 {
 	static const char spec_base[] = SPEC_BASE;
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 	static const char prefix[] = "+\0-\0 \0000x\0000X";
-	/*                            0  2  4  6   9 11*/
-#else  /* L_vfprintf */
+	/*                            0  2  4    6     9 11*/
+#else
 	static const wchar_t prefix[] = L"+\0-\0 \0000x\0000X";
-#endif /* L_vfprintf */
+#endif
 	enum {
 		PREFIX_PLUS = 0,
 		PREFIX_MINUS = 2,
@@ -1466,9 +1447,9 @@ static int _do_one_spec(FILE * __restrict stream,
 #ifdef __UCLIBC_HAS_WCHAR__
 	const wchar_t *ws = NULL;
 	mbstate_t mbstate;
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 	size_t slen;
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 #define SLEN slen
 #else
 	size_t SLEN;
@@ -1482,7 +1463,7 @@ static int _do_one_spec(FILE * __restrict stream,
 	char padchar = ' ';
 #ifdef __UCLIBC_MJN3_ONLY__
 #warning TODO: Determine appropriate buf size.
-#endif /* __UCLIBC_MJN3_ONLY__ */
+#endif
 	/* TODO: buf needs to be big enough for any possible error return strings
 	 * and also for any locale-grouped long long integer strings generated.
 	 * This should be large enough for any of the current archs/locales, but
@@ -1502,21 +1483,21 @@ static int _do_one_spec(FILE * __restrict stream,
 	/* Deal with the argptr vs argvalue issue. */
 #ifdef __va_arg_ptr
 	argptr = (const void * const *) ppfs->argptr;
-#ifdef NL_ARGMAX
+# ifdef NL_ARGMAX
 	if (ppfs->maxposarg > 0) {	/* Using positional args... */
 		argptr += ppfs->argnumber[2] - 1;
 	}
-#endif /* NL_ARGMAX */
+# endif
 #else
 	/* Need to build a local copy... */
 	{
 		register argvalue_t *p = ppfs->argvalue;
 		int i;
-#ifdef NL_ARGMAX
+# ifdef NL_ARGMAX
 		if (ppfs->maxposarg > 0) {	/* Using positional args... */
 			p += ppfs->argnumber[2] - 1;
 		}
-#endif /* NL_ARGMAX */
+# endif
 		for (i = 0 ; i < ppfs->num_data_args ; i++ ) {
 			argptr[i] = (void *) p++;
 		}
@@ -1535,11 +1516,12 @@ static int _do_one_spec(FILE * __restrict stream,
 			alphacase = __UIM_LOWER;
 
 #ifdef __UCLIBC_MJN3_ONLY__
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 #warning CONSIDER: Should we ignore these flags if stub locale?  What about custom specs?
 #endif
-#endif /* __UCLIBC_MJN3_ONLY__ */
-			if ((base = spec_base[(int)(ppfs->conv_num - CONV_p)]) == 10) {
+#endif
+			base = spec_base[(int)(ppfs->conv_num - CONV_p)];
+			if (base == 10) {
 				if (PRINT_INFO_FLAG_VAL(&(ppfs->info),group)) {
 					alphacase = __UIM_GROUP;
 				}
@@ -1563,13 +1545,13 @@ static int _do_one_spec(FILE * __restrict stream,
 				padchar = ppfs->info.pad;
 			}
 #ifdef __UCLIBC_MJN3_ONLY__
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 #warning CONSIDER: If using outdigits and/or grouping, how should we interpret precision?
 #endif
-#endif /* __UCLIBC_MJN3_ONLY__ */
+#endif
 			s = _uintmaxtostr(buf + sizeof(buf) - 1,
 							  (uintmax_t)
-							  _load_inttype(*argtype & __PA_INTMASK,
+							  _load_inttype(ppfs->conv_num == CONV_p ? PA_FLAG_LONG : *argtype & __PA_INTMASK,
 											*argptr, base), base, alphacase);
 			if (ppfs->conv_num > CONV_u) { /* signed int */
 				if (*s == '-') {
@@ -1583,7 +1565,7 @@ static int _do_one_spec(FILE * __restrict stream,
 				}
 			}
 			slen = (char *)(buf + sizeof(buf) - 1) - s;
-#ifdef L_vfwprintf
+#ifdef L__vfwprintf_internal
 			{
 				const char *q = s;
 				mbstate.__mask = 0; /* Initialize the mbstate. */
@@ -1608,13 +1590,13 @@ static int _do_one_spec(FILE * __restrict stream,
 				}
 				if (ppfs->conv_num == CONV_p) {/* null pointer */
 					s = "(nil)";
-#ifdef L_vfwprintf
+#ifdef L__vfwprintf_internal
 					SLEN =
 #endif
 					slen = 5;
 					numfill = 0;
 				} else if (numfill == 0) {	/* if precision 0, no output */
-#ifdef L_vfwprintf
+#ifdef L__vfwprintf_internal
 					SLEN =
 #endif
 					slen = 0;
@@ -1638,14 +1620,15 @@ static int _do_one_spec(FILE * __restrict stream,
 			return 0;
 #else  /* __STDIO_PRINTF_FLOAT */
 			return -1;			/* TODO -- try to continue? */
-#endif /* __STDIO_PRINTF_FLOAT */
+#endif
 		} else if (ppfs->conv_num <= CONV_S) {	/* wide char or string */
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 
 #ifdef __UCLIBC_HAS_WCHAR__
 			mbstate.__mask = 0;	/* Initialize the mbstate. */
 			if (ppfs->conv_num == CONV_S) { /* wide string */
-				if (!(ws = *((const wchar_t **) *argptr))) {
+				ws = *((const wchar_t **) *argptr);
+				if (!ws) {
 					goto NULL_STRING;
 				}
 				/* We use an awful uClibc-specific hack here, passing
@@ -1653,12 +1636,12 @@ static int _do_one_spec(FILE * __restrict stream,
 				 * uClibc's wcsrtombs that we want a "restricted" length
 				 * such that the mbs fits in a buffer of the specified
 				 * size with no partial conversions. */
-				if ((slen = wcsrtombs((char *) &ws, &ws, /* Use awful hack! */
-									  ((ppfs->info.prec >= 0)
-									   ? ppfs->info.prec
-									   : SIZE_MAX), &mbstate))
-					== ((size_t)-1)
-					) {
+				slen = wcsrtombs((char *) &ws, &ws, /* Use awful hack! */
+							((ppfs->info.prec >= 0)
+							 ? ppfs->info.prec
+							 : SIZE_MAX),
+							&mbstate);
+				if (slen == ((size_t)-1)) {
 					return -1;	/* EILSEQ */
 				}
 			} else {			/* wide char */
@@ -1671,7 +1654,7 @@ static int _do_one_spec(FILE * __restrict stream,
 			}
 #else  /* __UCLIBC_HAS_WCHAR__ */
 			return -1;
-#endif /* __UCLIBC_HAS_WCHAR__ */
+#endif
 		} else if (ppfs->conv_num <= CONV_s) {	/* char or string */
 			if (ppfs->conv_num == CONV_s) { /* string */
 				s = *((char **) (*argptr));
@@ -1695,7 +1678,7 @@ static int _do_one_spec(FILE * __restrict stream,
 				slen = 1;
 			}
 
-#else  /* L_vfprintf */
+#else  /* L__vfprintf_internal */
 
 			if (ppfs->conv_num == CONV_S) { /* wide string */
 				ws = *((wchar_t **) (*argptr));
@@ -1716,8 +1699,8 @@ static int _do_one_spec(FILE * __restrict stream,
 
 			if (ppfs->conv_num == CONV_s) { /* string */
 #ifdef __UCLIBC_MJN3_ONLY__
-#warning TODO: Fix %s for vfwprintf... output upto illegal sequence?
-#endif /* __UCLIBC_MJN3_ONLY__ */
+#warning TODO: Fix %s for _vfwprintf_internal... output upto illegal sequence?
+#endif
 				s = *((char **) (*argptr));
 				if (s) {
 #ifdef __UCLIBC_HAS_PRINTF_M_SPEC__
@@ -1749,7 +1732,7 @@ static int _do_one_spec(FILE * __restrict stream,
 				goto CHAR_CASE;
 			}
 
-#endif /* L_vfprintf */
+#endif /* L__vfprintf_internal */
 
 #ifdef __UCLIBC_HAS_PRINTF_M_SPEC__
 		} else if (ppfs->conv_num == CONV_m) {
@@ -1781,10 +1764,10 @@ static int _do_one_spec(FILE * __restrict stream,
 		}
 
 #ifdef __UCLIBC_MJN3_ONLY__
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 #warning CONSIDER: If using outdigits and/or grouping, how should we pad?
 #endif
-#endif /* __UCLIBC_MJN3_ONLY__ */
+#endif
 		{
 			size_t t;
 
@@ -1808,13 +1791,14 @@ static int _do_one_spec(FILE * __restrict stream,
 			numpad = 0;
 		}
 		OUTPUT(stream, prefix + prefix_num);
+
 		if (_charpad(stream, '0', numfill) != numfill) {
 			return -1;
 		}
 
-#ifdef L_vfprintf
+#ifdef L__vfprintf_internal
 
-#ifdef __UCLIBC_HAS_WCHAR__
+# ifdef __UCLIBC_HAS_WCHAR__
 		if (!ws) {
 			assert(s);
 			if (_outnstr(stream, s, slen) != slen) {
@@ -1826,20 +1810,20 @@ static int _do_one_spec(FILE * __restrict stream,
 			while (slen) {
 				t = (slen <= sizeof(buf)) ? slen : sizeof(buf);
 				t = wcsrtombs(buf, &ws, t, &mbstate);
-				assert (t != ((size_t)(-1)));
+				assert(t != ((size_t)(-1)));
 				if (_outnstr(stream, buf, t) != t) {
 					return -1;
 				}
 				slen -= t;
 			}
 		}
-#else  /* __UCLIBC_HAS_WCHAR__ */
-		if (_outnstr(stream, s, slen) != slen) {
+# else  /* __UCLIBC_HAS_WCHAR__ */
+		if (_outnstr(stream, (const unsigned char *) s, slen) != slen) {
 			return -1;
 		}
-#endif /* __UCLIBC_HAS_WCHAR__ */
+# endif
 
-#else  /* L_vfprintf */
+#else  /* L__vfprintf_internal */
 
 		if (!ws) {
 			assert(s);
@@ -1852,7 +1836,7 @@ static int _do_one_spec(FILE * __restrict stream,
 			}
 		}
 
-#endif /* L_vfprintf */
+#endif /* L__vfprintf_internal */
 		if (_charpad(stream, ' ', numpad) != numpad) {
 			return -1;
 		}
@@ -1861,37 +1845,22 @@ static int _do_one_spec(FILE * __restrict stream,
 	return 0;
 }
 
-libc_hidden_proto(fprintf)
 
-libc_hidden_proto(VFPRINTF)
-int VFPRINTF (FILE * __restrict stream,
-			  register const FMT_TYPE * __restrict format,
+int VFPRINTF_internal (FILE * __restrict stream,
+			  const FMT_TYPE * __restrict format,
 			  va_list arg)
 {
 	ppfs_t ppfs;
 	int count, r;
 	register const FMT_TYPE *s;
-	__STDIO_AUTO_THREADLOCK_VAR;
-
-	__STDIO_AUTO_THREADLOCK(stream);
 
 	count = 0;
 	s = format;
 
-	if 
-#ifdef L_vfprintf
-	(!__STDIO_STREAM_IS_NARROW_WRITING(stream)
-	 && __STDIO_STREAM_TRANS_TO_WRITE(stream, __FLAG_NARROW))
-#else
-	(!__STDIO_STREAM_IS_WIDE_WRITING(stream)
-	 && __STDIO_STREAM_TRANS_TO_WRITE(stream, __FLAG_WIDE))
-#endif
-	{
-		count = -1;
-	} else if (_PPFS_init(&ppfs, format) < 0) {	/* Bad format string. */
-		OUTNSTR(stream, (const FMT_TYPE *) ppfs.fmtpos,
+	if (_PPFS_init(&ppfs, format) < 0) {	/* Bad format string. */
+		OUTNSTR(stream, (const char *) ppfs.fmtpos,
 				STRLEN((const FMT_TYPE *)(ppfs.fmtpos)));
-#if defined(L_vfprintf) && !defined(NDEBUG)
+#if defined(L__vfprintf_internal) && !defined(NDEBUG)
 		fprintf(stderr,"\nIMbS: \"%s\"\n\n", format);
 #endif
 		count = -1;
@@ -1903,8 +1872,9 @@ int VFPRINTF (FILE * __restrict stream,
 				++format;
 			}
 
-			if (format-s) {		/* output any literal text in format string */
-				if ( (r = OUTNSTR(stream, s, format-s)) != (format-s)) {
+			if (format - s) {	/* output any literal text in format string */
+				r = OUTNSTR(stream, (const char *) s, format - s);
+				if (r != (format - s)) {
 					count = -1;
 					break;
 				}
@@ -1914,12 +1884,13 @@ int VFPRINTF (FILE * __restrict stream,
 			if (!*format) {			/* we're done */
 				break;
 			}
-		
+
 			if (format[1] != '%') {	/* if we get here, *format == '%' */
 				/* TODO: _do_one_spec needs to know what the output funcs are!!! */
 				ppfs.fmtpos = (const char *)(++format);
 				/* TODO: check -- should only fail on stream error */
-				if ( (r = _do_one_spec(stream, &ppfs, &count)) < 0) {
+				r = _do_one_spec(stream, &ppfs, &count);
+				if (r < 0) {
 					count = -1;
 					break;
 				}
@@ -1933,14 +1904,66 @@ int VFPRINTF (FILE * __restrict stream,
 		va_end(ppfs.arg);		/* Need to clean up after va_copy! */
 	}
 
-/* #if defined(L_vfprintf) && defined(__UCLIBC_HAS_WCHAR__) */
+/* #if defined(L__vfprintf_internal) && defined(__UCLIBC_HAS_WCHAR__) */
 /*  DONE: */
 /* #endif */
+
+	return count;
+}
+#endif /* defined(L__vfprintf_internal) || defined(L__vfwprintf_internal) */
+
+
+/**********************************************************************/
+#if defined(L_vfprintf) || defined(L_vfwprintf)
+
+/* This is just a wrapper around VFPRINTF_internal.
+ * Factoring out vfprintf internals allows:
+ * (1) vdprintf and vsnprintf don't need to setup fake locking,
+ * (2) __STDIO_STREAM_TRANS_TO_WRITE is not used in vfprintf internals,
+ * and thus fseek etc is not pulled in by vdprintf and vsnprintf.
+ *
+ * In order to not pull in fseek through fputs, OUTPUT() macro
+ * is using __stdio_fwrite (TODO: do the same for wide functions).
+ */
+#ifdef L_vfprintf
+# define VFPRINTF vfprintf
+# define VFPRINTF_internal _vfprintf_internal
+# define FMT_TYPE char
+#else
+# define VFPRINTF vfwprintf
+# define VFPRINTF_internal _vfwprintf_internal
+# define FMT_TYPE wchar_t
+#endif
+
+libc_hidden_proto(VFPRINTF)
+int VFPRINTF (FILE * __restrict stream,
+			  const FMT_TYPE * __restrict format,
+			  va_list arg)
+{
+	int count;
+	__STDIO_AUTO_THREADLOCK_VAR;
+
+	__STDIO_AUTO_THREADLOCK(stream);
+
+	if
+#ifdef L_vfprintf
+	(!__STDIO_STREAM_IS_NARROW_WRITING(stream)
+	 && __STDIO_STREAM_TRANS_TO_WRITE(stream, __FLAG_NARROW))
+#else
+	(!__STDIO_STREAM_IS_WIDE_WRITING(stream)
+	 && __STDIO_STREAM_TRANS_TO_WRITE(stream, __FLAG_WIDE))
+#endif
+	{
+		count = -1;
+	} else {
+		count = VFPRINTF_internal(stream, format, arg);
+	}
 
 	__STDIO_AUTO_THREADUNLOCK(stream);
 
 	return count;
 }
 libc_hidden_def(VFPRINTF)
-#endif
+#endif /* defined(L_vfprintf) || defined(L_vfwprintf) */
+
 /**********************************************************************/

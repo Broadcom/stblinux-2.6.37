@@ -71,6 +71,15 @@ echo "Starting network services"
 portmap &
 telnetd
 
+if [ -e /sbin/dropbear ]; then
+	if [ ! -e /etc/dropbear/dropbear_rsa_host_key ]; then
+		mkdir -p /etc/dropbear
+		dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key
+		dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
+	fi
+	dropbear
+fi
+
 if [ -f /root/rc.user ]; then
 	echo "Starting user services"
 	/bin/sh /root/rc.user

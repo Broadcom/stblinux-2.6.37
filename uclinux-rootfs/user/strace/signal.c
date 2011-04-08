@@ -30,11 +30,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: signal.c,v 1.68 2008/08/20 01:59:40 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
 
+#include <stdint.h>
 #include <signal.h>
 #include <sys/user.h>
 #include <fcntl.h>
@@ -71,33 +72,14 @@
 # include <asm/ptrace_offsets.h>
 #endif /* !IA64 */
 
-#if HAVE_ASM_REG_H
-# if defined (SPARC) || defined (SPARC64)
-#  define fpq kernel_fpq
-#  define fq kernel_fq
-#  define fpu kernel_fpu
-# endif
-# include <asm/reg.h>
-# if defined (SPARC) || defined (SPARC64)
-#  undef fpq
-#  undef fq
-#  undef fpu
-# endif
 #if defined (LINUX) && defined (SPARC64)
-# define r_pc r_tpc
 # undef PTRACE_GETREGS
 # define PTRACE_GETREGS PTRACE_GETREGS64
 # undef PTRACE_SETREGS
 # define PTRACE_SETREGS PTRACE_SETREGS64
 #endif /* LINUX && SPARC64 */
-#endif /* HAVE_ASM_REG_H */
 
-#if defined (SPARC) || defined (SPARC64)
-typedef struct {
-	struct regs		si_regs;
-	int			si_mask;
-} m_siginfo_t;
-#elif defined (MIPS)
+#if defined (SPARC) || defined (SPARC64) || defined (MIPS)
 typedef struct {
 	struct pt_regs		si_regs;
 	int			si_mask;
@@ -133,7 +115,7 @@ struct sigcontext_struct {
 	unsigned long cr2;
 };
 #else /* !I386 */
-#ifdef M68K
+#if defined M68K && !defined HAVE_STRUCT_SIGCONTEXT
 struct sigcontext
 {
 	unsigned long sc_mask;
@@ -247,6 +229,9 @@ static const struct xlat sigact_flags[] = {
 #endif
 #ifdef _SA_BSDCALL
 	{ _SA_BSDCALL,	"_SA_BSDCALL"	},
+#endif
+#ifdef SA_NOPTRACE
+	{ SA_NOPTRACE,	"SA_NOPTRACE"	},
 #endif
 	{ 0,		NULL		},
 };
@@ -401,7 +386,7 @@ void
 printsignal(nr)
 int nr;
 {
-	tprintf(signame(nr));
+	tprintf("%s", signame(nr));
 }
 
 void
@@ -921,7 +906,7 @@ int sig;
 #ifdef SUNOS4
 	void (*u_signal)();
 
-	if (upeek(tcp->pid, uoff(u_signal[0]) + sig*sizeof(u_signal),
+	if (upeek(tcp, uoff(u_signal[0]) + sig*sizeof(u_signal),
 	    (long *) &u_signal) < 0) {
 		return 0;
 	}
@@ -1120,11 +1105,19 @@ struct tcb *tcp;
 	else if (umove(tcp, addr, &sa) < 0)
 		tprintf("{...}");
 	else {
-		if (sa.SA_HANDLER == SIG_ERR)
+		/* Architectures using function pointers, like
+		 * hppa, may need to manipulate the function pointer
+		 * to compute the result of a comparison. However,
+		 * the SA_HANDLER function pointer exists only in
+		 * the address space of the traced process, and can't
+		 * be manipulated by strace. In order to prevent the
+		 * compiler from generating code to manipulate
+		 * SA_HANDLER we cast the function pointers to long. */
+		if ((long)sa.SA_HANDLER == (long)SIG_ERR)
 			tprintf("{SIG_ERR, ");
-		else if (sa.SA_HANDLER == SIG_DFL)
+		else if ((long)sa.SA_HANDLER == (long)SIG_DFL)
 			tprintf("{SIG_DFL, ");
-		else if (sa.SA_HANDLER == SIG_DFL) {
+		else if ((long)sa.SA_HANDLER == (long)SIG_IGN) {
 #ifndef USE_PROCFS
 			if (tcp->u_arg[0] == SIGTRAP) {
 				tcp->flags |= TCB_SIGTRAPPED;
@@ -1199,7 +1192,7 @@ struct tcb *tcp;
 		}
 		return 0;
 	}
-	else {
+	else if (!syserror(tcp)) {
 		switch (tcp->u_rval) {
 		    case (long) SIG_ERR:
 			tcp->auxstr = "SIG_ERR"; break;
@@ -1212,6 +1205,7 @@ struct tcb *tcp;
 		}
 		return RVAL_HEX | RVAL_STR;
 	}
+	return 0;
 }
 
 #ifdef SVR4
@@ -1231,10 +1225,9 @@ struct tcb *tcp;
 #ifdef LINUX
 
 int
-sys_sigreturn(tcp)
-struct tcb *tcp;
+sys_sigreturn(struct tcb *tcp)
 {
-#ifdef ARM
+#if defined(ARM)
 	struct pt_regs regs;
 	struct sigcontext_struct sc;
 
@@ -1265,7 +1258,7 @@ struct tcb *tcp;
 
 	if (entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid,PT_GPR15,&usp)<0)
+		if (upeek(tcp,PT_GPR15,&usp)<0)
 			return 0;
 		if (umove(tcp, usp+__SIGNAL_FRAMESIZE, &sc) < 0)
 			return 0;
@@ -1279,14 +1272,13 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else
-#ifdef I386
+#elif defined(I386)
 	long esp;
 	struct sigcontext_struct sc;
 
 	if (entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, 4*UESP, &esp) < 0)
+		if (upeek(tcp, 4*UESP, &esp) < 0)
 			return 0;
 		if (umove(tcp, esp, &sc) < 0)
 			return 0;
@@ -1303,8 +1295,7 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else /* !I386 */
-#ifdef IA64
+#elif defined(IA64)
 	struct sigcontext sc;
 	long sp;
 
@@ -1312,7 +1303,7 @@ struct tcb *tcp;
 		/* offset of sigcontext in the kernel's sigframe structure: */
 #		define SIGFRAME_SC_OFFSET	0x90
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, PT_R12, &sp) < 0)
+		if (upeek(tcp, PT_R12, &sp) < 0)
 			return 0;
 		if (umove(tcp, sp + 16 + SIGFRAME_SC_OFFSET, &sc) < 0)
 			return 0;
@@ -1330,15 +1321,20 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else /* !IA64 */
-#ifdef POWERPC
+#elif defined(POWERPC)
 	long esp;
 	struct sigcontext_struct sc;
 
 	if (entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, sizeof(unsigned long)*PT_R1, &esp) < 0)
+		if (upeek(tcp, sizeof(unsigned long)*PT_R1, &esp) < 0)
 			return 0;
+		/* Skip dummy stack frame. */
+#ifdef __powerpc64__
+		esp += 128;
+#else
+		esp += 64;
+#endif
 		if (umove(tcp, esp, &sc) < 0)
 			return 0;
 		tcp->u_arg[0] = 1;
@@ -1354,14 +1350,13 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else /* !POWERPC */
-#ifdef M68K
+#elif defined(M68K)
 	long usp;
 	struct sigcontext sc;
 
 	if (entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, 4*PT_USP, &usp) < 0)
+		if (upeek(tcp, 4*PT_USP, &usp) < 0)
 			return 0;
 		if (umove(tcp, usp, &sc) < 0)
 			return 0;
@@ -1378,14 +1373,13 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else /* !M68K */
-#ifdef ALPHA
+#elif defined(ALPHA)
 	long fp;
 	struct sigcontext_struct sc;
 
 	if (entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, REG_FP, &fp) < 0)
+		if (upeek(tcp, REG_FP, &fp) < 0)
 			return 0;
 		if (umove(tcp, fp, &sc) < 0)
 			return 0;
@@ -1402,10 +1396,9 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else
-#if defined (SPARC) || defined (SPARC64)
+#elif defined (SPARC) || defined (SPARC64)
 	long i1;
-	struct regs regs;
+	struct pt_regs regs;
 	m_siginfo_t si;
 
 	if(ptrace(PTRACE_GETREGS, tcp->pid, (char *)&regs, 0) < 0) {
@@ -1414,7 +1407,7 @@ struct tcb *tcp;
 	}
 	if(entering(tcp)) {
 		tcp->u_arg[0] = 0;
-		i1 = regs.r_o1;
+		i1 = regs.u_regs[U_REG_O1];
 		if(umove(tcp, i1, &si) < 0) {
 			perror("sigreturn: umove ");
 			return 0;
@@ -1431,35 +1424,33 @@ struct tcb *tcp;
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else
-#if defined (LINUX_MIPSN32) || defined (LINUX_MIPSN64)
+#elif defined (LINUX_MIPSN32) || defined (LINUX_MIPSN64)
 	/* This decodes rt_sigreturn.  The 64-bit ABIs do not have
 	   sigreturn.  */
 	long sp;
 	struct ucontext uc;
 
 	if(entering(tcp)) {
-	  	tcp->u_arg[0] = 0;
-		if (upeek(tcp->pid, REG_SP, &sp) < 0)
-		  	return 0;
+		tcp->u_arg[0] = 0;
+		if (upeek(tcp, REG_SP, &sp) < 0)
+			return 0;
 		/* There are six words followed by a 128-byte siginfo.  */
 		sp = sp + 6 * 4 + 128;
 		if (umove(tcp, sp, &uc) < 0)
-		  	return 0;
+			return 0;
 		tcp->u_arg[0] = 1;
 		tcp->u_arg[1] = *(long *) &uc.uc_sigmask;
 	} else {
 		sigset_t sigm;
 		long_to_sigset(tcp->u_arg[1], &sigm);
-	  	tcp->u_rval = tcp->u_error = 0;
+		tcp->u_rval = tcp->u_error = 0;
 		if(tcp->u_arg[0] == 0)
-		  	return 0;
+			return 0;
 		tcp->auxstr = sprintsigmask("mask now ", &sigm, 0);
 		return RVAL_NONE | RVAL_STR;
 	}
 	return 0;
-#else
-#ifdef MIPS
+#elif defined(MIPS)
 	long sp;
 	struct pt_regs regs;
 	m_siginfo_t si;
@@ -1469,7 +1460,7 @@ struct tcb *tcp;
 		return 0;
 	}
 	if(entering(tcp)) {
-	  	tcp->u_arg[0] = 0;
+		tcp->u_arg[0] = 0;
 		sp = regs.regs[29];
 		if (umove(tcp, sp, &si) < 0)
 		tcp->u_arg[0] = 1;
@@ -1477,8 +1468,62 @@ struct tcb *tcp;
 	} else {
 		sigset_t sigm;
 		long_to_sigset(tcp->u_arg[1], &sigm);
-	  	tcp->u_rval = tcp->u_error = 0;
+		tcp->u_rval = tcp->u_error = 0;
 		if(tcp->u_arg[0] == 0)
+			return 0;
+		tcp->auxstr = sprintsigmask("mask now ", &sigm, 0);
+		return RVAL_NONE | RVAL_STR;
+	}
+	return 0;
+#elif defined(CRISV10) || defined(CRISV32)
+	struct sigcontext sc;
+
+	if (entering(tcp)) {
+		long regs[PT_MAX+1];
+
+		tcp->u_arg[0] = 0;
+
+		if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long)regs) < 0) {
+			perror("sigreturn: PTRACE_GETREGS");
+			return 0;
+		}
+		if (umove(tcp, regs[PT_USP], &sc) < 0)
+			return 0;
+		tcp->u_arg[0] = 1;
+		tcp->u_arg[1] = sc.oldmask;
+	} else {
+		sigset_t sigm;
+		long_to_sigset(tcp->u_arg[1], &sigm);
+		tcp->u_rval = tcp->u_error = 0;
+
+		if (tcp->u_arg[0] == 0)
+			return 0;
+		tcp->auxstr = sprintsigmask("mask now ", &sigm, 0);
+		return RVAL_NONE | RVAL_STR;
+	}
+	return 0;
+#elif defined(TILE)
+	struct ucontext uc;
+	long sp;
+
+	/* offset of ucontext in the kernel's sigframe structure */
+#	define SIGFRAME_UC_OFFSET C_ABI_SAVE_AREA_SIZE + sizeof(struct siginfo)
+
+	if (entering(tcp)) {
+		tcp->u_arg[0] = 0;
+		if (upeek(tcp, PTREGS_OFFSET_SP, &sp) < 0)
+			return 0;
+		if (umove(tcp, sp + SIGFRAME_UC_OFFSET, &uc) < 0)
+			return 0;
+		tcp->u_arg[0] = 1;
+		memcpy(tcp->u_arg + 1, &uc.uc_sigmask, sizeof(uc.uc_sigmask));
+	}
+	else {
+		sigset_t sigm;
+
+		memcpy(&sigm, tcp->u_arg + 1, sizeof (sigm));
+		tcp->u_rval = tcp->u_error = 0;
+		if (tcp->u_arg[0] == 0)
 			return 0;
 		tcp->auxstr = sprintsigmask("mask now ", &sigm, 0);
 		return RVAL_NONE | RVAL_STR;
@@ -1488,15 +1533,7 @@ struct tcb *tcp;
 #warning No sys_sigreturn() for this architecture
 #warning         (no problem, just a reminder :-)
 	return 0;
-#endif /* MIPS */
-#endif /* LINUX_MIPSN32 || LINUX_MIPSN64 */
-#endif /* SPARC || SPARC64 */
-#endif /* ALPHA */
-#endif /* !M68K */
-#endif /* !POWERPC */
-#endif /* !IA64 */
-#endif /* !I386 */
-#endif /* S390 */
+#endif
 }
 
 int
@@ -1512,17 +1549,11 @@ struct tcb *tcp;
 }
 
 int
-sys_sigsuspend(tcp)
-struct tcb *tcp;
+sys_sigsuspend(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		sigset_t sigm;
 		long_to_sigset(tcp->u_arg[2], &sigm);
-#if 0
-		/* first two are not really arguments, but print them anyway */
-		/* nevermind, they are an anachronism now, too bad... */
-		tprintf("%d, %#x, ", tcp->u_arg[0], tcp->u_arg[1]);
-#endif
 		printsigmask(&sigm, 0);
 	}
 	return 0;
@@ -1850,25 +1881,29 @@ sys_rt_sigprocmask(tcp)
 /* Structure describing the action to be taken when a signal arrives.  */
 struct new_sigaction
 {
-	union
-	{
-		__sighandler_t __sa_handler;
-		void (*__sa_sigaction) (int, siginfo_t *, void *);
-	}
-	__sigaction_handler;
+	__sighandler_t __sa_handler;
 	unsigned long sa_flags;
 	void (*sa_restorer) (void);
-	unsigned long int sa_mask[2];
+	/* Kernel treats sa_mask as an array of longs. */
+	unsigned long sa_mask[NSIG / sizeof(long) ? NSIG / sizeof(long) : 1];
+};
+/* Same for i386-on-x86_64 and similar cases */
+struct new_sigaction32
+{
+	uint32_t __sa_handler;
+	uint32_t sa_flags;
+	uint32_t sa_restorer;
+	uint32_t sa_mask[2 * (NSIG / sizeof(long) ? NSIG / sizeof(long) : 1)];
 };
 
 
 int
-sys_rt_sigaction(tcp)
-	struct tcb *tcp;
+sys_rt_sigaction(struct tcb *tcp)
 {
 	struct new_sigaction sa;
 	sigset_t sigset;
 	long addr;
+	int r;
 
 	if (entering(tcp)) {
 		printsignal(tcp->u_arg[0]);
@@ -1876,41 +1911,86 @@ sys_rt_sigaction(tcp)
 		addr = tcp->u_arg[1];
 	} else
 		addr = tcp->u_arg[2];
-	if (addr == 0)
+
+	if (addr == 0) {
 		tprintf("NULL");
-	else if (!verbose(tcp))
-		tprintf("%#lx", addr);
-	else if (umove(tcp, addr, &sa) < 0)
-		tprintf("{...}");
-	else {
-		if (sa.__sigaction_handler.__sa_handler == SIG_ERR)
-			tprintf("{SIG_ERR, ");
-		else if (sa.__sigaction_handler.__sa_handler == SIG_DFL)
-			tprintf("{SIG_DFL, ");
-		else if (sa.__sigaction_handler.__sa_handler == SIG_DFL)
-			tprintf("{SIG_IGN, ");
-		else
-			tprintf("{%#lx, ",
-				(long) sa.__sigaction_handler.__sa_handler);
-		sigemptyset(&sigset);
-#ifdef LINUXSPARC
-		if (tcp->u_arg[4] <= sizeof(sigset))
-			memcpy(&sigset, &sa.sa_mask, tcp->u_arg[4]);
-#else
-		if (tcp->u_arg[3] <= sizeof(sigset))
-			memcpy(&sigset, &sa.sa_mask, tcp->u_arg[3]);
-#endif
-		else
-			memcpy(&sigset, &sa.sa_mask, sizeof(sigset));
-		printsigmask(&sigset, 1);
-		tprintf(", ");
-		printflags(sigact_flags, sa.sa_flags, "SA_???");
-#ifdef SA_RESTORER
-		if (sa.sa_flags & SA_RESTORER)
-			tprintf(", %p", sa.sa_restorer);
-#endif
-		tprintf("}");
+		goto after_sa;
 	}
+	if (!verbose(tcp)) {
+		tprintf("%#lx", addr);
+		goto after_sa;
+	}
+#if SUPPORTED_PERSONALITIES > 1
+	if (personality_wordsize[current_personality] != sizeof(sa.sa_flags)
+	 && personality_wordsize[current_personality] == 4
+	) {
+		struct new_sigaction32 sa32;
+		r = umove(tcp, addr, &sa32);
+		if (r >= 0) {
+			memset(&sa, 0, sizeof(sa));
+			sa.__sa_handler = (void*)(unsigned long)sa32.__sa_handler;
+			sa.sa_flags     = sa32.sa_flags;
+			sa.sa_restorer  = (void*)(unsigned long)sa32.sa_restorer;
+			/* Kernel treats sa_mask as an array of longs.
+			 * For 32-bit process, "long" is uint32_t, thus, for example,
+			 * 32th bit in sa_mask will end up as bit 0 in sa_mask[1].
+			 * But for (64-bit) kernel, 32th bit in sa_mask is
+			 * 32th bit in 0th (64-bit) long!
+			 * For little-endian, it's the same.
+			 * For big-endian, we swap 32-bit words.
+			 */
+			sa.sa_mask[0] = sa32.sa_mask[0] + ((long)(sa32.sa_mask[1]) << 32);
+		}
+	} else
+#endif
+	{
+		r = umove(tcp, addr, &sa);
+	}
+	if (r < 0) {
+		tprintf("{...}");
+		goto after_sa;
+	}
+	/* Architectures using function pointers, like
+	 * hppa, may need to manipulate the function pointer
+	 * to compute the result of a comparison. However,
+	 * the SA_HANDLER function pointer exists only in
+	 * the address space of the traced process, and can't
+	 * be manipulated by strace. In order to prevent the
+	 * compiler from generating code to manipulate
+	 * SA_HANDLER we cast the function pointers to long. */
+	if ((long)sa.__sa_handler == (long)SIG_ERR)
+		tprintf("{SIG_ERR, ");
+	else if ((long)sa.__sa_handler == (long)SIG_DFL)
+		tprintf("{SIG_DFL, ");
+	else if ((long)sa.__sa_handler == (long)SIG_IGN)
+		tprintf("{SIG_IGN, ");
+	else
+		tprintf("{%#lx, ", (long) sa.__sa_handler);
+	/* Questionable code below.
+	 * Kernel won't handle sys_rt_sigaction
+	 * with wrong sigset size (just returns EINVAL)
+	 * therefore tcp->u_arg[3(4)] _must_ be NSIG / 8 here,
+	 * and we always use smaller memcpy. */
+	sigemptyset(&sigset);
+#ifdef LINUXSPARC
+	if (tcp->u_arg[4] <= sizeof(sigset))
+		memcpy(&sigset, &sa.sa_mask, tcp->u_arg[4]);
+#else
+	if (tcp->u_arg[3] <= sizeof(sigset))
+		memcpy(&sigset, &sa.sa_mask, tcp->u_arg[3]);
+#endif
+	else
+		memcpy(&sigset, &sa.sa_mask, sizeof(sigset));
+	printsigmask(&sigset, 1);
+	tprintf(", ");
+	printflags(sigact_flags, sa.sa_flags, "SA_???");
+#ifdef SA_RESTORER
+	if (sa.sa_flags & SA_RESTORER)
+		tprintf(", %p", sa.sa_restorer);
+#endif
+	tprintf("}");
+
+ after_sa:
 	if (entering(tcp))
 		tprintf(", ");
 	else
@@ -1919,14 +1999,13 @@ sys_rt_sigaction(tcp)
 #elif defined(ALPHA)
 		tprintf(", %lu, %#lx", tcp->u_arg[3], tcp->u_arg[4]);
 #else
-		tprintf(", %lu", addr = tcp->u_arg[3]);
+		tprintf(", %lu", tcp->u_arg[3]);
 #endif
 	return 0;
 }
 
-	int
-sys_rt_sigpending(tcp)
-	struct tcb *tcp;
+int
+sys_rt_sigpending(struct tcb *tcp)
 {
 	sigset_t sigset;
 
@@ -1941,9 +2020,9 @@ sys_rt_sigpending(tcp)
 	}
 	return 0;
 }
-	int
-sys_rt_sigsuspend(tcp)
-	struct tcb *tcp;
+
+int
+sys_rt_sigsuspend(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		sigset_t sigm;
@@ -1954,9 +2033,9 @@ sys_rt_sigsuspend(tcp)
 	}
 	return 0;
 }
-	int
-sys_rt_sigqueueinfo(tcp)
-	struct tcb *tcp;
+
+int
+sys_rt_sigqueueinfo(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		siginfo_t si;
@@ -1966,13 +2045,12 @@ sys_rt_sigqueueinfo(tcp)
 		if (umove(tcp, tcp->u_arg[2], &si) < 0)
 			tprintf("%#lx", tcp->u_arg[2]);
 		else
-			printsiginfo(&si, verbose (tcp));
+			printsiginfo(&si, verbose(tcp));
 	}
 	return 0;
 }
 
-int sys_rt_sigtimedwait(tcp)
-	struct tcb *tcp;
+int sys_rt_sigtimedwait(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		sigset_t sigset;
@@ -1983,42 +2061,67 @@ int sys_rt_sigtimedwait(tcp)
 		else
 			printsigmask(&sigset, 1);
 		tprintf(", ");
+		/* This is the only "return" parameter, */
+		if (tcp->u_arg[1] != 0)
+			return 0;
+		/* ... if it's NULL, can decode all on entry */
+		tprintf("NULL, ");
 	}
-	else {
+	else if (tcp->u_arg[1] != 0) {
+		/* syscall exit, and u_arg[1] wasn't NULL */
 		if (syserror(tcp))
-			tprintf("%#lx", tcp->u_arg[0]);
+			tprintf("%#lx, ", tcp->u_arg[1]);
 		else {
 			siginfo_t si;
 			if (umove(tcp, tcp->u_arg[1], &si) < 0)
-				tprintf("%#lx", tcp->u_arg[1]);
-			else
-				printsiginfo(&si, verbose (tcp));
-			/* XXX For now */
-			tprintf(", %#lx", tcp->u_arg[2]);
-			tprintf(", %d", (int) tcp->u_arg[3]);
+				tprintf("%#lx, ", tcp->u_arg[1]);
+			else {
+				printsiginfo(&si, verbose(tcp));
+				tprintf(", ");
+			}
 		}
 	}
+	else {
+		/* syscall exit, and u_arg[1] was NULL */
+		return 0;
+	}
+	print_timespec(tcp, tcp->u_arg[2]);
+	tprintf(", %d", (int) tcp->u_arg[3]);
 	return 0;
 };
 
 int
-sys_restart_syscall(tcp)
-struct tcb *tcp;
+sys_restart_syscall(struct tcb *tcp)
 {
 	if (entering(tcp))
 		tprintf("<... resuming interrupted call ...>");
 	return 0;
 }
 
-int
-sys_signalfd(tcp)
-struct tcb *tcp;
+static int
+do_signalfd(struct tcb *tcp, int flags_arg)
 {
 	if (entering(tcp)) {
 		tprintf("%ld, ", tcp->u_arg[0]);
 		print_sigset(tcp, tcp->u_arg[1], 1);
-		tprintf("%lu", tcp->u_arg[2]);
+		tprintf(", %lu", tcp->u_arg[2]);
+		if (flags_arg >= 0) {
+			tprintf(", ");
+			printflags(open_mode_flags, tcp->u_arg[flags_arg], "O_???");
+		}
 	}
 	return 0;
+}
+
+int
+sys_signalfd(struct tcb *tcp)
+{
+	return do_signalfd(tcp, -1);
+}
+
+int
+sys_signalfd4(struct tcb *tcp)
+{
+	return do_signalfd(tcp, 3);
 }
 #endif /* LINUX */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991,92,93,94,95,96,97,2000 Free Software Foundation, Inc.
+/* Copyright (C) 1991-1997,2000,2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -161,11 +161,11 @@ struct nd_neighbor_advert     /* neighbor advertisement */
 #define nd_na_code               nd_na_hdr.icmp6_code
 #define nd_na_cksum              nd_na_hdr.icmp6_cksum
 #define nd_na_flags_reserved     nd_na_hdr.icmp6_data32[0]
-#if     BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER == __BIG_ENDIAN
 #define ND_NA_FLAG_ROUTER        0x80000000
 #define ND_NA_FLAG_SOLICITED     0x40000000
 #define ND_NA_FLAG_OVERRIDE      0x20000000
-#else   /* BYTE_ORDER == LITTLE_ENDIAN */
+#else   /* __BYTE_ORDER == __LITTLE_ENDIAN */
 #define ND_NA_FLAG_ROUTER        0x00000080
 #define ND_NA_FLAG_SOLICITED     0x00000040
 #define ND_NA_FLAG_OVERRIDE      0x00000020
@@ -191,13 +191,13 @@ struct nd_opt_hdr             /* Neighbor discovery option header */
     /* followed by option specific data */
   };
 
-#define  ND_OPT_SOURCE_LINKADDR       1
-#define  ND_OPT_TARGET_LINKADDR       2
-#define  ND_OPT_PREFIX_INFORMATION    3
-#define  ND_OPT_REDIRECTED_HEADER     4
-#define  ND_OPT_MTU                   5
-#define  ND_OPT_RTR_ADV_INTERVAL      7
-#define  ND_OPT_HOME_AGENT_INFO       8
+#define ND_OPT_SOURCE_LINKADDR		1
+#define ND_OPT_TARGET_LINKADDR		2
+#define ND_OPT_PREFIX_INFORMATION	3
+#define ND_OPT_REDIRECTED_HEADER	4
+#define ND_OPT_MTU			5
+#define ND_OPT_RTR_ADV_INTERVAL		7
+#define ND_OPT_HOME_AGENT_INFO		8
 
 struct nd_opt_prefix_info     /* prefix information */
   {
@@ -211,9 +211,9 @@ struct nd_opt_prefix_info     /* prefix information */
     struct in6_addr  nd_opt_pi_prefix;
   };
 
-#define ND_OPT_PI_FLAG_ONLINK        0x80
-#define ND_OPT_PI_FLAG_AUTO          0x40
-#define ND_OPT_PI_FLAG_RADDR         0x20
+#define ND_OPT_PI_FLAG_ONLINK	0x80
+#define ND_OPT_PI_FLAG_AUTO	0x40
+#define ND_OPT_PI_FLAG_RADDR	0x20
 
 struct nd_opt_rd_hdr          /* redirected header */
   {
@@ -299,12 +299,12 @@ struct rr_pco_use      /* use prefix part */
 #define ICMP6_RR_PCOUSE_RAFLAGS_ONLINK  0x20
 #define ICMP6_RR_PCOUSE_RAFLAGS_AUTO    0x10
 
-#if BYTE_ORDER == BIG_ENDIAN
-# define ICMP6_RR_PCOUSE_DECRVLTIME      0x80000000
-# define ICMP6_RR_PCOUSE_DECRPLTIME      0x40000000
-#elif BYTE_ORDER == LITTLE_ENDIAN
-# define ICMP6_RR_PCOUSE_DECRVLTIME      0x80
-# define ICMP6_RR_PCOUSE_DECRPLTIME      0x40
+#if __BYTE_ORDER == __BIG_ENDIAN
+# define ICMP6_RR_PCOUSE_FLAGS_DECRVLTIME 0x80000000
+# define ICMP6_RR_PCOUSE_FLAGS_DECRPLTIME 0x40000000
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+# define ICMP6_RR_PCOUSE_FLAGS_DECRVLTIME 0x80
+# define ICMP6_RR_PCOUSE_FLAGS_DECRPLTIME 0x40
 #endif
 
 struct rr_result       /* router renumbering result message */
@@ -316,10 +316,10 @@ struct rr_result       /* router renumbering result message */
     struct in6_addr     rrr_prefix;
   };
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER == __BIG_ENDIAN
 # define ICMP6_RR_RESULT_FLAGS_OOB       0x0002
 # define ICMP6_RR_RESULT_FLAGS_FORBIDDEN 0x0001
-#elif BYTE_ORDER == LITTLE_ENDIAN
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 # define ICMP6_RR_RESULT_FLAGS_OOB       0x0200
 # define ICMP6_RR_RESULT_FLAGS_FORBIDDEN 0x0100
 #endif

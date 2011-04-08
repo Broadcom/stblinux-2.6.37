@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscall.h,v 1.59 2008/08/25 03:15:43 roland Exp $
+ *	$Id$
  */
 
 #include "dummy.h"
@@ -105,13 +105,15 @@ int sys_io_setup(), sys_io_submit(), sys_io_cancel(), sys_io_getevents(), sys_io
 int sys_utimensat(), sys_epoll_pwait(), sys_signalfd(), sys_timerfd(), sys_eventfd();
 int sys_getcpu();
 int sys_fallocate(), sys_timerfd_create(), sys_timerfd_settime(), sys_timerfd_gettime();
+int sys_signalfd4(), sys_eventfd2(), sys_epoll_create1(), sys_dup3(), sys_pipe2();
 
 /* sys_socketcall subcalls */
 
-int sys_socket(), sys_bind(), sys_connect(), sys_listen();
+int sys_socket(), sys_bind(), sys_connect(), sys_listen(), sys_accept4();
 int sys_accept(), sys_getsockname(), sys_getpeername(), sys_socketpair();
 int sys_send(), sys_recv(), sys_sendto(), sys_recvfrom();
 int sys_shutdown(), sys_setsockopt(), sys_getsockopt();
+int sys_recvmmsg();
 
 /* *at syscalls */
 int sys_fchmodat();
@@ -134,6 +136,7 @@ int sys_poll();
 int sys_mincore();
 int sys_inotify_add_watch();
 int sys_inotify_rm_watch();
+int sys_inotify_init1();
 int sys_pselect6();
 int sys_ppoll();
 int sys_unshare();
@@ -225,8 +228,10 @@ int sys_osf_utimes();
 #define SYS_sub_getsockopt	(SYS_socket_subcall + 15)
 #define SYS_sub_sendmsg		(SYS_socket_subcall + 16)
 #define SYS_sub_recvmsg		(SYS_socket_subcall + 17)
+#define SYS_sub_accept4		(SYS_socket_subcall + 18)
+#define SYS_sub_recvmmsg	(SYS_socket_subcall + 19)
 
-#define SYS_socket_nsubcalls	18
+#define SYS_socket_nsubcalls	20
 #endif /* !(ALPHA || MIPS || HPPA) */
 
 /* sys_ipc subcalls */
@@ -325,4 +330,8 @@ int sys_pread64(), sys_pwrite64();
 
 #ifdef POWERPC
 int sys_subpage_prot();
+#endif
+
+#ifdef BFIN
+int sys_sram_alloc();
 #endif

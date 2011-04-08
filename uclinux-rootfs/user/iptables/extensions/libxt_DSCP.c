@@ -9,6 +9,7 @@
  *
  * --set-class added by Iain Barnes
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,9 +39,9 @@ static void DSCP_help(void)
 }
 
 static const struct option DSCP_opts[] = {
-	{ "set-dscp", 1, NULL, 'F' },
-	{ "set-dscp-class", 1, NULL, 'G' },
-	{ .name = NULL }
+	{.name = "set-dscp",       .has_arg = true, .val = 'F'},
+	{.name = "set-dscp-class", .has_arg = true, .val = 'G'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -130,21 +131,7 @@ static void DSCP_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target dscp_target = {
-	.family		= NFPROTO_IPV4,
-	.name		= "DSCP",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_DSCP_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_DSCP_info)),
-	.help		= DSCP_help,
-	.parse		= DSCP_parse,
-	.final_check	= DSCP_check,
-	.print		= DSCP_print,
-	.save		= DSCP_save,
-	.extra_opts	= DSCP_opts,
-};
-
-static struct xtables_target dscp_target6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "DSCP",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_DSCP_info)),
@@ -160,5 +147,4 @@ static struct xtables_target dscp_target6 = {
 void _init(void)
 {
 	xtables_register_target(&dscp_target);
-	xtables_register_target(&dscp_target6);
 }

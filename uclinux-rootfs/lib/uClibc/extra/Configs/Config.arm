@@ -4,18 +4,13 @@
 #
 
 config TARGET_ARCH
+	string
 	default "arm"
 
 config FORCE_OPTIONS_FOR_ARCH
 	bool
 	default y
 	select ARCH_ANY_ENDIAN
-
-config ARCH_CFLAGS
-	string
-
-config LIBGCC_CFLAGS
-	string
 
 choice
 	prompt "Target ABI"
@@ -50,8 +45,8 @@ choice
 	  optimizing purposes.  To build a library that will run on all ARMCPU
 	  types (albeit not optimally fast), you can specify "Generic Arm" here.
 	  If you pick anything other than "Generic Arm", there is no guarantee 
-	  that uClibc will even run on anything other than the selected processor
-	  type.
+	  that uClibc will even run on anything other than the selected
+	  processor type.
 
 	  Here are the settings recommended for greatest speed:
 	  - "Generic Arm" select this if your compiler is already setup to
@@ -100,6 +95,24 @@ config CONFIG_ARM10T
 config CONFIG_ARM1136JF_S
 	bool "Arm 1136JF-S"
 	select ARCH_HAS_MMU
+
+config CONFIG_ARM1176JZ_S
+	bool "Arm 1176JZ-S"
+	select ARCH_HAS_MMU
+
+config CONFIG_ARM1176JZF_S
+	bool "Arm 1176JZF-S"
+	select ARCH_HAS_MMU
+
+config CONFIG_ARM_CORTEX_M3
+	bool "Arm Cortex-M3"
+	select ARCH_HAS_NO_MMU
+	select USE_BX
+
+config CONFIG_ARM_CORTEX_M1
+	bool "Arm Cortex-M1"
+	select ARCH_HAS_NO_MMU
+	select USE_BX
 
 config CONFIG_ARM_SA110
 	bool "Intel StrongArm SA-110"

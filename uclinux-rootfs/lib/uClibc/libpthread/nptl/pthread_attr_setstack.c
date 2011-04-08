@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -24,10 +24,10 @@
 
 
 int
-__pthread_attr_setstack (attr, stackaddr, stacksize)
-     pthread_attr_t *attr;
-     void *stackaddr;
-     size_t stacksize;
+__pthread_attr_setstack (
+     pthread_attr_t *attr,
+     void *stackaddr,
+     size_t stacksize)
 {
   struct pthread_attr *iattr;
 

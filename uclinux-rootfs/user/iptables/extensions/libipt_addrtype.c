@@ -1,7 +1,7 @@
 /* Shared library add-on to iptables to add addrtype matching support 
  * 
  * This program is released under the terms of GNU GPL */
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,8 +106,8 @@ addrtype_parse_v0(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags&IPT_ADDRTYPE_OPT_SRCTYPE)
 			xtables_error(PARAMETER_PROBLEM,
 			           "addrtype: can't specify src-type twice");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_types(argv[optind-1], &info->source);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_types(optarg, &info->source);
 		if (invert)
 			info->invert_source = 1;
 		*flags |= IPT_ADDRTYPE_OPT_SRCTYPE;
@@ -116,8 +116,8 @@ addrtype_parse_v0(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags&IPT_ADDRTYPE_OPT_DSTTYPE)
 			xtables_error(PARAMETER_PROBLEM,
 			           "addrtype: can't specify dst-type twice");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_types(argv[optind-1], &info->dest);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_types(optarg, &info->dest);
 		if (invert)
 			info->invert_dest = 1;
 		*flags |= IPT_ADDRTYPE_OPT_DSTTYPE;
@@ -141,8 +141,8 @@ addrtype_parse_v1(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IPT_ADDRTYPE_OPT_SRCTYPE)
 			xtables_error(PARAMETER_PROBLEM,
 			           "addrtype: can't specify src-type twice");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_types(argv[optind-1], &info->source);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_types(optarg, &info->source);
 		if (invert)
 			info->flags |= IPT_ADDRTYPE_INVERT_SOURCE;
 		*flags |= IPT_ADDRTYPE_OPT_SRCTYPE;
@@ -151,8 +151,8 @@ addrtype_parse_v1(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IPT_ADDRTYPE_OPT_DSTTYPE)
 			xtables_error(PARAMETER_PROBLEM,
 			           "addrtype: can't specify dst-type twice");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_types(argv[optind-1], &info->dest);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_types(optarg, &info->dest);
 		if (invert)
 			info->flags |= IPT_ADDRTYPE_INVERT_DEST;
 		*flags |= IPT_ADDRTYPE_OPT_DSTTYPE;
@@ -304,57 +304,57 @@ static void addrtype_save_v1(const void *ip, const struct xt_entry_match *match)
 }
 
 static const struct option addrtype_opts[] = {
-	{ "src-type", 1, NULL, '1' },
-	{ "dst-type", 1, NULL, '2' },
-	{ .name = NULL }
+	{.name = "src-type", .has_arg = true, .val = '1'},
+	{.name = "dst-type", .has_arg = true, .val = '2'},
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option addrtype_opts_v0[] = {
-	{ "src-type", 1, NULL, '1' },
-	{ "dst-type", 1, NULL, '2' },
-	{ .name = NULL }
+	{.name = "src-type", .has_arg = true, .val = '1'},
+	{.name = "dst-type", .has_arg = true, .val = '2'},
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option addrtype_opts_v1[] = {
-	{ "src-type", 1, NULL, '1' },
-	{ "dst-type", 1, NULL, '2' },
-	{ "limit-iface-in", 0, NULL, '3' },
-	{ "limit-iface-out", 0, NULL, '4' },
-	{ .name = NULL }
+	{.name = "src-type",        .has_arg = true,  .val = '1'},
+	{.name = "dst-type",        .has_arg = true,  .val = '2'},
+	{.name = "limit-iface-in",  .has_arg = false, .val = '3'},
+	{.name = "limit-iface-out", .has_arg = false, .val = '4'},
+	XT_GETOPT_TABLEEND,
 };
 
-static struct xtables_match addrtype_mt_reg_v0 = {
-	.name 		= "addrtype",
-	.version 	= XTABLES_VERSION,
-	.family		= NFPROTO_IPV4,
-	.size 		= XT_ALIGN(sizeof(struct ipt_addrtype_info)),
-	.userspacesize 	= XT_ALIGN(sizeof(struct ipt_addrtype_info)),
-	.help 		= addrtype_help_v0,
-	.parse 		= addrtype_parse_v0,
-	.final_check 	= addrtype_check_v0,
-	.print 		= addrtype_print_v0,
-	.save 		= addrtype_save_v0,
-	.extra_opts 	= addrtype_opts_v0,
-};
-
-static struct xtables_match addrtype_mt_reg_v1 = {
-	.name 		= "addrtype",
-	.version 	= XTABLES_VERSION,
-	.family		= NFPROTO_IPV4,
-	.size 		= XT_ALIGN(sizeof(struct ipt_addrtype_info_v1)),
-	.userspacesize 	= XT_ALIGN(sizeof(struct ipt_addrtype_info_v1)),
-	.help 		= addrtype_help_v1,
-	.parse 		= addrtype_parse_v1,
-	.final_check 	= addrtype_check_v1,
-	.print 		= addrtype_print_v1,
-	.save 		= addrtype_save_v1,
-	.extra_opts 	= addrtype_opts_v1,
-	.revision	= 1,
+static struct xtables_match addrtype_mt_reg[] = {
+	{
+		.name          = "addrtype",
+		.version       = XTABLES_VERSION,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct ipt_addrtype_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct ipt_addrtype_info)),
+		.help          = addrtype_help_v0,
+		.parse         = addrtype_parse_v0,
+		.final_check   = addrtype_check_v0,
+		.print         = addrtype_print_v0,
+		.save          = addrtype_save_v0,
+		.extra_opts    = addrtype_opts_v0,
+	},
+	{
+		.name          = "addrtype",
+		.revision      = 1,
+		.version       = XTABLES_VERSION,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct ipt_addrtype_info_v1)),
+		.userspacesize = XT_ALIGN(sizeof(struct ipt_addrtype_info_v1)),
+		.help          = addrtype_help_v1,
+		.parse         = addrtype_parse_v1,
+		.final_check   = addrtype_check_v1,
+		.print         = addrtype_print_v1,
+		.save          = addrtype_save_v1,
+		.extra_opts    = addrtype_opts_v1,
+	},
 };
 
 
 void _init(void) 
 {
-	xtables_register_match(&addrtype_mt_reg_v0);
-	xtables_register_match(&addrtype_mt_reg_v1);
+	xtables_register_matches(addrtype_mt_reg, ARRAY_SIZE(addrtype_mt_reg));
 }

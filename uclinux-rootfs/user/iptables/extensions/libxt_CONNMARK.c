@@ -19,6 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -27,6 +28,12 @@
 #include <xtables.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter/xt_CONNMARK.h>
+
+struct xt_connmark_target_info {
+	unsigned long mark;
+	unsigned long mask;
+	u_int8_t mode;
+};
 
 enum {
 	F_MARK    = 1 << 0,
@@ -43,11 +50,11 @@ static void CONNMARK_help(void)
 }
 
 static const struct option CONNMARK_opts[] = {
-	{ "set-mark", 1, NULL, '1' },
-	{ "save-mark", 0, NULL, '2' },
-	{ "restore-mark", 0, NULL, '3' },
-	{ "mask", 1, NULL, '4' },
-	{ .name = NULL }
+	{.name = "set-mark",     .has_arg = true,  .val = '1'},
+	{.name = "save-mark",    .has_arg = false, .val = '2'},
+	{.name = "restore-mark", .has_arg = false, .val = '3'},
+	{.name = "mask",         .has_arg = true,  .val = '4'},
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option connmark_tg_opts[] = {
@@ -61,7 +68,7 @@ static const struct option connmark_tg_opts[] = {
 	{.name = "ctmask",        .has_arg = true,  .val = 'c'},
 	{.name = "nfmask",        .has_arg = true,  .val = 'n'},
 	{.name = "mask",          .has_arg = true,  .val = 'm'},
-	{.name = NULL},
+	XT_GETOPT_TABLEEND,
 };
 
 static void connmark_tg_help(void)
@@ -312,6 +319,8 @@ connmark_tg_print(const void *ip, const struct xt_entry_target *target,
 			printf("CONNMARK or 0x%x ", info->ctmark);
 		else if (info->ctmask == 0)
 			printf("CONNMARK xor 0x%x ", info->ctmark);
+		else if (info->ctmask == 0xFFFFFFFFU)
+			printf("CONNMARK set 0x%x ", info->ctmark);
 		else
 			printf("CONNMARK xset 0x%x/0x%x ",
 			       info->ctmark, info->ctmask);
@@ -398,74 +407,40 @@ connmark_tg_save(const void *ip, const struct xt_entry_target *target)
 	}
 }
 
-static struct xtables_target connmark_target = {
-	.family		= NFPROTO_IPV4,
-	.name		= "CONNMARK",
-	.revision	= 0,
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_connmark_target_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_connmark_target_info)),
-	.help		= CONNMARK_help,
-	.init           = CONNMARK_init,
-	.parse		= CONNMARK_parse,
-	.final_check	= connmark_tg_check,
-	.print		= CONNMARK_print,
-	.save		= CONNMARK_save,
-	.extra_opts	= CONNMARK_opts,
-};
-
-static struct xtables_target connmark_target6 = {
-	.family		= NFPROTO_IPV6,
-	.name		= "CONNMARK",
-	.revision	= 0,
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_connmark_target_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_connmark_target_info)),
-	.help		= CONNMARK_help,
-	.init           = CONNMARK_init,
-	.parse		= CONNMARK_parse,
-	.final_check	= connmark_tg_check,
-	.print		= CONNMARK_print,
-	.save		= CONNMARK_save,
-	.extra_opts	= CONNMARK_opts,
-};
-
-static struct xtables_target connmark_tg_reg = {
-	.version        = XTABLES_VERSION,
-	.name           = "CONNMARK",
-	.revision       = 1,
-	.family         = NFPROTO_IPV4,
-	.size           = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
-	.userspacesize  = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
-	.help           = connmark_tg_help,
-	.init           = connmark_tg_init,
-	.parse          = connmark_tg_parse,
-	.final_check    = connmark_tg_check,
-	.print          = connmark_tg_print,
-	.save           = connmark_tg_save,
-	.extra_opts     = connmark_tg_opts,
-};
-
-static struct xtables_target connmark_tg6_reg = {
-	.version        = XTABLES_VERSION,
-	.name           = "CONNMARK",
-	.revision       = 1,
-	.family         = NFPROTO_IPV6,
-	.size           = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
-	.userspacesize  = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
-	.help           = connmark_tg_help,
-	.init           = connmark_tg_init,
-	.parse          = connmark_tg_parse,
-	.final_check    = connmark_tg_check,
-	.print          = connmark_tg_print,
-	.save           = connmark_tg_save,
-	.extra_opts     = connmark_tg_opts,
+static struct xtables_target connmark_tg_reg[] = {
+	{
+		.family        = NFPROTO_UNSPEC,
+		.name          = "CONNMARK",
+		.revision      = 0,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_connmark_target_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_connmark_target_info)),
+		.help          = CONNMARK_help,
+		.init          = CONNMARK_init,
+		.parse         = CONNMARK_parse,
+		.final_check   = connmark_tg_check,
+		.print         = CONNMARK_print,
+		.save          = CONNMARK_save,
+		.extra_opts    = CONNMARK_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "CONNMARK",
+		.revision      = 1,
+		.family        = NFPROTO_UNSPEC,
+		.size          = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_connmark_tginfo1)),
+		.help          = connmark_tg_help,
+		.init          = connmark_tg_init,
+		.parse         = connmark_tg_parse,
+		.final_check   = connmark_tg_check,
+		.print         = connmark_tg_print,
+		.save          = connmark_tg_save,
+		.extra_opts    = connmark_tg_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_target(&connmark_target);
-	xtables_register_target(&connmark_target6);
-	xtables_register_target(&connmark_tg_reg);
-	xtables_register_target(&connmark_tg6_reg);
+	xtables_register_targets(connmark_tg_reg, ARRAY_SIZE(connmark_tg_reg));
 }

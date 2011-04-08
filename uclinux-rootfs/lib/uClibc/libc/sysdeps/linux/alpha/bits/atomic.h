@@ -179,22 +179,22 @@ typedef uintmax_t uatomic_max_t;
 #define __arch_compare_and_exchange_val_8_int(mem, new, old, mb1, mb2)	\
 ({ unsigned long __prev; int __cmp;					\
    __arch_compare_and_exchange_xxx_8_int(mem, new, old, mb1, mb2);	\
-   (typeof (*mem))__prev; })
+   (__typeof (*mem))__prev; })
 
 #define __arch_compare_and_exchange_val_16_int(mem, new, old, mb1, mb2) \
 ({ unsigned long __prev; int __cmp;					\
    __arch_compare_and_exchange_xxx_16_int(mem, new, old, mb1, mb2);	\
-   (typeof (*mem))__prev; })
+   (__typeof (*mem))__prev; })
 
 #define __arch_compare_and_exchange_val_32_int(mem, new, old, mb1, mb2) \
 ({ unsigned long __prev; int __cmp;					\
    __arch_compare_and_exchange_xxx_32_int(mem, new, old, mb1, mb2);	\
-   (typeof (*mem))__prev; })
+   (__typeof (*mem))__prev; })
 
 #define __arch_compare_and_exchange_val_64_int(mem, new, old, mb1, mb2) \
 ({ unsigned long __prev; int __cmp;					\
    __arch_compare_and_exchange_xxx_64_int(mem, new, old, mb1, mb2);	\
-   (typeof (*mem))__prev; })
+   (__typeof (*mem))__prev; })
 
 /* Compare and exchange with "acquire" semantics, ie barrier after.  */
 
@@ -348,7 +348,7 @@ typedef uintmax_t uatomic_max_t;
 	: "memory");							\
   __ret; })
 
-/* ??? Barrier semantics for atomic_exchange_and_add appear to be 
+/* ??? Barrier semantics for atomic_exchange_and_add appear to be
    undefined.  Use full barrier for now, as that's safe.  */
 #define atomic_exchange_and_add(mem, value) \
   __atomic_val_bysize (__arch_exchange_and_add, int, mem, value, __MB, __MB)
@@ -363,7 +363,7 @@ typedef uintmax_t uatomic_max_t;
 */
 
 #ifndef UP
-# define atomic_full_barrier()	__asm ("mb" : : : "memory");
-# define atomic_read_barrier()	__asm ("mb" : : : "memory");
-# define atomic_write_barrier()	__asm ("wmb" : : : "memory");
+# define atomic_full_barrier()	__asm__ ("mb" : : : "memory");
+# define atomic_read_barrier()	__asm__ ("mb" : : : "memory");
+# define atomic_write_barrier()	__asm__ ("wmb" : : : "memory");
 #endif

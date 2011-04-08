@@ -67,15 +67,15 @@ static void hashlimit_mt_help(void)
 }
 
 static const struct option hashlimit_opts[] = {
-	{ "hashlimit", 1, NULL, '%' },
-	{ "hashlimit-burst", 1, NULL, '$' },
-	{ "hashlimit-htable-size", 1, NULL, '&' },
-	{ "hashlimit-htable-max", 1, NULL, '*' },
-	{ "hashlimit-htable-gcinterval", 1, NULL, '(' },
-	{ "hashlimit-htable-expire", 1, NULL, ')' },
-	{ "hashlimit-mode", 1, NULL, '_' },
-	{ "hashlimit-name", 1, NULL, '"' },
-	{ .name = NULL }
+	{.name = "hashlimit",                   .has_arg = true, .val = '%'},
+	{.name = "hashlimit-burst",             .has_arg = true, .val = '$'},
+	{.name = "hashlimit-htable-size",       .has_arg = true, .val = '&'},
+	{.name = "hashlimit-htable-max",        .has_arg = true, .val = '*'},
+	{.name = "hashlimit-htable-gcinterval", .has_arg = true, .val = '('},
+	{.name = "hashlimit-htable-expire",     .has_arg = true, .val = ')'},
+	{.name = "hashlimit-mode",              .has_arg = true, .val = '_'},
+	{.name = "hashlimit-name",              .has_arg = true, .val = '"'},
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option hashlimit_mt_opts[] = {
@@ -91,7 +91,7 @@ static const struct option hashlimit_mt_opts[] = {
 	{.name = "hashlimit-htable-expire",     .has_arg = true, .val = ')'},
 	{.name = "hashlimit-mode",              .has_arg = true, .val = '_'},
 	{.name = "hashlimit-name",              .has_arg = true, .val = '"'},
-	{},
+	XT_GETOPT_TABLEEND,
 };
 
 static
@@ -219,7 +219,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '%':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit",
 		          *flags & PARAM_LIMIT);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!parse_rate(optarg, &r->cfg.avg))
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad rate `%s'", optarg);
@@ -229,7 +229,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '$':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit-burst",
 		          *flags & PARAM_BURST);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, 10000))
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad --hashlimit-burst `%s'", optarg);
@@ -239,7 +239,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '&':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit-htable-size",
 		          *flags & PARAM_SIZE);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, UINT32_MAX))
 			xtables_error(PARAMETER_PROBLEM,
 				"bad --hashlimit-htable-size: `%s'", optarg);
@@ -249,7 +249,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '*':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit-htable-max",
 		          *flags & PARAM_MAX);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, UINT32_MAX))
 			xtables_error(PARAMETER_PROBLEM,
 				"bad --hashlimit-htable-max: `%s'", optarg);
@@ -260,7 +260,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit",
 		          "--hashlimit-htable-gcinterval",
 		          *flags & PARAM_GCINTERVAL);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, UINT32_MAX))
 			xtables_error(PARAMETER_PROBLEM,
 				"bad --hashlimit-htable-gcinterval: `%s'", 
@@ -272,7 +272,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case ')':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit",
 		          "--hashlimit-htable-expire", *flags & PARAM_EXPIRE);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (!xtables_strtoui(optarg, NULL, &num, 0, UINT32_MAX))
 			xtables_error(PARAMETER_PROBLEM,
 				"bad --hashlimit-htable-expire: `%s'", optarg);
@@ -283,7 +283,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '_':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit-mode",
 		          *flags & PARAM_MODE);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (parse_mode(&r->cfg.mode, optarg) < 0)
 			xtables_error(PARAMETER_PROBLEM,
 				   "bad --hashlimit-mode: `%s'\n", optarg);
@@ -292,7 +292,7 @@ hashlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 	case '"':
 		xtables_param_act(XTF_ONLY_ONCE, "hashlimit", "--hashlimit-name",
 		          *flags & PARAM_NAME);
-		if (xtables_check_inverse(argv[optind-1], &invert, &optind, 0)) break;
+		if (xtables_check_inverse(optarg, &invert, &optind, 0, argv)) break;
 		if (strlen(optarg) == 0)
 			xtables_error(PARAMETER_PROBLEM, "Zero-length name?");
 		strncpy(r->name, optarg, sizeof(r->name));
@@ -485,11 +485,10 @@ static void print_rate(u_int32_t period)
 {
 	unsigned int i;
 
-	for (i = 1; i < sizeof(rates)/sizeof(struct rates); i++) {
+	for (i = 1; i < ARRAY_SIZE(rates); ++i)
 		if (period > rates[i].mult
             || rates[i].mult/period < rates[i].mult%period)
 			break;
-	}
 
 	printf("%u/%s ", rates[i-1].mult / period, rates[i-1].name);
 }
@@ -525,8 +524,7 @@ static void print_mode(unsigned int mode, char separator)
 static void hashlimit_print(const void *ip,
                             const struct xt_entry_match *match, int numeric)
 {
-	struct xt_hashlimit_info *r = 
-		(struct xt_hashlimit_info *)match->data;
+	const struct xt_hashlimit_info *r = (const void *)match->data;
 	fputs("limit: avg ", stdout); print_rate(r->cfg.avg);
 	printf("burst %u ", r->cfg.burst);
 	fputs("mode ", stdout);
@@ -590,12 +588,10 @@ hashlimit_mt6_print(const void *ip, const struct xt_entry_match *match,
 
 static void hashlimit_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_hashlimit_info *r = 
-		(struct xt_hashlimit_info *)match->data;
+	const struct xt_hashlimit_info *r = (const void *)match->data;
 
 	fputs("--hashlimit ", stdout); print_rate(r->cfg.avg);
-	if (r->cfg.burst != XT_HASHLIMIT_BURST)
-		printf("--hashlimit-burst %u ", r->cfg.burst);
+	printf("--hashlimit-burst %u ", r->cfg.burst);
 
 	fputs("--hashlimit-mode ", stdout);
 	print_mode(r->cfg.mode, ',');
@@ -620,8 +616,7 @@ hashlimit_mt_save(const struct xt_hashlimit_mtinfo1 *info, unsigned int dmask)
 	else
 		fputs("--hashlimit-upto ", stdout);
 	print_rate(info->cfg.avg);
-	if (info->cfg.burst != XT_HASHLIMIT_BURST)
-		printf("--hashlimit-burst %u ", info->cfg.burst);
+	printf("--hashlimit-burst %u ", info->cfg.burst);
 
 	if (info->cfg.mode & (XT_HASHLIMIT_HASH_SIP | XT_HASHLIMIT_HASH_SPT |
 	    XT_HASHLIMIT_HASH_DIP | XT_HASHLIMIT_HASH_DPT)) {
@@ -636,7 +631,7 @@ hashlimit_mt_save(const struct xt_hashlimit_mtinfo1 *info, unsigned int dmask)
 	if (info->cfg.max != 0)
 		printf("--hashlimit-htable-max %u ", info->cfg.max);
 	if (info->cfg.gc_interval != XT_HASHLIMIT_GCINTERVAL)
-		printf("--hashlimit-htable-gcinterval %u", info->cfg.gc_interval);
+		printf("--hashlimit-htable-gcinterval %u ", info->cfg.gc_interval);
 	if (info->cfg.expire != XT_HASHLIMIT_EXPIRE)
 		printf("--hashlimit-htable-expire %u ", info->cfg.expire);
 
@@ -662,74 +657,55 @@ hashlimit_mt6_save(const void *ip, const struct xt_entry_match *match)
 	hashlimit_mt_save(info, 128);
 }
 
-static struct xtables_match hashlimit_match = {
-	.family		= NFPROTO_IPV4,
-	.name		= "hashlimit",
-	.version	= XTABLES_VERSION,
-	.revision	= 0,
-	.size		= XT_ALIGN(sizeof(struct xt_hashlimit_info)),
-	.userspacesize	= offsetof(struct xt_hashlimit_info, hinfo),
-	.help		= hashlimit_help,
-	.init		= hashlimit_init,
-	.parse		= hashlimit_parse,
-	.final_check	= hashlimit_check,
-	.print		= hashlimit_print,
-	.save		= hashlimit_save,
-	.extra_opts	= hashlimit_opts,
-};
-
-static struct xtables_match hashlimit_match6 = {
-	.family		= NFPROTO_IPV6,
-	.name		= "hashlimit",
-	.version	= XTABLES_VERSION,
-	.revision	= 0,
-	.size		= XT_ALIGN(sizeof(struct xt_hashlimit_info)),
-	.userspacesize	= offsetof(struct xt_hashlimit_info, hinfo),
-	.help		= hashlimit_help,
-	.init		= hashlimit_init,
-	.parse		= hashlimit_parse,
-	.final_check	= hashlimit_check,
-	.print		= hashlimit_print,
-	.save		= hashlimit_save,
-	.extra_opts	= hashlimit_opts,
-};
-
-static struct xtables_match hashlimit_mt_reg = {
-	.version        = XTABLES_VERSION,
-	.name           = "hashlimit",
-	.revision       = 1,
-	.family         = NFPROTO_IPV4,
-	.size           = XT_ALIGN(sizeof(struct xt_hashlimit_mtinfo1)),
-	.userspacesize  = offsetof(struct xt_hashlimit_mtinfo1, hinfo),
-	.help           = hashlimit_mt_help,
-	.init           = hashlimit_mt4_init,
-	.parse          = hashlimit_mt4_parse,
-	.final_check	= hashlimit_mt_check,
-	.print          = hashlimit_mt4_print,
-	.save           = hashlimit_mt4_save,
-	.extra_opts     = hashlimit_mt_opts,
-};
-
-static struct xtables_match hashlimit_mt6_reg = {
-	.version        = XTABLES_VERSION,
-	.name           = "hashlimit",
-	.revision       = 1,
-	.family         = NFPROTO_IPV6,
-	.size           = XT_ALIGN(sizeof(struct xt_hashlimit_mtinfo1)),
-	.userspacesize  = offsetof(struct xt_hashlimit_mtinfo1, hinfo),
-	.help           = hashlimit_mt_help,
-	.init           = hashlimit_mt6_init,
-	.parse          = hashlimit_mt6_parse,
-	.final_check	= hashlimit_mt_check,
-	.print          = hashlimit_mt6_print,
-	.save           = hashlimit_mt6_save,
-	.extra_opts     = hashlimit_mt_opts,
+static struct xtables_match hashlimit_mt_reg[] = {
+	{
+		.family        = NFPROTO_UNSPEC,
+		.name          = "hashlimit",
+		.version       = XTABLES_VERSION,
+		.revision      = 0,
+		.size          = XT_ALIGN(sizeof(struct xt_hashlimit_info)),
+		.userspacesize = offsetof(struct xt_hashlimit_info, hinfo),
+		.help          = hashlimit_help,
+		.init          = hashlimit_init,
+		.parse         = hashlimit_parse,
+		.final_check   = hashlimit_check,
+		.print         = hashlimit_print,
+		.save          = hashlimit_save,
+		.extra_opts    = hashlimit_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "hashlimit",
+		.revision      = 1,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct xt_hashlimit_mtinfo1)),
+		.userspacesize = offsetof(struct xt_hashlimit_mtinfo1, hinfo),
+		.help          = hashlimit_mt_help,
+		.init          = hashlimit_mt4_init,
+		.parse         = hashlimit_mt4_parse,
+		.final_check   = hashlimit_mt_check,
+		.print         = hashlimit_mt4_print,
+		.save          = hashlimit_mt4_save,
+		.extra_opts    = hashlimit_mt_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "hashlimit",
+		.revision      = 1,
+		.family        = NFPROTO_IPV6,
+		.size          = XT_ALIGN(sizeof(struct xt_hashlimit_mtinfo1)),
+		.userspacesize = offsetof(struct xt_hashlimit_mtinfo1, hinfo),
+		.help          = hashlimit_mt_help,
+		.init          = hashlimit_mt6_init,
+		.parse         = hashlimit_mt6_parse,
+		.final_check   = hashlimit_mt_check,
+		.print         = hashlimit_mt6_print,
+		.save          = hashlimit_mt6_save,
+		.extra_opts    = hashlimit_mt_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&hashlimit_match);
-	xtables_register_match(&hashlimit_match6);
-	xtables_register_match(&hashlimit_mt_reg);
-	xtables_register_match(&hashlimit_mt6_reg);
+	xtables_register_matches(hashlimit_mt_reg, ARRAY_SIZE(hashlimit_mt_reg));
 }

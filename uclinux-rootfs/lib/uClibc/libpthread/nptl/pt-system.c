@@ -22,6 +22,9 @@
 #include <sysdep.h>
 #include "pthreadP.h"
 
+extern __typeof(system) __libc_system;
+#include <system.c>
+
 
 int
 system (const char *line)

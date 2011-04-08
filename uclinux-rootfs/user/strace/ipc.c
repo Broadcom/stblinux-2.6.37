@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: ipc.c,v 1.17 2007/01/11 23:19:55 ldv Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -152,6 +152,12 @@ static const struct xlat msg_flags[] = {
 	{ 0,		NULL		},
 };
 
+static const struct xlat semop_flags[] = {
+	{ SEM_UNDO,	"SEM_UNDO"	},
+	{ IPC_NOWAIT,	"IPC_NOWAIT"	},
+	{ 0,		NULL		},
+};
+
 int sys_msgget(tcp)
 struct tcb *tcp;
 {
@@ -205,100 +211,148 @@ struct tcb *tcp;
 	return 0;
 }
 
-int sys_msgsnd(tcp)
-struct tcb *tcp;
+static void
+tprint_msgsnd(struct tcb *tcp, long addr, unsigned long count,
+	      unsigned long flags)
 {
 	long mtype;
 
+	if (umove(tcp, addr, &mtype) < 0) {
+		tprintf("%#lx", addr);
+	} else {
+		tprintf("{%lu, ", mtype);
+		printstr(tcp, addr + sizeof(mtype), count);
+		tprintf("}");
+	}
+	tprintf(", %lu, ", count);
+	printflags(msg_flags, flags, "MSG_???");
+}
+
+int sys_msgsnd(struct tcb *tcp)
+{
 	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
+		tprintf("%d, ", (int) tcp->u_arg[0]);
 		if (indirect_ipccall(tcp)) {
-			umove(tcp, tcp->u_arg[3], &mtype);
-			tprintf(", {%lu, ", mtype);
-			printstr(tcp, tcp->u_arg[3] + sizeof(long),
-				 tcp->u_arg[1]);
-			tprintf("}, %lu", tcp->u_arg[1]);
-			tprintf(", ");
-			printflags(msg_flags, tcp->u_arg[2], "MSG_???");
+			tprint_msgsnd(tcp, tcp->u_arg[3], tcp->u_arg[1],
+				      tcp->u_arg[2]);
 		} else {
-			umove(tcp, tcp->u_arg[1], &mtype);
-			tprintf(", {%lu, ", mtype);
-			printstr(tcp, tcp->u_arg[1] + sizeof(long),
-				 tcp->u_arg[2]);
-			tprintf("}, %lu", tcp->u_arg[2]);
-			tprintf(", ");
-			printflags(msg_flags, tcp->u_arg[3], "MSG_???");
+			tprint_msgsnd(tcp, tcp->u_arg[1], tcp->u_arg[2],
+				      tcp->u_arg[3]);
 		}
 	}
 	return 0;
 }
 
-int sys_msgrcv(tcp)
-struct tcb *tcp;
+static void
+tprint_msgrcv(struct tcb *tcp, long addr, unsigned long count, long msgtyp)
 {
 	long mtype;
 
-	if (entering(tcp)) {
-		tprintf("%lu, ", tcp->u_arg[0]);
+	if (syserror(tcp) || umove(tcp, addr, &mtype) < 0) {
+		tprintf("%#lx", addr);
 	} else {
-		tprintf("%lu", tcp->u_arg[0]);
+		tprintf("{%lu, ", mtype);
+		printstr(tcp, addr + sizeof(mtype), count);
+		tprintf("}");
+	}
+	tprintf(", %lu, %ld, ", count, msgtyp);
+}
+
+int sys_msgrcv(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		tprintf("%d, ", (int) tcp->u_arg[0]);
+	} else {
 		if (indirect_ipccall(tcp)) {
 			struct ipc_wrapper {
 				struct msgbuf *msgp;
 				long msgtyp;
 			} tmp;
-			umove(tcp, tcp->u_arg[3], &tmp);
-			umove(tcp, (long) tmp.msgp, &mtype);
-			tprintf(", {%lu, ", mtype);
-			printstr(tcp, (long) (tmp.msgp) + sizeof(long),
-				 tcp->u_arg[1]);
-			tprintf("}, %lu", tcp->u_arg[1]);
-			tprintf(", %ld", tmp.msgtyp);
-			tprintf(", ");
+
+			if (umove(tcp, tcp->u_arg[3], &tmp) < 0) {
+				tprintf("%#lx, %lu, ",
+					tcp->u_arg[3], tcp->u_arg[1]);
+			} else {
+				tprint_msgrcv(tcp, (long) tmp.msgp,
+					tcp->u_arg[1], tmp.msgtyp);
+			}
 			printflags(msg_flags, tcp->u_arg[2], "MSG_???");
 		} else {
-			umove(tcp, tcp->u_arg[1], &mtype);
-			tprintf("{%lu, ", mtype);
-			printstr(tcp, tcp->u_arg[1] + sizeof(long),
-				 tcp->u_arg[2]);
-			tprintf("}, %lu", tcp->u_arg[2]);
-			tprintf(", %ld", tcp->u_arg[3]);
-			tprintf(", ");
+			tprint_msgrcv(tcp, tcp->u_arg[1],
+				tcp->u_arg[2], tcp->u_arg[3]);
 			printflags(msg_flags, tcp->u_arg[4], "MSG_???");
 		}
 	}
 	return 0;
 }
 
-int sys_semop(tcp)
-struct tcb *tcp;
+static void
+tprint_sembuf(struct tcb *tcp, long addr, unsigned long count)
+{
+	unsigned long i, max_count;
+
+	if (abbrev(tcp))
+		max_count = (max_strlen < count) ? max_strlen : count;
+	else
+		max_count = count;
+
+	if (!max_count) {
+		tprintf("%#lx, %lu", addr, count);
+		return;
+	}
+
+	for(i = 0; i < max_count; ++i) {
+		struct sembuf sb;
+		if (i)
+			tprintf(", ");
+		if (umove(tcp, addr + i * sizeof(struct sembuf), &sb) < 0) {
+			if (i) {
+				tprintf("{???}");
+				break;
+			} else {
+				tprintf("%#lx, %lu", addr, count);
+				return;
+			}
+		} else {
+			if (!i)
+				tprintf("{");
+			tprintf("{%u, %d, ", sb.sem_num, sb.sem_op);
+			printflags(semop_flags, sb.sem_flg, "SEM_???");
+			tprintf("}");
+		}
+	}
+
+	if (i < max_count || max_count < count)
+		tprintf(", ...");
+
+	tprintf("}, %lu", count);
+}
+
+int sys_semop(struct tcb *tcp)
 {
 	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
+		tprintf("%lu, ", tcp->u_arg[0]);
 		if (indirect_ipccall(tcp)) {
-			tprintf(", %#lx", tcp->u_arg[3]);
-			tprintf(", %lu", tcp->u_arg[1]);
+			tprint_sembuf(tcp, tcp->u_arg[3], tcp->u_arg[1]);
 		} else {
-			tprintf(", %#lx", tcp->u_arg[1]);
-			tprintf(", %lu", tcp->u_arg[2]);
+			tprint_sembuf(tcp, tcp->u_arg[1], tcp->u_arg[2]);
 		}
 	}
 	return 0;
 }
 
 #ifdef LINUX
-int sys_semtimedop(tcp)
-struct tcb *tcp;
+int sys_semtimedop(struct tcb *tcp)
 {
 	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
+		tprintf("%lu, ", tcp->u_arg[0]);
 		if (indirect_ipccall(tcp)) {
-			tprintf(", %#lx", tcp->u_arg[3]);
-			tprintf(", %lu, ", tcp->u_arg[1]);
+			tprint_sembuf(tcp, tcp->u_arg[3], tcp->u_arg[1]);
+			tprintf(", ");
 			printtv(tcp, tcp->u_arg[5]);
 		} else {
-			tprintf(", %#lx", tcp->u_arg[1]);
-			tprintf(", %lu, ", tcp->u_arg[2]);
+			tprint_sembuf(tcp, tcp->u_arg[1], tcp->u_arg[2]);
+			tprintf(", ");
 			printtv(tcp, tcp->u_arg[3]);
 		}
 	}
@@ -387,7 +441,8 @@ struct tcb *tcp;
 		}
 		if (syserror(tcp))
 			return 0;
-#ifdef LINUX
+/* HPPA does not use an IPC multiplexer on Linux.  */
+#if defined(LINUX) && !defined(HPPA)
 		if (umove(tcp, tcp->u_arg[2], &raddr) < 0)
 			return RVAL_NONE;
 		tcp->u_rval = raddr;
@@ -420,7 +475,7 @@ sys_mq_open(struct tcb *tcp)
 		printpath(tcp, tcp->u_arg[0]);
 		tprintf(", ");
 		/* flags */
-		tprint_open_modes(tcp, tcp->u_arg[1]);
+		tprint_open_modes(tcp->u_arg[1]);
 		if (tcp->u_arg[1] & O_CREAT) {
 # ifndef HAVE_MQUEUE_H
 			tprintf(", %lx", tcp->u_arg[2]);
@@ -489,7 +544,7 @@ printmqattr(struct tcb *tcp, long addr)
 			return;
 		}
 		tprintf("{mq_flags=");
-		tprint_open_modes(tcp, attr.mq_flags);
+		tprint_open_modes(attr.mq_flags);
 		tprintf(", mq_maxmsg=%ld, mq_msgsize=%ld, mq_curmsg=%ld}",
 			attr.mq_maxmsg, attr.mq_msgsize, attr.mq_curmsgs);
 # endif

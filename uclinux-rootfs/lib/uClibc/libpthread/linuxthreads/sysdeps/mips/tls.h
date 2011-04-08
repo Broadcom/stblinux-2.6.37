@@ -37,37 +37,21 @@ typedef union dtv
   } pointer;
 } dtv_t;
 
-#ifdef _brcm_rdhwr
-# define READ_THREAD_POINTER() \
-    ({ void *__result;							      \
-       __asm__ __volatile__ (".set\tpush\n\t.set\tmips32r2\n\t"			      \
-		     "brdhwr\t%0, $29\n\t.set\tpop" : "=v" (__result));	      \
-       __result; })
-#else
 # define READ_THREAD_POINTER() \
     ({ void *__result;							      \
        __asm__ __volatile__ (".set\tpush\n\t.set\tmips32r2\n\t"			      \
 		     "rdhwr\t%0, $29\n\t.set\tpop" : "=v" (__result));	      \
        __result; })
-#endif
 
 #else /* __ASSEMBLER__ */
 # include <tcb-offsets.h>
 
 /* Note: rd must be $v1 to be ABI-conformant.  */
-#ifdef _brcm_rdhwr
-# define READ_THREAD_POINTER(rd) \
-	.set	push;							      \
-	.set	mips32r2;						      \
-	brdhwr	rd, $29;						      \
-	.set	pop
-#else
 # define READ_THREAD_POINTER(rd) \
 	.set	push;							      \
 	.set	mips32r2;						      \
 	rdhwr	rd, $29;						      \
 	.set	pop
-#endif
 #endif /* __ASSEMBLER__ */
 
 /* LinuxThreads can only use TLS if both floating stacks (in the MIPS case,

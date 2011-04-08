@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add Dst header support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -22,10 +23,10 @@ IP6T_OPTS_OPTSNR);
 }
 
 static const struct option dst_opts[] = {
-	{ .name = "dst-len",        .has_arg = 1, .val = '1' },
-	{ .name = "dst-opts",       .has_arg = 1, .val = '2' },
-	{ .name = "dst-not-strict", .has_arg = 1, .val = '3' },
-	{ .name = NULL }
+	{.name = "dst-len",        .has_arg = true, .val = '1'},
+	{.name = "dst-opts",       .has_arg = true, .val = '2'},
+	{.name = "dst-not-strict", .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -125,8 +126,8 @@ static int dst_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_OPTS_LEN)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--dst-len' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		optinfo->hdrlen = parse_opts_num(argv[optind-1], "length");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		optinfo->hdrlen = parse_opts_num(optarg, "length");
 		if (invert)
 			optinfo->invflags |= IP6T_OPTS_INV_LEN;
 		optinfo->flags |= IP6T_OPTS_LEN;
@@ -136,11 +137,11 @@ static int dst_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_OPTS_OPTS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--dst-opts' allowed");
-                xtables_check_inverse(optarg, &invert, &optind, 0);
+                xtables_check_inverse(optarg, &invert, &optind, 0, argv);
                 if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				" '!' not allowed with `--dst-opts'");
-		optinfo->optsnr = parse_options(argv[optind-1], optinfo->opts);
+		optinfo->optsnr = parse_options(optarg, optinfo->opts);
 		optinfo->flags |= IP6T_OPTS_OPTS;
 		*flags |= IP6T_OPTS_OPTS;
 		break;

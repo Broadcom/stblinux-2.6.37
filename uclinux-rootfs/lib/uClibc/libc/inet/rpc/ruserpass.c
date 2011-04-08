@@ -40,30 +40,8 @@
 #include <stdio_ext.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 
-libc_hidden_proto(strcat)
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strcasecmp)
-libc_hidden_proto(strncasecmp)
-libc_hidden_proto(getenv)
-libc_hidden_proto(printf)
-libc_hidden_proto(fstat)
-libc_hidden_proto(__fsetlocking)
-libc_hidden_proto(getgid)
-libc_hidden_proto(getuid)
-libc_hidden_proto(getegid)
-libc_hidden_proto(geteuid)
-libc_hidden_proto(gethostname)
-libc_hidden_proto(fileno)
-libc_hidden_proto(fopen)
-libc_hidden_proto(fclose)
-libc_hidden_proto(getc_unlocked)
-libc_hidden_proto(__fgetc_unlocked)
 
 #define _(X)  (X)
 /* #include "ftp_var.h" */
@@ -113,9 +91,8 @@ static const struct toktab {
 };
 
 
-
-extern int ruserpass(const char *host, const char **aname, const char **apass);
-libc_hidden_proto(ruserpass)
+/* ruserpass - remote password check.
+   This function also exists in glibc but is undocumented */
 int ruserpass(const char *host, const char **aname, const char **apass)
 {
 	char *hdir, *buf, *tmp;
@@ -309,7 +286,7 @@ bad:
 libc_hidden_def(ruserpass)
 
 static int
-token()
+token(void)
 {
 	char *cp;
 	int c;

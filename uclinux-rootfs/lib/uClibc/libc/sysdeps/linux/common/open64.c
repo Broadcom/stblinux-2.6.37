@@ -18,22 +18,18 @@
 # define O_LARGEFILE	0100000
 #endif
 
-extern __typeof(open64) __libc_open64;
-extern __typeof(open) __libc_open;
-libc_hidden_proto(__libc_open)
-
 /* Open FILE with access OFLAG.  If OFLAG includes O_CREAT,
    a third argument is the file protection.  */
-int __libc_open64 (const char *file, int oflag, ...)
+int open64 (const char *file, int oflag, ...)
 {
-  int mode = 0;
+    mode_t mode = 0;
 
-  if (oflag & O_CREAT)
+    if (oflag & O_CREAT)
     {
-      va_list arg;
-      va_start (arg, oflag);
-      mode = va_arg (arg, int);
-      va_end (arg);
+	va_list arg;
+	va_start (arg, oflag);
+	mode = va_arg (arg, mode_t);
+	va_end (arg);
     }
 
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
@@ -48,10 +44,14 @@ int __libc_open64 (const char *file, int oflag, ...)
 
   return result;
 #else
-  return __libc_open(file, oflag | O_LARGEFILE, mode);
+  return open(file, oflag | O_LARGEFILE, mode);
 #endif
 }
-libc_hidden_proto(open64)
-weak_alias(__libc_open64,open64)
+#ifndef __LINUXTHREADS_OLD__
+libc_hidden_def(open64)
+#else
 libc_hidden_weak(open64)
+strong_alias(open64,__libc_open64)
+#endif
+
 #endif /* __UCLIBC_HAS_LFS__ */

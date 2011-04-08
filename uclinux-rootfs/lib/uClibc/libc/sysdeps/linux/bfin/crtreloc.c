@@ -41,38 +41,41 @@ union word {
 
 /* Compute the runtime address of pointer in the range [p,e), and then
    map the pointer pointed by it.  */
-inline static void ***
+static __always_inline void ***
 reloc_range_indirect (void ***p, void ***e,
 		      const struct elf32_fdpic_loadmap *map)
 {
   while (p < e)
     {
-      void *ptr = __reloc_pointer (*p, map);
-      if (ptr)
+      if (*p != (void **)-1)
 	{
-	  void *pt;
-	  if ((long)ptr & 3)
+	  void *ptr = __reloc_pointer (*p, map);
+	  if (ptr != (void *)-1)
 	    {
-	      unsigned char *c = ptr;
-	      int i;
-	      unsigned long v = 0;
-	      for (i = 0; i < 4; i++)
-		v |= c[i] << 8 * i;
-	      pt = (void *)v;
+	      void *pt;
+	      if ((long)ptr & 3)
+		{
+		  unsigned char *c = ptr;
+		  int i;
+		  unsigned long v = 0;
+		  for (i = 0; i < 4; i++)
+		    v |= c[i] << 8 * i;
+		  pt = (void *)v;
+		}
+	      else
+		pt = *(void**)ptr;
+	      pt = __reloc_pointer (pt, map);
+	      if ((long)ptr & 3)
+		{
+		  unsigned char *c = ptr;
+		  int i;
+		  unsigned long v = (unsigned long)pt;
+		  for (i = 0; i < 4; i++, v >>= 8)
+		    c[i] = v;
+		}
+	      else
+		*(void**)ptr = pt;
 	    }
-	  else
-	    pt = *(void**)ptr;
-	  pt = __reloc_pointer (pt, map);
-	  if ((long)ptr & 3)
-	    {
-	      unsigned char *c = ptr;
-	      int i;
-	      unsigned long v = (unsigned long)pt;
-	      for (i = 0; i < 4; i++, v >>= 8)
-		c[i] = v;
-	    }
-	  else
-	    *(void**)ptr = pt;
 	}
       p++;
     }
@@ -82,7 +85,7 @@ reloc_range_indirect (void ***p, void ***e,
 /* Call __reloc_range_indirect for the given range except for the last
    entry, whose contents are only relocated.  It's expected to hold
    the GOT value.  */
-void* attribute_hidden
+attribute_hidden void*
 __self_reloc (const struct elf32_fdpic_loadmap *map,
 	      void ***p, void ***e)
 {
@@ -90,7 +93,7 @@ __self_reloc (const struct elf32_fdpic_loadmap *map,
 
   if (p >= e)
     return (void*)-1;
-  
+
   return __reloc_pointer (*p, map);
 }
 
@@ -99,7 +102,7 @@ __self_reloc (const struct elf32_fdpic_loadmap *map,
    need.  */
 
 /* Remap pointers in [p,e).  */
-inline static void**
+static __always_inline void**
 reloc_range (void **p, void **e,
 	     const struct elf32_fdpic_loadmap *map)
 {

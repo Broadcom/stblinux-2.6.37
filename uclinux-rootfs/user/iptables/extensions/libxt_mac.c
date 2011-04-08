@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add MAC address support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -21,8 +22,8 @@ static void mac_help(void)
 }
 
 static const struct option mac_opts[] = {
-	{ "mac-source", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "mac-source", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -57,8 +58,8 @@ mac_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_mac(argv[optind-1], macinfo);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_mac(optarg, macinfo);
 		if (invert)
 			macinfo->invert = 1;
 		*flags = 1;
@@ -112,21 +113,7 @@ static void mac_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match mac_match = {
-	.family		= NFPROTO_IPV4,
- 	.name		= "mac",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_mac_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_mac_info)),
-	.help		= mac_help,
-	.parse		= mac_parse,
-	.final_check	= mac_check,
-	.print		= mac_print,
-	.save		= mac_save,
-	.extra_opts	= mac_opts,
-};
-
-static struct xtables_match mac_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
  	.name		= "mac",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_mac_info)),
@@ -142,5 +129,4 @@ static struct xtables_match mac_match6 = {
 void _init(void)
 {
 	xtables_register_match(&mac_match);
-	xtables_register_match(&mac_match6);
 }

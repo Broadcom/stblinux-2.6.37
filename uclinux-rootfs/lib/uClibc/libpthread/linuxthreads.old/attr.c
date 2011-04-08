@@ -25,11 +25,24 @@
 #include "pthread.h"
 #include "internals.h"
 
+libpthread_hidden_proto(pthread_attr_destroy)
+libpthread_hidden_proto(pthread_attr_init)
+libpthread_hidden_proto(pthread_attr_getdetachstate)
+libpthread_hidden_proto(pthread_attr_setdetachstate)
+libpthread_hidden_proto(pthread_attr_getinheritsched)
+libpthread_hidden_proto(pthread_attr_setinheritsched)
+libpthread_hidden_proto(pthread_attr_setschedparam)
+libpthread_hidden_proto(pthread_attr_getschedparam)
+libpthread_hidden_proto(pthread_attr_getschedpolicy)
+libpthread_hidden_proto(pthread_attr_setschedpolicy)
+libpthread_hidden_proto(pthread_attr_getscope)
+libpthread_hidden_proto(pthread_attr_setscope)
+
 /* NOTE: With uClibc I don't think we need this versioning stuff.
  * Therefore, define the function pthread_attr_init() here using
  * a strong symbol. */
 
-//int __pthread_attr_init_2_1(pthread_attr_t *attr)
+/*int __pthread_attr_init_2_1(pthread_attr_t *attr)*/
 int pthread_attr_init(pthread_attr_t *attr)
 {
   size_t ps = getpagesize ();
@@ -45,9 +58,10 @@ int pthread_attr_init(pthread_attr_t *attr)
   attr->__stacksize = STACK_SIZE - ps;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_init)
 
 /* uClibc: leave out this for now. */
-#if DO_PTHREAD_VERSIONING_WITH_UCLIBC
+#if defined DO_PTHREAD_VERSIONING_WITH_UCLIBC
 #if defined __PIC__ && defined DO_VERSIONING
 default_symbol_version (__pthread_attr_init_2_1, pthread_attr_init, GLIBC_2.1);
 
@@ -70,6 +84,8 @@ int pthread_attr_destroy(pthread_attr_t *attr attribute_unused)
 {
   return 0;
 }
+libpthread_hidden_def(pthread_attr_destroy)
+
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
@@ -79,12 +95,14 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
   attr->__detachstate = detachstate;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_setdetachstate)
 
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
   *detachstate = attr->__detachstate;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_getdetachstate)
 
 int pthread_attr_setschedparam(pthread_attr_t *attr,
                                const struct sched_param *param)
@@ -97,6 +115,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
   memcpy (&attr->__schedparam, param, sizeof (struct sched_param));
   return 0;
 }
+libpthread_hidden_def(pthread_attr_setschedparam)
 
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
                                struct sched_param *param)
@@ -104,6 +123,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
   memcpy (param, &attr->__schedparam, sizeof (struct sched_param));
   return 0;
 }
+libpthread_hidden_def(pthread_attr_getschedparam)
 
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
 {
@@ -112,12 +132,14 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
   attr->__schedpolicy = policy;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_setschedpolicy)
 
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 {
   *policy = attr->__schedpolicy;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_getschedpolicy)
 
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 {
@@ -126,12 +148,14 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
   attr->__inheritsched = inherit;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_setinheritsched)
 
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inherit)
 {
   *inherit = attr->__inheritsched;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_getinheritsched)
 
 int pthread_attr_setscope(pthread_attr_t *attr, int scope)
 {
@@ -145,12 +169,14 @@ int pthread_attr_setscope(pthread_attr_t *attr, int scope)
     return EINVAL;
   }
 }
+libpthread_hidden_def(pthread_attr_setscope)
 
 int pthread_attr_getscope(const pthread_attr_t *attr, int *scope)
 {
   *scope = attr->__scope;
   return 0;
 }
+libpthread_hidden_def(pthread_attr_getscope)
 
 int __pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
 {
@@ -175,6 +201,7 @@ int __pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
 }
 weak_alias (__pthread_attr_getguardsize, pthread_attr_getguardsize)
 
+#if 0 /* uClibc: deprecated stuff disabled */
 int __pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr)
 {
   attr->__stackaddr = stackaddr;
@@ -192,6 +219,7 @@ int __pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stackaddr)
   return 0;
 }
 weak_alias (__pthread_attr_getstackaddr, pthread_attr_getstackaddr)
+#endif
 
 int __pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
 {

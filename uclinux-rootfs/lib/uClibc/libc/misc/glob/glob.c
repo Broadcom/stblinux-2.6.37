@@ -31,24 +31,10 @@
 #include <fnmatch.h>
 #include <glob.h>
 
-libc_hidden_proto(closedir)
-libc_hidden_proto(fnmatch)
-libc_hidden_proto(memcpy)
-libc_hidden_proto(mempcpy)
-libc_hidden_proto(opendir)
-libc_hidden_proto(qsort)
-libc_hidden_proto(readdir)
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcoll)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strdup)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strrchr)
 
 
 #ifdef ENABLE_GLOB_TILDE_EXPANSION
 #include <pwd.h>
-libc_hidden_proto(getpwnam_r)
 #endif
 
 #ifdef COMPILE_GLOB64
@@ -62,19 +48,15 @@ libc_hidden_proto(getpwnam_r)
 #define glob_t glob64_t
 #define glob(pattern, flags, errfunc, pglob) glob64 (pattern, flags, errfunc, pglob)
 #define globfree(pglob) globfree64 (pglob)
-libc_hidden_proto(stat64)
-libc_hidden_proto(readdir64)
 #else
 #define __readdir readdir
 #ifdef __UCLIBC_HAS_LFS__
 #define __readdir64 readdir64
-libc_hidden_proto(readdir64)
 #else
 #define __readdir64 readdir
 #endif
 #define struct_stat64          struct stat
 #define __stat64(fname, buf)   stat (fname, buf)
-libc_hidden_proto(stat)
 #endif
 
 
@@ -132,7 +114,6 @@ extern int __prefix_array (const char *dirname, char **array, size_t n) attribut
 extern const char *__next_brace_sub (const char *cp, int flags) attribute_hidden;
 #endif
 
-libc_hidden_proto(glob_pattern_p)
 #ifndef COMPILE_GLOB64
 /* Return nonzero if PATTERN contains any metacharacters.
    Metacharacters can be quoted with backslashes if QUOTE is nonzero.  */
@@ -361,7 +342,7 @@ static int glob_in_dir (const char *pattern, const char *directory, int flags,
 		{
 		  const char *name;
 		  size_t len;
-#if !defined COMPILE_GLOB64
+#if defined __UCLIBC_HAS_LFS__ && !defined COMPILE_GLOB64
 		  struct dirent64 *d;
 		  union
 		    {
@@ -482,20 +463,12 @@ static int glob_in_dir (const char *pattern, const char *directory, int flags,
   }
   while (names != NULL)
     {
-      if (names->name != NULL)
-	free (names->name);
+      free (names->name);
       names = names->next;
     }
   return GLOB_NOSPACE;
 }
 
-#ifdef COMPILE_GLOB64
-libc_hidden_proto(glob64)
-libc_hidden_proto(globfree64)
-#else
-libc_hidden_proto(glob)
-libc_hidden_proto(globfree)
-#endif
 /* Do glob searching for PATTERN, placing results in PGLOB.
    The bits defined above may be set in FLAGS.
    If a directory cannot be opened or read and ERRFUNC is not nil,
@@ -505,11 +478,11 @@ libc_hidden_proto(globfree)
    If memory cannot be allocated for PGLOB, GLOB_NOSPACE is returned.
    Otherwise, `glob' returns zero.  */
 int
-glob (pattern, flags, errfunc, pglob)
-     const char *pattern;
-     int flags;
-     int (*errfunc) (const char *, int);
-     glob_t *pglob;
+glob (
+     const char *pattern,
+     int flags,
+     int (*errfunc) (const char *, int),
+     glob_t *pglob)
 {
   const char *filename;
   const char *dirname;
@@ -1075,8 +1048,7 @@ libc_hidden_def(glob)
 
 /* Free storage allocated in PGLOB by a previous `glob' call.  */
 void
-globfree (pglob)
-     register glob_t *pglob;
+globfree (register glob_t *pglob)
 {
   if (pglob->gl_pathv != NULL)
     {

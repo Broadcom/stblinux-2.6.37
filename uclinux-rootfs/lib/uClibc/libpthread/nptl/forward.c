@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2004, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -21,22 +21,25 @@
 #include <pthreadP.h>
 #include <signal.h>
 #include <stdlib.h>
+
 #include <atomic.h>
 #include <sysdep.h>
 
 
 /* Pointers to the libc functions.  */
 struct pthread_functions __libc_pthread_functions attribute_hidden;
+int __libc_pthread_functions_init attribute_hidden;
 
 
 #define FORWARD2(name, rettype, decl, params, defaction) \
 rettype									      \
 name decl								      \
 {									      \
-  if (__libc_pthread_functions.ptr_##name == NULL)			      \
+  if (!__libc_pthread_functions_init) {					      \
     defaction;								      \
-									      \
-  return __libc_pthread_functions.ptr_##name params;			      \
+  } else {								      \
+    return PTHFCT_CALL (ptr_##name, params);				      \
+  }									      \
 }
 
 #define FORWARD(name, decl, params, defretval) \
@@ -110,6 +113,7 @@ FORWARD (pthread_equal, (pthread_t thread1, pthread_t thread2),
 
 /* Use an alias to avoid warning, as pthread_exit is declared noreturn.  */
 FORWARD2 (__pthread_exit, void, (void *retval), (retval), exit (EXIT_SUCCESS))
+strong_alias (__pthread_exit, pthread_exit);
 
 
 FORWARD (pthread_getschedparam,
@@ -125,28 +129,12 @@ FORWARD (pthread_mutex_destroy, (pthread_mutex_t *mutex), (mutex), 0)
 FORWARD (pthread_mutex_init,
 	 (pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr),
 	 (mutex, mutexattr), 0)
-libc_hidden_proto(pthread_mutex_init)
-libc_hidden_def(pthread_mutex_init)
-
-FORWARD (pthread_mutex_trylock, (pthread_mutex_t *mutex), (mutex), 0)
-libc_hidden_proto(pthread_mutex_trylock)
-libc_hidden_def(pthread_mutex_trylock)
 
 FORWARD (pthread_mutex_lock, (pthread_mutex_t *mutex), (mutex), 0)
-libc_hidden_proto(pthread_mutex_lock)
-libc_hidden_def(pthread_mutex_lock)
+weak_alias (pthread_mutex_lock, __pthread_mutex_lock)
 
 FORWARD (pthread_mutex_unlock, (pthread_mutex_t *mutex), (mutex), 0)
-libc_hidden_proto(pthread_mutex_unlock)
-libc_hidden_def(pthread_mutex_unlock)
-
-FORWARD (pthread_mutexattr_init, (pthread_mutexattr_t *attr), (attr), 0)
-
-FORWARD (pthread_mutexattr_destroy, (pthread_mutexattr_t *attr), (attr), 0)
-
-FORWARD (pthread_mutexattr_settype, (pthread_mutexattr_t *attr, int kind),
-				    (attr, kind), 0)
-
+weak_alias (pthread_mutex_unlock, __pthread_mutex_unlock)
 
 FORWARD2 (pthread_self, pthread_t, (void), (), return 0)
 
@@ -157,6 +145,16 @@ FORWARD (pthread_setcancelstate, (int state, int *oldstate), (state, oldstate),
 FORWARD (pthread_setcanceltype, (int type, int *oldtype), (type, oldtype), 0)
 
 #define return /* value is void */
+FORWARD2(_pthread_cleanup_push_defer,
+	 void, (struct _pthread_cleanup_buffer *buffer, void (*routine)(void *), void *arg),
+	 (buffer, routine, arg),
+	 { buffer->__routine = routine; buffer->__arg = arg; });
+
+FORWARD2(_pthread_cleanup_pop_restore,
+	 void, (struct _pthread_cleanup_buffer *buffer, int execute),
+	 (buffer, execute),
+	 if (execute) { buffer->__routine(buffer->__arg); });
+
 FORWARD2(__pthread_unwind,
 	 void attribute_hidden __attribute ((noreturn)) __cleanup_fct_attribute,
 	 (__pthread_unwind_buf_t *buf), (buf), {

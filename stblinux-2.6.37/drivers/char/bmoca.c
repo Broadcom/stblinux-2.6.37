@@ -62,11 +62,8 @@
 /* offsets from the start of the MoCA core */
 #define OFF_DATA_MEM		0x00000000
 
-#if defined(CONFIG_BRCM_HAS_MOCA_11_PLUS)
-#define OFF_CNTL_MEM		0x00040000
-#else
-#define OFF_CNTL_MEM		0x0004c000
-#endif
+#define OFF_CNTL_MEM_11_PLUS	0x00040000
+#define OFF_CNTL_MEM_11		0x0004c000
 
 #define OFF_PKT_REINIT_MEM	0x00a08000
 #define OFF_M2M_SRC		0x000a2000
@@ -87,23 +84,13 @@
 #define OFF_L2_MASK_CLEAR	0x000a2094
 
 /* region size */
-#if defined(CONFIG_BRCM_HAS_MOCA_11_LITE)
-#define DATA_MEM_SIZE		(96 * 1024)
-#else
-#define DATA_MEM_SIZE		(256 * 1024)
-#endif
+#define DATA_MEM_SIZE_11_LITE	(96 * 1024)
+#define DATA_MEM_SIZE_11	(256 * 1024)
 
-#if defined(CONFIG_BRCM_HAS_MOCA_11_PLUS)
-#define CNTL_MEM_SIZE		(128 * 1024)
-#else
-#define CNTL_MEM_SIZE		(80 * 1024)
-#endif
+#define CNTL_MEM_SIZE_11_PLUS	(128 * 1024)
+#define CNTL_MEM_SIZE_11	(80 * 1024)
 
 #define PKT_REINIT_MEM_SIZE	(32 * 1024)
-
-#define DATA_MEM_END		(OFF_DATA_MEM + DATA_MEM_SIZE)
-#define CNTL_MEM_END		(OFF_CNTL_MEM + CNTL_MEM_SIZE)
-
 #define PKT_REINIT_MEM_END	(OFF_PKT_REINIT_MEM  + PKT_REINIT_MEM_SIZE)
 
 /* mailbox layout */
@@ -119,7 +106,7 @@
 #define CORE_RESP_OFFSET	(CORE_REQ_OFFSET + CORE_REQ_SIZE)
 
 /* local H2M, M2H buffers */
-#define NUM_CORE_MSG		8
+#define NUM_CORE_MSG		16
 #define NUM_HOST_MSG		8
 
 #define FW_CHUNK_SIZE		4096
@@ -205,6 +192,10 @@ struct moca_priv_data {
 	unsigned long		start_time;
 	int			continuous_power_tx_mode;
 	dma_addr_t		tpcapBufPhys;
+
+	unsigned int		data_mem_size;
+	unsigned int		cntl_mem_size;
+	unsigned int		cntl_mem_offset;
 };
 
 #define MOCA_FW_MAGIC		0x4d6f4341
@@ -267,19 +258,22 @@ static u32 moca_3450_read_i2c(struct moca_priv_data *priv, u8 addr);
 
 #define INRANGE(x, a, b)	(((x) >= (a)) && ((x) < (b)))
 
-static inline int moca_range_ok(unsigned long offset, unsigned long len)
+static inline int moca_range_ok(struct moca_priv_data *priv,
+	unsigned long offset, unsigned long len)
 {
 	unsigned long lastad = offset + len - 1;
 
 	if (lastad < offset)
 		return -EINVAL;
 
-	if (INRANGE(offset, OFF_CNTL_MEM, CNTL_MEM_END) &&
-	    INRANGE(lastad, OFF_CNTL_MEM, CNTL_MEM_END))
+	if (INRANGE(offset, priv->cntl_mem_offset,
+		    priv->cntl_mem_offset + priv->cntl_mem_size) &&
+	    INRANGE(lastad, priv->cntl_mem_offset,
+		    priv->cntl_mem_offset + priv->cntl_mem_size))
 		return 0;
 
-	if (INRANGE(offset, OFF_DATA_MEM, DATA_MEM_END) &&
-	    INRANGE(lastad, OFF_DATA_MEM, DATA_MEM_END))
+	if (INRANGE(offset, OFF_DATA_MEM, OFF_DATA_MEM + priv->data_mem_size) &&
+	    INRANGE(lastad, OFF_DATA_MEM, OFF_DATA_MEM + priv->data_mem_size))
 		return 0;
 
 	if (INRANGE(offset, OFF_PKT_REINIT_MEM, PKT_REINIT_MEM_END) &&
@@ -451,7 +445,7 @@ static void moca_write_mem(struct moca_priv_data *priv,
 {
 	dma_addr_t pa;
 
-	if (moca_range_ok(dst_offset, len) < 0) {
+	if (moca_range_ok(priv, dst_offset, len) < 0) {
 		printk(KERN_WARNING "%s: copy past end of cntl memory: %08x\n",
 			__func__, dst_offset);
 		return;
@@ -468,7 +462,7 @@ static void moca_read_mem(struct moca_priv_data *priv,
 {
 	int i;
 
-	if (moca_range_ok(src_offset, len) < 0) {
+	if (moca_range_ok(priv, src_offset, len) < 0) {
 		printk(KERN_WARNING "%s: copy past end of cntl memory: %08x\n",
 			__func__, src_offset);
 		return;
@@ -932,7 +926,8 @@ static int moca_get_mbx_offset(struct moca_priv_data *priv)
 	if (priv->mbx_offset == -1) {
 		uintptr_t base = MOCA_RD(priv->base + OFF_GP0) & 0x1fffffff;
 
-		if ((base == 0) || (base >= CNTL_MEM_END) || (base & 0x07)) {
+		if ((base == 0) || (base & 0x07) ||
+		    (base >= priv->cntl_mem_size + priv->cntl_mem_offset)) {
 			printk(KERN_WARNING "%s: can't get mailbox base\n",
 				__func__);
 			return -1;
@@ -951,29 +946,32 @@ static void moca_work_handler(struct work_struct *work)
 {
 	struct moca_priv_data *priv =
 		container_of(work, struct moca_priv_data, work);
-	u32 mask = moca_irq_status(priv, FLUSH_IRQ);
+	u32 mask = 0;
 	int ret, stopped = 0;
 
-	if (mask & M2H_DMA) {
-		mask &= ~M2H_DMA;
-		complete(&priv->copy_complete);
-	}
+	if (priv->running) {
+		mask = moca_irq_status(priv, FLUSH_IRQ);
+		if (mask & M2H_DMA) {
+			mask &= ~M2H_DMA;
+			complete(&priv->copy_complete);
+		}
 
-	if (mask & M2H_NEXTCHUNK) {
-		mask &= ~M2H_NEXTCHUNK;
-		complete(&priv->chunk_complete);
-	}
+		if (mask & M2H_NEXTCHUNK) {
+			mask &= ~M2H_NEXTCHUNK;
+			complete(&priv->chunk_complete);
+		}
 
-	if (mask == 0) {
-		moca_enable_irq(priv);
-		return;
-	}
-
-	if (mask & (M2H_REQ | M2H_RESP)) {
-		if (moca_get_mbx_offset(priv)) {
-			/* got mbx interrupt but mbx_offset is bogus?? */
+		if (mask == 0) {
 			moca_enable_irq(priv);
 			return;
+		}
+
+		if (mask & (M2H_REQ | M2H_RESP)) {
+			if (moca_get_mbx_offset(priv)) {
+				/* got mbx interrupt but mbx_offset is bogus? */
+				moca_enable_irq(priv);
+				return;
+			}
 		}
 	}
 
@@ -989,7 +987,6 @@ static void moca_work_handler(struct work_struct *work)
 				CORE_REQ_SIZE, 0);
 			if (ret == -ENOMEM)
 				priv->assert_pending = 1;
-			stopped = 1;
 		}
 		if (mask & M2H_WDT) {
 			ret = moca_wdt(priv);
@@ -1204,7 +1201,7 @@ static int moca_ioctl_readmem(struct moca_priv_data *priv,
 	if (copy_from_user(&x, (void __user *)xfer_uaddr, sizeof(x)))
 		return -EFAULT;
 
-	if (moca_range_ok(x.moca_addr, x.len) < 0)
+	if (moca_range_ok(priv, x.moca_addr, x.len) < 0)
 		return -EINVAL;
 
 	src = (uintptr_t)priv->base + x.moca_addr;
@@ -1227,7 +1224,7 @@ static int moca_ioctl_writemem(struct moca_priv_data *priv,
 	if (copy_from_user(&x, (void __user *)xfer_uaddr, sizeof(x)))
 		return -EFAULT;
 
-	if (moca_range_ok(x.moca_addr, x.len) < 0)
+	if (moca_range_ok(priv, x.moca_addr, x.len) < 0)
 		return -EINVAL;
 
 	dst = (uintptr_t)priv->base + x.moca_addr;
@@ -1245,10 +1242,10 @@ static int moca_ioctl_writemem(struct moca_priv_data *priv,
 }
 
 /* legacy ioctl - DEPRECATED */
-static int moca_ioctl_get_drv_info_v1(struct moca_priv_data *priv,
+static int moca_ioctl_get_drv_info_v2(struct moca_priv_data *priv,
 	unsigned long arg)
 {
-	struct moca_kdrv_info_v1 info;
+	struct moca_kdrv_info_v2 info;
 	struct moca_platform_data *pd = priv->pdev->dev.platform_data;
 
 	memset(&info, 0, sizeof(info));
@@ -1265,7 +1262,7 @@ static int moca_ioctl_get_drv_info_v1(struct moca_priv_data *priv,
 	info.enet_id = pd->enet_id;
 	info.macaddr_hi = pd->macaddr_hi;
 	info.macaddr_lo = pd->macaddr_lo;
-	info.hw_rev = pd->hw_rev;
+	info.hw_rev = pd->chip_id;
 	info.rf_band = pd->rf_band;
 
 	if (copy_to_user((void *)arg, &info, sizeof(info)))
@@ -1294,6 +1291,7 @@ static int moca_ioctl_get_drv_info(struct moca_priv_data *priv,
 	info.enet_id = pd->enet_id;
 	info.macaddr_hi = pd->macaddr_hi;
 	info.macaddr_lo = pd->macaddr_lo;
+	info.chip_id = pd->chip_id;
 	info.hw_rev = pd->hw_rev;
 	info.rf_band = pd->rf_band;
 
@@ -1311,6 +1309,8 @@ static int moca_ioctl_check_for_data(struct moca_priv_data *priv,
 	u32 mask;
 
 	moca_disable_irq(priv);
+
+	moca_get_mbx_offset(priv);
 
 	/* If an IRQ is pending, process it here rather than waiting for it to
 	   ensure the results are ready. Clear the ones we are currently
@@ -1387,14 +1387,17 @@ static long moca_file_ioctl(struct file *file, unsigned int cmd,
 		if (priv->running)
 			ret = moca_ioctl_writemem(priv, arg);
 		break;
-	case MOCA_IOCTL_GET_DRV_INFO_V1:
-		ret = moca_ioctl_get_drv_info_v1(priv, arg);
+	case MOCA_IOCTL_GET_DRV_INFO_V2:
+		ret = moca_ioctl_get_drv_info_v2(priv, arg);
 		break;
 	case MOCA_IOCTL_GET_DRV_INFO:
 		ret = moca_ioctl_get_drv_info(priv, arg);
 		break;
 	case MOCA_IOCTL_CHECK_FOR_DATA:
-		ret = moca_ioctl_check_for_data(priv, arg);
+		if (priv->running)
+			ret = moca_ioctl_check_for_data(priv, arg);
+		else
+			ret = -EIO;
 		break;
 	}
 	mutex_unlock(&priv->dev_mutex);
@@ -1617,6 +1620,19 @@ static int moca_probe(struct platform_device *pdev)
 
 	priv->clk = clk_get(&pdev->dev, "moca");
 
+	if (pd->hw_rev == HWREV_MOCA_11_PLUS) {
+		priv->cntl_mem_offset = OFF_CNTL_MEM_11_PLUS;
+		priv->cntl_mem_size = CNTL_MEM_SIZE_11_PLUS;
+	} else {
+		priv->cntl_mem_offset = OFF_CNTL_MEM_11;
+		priv->cntl_mem_size = CNTL_MEM_SIZE_11;
+	}
+
+	if (pd->hw_rev == HWREV_MOCA_11_LITE)
+		priv->data_mem_size = DATA_MEM_SIZE_11_LITE;
+	else
+		priv->data_mem_size = DATA_MEM_SIZE_11;
+
 	init_waitqueue_head(&priv->host_msg_wq);
 	init_waitqueue_head(&priv->core_msg_wq);
 	init_completion(&priv->copy_complete);
@@ -1772,6 +1788,7 @@ static int moca_init(void)
 		printk(KERN_ERR "bmoca: can't register major %d\n", MOCA_MAJOR);
 		goto bad;
 	}
+
 	moca_class = class_create(THIS_MODULE, MOCA_CLASS);
 	if (IS_ERR(moca_class)) {
 		printk(KERN_ERR "bmoca: can't create device class\n");

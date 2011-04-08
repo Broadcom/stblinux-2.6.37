@@ -7,8 +7,6 @@
 
 #include "_stdio.h"
 
-libc_hidden_proto(read)
-libc_hidden_proto(abort)
 
 /* Given a reading stream without its end-of-file indicator set and
  * with no buffered input or ungots, read at most 'bufsize' bytes
@@ -44,7 +42,7 @@ size_t attribute_hidden __stdio_READ(register FILE *stream,
 #warning EINTR?
 #endif
 /* 	RETRY: */
-		if ((rv = __READ(stream, buf, bufsize)) <= 0) {
+		if ((rv = __READ(stream, (char *) buf, bufsize)) <= 0) {
 			if (rv == 0) {
 				__STDIO_STREAM_SET_EOF(stream);
 			} else {

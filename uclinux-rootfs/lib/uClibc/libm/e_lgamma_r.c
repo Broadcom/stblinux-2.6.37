@@ -1,4 +1,3 @@
-/* @(#)er_lgamma.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_lgamma_r.c,v 1.7 1995/05/10 20:45:42 jtc Exp $";
-#endif
 
 /* __ieee754_lgamma_r(x, signgamp)
  * Reentrant version of the logarithm of the Gamma function
@@ -84,14 +79,7 @@ static char rcsid[] = "$NetBSD: e_lgamma_r.c,v 1.7 1995/05/10 20:45:42 jtc Exp $
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(floor)
-libm_hidden_proto(fabs)
-
-#ifdef __STDC__
 static const double
-#else
-static double
-#endif
 two52=  4.50359962737049600000e+15, /* 0x43300000, 0x00000000 */
 half=  5.00000000000000000000e-01, /* 0x3FE00000, 0x00000000 */
 one =  1.00000000000000000000e+00, /* 0x3FF00000, 0x00000000 */
@@ -159,22 +147,13 @@ w4  = -5.95187557450339963135e-04, /* 0xBF4380CB, 0x8C0FE741 */
 w5  =  8.36339918996282139126e-04, /* 0x3F4B67BA, 0x4CDAD5D1 */
 w6  = -1.63092934096575273989e-03; /* 0xBF5AB89D, 0x0B9E43E4 */
 
-#ifdef __STDC__
 static const double zero=  0.00000000000000000000e+00;
-#else
-static double zero=  0.00000000000000000000e+00;
-#endif
 
 static
 #ifdef __GNUC__
-inline
+__inline__
 #endif
-#ifdef __STDC__
-	double sin_pi(double x)
-#else
-	double sin_pi(x)
-	double x;
-#endif
+double sin_pi(double x)
 {
 	double y,z;
 	int n,ix;
@@ -218,13 +197,7 @@ inline
 	return -y;
 }
 
-
-#ifdef __STDC__
-	double attribute_hidden __ieee754_lgamma_r(double x, int *signgamp)
-#else
-	double attribute_hidden __ieee754_lgamma_r(x,signgamp)
-	double x; int *signgamp;
-#endif
+double attribute_hidden __ieee754_lgamma_r(double x, int *signgamp)
 {
 	double t,y,z,nadj=0,p,p1,p2,p3,q,r,w;
 	int i,hx,lx,ix;
@@ -235,7 +208,11 @@ inline
 	*signgamp = 1;
 	ix = hx&0x7fffffff;
 	if(ix>=0x7ff00000) return x*x;
-	if((ix|lx)==0) return one/zero;
+	if((ix|lx)==0) {
+	    if (signbit(x))
+	        *signgamp = -1;
+	    return one/zero;
+	}
 	if(ix<0x3b900000) {	/* |x|<2**-70, return -log(|x|) */
 	    if(hx<0) {
 	        *signgamp = -1;
@@ -317,3 +294,101 @@ inline
 	if(hx<0) r = nadj - r;
 	return r;
 }
+
+/*
+ * wrapper double lgamma_r(double x, int *signgamp)
+ */
+#ifndef _IEEE_LIBM
+double lgamma_r(double x, int *signgamp)
+{
+	double y = __ieee754_lgamma_r(x, signgamp);
+	if (_LIB_VERSION == _IEEE_)
+		return y;
+	if (!isfinite(y) && isfinite(x)) {
+		if (floor(x) == x && x <= 0.0)
+			return __kernel_standard(x, x, 15); /* lgamma pole */
+		return __kernel_standard(x, x, 14); /* lgamma overflow */
+	}
+	return y;
+}
+#else
+strong_alias(__ieee754_lgamma_r, lgamma_r)
+#endif
+
+/* __ieee754_lgamma(x)
+ * Return the logarithm of the Gamma function of x.
+ */
+double attribute_hidden __ieee754_lgamma(double x)
+{
+	return __ieee754_lgamma_r(x, &signgam);
+}
+
+/*
+ * wrapper double lgamma(double x)
+ */
+#ifndef _IEEE_LIBM
+double lgamma(double x)
+{
+	double y = __ieee754_lgamma_r(x, &signgam);
+	if (_LIB_VERSION == _IEEE_)
+		return y;
+	if (!isfinite(y) && isfinite(x)) {
+		if (floor(x) == x && x <= 0.0)
+			return __kernel_standard(x, x, 15); /* lgamma pole */
+		return __kernel_standard(x, x, 14); /* lgamma overflow */
+	}
+	return y;
+}
+#else
+strong_alias(__ieee754_lgamma, lgamma);
+#endif
+libm_hidden_def(lgamma)
+
+
+/* NB: gamma function is an old name for lgamma.
+ * It is deprecated.
+ * Some C math libraries redefine it as a "true gamma", i.e.,
+ * not a ln(|Gamma(x)|) but just Gamma(x), but standards
+ * introduced tgamma name for that.
+ */
+#ifndef _IEEE_LIBM
+strong_alias(lgamma_r, gamma_r)
+strong_alias(lgamma, gamma)
+#else
+strong_alias(__ieee754_lgamma_r, gamma_r)
+strong_alias(__ieee754_lgamma, gamma)
+#endif
+
+
+/* double tgamma(double x)
+ * Return the Gamma function of x.
+ */
+double tgamma(double x)
+{
+	int sign_of_gamma;
+	int32_t hx;
+	u_int32_t lx;
+
+	/* We don't have a real gamma implementation now.  We'll use lgamma
+	   and the exp function.  But due to the required boundary
+	   conditions we must check some values separately.  */
+
+	EXTRACT_WORDS(hx, lx, x);
+
+	if (((hx & 0x7fffffff) | lx) == 0) {
+		/* Return value for x == 0 is Inf with divide by zero exception.  */
+		return 1.0 / x;
+	}
+	if (hx < 0 && (u_int32_t)hx < 0xfff00000 && rint(x) == x) {
+		/* Return value for integer x < 0 is NaN with invalid exception.  */
+		return (x - x) / (x - x);
+	}
+	if ((u_int32_t)hx == 0xfff00000 && lx == 0) {
+		/* x == -Inf.  According to ISO this is NaN.  */
+		return x - x;
+	}
+
+	x = exp(lgamma_r(x, &sign_of_gamma));
+	return sign_of_gamma >= 0 ? x : -x;
+}
+libm_hidden_def(tgamma)

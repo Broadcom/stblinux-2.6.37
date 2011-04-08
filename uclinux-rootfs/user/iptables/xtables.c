@@ -114,14 +114,6 @@ struct option *xtables_merge_options(struct option *oldopts,
 	return merge;
 }
 
-void xtables_set_revision(char *name, u_int8_t revision)
-{
-	/* Old kernel sources don't have ".revision" field,
-	*            but we stole a byte from name. */
-	name[XT_FUNCTION_MAXNAMELEN - 2] = '\0';
-	name[XT_FUNCTION_MAXNAMELEN - 1] = revision;
-}
-
 /**
  * xtables_afinfo - protocol family dependent information
  * @kmod:		kernel module basename (e.g. "ip_tables")
@@ -271,6 +263,18 @@ void *xtables_malloc(size_t size)
 	return p;
 }
 
+void *xtables_realloc(void *ptr, size_t size)
+{
+	void *p;
+
+	if ((p = realloc(ptr, size)) == NULL) {
+		perror("ip[6]tables: realloc failed");
+		exit(1);
+	}
+
+	return p;
+}
+
 static char *get_modprobe(void)
 {
 	int procfile;
@@ -281,7 +285,7 @@ static char *get_modprobe(void)
 	if (procfile < 0)
 		return NULL;
 
-	ret = (char *) malloc(PROCFILE_BUFSIZ);
+	ret = malloc(PROCFILE_BUFSIZ);
 	if (ret) {
 		memset(ret, 0, PROCFILE_BUFSIZ);
 		switch (read(procfile, ret, PROCFILE_BUFSIZ)) {
@@ -319,7 +323,7 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	 */
 	fflush(stdout);
 
-	switch (fork()) {
+	switch (vfork()) {
 	case 0:
 		argv[0] = (char *)modprobe;
 		argv[1] = (char *)modname;
@@ -438,7 +442,7 @@ u_int16_t xtables_parse_port(const char *port, const char *proto)
 void xtables_parse_interface(const char *arg, char *vianame,
 			     unsigned char *mask)
 {
-	int vialen = strlen(arg);
+	unsigned int vialen = strlen(arg);
 	unsigned int i;
 
 	memset(mask, 0, IFNAMSIZ);
@@ -450,7 +454,7 @@ void xtables_parse_interface(const char *arg, char *vianame,
 			   " (%i)", arg, IFNAMSIZ-1);
 
 	strcpy(vianame, arg);
-	if ((vialen == 0) || (vialen == 1 && vianame[0] == '+'))
+	if (vialen == 0)
 		memset(mask, 0, IFNAMSIZ);
 	else if (vianame[vialen - 1] == '+') {
 		memset(mask, 0xFF, vialen - 1);
@@ -461,12 +465,11 @@ void xtables_parse_interface(const char *arg, char *vianame,
 		memset(mask, 0xFF, vialen + 1);
 		memset(mask + vialen + 1, 0, IFNAMSIZ - vialen - 1);
 		for (i = 0; vianame[i]; i++) {
-			if (vianame[i] == ':' ||
-			    vianame[i] == '!' ||
-			    vianame[i] == '*') {
+			if (vianame[i] == '/' ||
+			    vianame[i] == ' ') {
 				fprintf(stderr,
 					"Warning: weird character in interface"
-					" `%s' (No aliases, :, ! or *).\n",
+					" `%s' ('/' and ' ' are not allowed by the kernel).\n",
 					vianame);
 				break;
 			}
@@ -533,6 +536,11 @@ xtables_find_match(const char *name, enum xtables_tryload tryload,
 {
 	struct xtables_match *ptr;
 	const char *icmp6 = "icmp6";
+
+	if (strlen(name) >= XT_EXTENSION_MAXNAMELEN)
+		xtables_error(PARAMETER_PROBLEM,
+			   "Invalid match name \"%s\" (%u chars max)",
+			   name, XT_EXTENSION_MAXNAMELEN - 1);
 
 	/* This is ugly as hell. Nonetheless, there is no way of changing
 	 * this without hurting backwards compatibility */
@@ -638,7 +646,7 @@ xtables_find_target(const char *name, enum xtables_tryload tryload)
 		else
 			ptr = NULL;
 	}
-	if(!ptr && (tryload == XTF_LOAD_MUST_SUCCEED)) {
+	if (ptr == NULL && tryload == XTF_LOAD_MUST_SUCCEED) {
 		xt_params->exit_err(PARAMETER_PROBLEM,
 			   "Couldn't find target `%s'\n", name);
 	}
@@ -712,6 +720,11 @@ void xtables_register_match(struct xtables_match *me)
 {
 	struct xtables_match **i, *old;
 
+	if (me->version == NULL) {
+		fprintf(stderr, "%s: match %s<%u> is missing a version\n",
+		        xt_params->program_name, me->name, me->revision);
+		exit(1);
+	}
 	if (strcmp(me->version, XTABLES_VERSION) != 0) {
 		fprintf(stderr, "%s: match \"%s\" has version \"%s\", "
 		        "but \"%s\" is required.\n",
@@ -720,8 +733,7 @@ void xtables_register_match(struct xtables_match *me)
 		exit(1);
 	}
 
-	/* Revision field stole a char from name. */
-	if (strlen(me->name) >= XT_FUNCTION_MAXNAMELEN-1) {
+	if (strlen(me->name) >= XT_EXTENSION_MAXNAMELEN) {
 		fprintf(stderr, "%s: target `%s' has invalid name\n",
 			xt_params->program_name, me->name);
 		exit(1);
@@ -782,10 +794,22 @@ void xtables_register_match(struct xtables_match *me)
 	me->mflags = 0;
 }
 
+void xtables_register_matches(struct xtables_match *match, unsigned int n)
+{
+	do {
+		xtables_register_match(&match[--n]);
+	} while (n > 0);
+}
+
 void xtables_register_target(struct xtables_target *me)
 {
 	struct xtables_target *old;
 
+	if (me->version == NULL) {
+		fprintf(stderr, "%s: target %s<%u> is missing a version\n",
+		        xt_params->program_name, me->name, me->revision);
+		exit(1);
+	}
 	if (strcmp(me->version, XTABLES_VERSION) != 0) {
 		fprintf(stderr, "%s: target \"%s\" has version \"%s\", "
 		        "but \"%s\" is required.\n",
@@ -794,8 +818,7 @@ void xtables_register_target(struct xtables_target *me)
 		exit(1);
 	}
 
-	/* Revision field stole a char from name. */
-	if (strlen(me->name) >= XT_FUNCTION_MAXNAMELEN-1) {
+	if (strlen(me->name) >= XT_EXTENSION_MAXNAMELEN) {
 		fprintf(stderr, "%s: target `%s' has invalid name\n",
 			xt_params->program_name, me->name);
 		exit(1);
@@ -854,6 +877,13 @@ void xtables_register_target(struct xtables_target *me)
 	xtables_targets = me;
 	me->t = NULL;
 	me->tflags = 0;
+}
+
+void xtables_register_targets(struct xtables_target *target, unsigned int n)
+{
+	do {
+		xtables_register_target(&target[--n]);
+	} while (n > 0);
 }
 
 /**
@@ -1133,6 +1163,86 @@ static struct in_addr *parse_ipmask(const char *mask)
 	return &maskaddr;
 }
 
+void xtables_ipparse_multiple(const char *name, struct in_addr **addrpp,
+                              struct in_addr **maskpp, unsigned int *naddrs)
+{
+	struct in_addr *addrp;
+	char buf[256], *p;
+	unsigned int len, i, j, n, count = 1;
+	const char *loop = name;
+
+	while ((loop = strchr(loop, ',')) != NULL) {
+		++count;
+		++loop; /* skip ',' */
+	}
+
+	*addrpp = xtables_malloc(sizeof(struct in_addr) * count);
+	*maskpp = xtables_malloc(sizeof(struct in_addr) * count);
+
+	loop = name;
+
+	for (i = 0; i < count; ++i) {
+		if (loop == NULL)
+			break;
+		if (*loop == ',')
+			++loop;
+		if (*loop == '\0')
+			break;
+		p = strchr(loop, ',');
+		if (p != NULL)
+			len = p - loop;
+		else
+			len = strlen(loop);
+		if (len == 0 || sizeof(buf) - 1 < len)
+			break;
+
+		strncpy(buf, loop, len);
+		buf[len] = '\0';
+		loop += len;
+		if ((p = strrchr(buf, '/')) != NULL) {
+			*p = '\0';
+			addrp = parse_ipmask(p + 1);
+		} else {
+			addrp = parse_ipmask(NULL);
+		}
+		memcpy(*maskpp + i, addrp, sizeof(*addrp));
+
+		/* if a null mask is given, the name is ignored, like in "any/0" */
+		if ((*maskpp + i)->s_addr == 0)
+			/*
+			 * A bit pointless to process multiple addresses
+			 * in this case...
+			 */
+			strcpy(buf, "0.0.0.0");
+
+		addrp = ipparse_hostnetwork(buf, &n);
+		if (n > 1) {
+			count += n - 1;
+			*addrpp = xtables_realloc(*addrpp,
+			          sizeof(struct in_addr) * count);
+			*maskpp = xtables_realloc(*maskpp,
+			          sizeof(struct in_addr) * count);
+			for (j = 0; j < n; ++j)
+				/* for each new addr */
+				memcpy(*addrpp + i + j, addrp + j,
+				       sizeof(*addrp));
+			for (j = 1; j < n; ++j)
+				/* for each new mask */
+				memcpy(*maskpp + i + j, *maskpp + i,
+				       sizeof(*addrp));
+			i += n - 1;
+		} else {
+			memcpy(*addrpp + i, addrp, sizeof(*addrp));
+		}
+		/* free what ipparse_hostnetwork had allocated: */
+		free(addrp);
+	}
+	*naddrs = count;
+	for (i = 0; i < n; ++i)
+		(*addrpp+i)->s_addr &= (*maskpp+i)->s_addr;
+}
+
+
 /**
  * xtables_ipparse_any - transform arbitrary name to in_addr
  *
@@ -1296,7 +1406,7 @@ host_to_ip6addr(const char *name, unsigned int *naddr)
 
 #ifdef DEBUG
 		fprintf(stderr, "resolved: len=%d  %s ", res->ai_addrlen,
-		        ip6addr_to_numeric(&((struct sockaddr_in6 *)res->ai_addr)->sin6_addr));
+		        xtables_ip6addr_to_numeric(&((struct sockaddr_in6 *)res->ai_addr)->sin6_addr));
 #endif
 		/* Get the first element of the address-chain */
 		addr = xtables_malloc(sizeof(struct in6_addr));
@@ -1364,9 +1474,94 @@ static struct in6_addr *parse_ip6mask(char *mask)
 	return &maskaddr;
 }
 
+void
+xtables_ip6parse_multiple(const char *name, struct in6_addr **addrpp,
+		      struct in6_addr **maskpp, unsigned int *naddrs)
+{
+	static const struct in6_addr zero_addr;
+	struct in6_addr *addrp;
+	char buf[256], *p;
+	unsigned int len, i, j, n, count = 1;
+	const char *loop = name;
+
+	while ((loop = strchr(loop, ',')) != NULL) {
+		++count;
+		++loop; /* skip ',' */
+	}
+
+	*addrpp = xtables_malloc(sizeof(struct in6_addr) * count);
+	*maskpp = xtables_malloc(sizeof(struct in6_addr) * count);
+
+	loop = name;
+
+	for (i = 0; i < count /*NB: count can grow*/; ++i) {
+		if (loop == NULL)
+			break;
+		if (*loop == ',')
+			++loop;
+		if (*loop == '\0')
+			break;
+		p = strchr(loop, ',');
+		if (p != NULL)
+			len = p - loop;
+		else
+			len = strlen(loop);
+		if (len == 0 || sizeof(buf) - 1 < len)
+			break;
+
+		strncpy(buf, loop, len);
+		buf[len] = '\0';
+		loop += len;
+		if ((p = strrchr(buf, '/')) != NULL) {
+			*p = '\0';
+			addrp = parse_ip6mask(p + 1);
+		} else {
+			addrp = parse_ip6mask(NULL);
+		}
+		memcpy(*maskpp + i, addrp, sizeof(*addrp));
+
+		/* if a null mask is given, the name is ignored, like in "any/0" */
+		if (memcmp(*maskpp + i, &zero_addr, sizeof(zero_addr)) == 0)
+			strcpy(buf, "::");
+
+		addrp = ip6parse_hostnetwork(buf, &n);
+		/* ip6parse_hostnetwork only ever returns one IP
+		address (it exits if the resolution fails).
+		Therefore, n will always be 1 here.  Leaving the
+		code below in anyway in case ip6parse_hostnetwork
+		is improved some day to behave like
+		ipparse_hostnetwork: */
+		if (n > 1) {
+			count += n - 1;
+			*addrpp = xtables_realloc(*addrpp,
+			          sizeof(struct in6_addr) * count);
+			*maskpp = xtables_realloc(*maskpp,
+			          sizeof(struct in6_addr) * count);
+			for (j = 0; j < n; ++j)
+				/* for each new addr */
+				memcpy(*addrpp + i + j, addrp + j,
+				       sizeof(*addrp));
+			for (j = 1; j < n; ++j)
+				/* for each new mask */
+				memcpy(*maskpp + i + j, *maskpp + i,
+				       sizeof(*addrp));
+			i += n - 1;
+		} else {
+			memcpy(*addrpp + i, addrp, sizeof(*addrp));
+		}
+		/* free what ip6parse_hostnetwork had allocated: */
+		free(addrp);
+	}
+	*naddrs = count;
+	for (i = 0; i < n; ++i)
+		for (j = 0; j < 4; ++j)
+			(*addrpp+i)->s6_addr32[j] &= (*maskpp+i)->s6_addr32[j];
+}
+
 void xtables_ip6parse_any(const char *name, struct in6_addr **addrpp,
                           struct in6_addr *maskp, unsigned int *naddrs)
 {
+	static const struct in6_addr zero_addr;
 	struct in6_addr *addrp;
 	unsigned int i, j, k, n;
 	char buf[256], *p;
@@ -1382,7 +1577,7 @@ void xtables_ip6parse_any(const char *name, struct in6_addr **addrpp,
 	memcpy(maskp, addrp, sizeof(*maskp));
 
 	/* if a null mask is given, the name is ignored, like in "any/0" */
-	if (memcmp(maskp, &in6addr_any, sizeof(in6addr_any)) == 0)
+	if (memcmp(maskp, &zero_addr, sizeof(zero_addr)) == 0)
 		strcpy(buf, "::");
 
 	addrp = *addrpp = ip6parse_hostnetwork(buf, naddrs);
@@ -1442,27 +1637,28 @@ void xtables_save_string(const char *value)
  * Do not use in new code.
  */
 int xtables_check_inverse(const char option[], int *invert,
-			  int *my_optind, int argc)
+			  int *my_optind, int argc, char **argv)
 {
-	if (option && strcmp(option, "!") == 0) {
-		fprintf(stderr, "Using intrapositioned negation "
-		        "(`--option ! this`) is deprecated in favor of "
-		        "extrapositioned (`! --option this`).\n");
+	if (option == NULL || strcmp(option, "!") != 0)
+		return false;
 
-		if (*invert)
+	fprintf(stderr, "Using intrapositioned negation "
+	        "(`--option ! this`) is deprecated in favor of "
+	        "extrapositioned (`! --option this`).\n");
+
+	if (*invert)
+		xt_params->exit_err(PARAMETER_PROBLEM,
+			   "Multiple `!' flags not allowed");
+	*invert = true;
+	if (my_optind != NULL) {
+		optarg = argv[*my_optind];
+		++*my_optind;
+		if (argc && *my_optind > argc)
 			xt_params->exit_err(PARAMETER_PROBLEM,
-				   "Multiple `!' flags not allowed");
-		*invert = true;
-		if (my_optind != NULL) {
-			++*my_optind;
-			if (argc && *my_optind > argc)
-				xt_params->exit_err(PARAMETER_PROBLEM,
-					   "no argument following `!'");
-		}
-
-		return true;
+				   "no argument following `!'");
 	}
-	return false;
+
+	return true;
 }
 
 const struct xtables_pprot xtables_chain_protos[] = {
@@ -1501,6 +1697,9 @@ xtables_parse_protocol(const char *s)
 		else {
 			unsigned int i;
 			for (i = 0; i < ARRAY_SIZE(xtables_chain_protos); ++i) {
+				if (xtables_chain_protos[i].name == NULL)
+					continue;
+
 				if (strcmp(s, xtables_chain_protos[i].name) == 0) {
 					proto = xtables_chain_protos[i].num;
 					break;

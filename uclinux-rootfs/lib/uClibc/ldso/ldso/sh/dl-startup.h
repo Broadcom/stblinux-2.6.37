@@ -1,8 +1,9 @@
-/* Any assmbly language/system dependent hacks needed to setup boot1.c so it
+/* Any assembly language/system dependent hacks needed to setup boot1.c so it
  * will work as expected and cope with whatever platform specific wierdness is
  * needed for this architecture.  */
 
-asm(
+__asm__(
+    "	.text\n"
     "	.globl	_start\n"
     "	.type	_start,@function\n"
     "_start:\n"
@@ -11,17 +12,27 @@ asm(
     "	bsrf    r0\n"
     "	add	#4, r4\n"
     ".jmp_loc:\n"
-    "	jmp	@r0\n"
-    "	mov    #0, r4 	!call _start with arg == 0\n"
+    "	mov     r0, r8        ! Save the user entry point address in r8\n"
+    "	mov.l   .L_got, r12   ! Load the GOT on r12\n"
+    "	mova    .L_got, r0\n"
+    "	add     r0, r12\n"
+    "	mov.l   .L_dl_fini, r0\n"
+    "	mov.l   @(r0,r12), r4 ! Pass the finalizer in r4\n"
+    "	jmp     @r8\n"
+    "	nop\n"
     ".L_dl_start:\n"
     "	.long   _dl_start-.jmp_loc\n"
+    ".L_dl_fini:\n"
+    "	.long	_dl_fini@GOT\n"
+    ".L_got:\n"
+    "	.long _GLOBAL_OFFSET_TABLE_\n"
     "	.size	_start,.-_start\n"
     "	.previous\n"
 );
 
 /*
  * Get a pointer to the argv array.  On many platforms this can be just
- * the address if the first argument, on other platforms we need to
+ * the address of the first argument, on other platforms we need to
  * do something a little more subtle here.
  */
 #define GET_ARGV(ARGVP, ARGS) ARGVP = ((unsigned long*)   ARGS)

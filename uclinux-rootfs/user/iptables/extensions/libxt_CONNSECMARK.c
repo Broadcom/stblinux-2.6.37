@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2006 Red Hat, Inc., James Morris <jmorris@redhat.com>
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,9 +24,9 @@ static void CONNSECMARK_help(void)
 }
 
 static const struct option CONNSECMARK_opts[] = {
-	{ "save", 0, NULL, '1' },
-	{ "restore", 0, NULL, '2' },
-	{ .name = NULL }
+	{.name = "save",    .has_arg = false, .val = '1'},
+	{.name = "restore", .has_arg = false, .val = '2'},
+	XT_GETOPT_TABLEEND,
 };
 
 static int
@@ -69,7 +70,7 @@ static void CONNSECMARK_check(unsigned int flags)
 		           "or --restore is allowed");
 }
 
-static void print_connsecmark(struct xt_connsecmark_target_info *info)
+static void print_connsecmark(const struct xt_connsecmark_target_info *info)
 {
 	switch (info->mode) {
 	case CONNSECMARK_SAVE:
@@ -89,7 +90,7 @@ static void
 CONNSECMARK_print(const void *ip, const struct xt_entry_target *target,
                   int numeric)
 {
-	struct xt_connsecmark_target_info *info =
+	const struct xt_connsecmark_target_info *info =
 		(struct xt_connsecmark_target_info*)(target)->data;
 
 	printf("CONNSECMARK ");
@@ -99,7 +100,7 @@ CONNSECMARK_print(const void *ip, const struct xt_entry_target *target,
 static void
 CONNSECMARK_save(const void *ip, const struct xt_entry_target *target)
 {
-	struct xt_connsecmark_target_info *info =
+	const struct xt_connsecmark_target_info *info =
 		(struct xt_connsecmark_target_info*)target->data;
 
 	printf("--");
@@ -107,22 +108,7 @@ CONNSECMARK_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target connsecmark_target = {
-	.family		= NFPROTO_IPV4,
-	.name		= "CONNSECMARK",
-	.version	= XTABLES_VERSION,
-	.revision	= 0,
-	.size		= XT_ALIGN(sizeof(struct xt_connsecmark_target_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_connsecmark_target_info)),
-	.parse		= CONNSECMARK_parse,
-	.help		= CONNSECMARK_help,
-	.final_check	= CONNSECMARK_check,
-	.print		= CONNSECMARK_print,
-	.save		= CONNSECMARK_save,
-	.extra_opts	= CONNSECMARK_opts,
-};
-
-static struct xtables_target connsecmark_target6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "CONNSECMARK",
 	.version	= XTABLES_VERSION,
 	.revision	= 0,
@@ -139,5 +125,4 @@ static struct xtables_target connsecmark_target6 = {
 void _init(void)
 {
 	xtables_register_target(&connsecmark_target);
-	xtables_register_target(&connsecmark_target6);
 }

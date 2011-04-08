@@ -26,17 +26,17 @@
    FUNC(function): converts general function name (like cos) to
    name with correct suffix (e.g. cosl or cosf)
    MATHCONST(x):   like FUNC but for constants (e.g convert 0.0 to 0.0L)
-   FLOAT:	   floating point type to test
-   - TEST_MSG:	   informal message to be displayed
+   FLOAT:          floating point type to test
+   - TEST_MSG:     informal message to be displayed
    CHOOSE(Clongdouble,Cdouble,Cfloat,Cinlinelongdouble,Cinlinedouble,Cinlinefloat):
    chooses one of the parameters as delta for testing
    equality
-   PRINTF_EXPR	   Floating point conversion specification to print a variable
+   PRINTF_EXPR     Floating point conversion specification to print a variable
    of type FLOAT with printf.  PRINTF_EXPR just contains
    the specifier, not the percent and width arguments,
    e.g. "f".
    PRINTF_XEXPR	   Like PRINTF_EXPR, but print in hexadecimal format.
-   PRINTF_NEXPR Like PRINTF_EXPR, but print nice.  */
+   PRINTF_NEXPR    Like PRINTF_EXPR, but print nice.  */
 
 /* This testsuite has currently tests for:
    acos, acosh, asin, asinh, atan, atan2, atanh,
@@ -310,7 +310,7 @@ fpstack_test (const char *test_name)
   static int old_stack;
   int sw;
 
-  asm ("fnstsw" : "=a" (sw));
+  __asm__ ("fnstsw" : "=a" (sw));
   sw >>= 11;
   sw &= 7;
 
@@ -3003,6 +3003,7 @@ isnormal_test (void)
   END (isnormal);
 }
 
+#if defined __DO_XSI_MATH__
 static void
 j0_test (void)
 {
@@ -3149,6 +3150,7 @@ jn_test (void)
 
   END (jn);
 }
+#endif /* __DO_XSI_MATH__ */
 
 
 static void
@@ -4182,14 +4184,14 @@ round_test (void)
   /* The result can only be represented in long double.  */
   TEST_f_f (round, 4503599627370495.5L, 4503599627370496.0L);
   TEST_f_f (round, 4503599627370496.25L, 4503599627370496.0L);
-  TEST_f_f (round, 4503599627370496.5L, 4503599627370497.0L); 
+  TEST_f_f (round, 4503599627370496.5L, 4503599627370497.0L);
   TEST_f_f (round, 4503599627370496.75L, 4503599627370497.0L);
-  TEST_f_f (round, 4503599627370497.5L, 4503599627370498.0L);  
+  TEST_f_f (round, 4503599627370497.5L, 4503599627370498.0L);
 
-  TEST_f_f (round, -4503599627370495.5L, -4503599627370496.0L); 
-  TEST_f_f (round, -4503599627370496.25L, -4503599627370496.0L); 
+  TEST_f_f (round, -4503599627370495.5L, -4503599627370496.0L);
+  TEST_f_f (round, -4503599627370496.25L, -4503599627370496.0L);
   TEST_f_f (round, -4503599627370496.5L, -4503599627370497.0L);
-  TEST_f_f (round, -4503599627370496.75L, -4503599627370497.0L); 
+  TEST_f_f (round, -4503599627370496.75L, -4503599627370497.0L);
   TEST_f_f (round, -4503599627370497.5L, -4503599627370498.0L);
 
   TEST_f_f (round, 9007199254740991.5L, 9007199254740992.0L);
@@ -4231,8 +4233,9 @@ round_test (void)
 static void
 scalb_test (void)
 {
-
   START (scalb);
+#ifndef TEST_LDOUBLE /* uclibc doesn't have scalbl */
+#ifdef __UCLIBC_SUSV3_LEGACY__ /* scalbf is susv3 legacy */
 
   TEST_ff_f (scalb, 2.0, 0.5, nan_value, INVALID_EXCEPTION);
   TEST_ff_f (scalb, 3.0, -2.5, nan_value, INVALID_EXCEPTION);
@@ -4283,7 +4286,8 @@ scalb_test (void)
 
   TEST_ff_f (scalb, 0.8L, 4, 12.8L);
   TEST_ff_f (scalb, -0.854375L, 5, -27.34L);
-
+#endif /* __UCLIBC_SUSV3_LEGACY__ */
+#endif /* TEST_LDOUBLE */
   END (scalb);
 }
 
@@ -4515,7 +4519,8 @@ tanh_test (void)
   START (tanh);
 
   TEST_f_f (tanh, 0, 0);
-  TEST_f_f (tanh, minus_zero, minus_zero);
+  /* vda: uclibc: added IGNORE_ZERO_INF_SIGN to treat -0 as ok */
+  TEST_f_f (tanh, minus_zero, minus_zero, IGNORE_ZERO_INF_SIGN);
 
 #ifndef TEST_INLINE
   TEST_f_f (tanh, plus_infty, 1);
@@ -4640,13 +4645,14 @@ trunc_test (void)
   TEST_f_f (trunc, 10141204801825835211973625643008.25L, 10141204801825835211973625643008.0L);
   TEST_f_f (trunc, 10141204801825835211973625643008.5L, 10141204801825835211973625643008.0L);
   TEST_f_f (trunc, 10141204801825835211973625643008.75L, 10141204801825835211973625643008.0L);
-  TEST_f_f (trunc, 10141204801825835211973625643009.5L, 10141204801825835211973625643009.0L); 
+  TEST_f_f (trunc, 10141204801825835211973625643009.5L, 10141204801825835211973625643009.0L);
 #endif
 
   END (trunc);
 }
 #endif
 
+#if defined __DO_XSI_MATH__
 static void
 y0_test (void)
 {
@@ -4789,6 +4795,7 @@ yn_test (void)
   END (yn);
 
 }
+#endif /* __DO_XSI_MATH__ */
 
 
 static void
@@ -5066,14 +5073,14 @@ main (int argc, char **argv)
 #endif
 
   /* Bessel functions:  */
-#if 0
+#if defined __DO_XSI_MATH__
   j0_test ();
   j1_test ();
   jn_test ();
   y0_test ();
   y1_test ();
   yn_test ();
-#endif
+#endif /* __DO_XSI_MATH__ */
 
   if (output_ulps)
     fclose (ulps_file);

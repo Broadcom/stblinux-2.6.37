@@ -1,5 +1,5 @@
 /* System-specific socket constants and types.  Linux version.
-   Copyright (C) 1991,1992,1994-2001, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1991,1992,1994-2001,2004,2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -53,10 +53,20 @@ enum __socket_type
   SOCK_SEQPACKET = 5,		/* Sequenced, reliable, connection-based,
 				   datagrams of fixed maximum length.  */
 #define SOCK_SEQPACKET SOCK_SEQPACKET
-  SOCK_PACKET = 10		/* Linux specific way of getting packets
+  SOCK_PACKET = 10,		/* Linux specific way of getting packets
 				   at the dev level.  For writing rarp and
 				   other similar things on the user level. */
 #define SOCK_PACKET SOCK_PACKET
+
+  /* Flags to be ORed into the type parameter of socket and socketpair and
+     used for the flags parameter of paccept.  */
+
+  SOCK_CLOEXEC = 02000000,	/* Atomically set close-on-exec flag for the
+				   new descriptor(s).  */
+#define SOCK_CLOEXEC SOCK_CLOEXEC
+  SOCK_NONBLOCK = 04000		/* Atomically mark descriptor(s) as
+				   non-blocking.  */
+#define SOCK_NONBLOCK SOCK_NONBLOCK
 };
 
 /* Protocol families.  */
@@ -215,16 +225,26 @@ enum
 /* Note: do not change these members to match glibc; these match the
    SuSv3 spec already (e.g. msg_iovlen/msg_controllen).
    http://www.opengroup.org/onlinepubs/009695399/basedefs/sys/socket.h.html */
+/* Note: linux kernel uses __kernel_size_t (which is 8bytes on 64bit
+   platforms, and 4bytes on 32bit platforms) for msg_iovlen/msg_controllen */
 struct msghdr
   {
     void *msg_name;		/* Address to send to/receive from.  */
     socklen_t msg_namelen;	/* Length of address data.  */
 
     struct iovec *msg_iov;	/* Vector of data to send/receive into.  */
+#if __WORDSIZE == 32
     int msg_iovlen;		/* Number of elements in the vector.  */
+#else
+    size_t msg_iovlen;		/* Number of elements in the vector.  */
+#endif
 
     void *msg_control;		/* Ancillary data (eg BSD filedesc passing). */
+#if __WORDSIZE == 32
     socklen_t msg_controllen;	/* Ancillary data buffer length.  */
+#else
+    size_t msg_controllen;	/* Ancillary data buffer length.  */
+#endif
 
     int msg_flags;		/* Flags on received message.  */
   };
@@ -259,6 +279,7 @@ struct cmsghdr
 
 extern struct cmsghdr *__cmsg_nxthdr (struct msghdr *__mhdr,
 				      struct cmsghdr *__cmsg) __THROW;
+libc_hidden_proto(__cmsg_nxthdr)
 #ifdef __USE_EXTERN_INLINES
 # ifndef _EXTERN_INLINE
 #  define _EXTERN_INLINE extern __inline
@@ -286,13 +307,12 @@ __NTH (__cmsg_nxthdr (struct msghdr *__mhdr, struct cmsghdr *__cmsg))
    <linux/socket.h>.  */
 enum
   {
-    SCM_RIGHTS = 0x01,		/* Transfer file descriptors.  */
+    SCM_RIGHTS = 0x01		/* Transfer file descriptors.  */
 #define SCM_RIGHTS SCM_RIGHTS
 #ifdef __USE_BSD
-    SCM_CREDENTIALS = 0x02,     /* Credentials passing.  */
+    , SCM_CREDENTIALS = 0x02	/* Credentials passing.  */
 # define SCM_CREDENTIALS SCM_CREDENTIALS
 #endif
-    __SCM_CONNECT = 0x03	/* Data array is `struct scm_connect'.  */
   };
 
 /* User visible structure for SCM_CREDENTIALS message */
@@ -305,7 +325,13 @@ struct ucred
 };
 
 /* Get socket manipulation related informations from kernel headers.  */
+#ifndef __GLIBC__
+#define __GLIBC__ 2
 #include <asm/socket.h>
+#undef __GLIBC__
+#else
+#include <asm/socket.h>
+#endif
 
 
 /* Structure used to manipulate the SO_LINGER option.  */

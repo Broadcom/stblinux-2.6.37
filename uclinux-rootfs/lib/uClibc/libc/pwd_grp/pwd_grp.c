@@ -32,37 +32,9 @@
 #include <grp.h>
 #include <paths.h>
 #ifdef __UCLIBC_HAS_SHADOW__
-#include <shadow.h>
+# include <shadow.h>
 #endif
-#ifdef __UCLIBC_HAS_THREADS__
-#include <pthread.h>
-#endif
-
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strtoul)
-libc_hidden_proto(rewind)
-libc_hidden_proto(fgets_unlocked)
-libc_hidden_proto(__fputc_unlocked)
-libc_hidden_proto(sprintf)
-libc_hidden_proto(fopen)
-libc_hidden_proto(fclose)
-libc_hidden_proto(fprintf)
-#ifdef __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(__ctype_b_loc)
-#elif __UCLIBC_HAS_CTYPE_TABLES__
-libc_hidden_proto(__ctype_b)
-#endif
-
-/**********************************************************************/
-/* Sizes for statically allocated buffers. */
-
-/* If you change these values, also change _SC_GETPW_R_SIZE_MAX and
- * _SC_GETGR_R_SIZE_MAX in libc/unistd/sysconf.c to match */
-#define PWD_BUFFER_SIZE 256
-#define GRP_BUFFER_SIZE 256
+#include <bits/uClibc_mutex.h>
 
 /**********************************************************************/
 /* Prototypes for internal functions. */
@@ -73,6 +45,8 @@ extern int __parsespent(void *sp, char *line) attribute_hidden;
 
 extern int __pgsreader(int (*__parserfunc)(void *d, char *line), void *data,
 			   char *__restrict line_buff, size_t buflen, FILE *f) attribute_hidden;
+
+extern gid_t* __getgrouplist_internal(const char *user, gid_t gid, int *ngroups) attribute_hidden;
 
 /**********************************************************************/
 /* For the various fget??ent_r funcs, return
@@ -92,7 +66,6 @@ extern int __pgsreader(int (*__parserfunc)(void *d, char *line), void *data,
 #ifdef L_fgetpwent_r
 
 #ifdef __USE_SVID
-libc_hidden_proto(fgetpwent_r)
 int fgetpwent_r(FILE *__restrict stream, struct passwd *__restrict resultbuf,
 				char *__restrict buffer, size_t buflen,
 				struct passwd **__restrict result)
@@ -115,7 +88,6 @@ libc_hidden_def(fgetpwent_r)
 #ifdef L_fgetgrent_r
 
 #ifdef __USE_SVID
-libc_hidden_proto(fgetgrent_r)
 int fgetgrent_r(FILE *__restrict stream, struct group *__restrict resultbuf,
 				char *__restrict buffer, size_t buflen,
 				struct group **__restrict result)
@@ -137,7 +109,6 @@ libc_hidden_def(fgetgrent_r)
 /**********************************************************************/
 #ifdef L_fgetspent_r
 
-libc_hidden_proto(fgetspent_r)
 int fgetspent_r(FILE *__restrict stream, struct spwd *__restrict resultbuf,
 				char *__restrict buffer, size_t buflen,
 				struct spwd **__restrict result)
@@ -163,11 +134,10 @@ libc_hidden_def(fgetspent_r)
 #ifdef L_fgetpwent
 
 #ifdef __USE_SVID
-libc_hidden_proto(fgetpwent_r)
 
 struct passwd *fgetpwent(FILE *stream)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct passwd resultbuf;
 	struct passwd *result;
 
@@ -181,11 +151,10 @@ struct passwd *fgetpwent(FILE *stream)
 #ifdef L_fgetgrent
 
 #ifdef __USE_SVID
-libc_hidden_proto(fgetgrent_r)
 
 struct group *fgetgrent(FILE *stream)
 {
-	static char buffer[GRP_BUFFER_SIZE];
+	static char buffer[__UCLIBC_GRP_BUFFER_SIZE__];
 	static struct group resultbuf;
 	struct group *result;
 
@@ -198,11 +167,10 @@ struct group *fgetgrent(FILE *stream)
 /**********************************************************************/
 #ifdef L_fgetspent
 
-libc_hidden_proto(fgetspent_r)
 
 struct spwd *fgetspent(FILE *stream)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct spwd resultbuf;
 	struct spwd *result;
 
@@ -214,7 +182,6 @@ struct spwd *fgetspent(FILE *stream)
 /**********************************************************************/
 #ifdef L_sgetspent_r
 
-libc_hidden_proto(sgetspent_r)
 int sgetspent_r(const char *string, struct spwd *result_buf,
 				char *buffer, size_t buflen, struct spwd **result)
 {
@@ -222,7 +189,7 @@ int sgetspent_r(const char *string, struct spwd *result_buf,
 
 	*result = NULL;
 
-	if (buflen < PWD_BUFFER_SIZE) {
+	if (buflen < __UCLIBC_PWD_BUFFER_SIZE__) {
 	DO_ERANGE:
 		__set_errno(rv);
 		goto DONE;
@@ -253,7 +220,7 @@ libc_hidden_def(sgetspent_r)
 
 #ifdef L_getpwnam_r
 #define GETXXKEY_R_FUNC		getpwnam_r
-#define GETXXKEY_R_PARSER   	__parsepwent
+#define GETXXKEY_R_PARSER	__parsepwent
 #define GETXXKEY_R_ENTTYPE	struct passwd
 #define GETXXKEY_R_TEST(ENT)	(!strcmp((ENT)->pw_name, key))
 #define DO_GETXXKEY_R_KEYTYPE	const char *__restrict
@@ -263,7 +230,7 @@ libc_hidden_def(sgetspent_r)
 
 #ifdef L_getgrnam_r
 #define GETXXKEY_R_FUNC		getgrnam_r
-#define GETXXKEY_R_PARSER   	__parsegrent
+#define GETXXKEY_R_PARSER	__parsegrent
 #define GETXXKEY_R_ENTTYPE	struct group
 #define GETXXKEY_R_TEST(ENT)	(!strcmp((ENT)->gr_name, key))
 #define DO_GETXXKEY_R_KEYTYPE	const char *__restrict
@@ -273,7 +240,7 @@ libc_hidden_def(sgetspent_r)
 
 #ifdef L_getspnam_r
 #define GETXXKEY_R_FUNC		getspnam_r
-#define GETXXKEY_R_PARSER   	__parsespent
+#define GETXXKEY_R_PARSER	__parsespent
 #define GETXXKEY_R_ENTTYPE	struct spwd
 #define GETXXKEY_R_TEST(ENT)	(!strcmp((ENT)->sp_namp, key))
 #define DO_GETXXKEY_R_KEYTYPE	const char *__restrict
@@ -283,7 +250,7 @@ libc_hidden_def(sgetspent_r)
 
 #ifdef L_getpwuid_r
 #define GETXXKEY_R_FUNC		getpwuid_r
-#define GETXXKEY_R_PARSER   	__parsepwent
+#define GETXXKEY_R_PARSER	__parsepwent
 #define GETXXKEY_R_ENTTYPE	struct passwd
 #define GETXXKEY_R_TEST(ENT)	((ENT)->pw_uid == key)
 #define DO_GETXXKEY_R_KEYTYPE	uid_t
@@ -293,7 +260,7 @@ libc_hidden_def(sgetspent_r)
 
 #ifdef L_getgrgid_r
 #define GETXXKEY_R_FUNC		getgrgid_r
-#define GETXXKEY_R_PARSER   	__parsegrent
+#define GETXXKEY_R_PARSER	__parsegrent
 #define GETXXKEY_R_ENTTYPE	struct group
 #define GETXXKEY_R_TEST(ENT)	((ENT)->gr_gid == key)
 #define DO_GETXXKEY_R_KEYTYPE	gid_t
@@ -304,11 +271,10 @@ libc_hidden_def(sgetspent_r)
 /**********************************************************************/
 #ifdef L_getpwuid
 
-libc_hidden_proto(getpwuid_r)
 
 struct passwd *getpwuid(uid_t uid)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct passwd resultbuf;
 	struct passwd *result;
 
@@ -320,11 +286,10 @@ struct passwd *getpwuid(uid_t uid)
 /**********************************************************************/
 #ifdef L_getgrgid
 
-libc_hidden_proto(getgrgid_r)
 
 struct group *getgrgid(gid_t gid)
 {
-	static char buffer[GRP_BUFFER_SIZE];
+	static char buffer[__UCLIBC_GRP_BUFFER_SIZE__];
 	static struct group resultbuf;
 	struct group *result;
 
@@ -340,8 +305,6 @@ struct group *getgrgid(gid_t gid)
  * to have been created as a reentrant version of the non-standard
  * functions getspuid.  Why getspuid was added, I do not know. */
 
-libc_hidden_proto(getpwuid_r)
-libc_hidden_proto(getspnam_r)
 
 int getspuid_r(uid_t uid, struct spwd *__restrict resultbuf,
 		       char *__restrict buffer, size_t buflen,
@@ -350,7 +313,7 @@ int getspuid_r(uid_t uid, struct spwd *__restrict resultbuf,
 	int rv;
 	struct passwd *pp;
 	struct passwd password;
-	char pwd_buff[PWD_BUFFER_SIZE];
+	char pwd_buff[__UCLIBC_PWD_BUFFER_SIZE__];
 
 	*result = NULL;
 	if (!(rv = getpwuid_r(uid, &password, pwd_buff, sizeof(pwd_buff), &pp))) {
@@ -367,11 +330,9 @@ int getspuid_r(uid_t uid, struct spwd *__restrict resultbuf,
 /* This function is non-standard and is currently not built.
  * Why it was added, I do not know. */
 
-libc_hidden_proto(getspuid_r)
-
 struct spwd *getspuid(uid_t uid)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct spwd resultbuf;
 	struct spwd *result;
 
@@ -383,11 +344,10 @@ struct spwd *getspuid(uid_t uid)
 /**********************************************************************/
 #ifdef L_getpwnam
 
-libc_hidden_proto(getpwnam_r)
 
 struct passwd *getpwnam(const char *name)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct passwd resultbuf;
 	struct passwd *result;
 
@@ -399,11 +359,10 @@ struct passwd *getpwnam(const char *name)
 /**********************************************************************/
 #ifdef L_getgrnam
 
-libc_hidden_proto(getgrnam_r)
 
 struct group *getgrnam(const char *name)
 {
-	static char buffer[GRP_BUFFER_SIZE];
+	static char buffer[__UCLIBC_GRP_BUFFER_SIZE__];
 	static struct group resultbuf;
 	struct group *result;
 
@@ -415,11 +374,10 @@ struct group *getgrnam(const char *name)
 /**********************************************************************/
 #ifdef L_getspnam
 
-libc_hidden_proto(getspnam_r)
 
 struct spwd *getspnam(const char *name)
 {
-	static char buffer[PWD_BUFFER_SIZE];
+	static char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct spwd resultbuf;
 	struct spwd *result;
 
@@ -431,13 +389,12 @@ struct spwd *getspnam(const char *name)
 /**********************************************************************/
 #ifdef L_getpw
 
-libc_hidden_proto(getpwuid_r)
 
 int getpw(uid_t uid, char *buf)
 {
 	struct passwd resultbuf;
 	struct passwd *result;
-	char buffer[PWD_BUFFER_SIZE];
+	char buffer[__UCLIBC_PWD_BUFFER_SIZE__];
 
 	if (!buf) {
 		__set_errno(EINVAL);
@@ -458,47 +415,39 @@ int getpw(uid_t uid, char *buf)
 
 #endif
 /**********************************************************************/
-#if defined(L_getpwent_r) || defined(L_getgrent_r) || defined(L_getspent_r)
-#ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
-static pthread_mutex_t mylock = PTHREAD_MUTEX_INITIALIZER;
-#endif
-#define LOCK		__PTHREAD_MUTEX_LOCK(&mylock)
-#define UNLOCK		__PTHREAD_MUTEX_UNLOCK(&mylock)
-#endif
 
 #ifdef L_getpwent_r
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
 static FILE *pwf /*= NULL*/;
 
 void setpwent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (pwf) {
 		rewind(pwf);
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
 void endpwent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (pwf) {
 		fclose(pwf);
 		pwf = NULL;
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
 
-libc_hidden_proto(getpwent_r)
-int getpwent_r(struct passwd *__restrict resultbuf, 
+int getpwent_r(struct passwd *__restrict resultbuf,
 			   char *__restrict buffer, size_t buflen,
 			   struct passwd **__restrict result)
 {
 	int rv;
 
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 
 	*result = NULL;				/* In case of error... */
 
@@ -516,7 +465,7 @@ int getpwent_r(struct passwd *__restrict resultbuf,
 	}
 
  ERR:
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 
 	return rv;
 }
@@ -525,36 +474,36 @@ libc_hidden_def(getpwent_r)
 #endif
 /**********************************************************************/
 #ifdef L_getgrent_r
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
 static FILE *grf /*= NULL*/;
 
 void setgrent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (grf) {
 		rewind(grf);
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
 void endgrent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (grf) {
 		fclose(grf);
 		grf = NULL;
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
-libc_hidden_proto(getgrent_r)
 int getgrent_r(struct group *__restrict resultbuf,
 			   char *__restrict buffer, size_t buflen,
 			   struct group **__restrict result)
 {
 	int rv;
 
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 
 	*result = NULL;				/* In case of error... */
 
@@ -572,7 +521,7 @@ int getgrent_r(struct group *__restrict resultbuf,
 	}
 
  ERR:
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 
 	return rv;
 }
@@ -581,35 +530,35 @@ libc_hidden_def(getgrent_r)
 #endif
 /**********************************************************************/
 #ifdef L_getspent_r
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
 static FILE *spf /*= NULL*/;
 
 void setspent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (spf) {
 		rewind(spf);
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
 void endspent(void)
 {
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 	if (spf) {
 		fclose(spf);
 		spf = NULL;
 	}
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 
-libc_hidden_proto(getspent_r)
-int getspent_r(struct spwd *resultbuf, char *buffer, 
+int getspent_r(struct spwd *resultbuf, char *buffer,
 			   size_t buflen, struct spwd **result)
 {
 	int rv;
 
-	LOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
 
 	*result = NULL;				/* In case of error... */
 
@@ -627,7 +576,7 @@ int getspent_r(struct spwd *resultbuf, char *buffer,
 	}
 
  ERR:
-	UNLOCK;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 
 	return rv;
 }
@@ -637,11 +586,10 @@ libc_hidden_def(getspent_r)
 /**********************************************************************/
 #ifdef L_getpwent
 
-libc_hidden_proto(getpwent_r)
 
 struct passwd *getpwent(void)
 {
-	static char line_buff[PWD_BUFFER_SIZE];
+	static char line_buff[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct passwd pwd;
 	struct passwd *result;
 
@@ -653,11 +601,10 @@ struct passwd *getpwent(void)
 /**********************************************************************/
 #ifdef L_getgrent
 
-libc_hidden_proto(getgrent_r)
 
 struct group *getgrent(void)
 {
-	static char line_buff[GRP_BUFFER_SIZE];
+	static char line_buff[__UCLIBC_GRP_BUFFER_SIZE__];
 	static struct group gr;
 	struct group *result;
 
@@ -669,11 +616,10 @@ struct group *getgrent(void)
 /**********************************************************************/
 #ifdef L_getspent
 
-libc_hidden_proto(getspent_r)
 
 struct spwd *getspent(void)
 {
-	static char line_buff[PWD_BUFFER_SIZE];
+	static char line_buff[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct spwd spwd;
 	struct spwd *result;
 
@@ -685,11 +631,10 @@ struct spwd *getspent(void)
 /**********************************************************************/
 #ifdef L_sgetspent
 
-libc_hidden_proto(sgetspent_r)
 
 struct spwd *sgetspent(const char *string)
 {
-	static char line_buff[PWD_BUFFER_SIZE];
+	static char line_buff[__UCLIBC_PWD_BUFFER_SIZE__];
 	static struct spwd spwd;
 	struct spwd *result;
 
@@ -699,62 +644,104 @@ struct spwd *sgetspent(const char *string)
 
 #endif
 /**********************************************************************/
+#ifdef L___getgrouplist_internal
+
+gid_t attribute_hidden *__getgrouplist_internal(const char *user, gid_t gid, int *ngroups)
+{
+	FILE *grfile;
+	gid_t *group_list;
+	int num_groups;
+	struct group group;
+	char buff[__UCLIBC_PWD_BUFFER_SIZE__];
+
+	*ngroups = num_groups = 1;
+
+	/* We alloc space for 8 gids at a time. */
+	group_list = malloc(8 * sizeof(group_list[0]));
+	if (!group_list)
+		return NULL;
+
+	group_list[0] = gid;
+	grfile = fopen(_PATH_GROUP, "r");
+	/* If /etc/group doesn't exist, we still return 1-element vector */
+	if (!grfile)
+		return group_list;
+
+	__STDIO_SET_USER_LOCKING(grfile);
+
+	while (!__pgsreader(__parsegrent, &group, buff, sizeof(buff), grfile)) {
+		char **m;
+
+		assert(group.gr_mem); /* Must have at least a NULL terminator. */
+		if (group.gr_gid == gid)
+			continue;
+		for (m = group.gr_mem; *m; m++) {
+			if (strcmp(*m, user) != 0)
+				continue;
+			if (!(num_groups & 7)) {
+				gid_t *tmp = realloc(group_list, (num_groups+8) * sizeof(group_list[0]));
+				if (!tmp)
+					goto DO_CLOSE;
+				group_list = tmp;
+			}
+			group_list[num_groups++] = group.gr_gid;
+			break;
+		}
+	}
+
+ DO_CLOSE:
+	fclose(grfile);
+	*ngroups = num_groups;
+	return group_list;
+}
+
+#endif
+/**********************************************************************/
+#ifdef L_getgrouplist
+
+#if defined __USE_BSD || defined __USE_GNU
+int getgrouplist(const char *user, gid_t gid, gid_t *groups, int *ngroups)
+{
+	int sz = *ngroups;
+	gid_t *group_list = __getgrouplist_internal(user, gid, ngroups);
+
+	if (!group_list) {
+		/* malloc failure - what shall we do?
+		 * fail with ENOMEM? I bet users never check for that */
+		/* *ngroups = 1; - already done by __getgrouplist_internal */
+		if (sz) {
+			groups[0] = gid;
+			return 1;
+		}
+		return -1;
+	}
+	/* *ngroups is non-zero here */
+
+	if (sz > *ngroups)
+		sz = *ngroups;
+	if (sz)
+		memcpy(groups, group_list, sz * sizeof(group_list[0]));
+	free(group_list);
+	if (sz < *ngroups)
+		return -1;
+	return sz;
+}
+#endif
+
+#endif
+/**********************************************************************/
 #ifdef L_initgroups
 
 #ifdef __USE_BSD
 
-libc_hidden_proto(setgroups)
-
 int initgroups(const char *user, gid_t gid)
 {
-	FILE *grfile;
-	gid_t *group_list;
-	int num_groups, rv;
-	char **m;
-	struct group group;
-	char buff[PWD_BUFFER_SIZE];
-
-	rv = -1;
-
-	/* We alloc space for 8 gids at a time. */
-	if (((group_list = (gid_t *) malloc(8*sizeof(gid_t *))) != NULL)
-		&& ((grfile = fopen(_PATH_GROUP, "r")) != NULL)
-		) {
-
-		__STDIO_SET_USER_LOCKING(grfile);
-
-		*group_list = gid;
-		num_groups = 1;
-
-		while (!__pgsreader(__parsegrent, &group, buff, sizeof(buff), grfile)) {
-			assert(group.gr_mem); /* Must have at least a NULL terminator. */
-			if (group.gr_gid != gid) {
-				for (m=group.gr_mem ; *m ; m++) {
-					if (!strcmp(*m, user)) {
-						if (!(num_groups & 7)) {
-							gid_t *tmp = (gid_t *)
-								realloc(group_list,
-										(num_groups+8) * sizeof(gid_t *));
-							if (!tmp) {
-								rv = -1;
-								goto DO_CLOSE;
-							}
-							group_list = tmp;
-						}
-						group_list[num_groups++] = group.gr_gid;
-						break;
-					}
-				}
-			}
-		}
-
-		rv = setgroups(num_groups, group_list);
-	DO_CLOSE:
-		fclose(grfile);
-	}
-
-	/* group_list will be NULL if initial malloc failed, which may trigger
-	 * warnings from various malloc debuggers. */
+	int rv;
+	int num_groups = ((unsigned)~0) >> 1; /* INT_MAX */
+	gid_t *group_list = __getgrouplist_internal(user, gid, &num_groups);
+	if (!group_list)
+		return -1;
+	rv = setgroups(num_groups, group_list);
 	free(group_list);
 	return rv;
 }
@@ -842,11 +829,11 @@ int putgrent(const struct group *__restrict p, FILE *__restrict f)
 
 static const unsigned char _sp_off[] = {
 	offsetof(struct spwd, sp_lstchg),	/* 2 - not a char ptr */
-	offsetof(struct spwd, sp_min), 		/* 3 - not a char ptr */
+	offsetof(struct spwd, sp_min),		/* 3 - not a char ptr */
 	offsetof(struct spwd, sp_max),		/* 4 - not a char ptr */
-	offsetof(struct spwd, sp_warn), 	/* 5 - not a char ptr */
-	offsetof(struct spwd, sp_inact), 	/* 6 - not a char ptr */
-	offsetof(struct spwd, sp_expire), 	/* 7 - not a char ptr */
+	offsetof(struct spwd, sp_warn),		/* 5 - not a char ptr */
+	offsetof(struct spwd, sp_inact),	/* 6 - not a char ptr */
+	offsetof(struct spwd, sp_expire),	/* 7 - not a char ptr */
 };
 
 int putspent(const struct spwd *p, FILE *stream)
@@ -899,13 +886,13 @@ int putspent(const struct spwd *p, FILE *stream)
 #ifdef L___parsepwent
 
 static const unsigned char pw_off[] = {
-	offsetof(struct passwd, pw_name), 	/* 0 */
+	offsetof(struct passwd, pw_name),	/* 0 */
 	offsetof(struct passwd, pw_passwd),	/* 1 */
 	offsetof(struct passwd, pw_uid),	/* 2 - not a char ptr */
-	offsetof(struct passwd, pw_gid), 	/* 3 - not a char ptr */
+	offsetof(struct passwd, pw_gid),	/* 3 - not a char ptr */
 	offsetof(struct passwd, pw_gecos),	/* 4 */
-	offsetof(struct passwd, pw_dir), 	/* 5 */
-	offsetof(struct passwd, pw_shell) 	/* 6 */
+	offsetof(struct passwd, pw_dir),	/* 5 */
+	offsetof(struct passwd, pw_shell)	/* 6 */
 };
 
 int attribute_hidden __parsepwent(void *data, char *line)
@@ -918,7 +905,7 @@ int attribute_hidden __parsepwent(void *data, char *line)
 	do {
 		p = ((char *) ((struct passwd *) data)) + pw_off[i];
 
-		if ((i & 6) ^ 2) { 	/* i!=2 and i!=3 */
+		if ((i & 6) ^ 2) {	/* i!=2 and i!=3 */
 			*((char **) p) = line;
 			if (i==6) {
 				return 0;
@@ -958,7 +945,7 @@ int attribute_hidden __parsepwent(void *data, char *line)
 #ifdef L___parsegrent
 
 static const unsigned char gr_off[] = {
-	offsetof(struct group, gr_name), 	/* 0 */
+	offsetof(struct group, gr_name),	/* 0 */
 	offsetof(struct group, gr_passwd),	/* 1 */
 	offsetof(struct group, gr_gid)		/* 2 - not a char ptr */
 };
@@ -1040,7 +1027,7 @@ int attribute_hidden __parsegrent(void *data, char *line)
 					if (!--i) break;
 					while (*++p) {}
 				} while (1);
-			}				
+			}
 			*members = NULL;
 
 			return 0;
@@ -1059,12 +1046,12 @@ static const unsigned char sp_off[] = {
 	offsetof(struct spwd, sp_namp),		/* 0 */
 	offsetof(struct spwd, sp_pwdp),		/* 1 */
 	offsetof(struct spwd, sp_lstchg),	/* 2 - not a char ptr */
-	offsetof(struct spwd, sp_min), 		/* 3 - not a char ptr */
+	offsetof(struct spwd, sp_min),		/* 3 - not a char ptr */
 	offsetof(struct spwd, sp_max),		/* 4 - not a char ptr */
-	offsetof(struct spwd, sp_warn), 	/* 5 - not a char ptr */
-	offsetof(struct spwd, sp_inact), 	/* 6 - not a char ptr */
-	offsetof(struct spwd, sp_expire), 	/* 7 - not a char ptr */
-	offsetof(struct spwd, sp_flag) 		/* 8 - not a char ptr */
+	offsetof(struct spwd, sp_warn),		/* 5 - not a char ptr */
+	offsetof(struct spwd, sp_inact),	/* 6 - not a char ptr */
+	offsetof(struct spwd, sp_expire),	/* 7 - not a char ptr */
+	offsetof(struct spwd, sp_flag)		/* 8 - not a char ptr */
 };
 
 int attribute_hidden __parsespent(void *data, char * line)
@@ -1141,7 +1128,7 @@ int attribute_hidden __pgsreader(int (*__parserfunc)(void *d, char *line), void 
 	int rv = ERANGE;
 	__STDIO_AUTO_THREADLOCK_VAR;
 
-	if (buflen < PWD_BUFFER_SIZE) {
+	if (buflen < __UCLIBC_PWD_BUFFER_SIZE__) {
 		__set_errno(rv);
 	} else {
 		__STDIO_AUTO_THREADLOCK(f);

@@ -38,10 +38,12 @@ __BEGIN_NAMESPACE_STD
 extern void *memcpy (void *__restrict __dest,
 		     __const void *__restrict __src, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(memcpy)
 /* Copy N bytes of SRC to DEST, guaranteeing
    correct behavior for overlapping strings.  */
 extern void *memmove (void *__dest, __const void *__src, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(memmove)
 __END_NAMESPACE_STD
 
 /* Copy no more than N bytes of SRC to DEST, stopping when C is found.
@@ -51,20 +53,24 @@ __END_NAMESPACE_STD
 extern void *memccpy (void *__restrict __dest, __const void *__restrict __src,
 		      int __c, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(memccpy)
 #endif /* SVID.  */
 
 
 __BEGIN_NAMESPACE_STD
 /* Set N bytes of S to C.  */
 extern void *memset (void *__s, int __c, size_t __n) __THROW __nonnull ((1));
+libc_hidden_proto(memset)
 
 /* Compare N bytes of S1 and S2.  */
 extern int memcmp (__const void *__s1, __const void *__s2, size_t __n)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(memcmp)
 
 /* Search N bytes of S for C.  */
 extern void *memchr (__const void *__s, int __c, size_t __n)
       __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(memchr)
 __END_NAMESPACE_STD
 
 #ifdef __USE_GNU
@@ -72,10 +78,12 @@ __END_NAMESPACE_STD
    length limit.  */
 extern void *rawmemchr (__const void *__s, int __c)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(rawmemchr)
 
 /* Search N bytes of S for the final occurrence of C.  */
 extern void *memrchr (__const void *__s, int __c, size_t __n)
       __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(memrchr)
 #endif
 
 
@@ -83,193 +91,40 @@ __BEGIN_NAMESPACE_STD
 /* Copy SRC to DEST.  */
 extern char *strcpy (char *__restrict __dest, __const char *__restrict __src)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(strcpy)
 /* Copy no more than N characters of SRC to DEST.  */
 extern char *strncpy (char *__restrict __dest,
 		      __const char *__restrict __src, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(strncpy)
 
 /* Append SRC onto DEST.  */
 extern char *strcat (char *__restrict __dest, __const char *__restrict __src)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(strcat)
 /* Append no more than N characters from SRC onto DEST.  */
 extern char *strncat (char *__restrict __dest, __const char *__restrict __src,
 		      size_t __n) __THROW __nonnull ((1, 2));
-
-#if defined(__mips__) && ! defined(__mips16) && ! defined(__mips64)
-
-/*
- * Fast MIPS32 strcmp() -- Copyright 2007 Broadcom Corporation
- *
- * Dual licensed under LGPL 2.1 (see COPYING.LIB) and Broadcom SLA.
- */
-
-#ifdef __MIPSEL__
-#define __STRCMP_MASK_NEXT_BYTE__(reg) \
-	"	andi	" reg ", 0xff		\n"
-#else
-#define __STRCMP_MASK_NEXT_BYTE__(reg) \
-	"	srl	" reg ", 24		\n"
-#endif
-
-#define __strcmp_asm__(s0, s1) ({		    \
-	register __const char *str0 = s0, *str1 = s1; \
-	register int ret;			    \
-	register unsigned long mask0, mask1,	    \
-		          tmp0, tmp1;		    \
-	__asm__ __volatile__(			    \
-	"	.set noreorder			\n" \
-	"	or	%1,%5,%6		\n" \
-	"	andi	%1, 3			\n" \
-	"	bnez	%1, 8f			\n" \
-	"	lui	%3, 0x0101		\n" \
-	"	lw	%0, 0(%5)		\n" \
-	"	ori	%3, 0x0101		\n" \
-	"	lw	%1, 0(%6)		\n" \
-	"	lui	%4, 0x7f7f		\n" \
-	"	bne	%0, %1, 4f		\n" \
-	"	ori	%4, 0x7f7f		\n" \
-	"	subu	%1, %0, %3		\n" \
-	"3:					\n" \
-	"	nor	%2, %0, %4		\n" \
-	"	and	%2, %1			\n" \
-	"	beqzl	%2, 1f			\n" \
-	"	lw	%1, 4(%6)		\n" \
-	"	b	7f			\n" \
-	"	li	%0, 0			\n" \
-	"1:	lw	%0, 4(%5)		\n" \
-	"	subu	%2, %1, %3		\n" \
-	"	beql	%0, %1, 1f		\n" \
-	"	nor	%0, %1, %4		\n" \
-	"	addiu	%5, 4			\n" \
-	"	b	4f			\n" \
-	"	addiu	%6, 4			\n" \
-	"1:	and	%0, %2			\n" \
-	"	beqzl	%0, 1f			\n" \
-	"	lw	%1, 8(%6)		\n" \
-	"	b	7f			\n" \
-	"	li	%0, 0			\n" \
-	"1:	lw	%0, 8(%5)		\n" \
-	"	subu	%2, %1, %3		\n" \
-	"	beql	%0, %1, 1f		\n" \
-	"	nor	%0, %1, %4		\n" \
-	"	addiu	%5, 8			\n" \
-	"	b	4f			\n" \
-	"	addiu	%6, 8			\n" \
-	"1:	and	%0, %2			\n" \
-	"	beqzl	%0, 1f			\n" \
-	"	lw	%1, 12(%6)		\n" \
-	"	b	7f			\n" \
-	"	li	%0, 0			\n" \
-	"1:	lw	%0, 12(%5)		\n" \
-	"	subu	%2, %1, %3		\n" \
-	"	beql	%0, %1, 1f		\n" \
-	"	nor	%0, %1, %4		\n" \
-	"	addiu	%5, 12			\n" \
-	"	b	4f			\n" \
-	"	addiu	%6, 12			\n" \
-	"1:	and	%0, %2			\n" \
-	"	beqzl	%0, 1f			\n" \
-	"	lw	%1, 16(%6)		\n" \
-	"	b	7f			\n" \
-	"	li	%0, 0			\n" \
-	"1:	addiu	%6, 16			\n" \
-	"	lw	%0, 16(%5)		\n" \
-	"	addiu	%5, 16			\n" \
-	"	bnel	%0, %1, 5f		\n" \
-	__STRCMP_MASK_NEXT_BYTE__("%0")		    \
-	"	b	3b			\n" \
-	"	subu	%1, %0, %3		\n" \
-	"4:					\n" \
-	"	lbu	%0, 0(%5)		\n" \
-	"5:					\n" \
-	"	lbu	%1, 0(%6)		\n" \
-	"6:					\n" \
-	"	bnezl	%0, 1f			\n" \
-	"	lbu	%2, 1(%5)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %0, %1		\n" \
-	"1:	beql	%0, %1, 2f		\n" \
-	"	lbu	%3, 1(%6)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %0, %1		\n" \
-	"2:	bnezl	%2, 1f			\n" \
-	"	lbu	%0, 2(%5)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %2, %3		\n" \
-	"1:	beql	%2, %3, 2f		\n" \
-	"	lbu	%1, 2(%6)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %2, %3		\n" \
-	"2:	bnezl	%0, 1f			\n" \
-	"	lbu	%2, 3(%5)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %0, %1		\n" \
-	"1:	beql	%0, %1, 2f		\n" \
-	"	lbu	%3, 3(%6)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %0, %1		\n" \
-	"2:	bnez	%2, 1f			\n" \
-	"	nop				\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %2, %3		\n" \
-	"1:	beql	%2, %3, 2f		\n" \
-	"	lbu	%1, 4(%6)		\n" \
-	"	b	7f			\n" \
-	"	subu	%0, %2, %3		\n" \
-	"2:	addiu	%6, 4			\n" \
-	"	lbu	%0, 4(%5)		\n" \
-	"	b	6b			\n" \
-	"	addiu	%5, 4			\n" \
-	"8:					\n" \
-	"	lbu	%0, 0(%5)		\n" \
-	"	beqz	%0, 9f			\n" \
-	"	lbu	%1, 0(%6)		\n" \
-	"	bne	%0, %1, 9f		\n" \
-	"	addiu	%5, 1			\n" \
-	"	b	8b			\n" \
-	"	addiu	%6, 1			\n" \
-	"9:	subu	%0, %0, %1		\n" \
-	"7:					\n" \
-	"	.set reorder			\n" \
-		: "=&r" (ret),			    \
-		  "=&r" (tmp0), "=&r" (tmp1),	    \
-		  "=&r" (mask0), "=&r" (mask1),	    \
-		  "+r" (str0), "+r" (str1)	    \
-		: /* no inputs */		    \
-		: "memory");			    \
-	ret; })
-
-#endif
-
-#if defined(__strcmp_asm__) && \
-	! defined(_NO_INLINE_STRCMP_) && \
-	! defined(_LIBC) && \
-	((__OPTIMIZE_LEVEL__ >= 3) || defined(_FORCE_INLINE_STRCMP_))
-
-static __always_inline int strcmp (__const char *__s1, __const char *__s2)
-{
-	return(__strcmp_asm__(__s1, __s2));
-}
-
-#else
+libc_hidden_proto(strncat)
 
 /* Compare S1 and S2.  */
 extern int strcmp (__const char *__s1, __const char *__s2)
      __THROW __attribute_pure__ __nonnull ((1, 2));
-
-#endif
-
+libc_hidden_proto(strcmp)
 /* Compare N characters of S1 and S2.  */
 extern int strncmp (__const char *__s1, __const char *__s2, size_t __n)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strncmp)
 
 /* Compare the collated forms of S1 and S2.  */
 extern int strcoll (__const char *__s1, __const char *__s2)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strcoll)
 /* Put a transformation of SRC into no more than N bytes of DEST.  */
 extern size_t strxfrm (char *__restrict __dest,
 		       __const char *__restrict __src, size_t __n)
      __THROW __nonnull ((2));
+libc_hidden_proto(strxfrm)
 __END_NAMESPACE_STD
 
 #if defined __USE_GNU && defined __UCLIBC_HAS_XLOCALE__
@@ -281,15 +136,18 @@ __END_NAMESPACE_STD
 /* Compare the collated forms of S1 and S2 using rules from L.  */
 extern int strcoll_l (__const char *__s1, __const char *__s2, __locale_t __l)
      __THROW __attribute_pure__ __nonnull ((1, 2, 3));
+libc_hidden_proto(strcoll_l)
 /* Put a transformation of SRC into no more than N bytes of DEST.  */
 extern size_t strxfrm_l (char *__dest, __const char *__src, size_t __n,
 			 __locale_t __l) __THROW __nonnull ((2, 4));
+libc_hidden_proto(strxfrm_l)
 #endif
 
 #if defined __USE_SVID || defined __USE_BSD || defined __USE_XOPEN_EXTENDED
 /* Duplicate S, returning an identical malloc'd string.  */
 extern char *strdup (__const char *__s)
      __THROW __attribute_malloc__ __nonnull ((1));
+libc_hidden_proto(strdup)
 #endif
 
 /* Return a malloc'd copy of at most N bytes of STRING.  The
@@ -298,6 +156,7 @@ extern char *strdup (__const char *__s)
 #if defined __USE_GNU
 extern char *strndup (__const char *__string, size_t __n)
      __THROW __attribute_malloc__ __nonnull ((1));
+libc_hidden_proto(strndup)
 #endif
 
 #if defined __USE_GNU && defined __GNUC__
@@ -327,9 +186,11 @@ __BEGIN_NAMESPACE_STD
 /* Find the first occurrence of C in S.  */
 extern char *strchr (__const char *__s, int __c)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(strchr)
 /* Find the last occurrence of C in S.  */
 extern char *strrchr (__const char *__s, int __c)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(strrchr)
 __END_NAMESPACE_STD
 
 #ifdef __USE_GNU
@@ -337,6 +198,7 @@ __END_NAMESPACE_STD
    the closing NUL byte in case C is not found in S.  */
 extern char *strchrnul (__const char *__s, int __c)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(strchrnul)
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -344,21 +206,26 @@ __BEGIN_NAMESPACE_STD
    consists entirely of characters not in REJECT.  */
 extern size_t strcspn (__const char *__s, __const char *__reject)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strcspn)
 /* Return the length of the initial segment of S which
    consists entirely of characters in ACCEPT.  */
 extern size_t strspn (__const char *__s, __const char *__accept)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strspn)
 /* Find the first occurrence in S of any character in ACCEPT.  */
 extern char *strpbrk (__const char *__s, __const char *__accept)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strpbrk)
 /* Find the first occurrence of NEEDLE in HAYSTACK.  */
 extern char *strstr (__const char *__haystack, __const char *__needle)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strstr)
 
 
 /* Divide S into tokens separated by characters in DELIM.  */
 extern char *strtok (char *__restrict __s, __const char *__restrict __delim)
      __THROW __nonnull ((2));
+libc_hidden_proto(strtok)
 __END_NAMESPACE_STD
 
 /* Divide S into tokens separated by characters in DELIM.  Information
@@ -373,12 +240,14 @@ extern char *__strtok_r (char *__restrict __s,
 extern char *strtok_r (char *__restrict __s, __const char *__restrict __delim,
 		       char **__restrict __save_ptr)
      __THROW __nonnull ((2, 3));
+libc_hidden_proto(strtok_r)
 #endif
 
 #ifdef __USE_GNU
 /* Similar to `strstr' but this function ignores the case of both strings.  */
 extern char *strcasestr (__const char *__haystack, __const char *__needle)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strcasestr)
 #endif
 
 #ifdef __USE_GNU
@@ -388,6 +257,7 @@ extern char *strcasestr (__const char *__haystack, __const char *__needle)
 extern void *memmem (__const void *__haystack, size_t __haystacklen,
 		     __const void *__needle, size_t __needlelen)
      __THROW __attribute_pure__ __nonnull ((1, 3));
+libc_hidden_proto(memmem)
 
 /* Copy N bytes of SRC to DEST, return pointer to bytes after the
    last written byte.  */
@@ -399,6 +269,7 @@ extern void *__mempcpy (void *__restrict __dest,
 extern void *mempcpy (void *__restrict __dest,
 		      __const void *__restrict __src, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(mempcpy)
 #endif
 
 
@@ -406,6 +277,7 @@ __BEGIN_NAMESPACE_STD
 /* Return the length of S.  */
 extern size_t strlen (__const char *__s)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(strlen)
 __END_NAMESPACE_STD
 
 #ifdef	__USE_GNU
@@ -413,12 +285,14 @@ __END_NAMESPACE_STD
    If no '\0' terminator is found in that many characters, return MAXLEN.  */
 extern size_t strnlen (__const char *__string, size_t __maxlen)
      __THROW __attribute_pure__ __nonnull ((1));
+libc_hidden_proto(strnlen)
 #endif
 
 
 __BEGIN_NAMESPACE_STD
 /* Return a string describing the meaning of the `errno' code in ERRNUM.  */
 extern char *strerror (int __errnum) __THROW;
+libc_hidden_proto(strerror)
 __END_NAMESPACE_STD
 #if defined __USE_XOPEN2K || defined __USE_MISC
 /* Reentrant version of `strerror'.
@@ -433,6 +307,7 @@ __END_NAMESPACE_STD
    ERRNUM.  */
 extern int __xpg_strerror_r (int __errnum, char *__buf, size_t __buflen)
      __THROW __nonnull ((2));
+libc_hidden_proto(__xpg_strerror_r)
 #  ifdef __REDIRECT_NTH
 extern int __REDIRECT_NTH (strerror_r,
 			   (int __errnum, char *__buf, size_t __buflen),
@@ -445,6 +320,7 @@ extern int __REDIRECT_NTH (strerror_r,
    used.  */
 extern char *__glibc_strerror_r (int __errnum, char *__buf, size_t __buflen)
      __THROW __nonnull ((2));
+libc_hidden_proto(__glibc_strerror_r)
 #  ifdef __REDIRECT_NTH
 extern char * __REDIRECT_NTH (strerror_r,
 			   (int __errnum, char *__buf, size_t __buflen),
@@ -498,10 +374,11 @@ extern char *rindex (__const char *__s, int __c)
 /* Return the position of the first bit set in I, or 0 if none are set.
    The least-significant bit is position 1, the most-significant 32.  */
 extern int ffs (int __i) __THROW __attribute__ ((__const__));
+libc_hidden_proto(ffs)
 
 /* The following two functions are non-standard but necessary for non-32 bit
    platforms.  */
-#if 0 /*def	__USE_GNU*/
+# if 0 /*#ifdef __USE_GNU*/
 extern int ffsl (long int __l) __THROW __attribute__ ((__const__));
 #  ifdef __GNUC__
 __extension__ extern int ffsll (long long int __ll)
@@ -512,10 +389,12 @@ __extension__ extern int ffsll (long long int __ll)
 /* Compare S1 and S2, ignoring case.  */
 extern int strcasecmp (__const char *__s1, __const char *__s2)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strcasecmp)
 
 /* Compare no more than N chars of S1 and S2, ignoring case.  */
 extern int strncasecmp (__const char *__s1, __const char *__s2, size_t __n)
      __THROW __attribute_pure__ __nonnull ((1, 2));
+libc_hidden_proto(strncasecmp)
 #endif /* Use BSD.  */
 
 #if defined __USE_GNU && defined __UCLIBC_HAS_XLOCALE__
@@ -524,10 +403,12 @@ extern int strncasecmp (__const char *__s1, __const char *__s2, size_t __n)
 extern int strcasecmp_l (__const char *__s1, __const char *__s2,
 			 __locale_t __loc)
      __THROW __attribute_pure__ __nonnull ((1, 2, 3));
+libc_hidden_proto(strcasecmp_l)
 
 extern int strncasecmp_l (__const char *__s1, __const char *__s2,
 			  size_t __n, __locale_t __loc)
      __THROW __attribute_pure__ __nonnull ((1, 2, 4));
+libc_hidden_proto(strncasecmp_l)
 #endif
 
 #ifdef	__USE_BSD
@@ -536,44 +417,47 @@ extern int strncasecmp_l (__const char *__s1, __const char *__s2,
 extern char *strsep (char **__restrict __stringp,
 		     __const char *__restrict __delim)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(strsep)
 #endif
 
 #ifdef	__USE_GNU
 /* Compare S1 and S2 as strings holding name & indices/version numbers.  */
-#if 0
 extern int strverscmp (__const char *__s1, __const char *__s2)
      __THROW __attribute_pure__ __nonnull ((1, 2));
-#endif
+libc_hidden_proto(strverscmp)
 
 /* Return a string describing the meaning of the signal number in SIG.  */
 extern char *strsignal (int __sig) __THROW;
+libc_hidden_proto(strsignal)
 
 /* Copy SRC to DEST, returning the address of the terminating '\0' in DEST.  */
-#if 0 /* uClibc: disabled */
+# if 0 /* uClibc: disabled */
 extern char *__stpcpy (char *__restrict __dest, __const char *__restrict __src)
      __THROW __nonnull ((1, 2));
-#endif
+# endif
 extern char *stpcpy (char *__restrict __dest, __const char *__restrict __src)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(stpcpy)
 
 /* Copy no more than N characters of SRC to DEST, returning the address of
    the last character written into DEST.  */
-#if 0 /* uClibc: disabled */
+# if 0 /* uClibc: disabled */
 extern char *__stpncpy (char *__restrict __dest,
 			__const char *__restrict __src, size_t __n)
      __THROW __nonnull ((1, 2));
-#endif
+# endif
 extern char *stpncpy (char *__restrict __dest,
 		      __const char *__restrict __src, size_t __n)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(stpncpy)
 
-#if 0							/* uClibc does not support strfry or memfrob. */
+# if 0			/* uClibc does not support strfry or memfrob. */
 /* Sautee STRING briskly.  */
 extern char *strfry (char *__string) __THROW __nonnull ((1));
 
 /* Frobnicate N bytes of S.  */
 extern void *memfrob (void *__s, size_t __n) __THROW __nonnull ((1));
-#endif
+# endif
 
 # ifndef basename
 /* Return the file name within directory of FILENAME.  We don't
@@ -581,18 +465,28 @@ extern void *memfrob (void *__s, size_t __n) __THROW __nonnull ((1));
    in <libgen.h>) which makes the XPG version of this function
    available.  */
 extern char *basename (__const char *__filename) __THROW __nonnull ((1));
+libc_hidden_proto(basename)
 # endif
-#endif
+#endif /* __USE_GNU */
 
 
 #ifdef	__USE_BSD
 /* Two OpenBSD extension functions. */
 extern size_t strlcat(char *__restrict dst, const char *__restrict src,
                       size_t n) __THROW __nonnull ((1, 2));
+libc_hidden_proto(strlcat)
 extern size_t strlcpy(char *__restrict dst, const char *__restrict src,
                       size_t n) __THROW __nonnull ((1, 2));
+libc_hidden_proto(strlcpy)
 #endif
 
 __END_DECLS
 
-#endif /* string.h  */
+
+#if defined(_LIBC) && defined(__UCLIBC_HAS_STRING_ARCH_OPT__)
+# if defined __i386__
+#  include <../libc/string/i386/string.h>
+# endif
+#endif
+
+#endif /* string.h */

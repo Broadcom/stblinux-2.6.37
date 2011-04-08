@@ -9,9 +9,8 @@
 #include <stdarg.h>
 #include <wchar.h>
 
-libc_hidden_proto(vswprintf)
 
-libc_hidden_proto(vfwprintf)
+/* NB: this file is not used if __USE_OLD_VFPRINTF__ */
 
 #ifndef __STDIO_BUFFERS
 #warning Skipping vswprintf since no buffering!
@@ -40,33 +39,25 @@ int vswprintf(wchar_t *__restrict buf, size_t size,
 	__INIT_MBSTATE(&(f.__state));
 #endif /* __STDIO_MBSTATE */
 
-#ifdef __UCLIBC_HAS_THREADS__
-	f.__user_locking = 1;		/* Set user locking. */
-#ifdef __USE_STDIO_FUTEXES__
-	_IO_lock_init (f._lock);
-#else
-	__stdio_init_mutex(&f.__lock);
-#endif
-#endif
 	f.__nextopen = NULL;
 
 	if (size > ((SIZE_MAX - (size_t) buf)/sizeof(wchar_t))) {
 		size = ((SIZE_MAX - (size_t) buf)/sizeof(wchar_t));
 	}
 
-	f.__bufstart = (char *) buf;
-	f.__bufend = (char *)(buf + size);
+	f.__bufstart = (unsigned char *) buf;
+	f.__bufend = (unsigned char *) (buf + size);
 	__STDIO_STREAM_INIT_BUFREAD_BUFPOS(&f);
 	__STDIO_STREAM_DISABLE_GETC(&f);
 	__STDIO_STREAM_DISABLE_PUTC(&f);
 
-	rv = vfwprintf(&f, format, arg);
+	rv = _vfwprintf_internal(&f, format, arg);
 
 	/* NOTE: Return behaviour differs from snprintf... */
 	if (f.__bufpos == f.__bufend) {
 		rv = -1;
 		if (size) {
-			f.__bufpos = (char *)(((wchar_t *) f.__bufpos) - 1);
+			f.__bufpos = (unsigned char *) (((wchar_t *) f.__bufpos) - 1);
 		}
 	}
 	if (size) {

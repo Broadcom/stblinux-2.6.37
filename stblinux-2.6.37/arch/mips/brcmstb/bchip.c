@@ -40,7 +40,7 @@ int brcm_enet_enabled;
 int brcm_pci_enabled;
 int brcm_pcie_enabled;
 int brcm_smp_enabled;
-int brcm_emac_1_enabled;
+int brcm_enet1_enabled;
 int brcm_moca_enabled;
 int brcm_usb_enabled;
 int brcm_pm_enabled;
@@ -175,11 +175,11 @@ void __init bchip_check_compat(void)
 #elif defined(CONFIG_BCM7408)
 	MAIN_CHIP_ID(7408, b0);
 #elif defined(CONFIG_BCM7420)
-	ALT_CHIP_ID(3320, c0);
-	ALT_CHIP_ID(7220, c0);
-	ALT_CHIP_ID(7409, c0);
-	ALT_CHIP_ID(7410, c0);
-	MAIN_CHIP_ID(7420, c0);
+	ALT_CHIP_ID(3320, c1);
+	ALT_CHIP_ID(7220, c1);
+	ALT_CHIP_ID(7409, c1);
+	ALT_CHIP_ID(7410, c1);
+	MAIN_CHIP_ID(7420, c1);
 #elif defined(CONFIG_BCM7422) || defined(CONFIG_BCM7425)
 	ALT_CHIP_ID(7422, a0);
 	MAIN_CHIP_ID(7425, a0);
@@ -215,7 +215,7 @@ void __init bchip_check_compat(void)
  * MIPS features, caches, and bus interface
  ***********************************************************************/
 
-void __init bchip_mips_setup(void)
+void bchip_mips_setup(void)
 {
 #if   defined(CONFIG_BMIPS3300)
 
@@ -297,29 +297,40 @@ void __init bchip_mips_setup(void)
 #define USB_REG(x, y)		(x + BCHP_USB_CTRL_##y - \
 				 BCHP_USB_CTRL_REG_START)
 
-static void bchip_usb_init_one(uintptr_t base)
+static void bchip_usb_init_one(int id, uintptr_t base)
 {
 	/* endianness setup */
 	BDEV_UNSET_RB(USB_REG(base, SETUP), USB_ENDIAN_MASK);
 	BDEV_SET_RB(USB_REG(base, SETUP), USB_ENDIAN);
 
 	/* power control setup */
-#ifdef CONFIG_BRCM_OVERRIDE_USB_PWR
-#ifdef CONFIG_BRCM_FORCE_USB_PWR_LO
-	BDEV_UNSET(USB_REG(base, SETUP), USB_IPP);
-	printk(KERN_INFO "USB: forcing active low VBUS input\n");
+#ifdef CONFIG_BRCM_OVERRIDE_USB
+
+#ifdef CONFIG_BRCM_FORCE_USB_OC_LO
+	BDEV_SET(USB_REG(base, SETUP), USB_IOC);
 #else
-	BDEV_SET(USB_REG(base, SETUP), USB_IPP);
-	printk(KERN_INFO "USB: forcing active high VBUS input\n");
+	BDEV_UNSET(USB_REG(base, SETUP), USB_IOC);
 #endif
-#else /* CONFIG_BRCM_OVERRIDE_USB_PWR */
-	if (!(BDEV_RD(USB_REG(base, SETUP)) & USB_IOC)) {
-		printk(KERN_WARNING "warning: USB IOC not initialized by "
-			"bootloader, assuming active low\n");
+
+#ifdef CONFIG_BRCM_FORCE_USB_PWR_LO
+	BDEV_SET(USB_REG(base, SETUP), USB_IPP);
+#else
+	BDEV_UNSET(USB_REG(base, SETUP), USB_IPP);
+#endif
+
+#else /* CONFIG_BRCM_OVERRIDE_USB */
+	if ((BDEV_RD(USB_REG(base, SETUP)) & USB_IOC) == 0) {
+		printk(KERN_WARNING "USB%d: IOC was not set by the bootloader;"
+			" forcing default settings\n", id);
 		BDEV_SET(USB_REG(base, SETUP), USB_IOC);
-		BDEV_UNSET(USB_REG(base, SETUP), USB_IPP);
+		BDEV_SET(USB_REG(base, SETUP), USB_IPP);
 	}
-#endif /* CONFIG_BRCM_OVERRIDE_USB_PWR */
+#endif /* CONFIG_BRCM_OVERRIDE_USB */
+
+	printk(KERN_INFO "USB%d: power enable is active %s; overcurrent is "
+		"active %s\n", id,
+		BDEV_RD(USB_REG(base, SETUP)) & USB_IPP ? "low" : "high",
+		BDEV_RD(USB_REG(base, SETUP)) & USB_IOC ? "low" : "high");
 
 	/* PR45703 - for OHCI->SCB bridge lockup */
 	BDEV_UNSET(USB_REG(base, OBRIDGE),
@@ -351,16 +362,16 @@ static void bchip_usb_init_one(uintptr_t base)
 
 }
 
-void __init bchip_usb_init(void)
+void bchip_usb_init(void)
 {
-	bchip_usb_init_one(BCHP_USB_CTRL_REG_START);
+	bchip_usb_init_one(0, BCHP_USB_CTRL_REG_START);
 #ifdef BCHP_USB1_CTRL_REG_START
-	bchip_usb_init_one(BCHP_USB1_CTRL_REG_START);
+	bchip_usb_init_one(1, BCHP_USB1_CTRL_REG_START);
 #endif
 }
 
 #if defined(CONFIG_BRCM_HAS_MOCA)
-void __init bchip_moca_init(void)
+void bchip_moca_init(void)
 {
 #ifdef BCHP_SUN_TOP_CTRL_SW_RESET
 	BDEV_WR_F_RB(SUN_TOP_CTRL_SW_RESET, moca_sw_reset, 0);
@@ -471,7 +482,7 @@ void __init bchip_set_features(void)
 	brcm_smp_enabled = 1;
 #endif
 #if defined(CONFIG_BRCM_HAS_EMAC_1) || defined(CONFIG_BRCM_HAS_GENET_1)
-	brcm_emac_1_enabled = 1;
+	brcm_enet1_enabled = 1;
 #endif
 #if defined(CONFIG_BRCM_HAS_MOCA)
 	brcm_moca_enabled = 1;
@@ -501,17 +512,17 @@ void __init bchip_set_features(void)
 	case 0x1:
 		/* 7466 */
 		brcm_pci_enabled = 0;
-		brcm_emac_1_enabled = 0;
+		brcm_enet1_enabled = 0;
 		break;
 	case 0x3:
 		/* 7106 */
-		brcm_emac_1_enabled = 0;
+		brcm_enet1_enabled = 0;
 		brcm_smp_enabled = 0;
 		break;
 	case 0x4:
 	case 0x6:
 		/* 7205/7213 */
-		brcm_emac_1_enabled = 0;
+		brcm_enet1_enabled = 0;
 		break;
 	}
 #endif
@@ -563,7 +574,7 @@ void __init bchip_set_features(void)
 				0);
 		} else {
 			/* MOCA_GENET regs are inaccessible - don't touch it */
-			brcm_emac_1_enabled = 0;
+			brcm_enet1_enabled = 0;
 		}
 
 		/* MoCA PHY is always disabled on these bondouts */

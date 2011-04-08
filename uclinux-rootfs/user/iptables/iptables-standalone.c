@@ -58,7 +58,7 @@ main(int argc, char *argv[])
 				iptables_globals.program_version);
 				exit(1);
 	}
-#ifdef NO_SHARED_LIBS
+#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 #endif
 
@@ -69,9 +69,14 @@ main(int argc, char *argv[])
 	}
 
 	if (!ret) {
-		fprintf(stderr, "iptables: %s. "
-				"Run `dmesg' for more information.\n",
-			iptc_strerror(errno));
+		if (errno == EINVAL) {
+			fprintf(stderr, "iptables: %s. "
+					"Run `dmesg' for more information.\n",
+				iptc_strerror(errno));
+		} else {
+			fprintf(stderr, "iptables: %s.\n",
+				iptc_strerror(errno));
+		}
 		if (errno == EAGAIN) {
 			exit(RESOURCE_PROBLEM);
 		}

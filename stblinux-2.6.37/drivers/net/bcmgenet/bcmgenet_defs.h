@@ -40,6 +40,8 @@ extern "C" {
 #define PORT_MODE_EXT_EPHY		2
 #define PORT_MODE_EXT_GPHY		3
 
+#define LED_ACT_SOURCE_MAC		(1 << 9)
+
 /* umac register group start */
 /* reg: umac->hdBkpCtrl */
 /* Enable half-duplex flow control.*/

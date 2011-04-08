@@ -30,30 +30,58 @@
 
 #include <errno.h>
 
-#define SYS_ify(syscall_name)  (__NR_##syscall_name)
-
 #undef IA64_USE_NEW_STUB
 
-/* taken from asm-ia64/break.h */
 #define __IA64_BREAK_SYSCALL	0x100000
-#define ___IA64_BREAK_SYSCALL	"0x100000"
 
-#define _DO_SYSCALL(name, nr, args...) \
-    LOAD_ARGS_##nr (args) \
-    register long _r8 asm ("r8"); \
-    register long _r10 asm ("r10"); \
-    register long _r15 asm ("r15") = SYS_ify(name); \
-    long _retval; \
-    LOAD_REGS_##nr \
-    __asm __volatile ("break " ___IA64_BREAK_SYSCALL ";;\n\t" \
-		: "=r" (_r8), "=r" (_r10), "=r" (_r15) ASM_OUTARGS_##nr \
-		: "2" (_r15) ASM_ARGS_##nr \
-		: "memory" ASM_CLOBBERS_##nr); \
-    _retval = _r8; \
-	if (_r10 == -1) { \
-		__set_errno (_retval); \
-		_retval = -1; \
-	}
+/* mostly taken from glibc sysdeps/unix/sysv/linux/ia64/sysdep.h */
+#define BREAK_INSN_1(num) "break " #num ";;\n\t"
+#define BREAK_INSN(num) BREAK_INSN_1(num)
+
+/* On IA-64 we have stacked registers for passing arguments.  The
+   "out" registers end up being the called function's "in"
+   registers.
+
+   Also, since we have plenty of registers we have two return values
+   from a syscall.  r10 is set to -1 on error, whilst r8 contains the
+   (non-negative) errno on error or the return value on success.
+ */
+
+# define DO_INLINE_SYSCALL_NCS(name, nr, args...)		\
+    LOAD_ARGS_##nr (args)					\
+    register long _r8 __asm__ ("r8");				\
+    register long _r10 __asm__ ("r10");				\
+    register long _r15 __asm__ ("r15") = name;			\
+    long _retval;						\
+    LOAD_REGS_##nr						\
+    __asm__ __volatile__ (BREAK_INSN (__IA64_BREAK_SYSCALL)	\
+		      : "=r" (_r8), "=r" (_r10), "=r" (_r15)	\
+			ASM_OUTARGS_##nr			\
+		      : "2" (_r15) ASM_ARGS_##nr		\
+		      : "memory" ASM_CLOBBERS_##nr);		\
+    _retval = _r8;
+
+#define INLINE_SYSCALL_NCS(name, nr, args...)		\
+  ({							\
+    DO_INLINE_SYSCALL_NCS (name, nr, args)	\
+    if (_r10 == -1)					\
+      {							\
+	__set_errno (_retval);				\
+	_retval = -1;					\
+      }							\
+    _retval; })
+
+#define INTERNAL_SYSCALL_DECL(err) long int err
+
+#define INTERNAL_SYSCALL_NCS(name, err, nr, args...)	\
+  ({							\
+    DO_INLINE_SYSCALL_NCS (name, nr, args)		\
+    err = _r10;						\
+    _retval; })
+
+#define INTERNAL_SYSCALL_ERROR_P(val, err)	(err == -1)
+
+#define INTERNAL_SYSCALL_ERRNO(val, err)	(val)
 
 #define LOAD_ARGS_0()
 #define LOAD_REGS_0
@@ -61,37 +89,37 @@
   long _arg1 = (long) (a1);				\
   LOAD_ARGS_0 ()
 #define LOAD_REGS_1					\
-  register long _out0 asm ("out0") = _arg1;		\
+  register long _out0 __asm__ ("out0") = _arg1;		\
   LOAD_REGS_0
 #define LOAD_ARGS_2(a1, a2)				\
   long _arg2 = (long) (a2);				\
   LOAD_ARGS_1 (a1)
 #define LOAD_REGS_2					\
-  register long _out1 asm ("out1") = _arg2;		\
+  register long _out1 __asm__ ("out1") = _arg2;		\
   LOAD_REGS_1
 #define LOAD_ARGS_3(a1, a2, a3)				\
   long _arg3 = (long) (a3);				\
   LOAD_ARGS_2 (a1, a2)
 #define LOAD_REGS_3					\
-  register long _out2 asm ("out2") = _arg3;		\
+  register long _out2 __asm__ ("out2") = _arg3;		\
   LOAD_REGS_2
 #define LOAD_ARGS_4(a1, a2, a3, a4)			\
   long _arg4 = (long) (a4);				\
   LOAD_ARGS_3 (a1, a2, a3)
 #define LOAD_REGS_4					\
-  register long _out3 asm ("out3") = _arg4;		\
+  register long _out3 __asm__ ("out3") = _arg4;		\
   LOAD_REGS_3
 #define LOAD_ARGS_5(a1, a2, a3, a4, a5)			\
   long _arg5 = (long) (a5);				\
   LOAD_ARGS_4 (a1, a2, a3, a4)
 #define LOAD_REGS_5					\
-  register long _out4 asm ("out4") = _arg5;		\
+  register long _out4 __asm__ ("out4") = _arg5;		\
   LOAD_REGS_4
 #define LOAD_ARGS_6(a1, a2, a3, a4, a5, a6)		\
   long _arg6 = (long) (a6);	    			\
   LOAD_ARGS_5 (a1, a2, a3, a4, a5)
 #define LOAD_REGS_6					\
-  register long _out5 asm ("out5") = _arg6;		\
+  register long _out5 __asm__ ("out5") = _arg6;		\
   LOAD_REGS_5
 
 #define ASM_OUTARGS_0
@@ -102,15 +130,6 @@
 #define ASM_OUTARGS_5	ASM_OUTARGS_4, "=r" (_out4)
 #define ASM_OUTARGS_6	ASM_OUTARGS_5, "=r" (_out5)
 
-#ifdef IA64_USE_NEW_STUB
-#define ASM_ARGS_0
-#define ASM_ARGS_1	ASM_ARGS_0, "4" (_out0)
-#define ASM_ARGS_2	ASM_ARGS_1, "5" (_out1)
-#define ASM_ARGS_3	ASM_ARGS_2, "6" (_out2)
-#define ASM_ARGS_4	ASM_ARGS_3, "7" (_out3)
-#define ASM_ARGS_5	ASM_ARGS_4, "8" (_out4)
-#define ASM_ARGS_6	ASM_ARGS_5, "9" (_out5)
-#else
 #define ASM_ARGS_0
 #define ASM_ARGS_1	ASM_ARGS_0, "3" (_out0)
 #define ASM_ARGS_2	ASM_ARGS_1, "4" (_out1)
@@ -118,7 +137,6 @@
 #define ASM_ARGS_4	ASM_ARGS_3, "6" (_out3)
 #define ASM_ARGS_5	ASM_ARGS_4, "7" (_out4)
 #define ASM_ARGS_6	ASM_ARGS_5, "8" (_out5)
-#endif
 
 #define ASM_CLOBBERS_0	ASM_CLOBBERS_1, "out0"
 #define ASM_CLOBBERS_1	ASM_CLOBBERS_2, "out1"
@@ -126,6 +144,7 @@
 #define ASM_CLOBBERS_3	ASM_CLOBBERS_4, "out3"
 #define ASM_CLOBBERS_4	ASM_CLOBBERS_5, "out4"
 #define ASM_CLOBBERS_5	ASM_CLOBBERS_6, "out5"
+#define ASM_CLOBBERS_6	ASM_CLOBBERS_6_COMMON , "b7"
 #define ASM_CLOBBERS_6_COMMON	, "out6", "out7",			\
   /* Non-stacked integer registers, minus r8, r10, r15.  */		\
   "r2", "r3", "r9", "r11", "r12", "r13", "r14", "r16", "r17", "r18",	\
@@ -137,56 +156,6 @@
   "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",	\
   /* Branch registers.  */						\
   "b6"
-
-#ifdef IA64_USE_NEW_STUB
-# define ASM_CLOBBERS_6	ASM_CLOBBERS_6_COMMON
-#else
-# define ASM_CLOBBERS_6	ASM_CLOBBERS_6_COMMON , "b7"
-#endif
-
-
-
-#define _syscall0(type,name) \
-type name(void) \
-{ \
-	_DO_SYSCALL(name, 0); return (type) _retval; \
-}
-
-#define _syscall1(type,name,type1,arg1) \
-type name(type1 arg1) \
-{ \
-	_DO_SYSCALL(name, 1, arg1); return (type) _retval; \
-}
-
-#define _syscall2(type,name,type1,arg1,type2,arg2) \
-type name(type1 arg1, type2 arg2) \
-{ \
-	_DO_SYSCALL(name, 2, arg1, arg2); return (type) _retval; \
-}
-
-#define _syscall3(type,name,type1,arg1,type2,arg2,type3,arg3) \
-type name(type1 arg1, type2 arg2, type3 arg3) \
-{ \
-	_DO_SYSCALL(name, 3, arg1, arg2, arg3); return (type) _retval; \
-}
-
-#define _syscall4(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4) \
-type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4) \
-{ \
-	_DO_SYSCALL(name, 4, arg1, arg2, arg3, arg4); return (type) _retval; \
-}
-
-#define _syscall5(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4,type5,arg5) \
-type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) \
-{ \
-	_DO_SYSCALL(name, 5, arg1, arg2, arg3, arg4, arg5); return (type) _retval; \
-}
-
-#define _syscall6(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4,type5,arg5,type6,arg6) \
-type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6) \
-{ \
-	_DO_SYSCALL(name, 6, arg1, arg2, arg3, arg4, arg5, arg6); return (type) _retval; \
-}
 
 #endif /* __ASSEMBLER__ */
 #endif /* _BITS_SYSCALLS_H */

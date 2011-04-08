@@ -4,18 +4,13 @@
 #
 
 config TARGET_ARCH
+	string
 	default "sh"
 
 config FORCE_OPTIONS_FOR_ARCH
 	bool
 	default y
 	select ARCH_ANY_ENDIAN
-
-config ARCH_CFLAGS
-	string
-
-config LIBGCC_CFLAGS
-	string
 
 choice
 	prompt "Target Processor Type"
@@ -50,3 +45,8 @@ config CONFIG_SH4
 	bool "SH4"
 
 endchoice
+
+config ARCH_HAS_BWD_MEMCPY
+       bool
+       default y
+       depends on CONFIG_SH4

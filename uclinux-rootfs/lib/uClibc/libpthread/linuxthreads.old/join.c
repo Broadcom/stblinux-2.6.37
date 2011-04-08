@@ -25,10 +25,12 @@
 #include "restart.h"
 #include "debug.h" /* PDEBUG, added by StS */
 
+libpthread_hidden_proto(pthread_exit)
 void pthread_exit(void * retval)
 {
   __pthread_do_exit (retval, CURRENT_STACK_FRAME);
 }
+libpthread_hidden_def (pthread_exit)
 
 void __pthread_do_exit(void *retval, char *currentframe)
 {
@@ -75,7 +77,7 @@ void __pthread_do_exit(void *retval, char *currentframe)
   THREAD_SETMEM(self, p_terminated, 1);
   /* See if someone is joining on us */
   joining = THREAD_GETMEM(self, p_joining);
-  PDEBUG("joining = %p, pid=%d\n", joining, joining->p_pid);
+  PDEBUG("joining = %p, pid=%d\n", joining, joining ? joining->p_pid : 0);
   __pthread_unlock(THREAD_GETMEM(self, p_lock));
   /* Restart joining thread if any */
   if (joining != NULL) restart(joining);
@@ -85,7 +87,7 @@ void __pthread_do_exit(void *retval, char *currentframe)
   if (self == __pthread_main_thread && __pthread_manager_request >= 0) {
     request.req_thread = self;
     request.req_kind = REQ_MAIN_THREAD_EXIT;
-    TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+    TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		(char *)&request, sizeof(request)));
     suspend(self);
     /* Main thread flushes stdio streams and runs atexit functions.
@@ -149,7 +151,7 @@ int pthread_join(pthread_t thread_id, void ** thread_return)
   /* If not terminated yet, suspend ourselves. */
   if (! th->p_terminated) {
     /* Register extrication interface */
-    __pthread_set_own_extricate_if(self, &extr); 
+    __pthread_set_own_extricate_if(self, &extr);
     if (!(THREAD_GETMEM(self, p_canceled)
 	&& THREAD_GETMEM(self, p_cancelstate) == PTHREAD_CANCEL_ENABLE))
       th->p_joining = self;
@@ -158,7 +160,7 @@ int pthread_join(pthread_t thread_id, void ** thread_return)
     __pthread_unlock(&handle->h_lock);
 
     if (already_canceled) {
-      __pthread_set_own_extricate_if(self, 0); 
+      __pthread_set_own_extricate_if(self, 0);
       __pthread_do_exit(PTHREAD_CANCELED, CURRENT_STACK_FRAME);
     }
 
@@ -166,7 +168,7 @@ int pthread_join(pthread_t thread_id, void ** thread_return)
     suspend(self);
   PDEBUG("after suspend\n");
     /* Deregister extrication interface */
-    __pthread_set_own_extricate_if(self, 0); 
+    __pthread_set_own_extricate_if(self, 0);
 
     /* This is a cancellation point */
     if (THREAD_GETMEM(self, p_woken_by_cancel)
@@ -184,7 +186,7 @@ int pthread_join(pthread_t thread_id, void ** thread_return)
     request.req_thread = self;
     request.req_kind = REQ_FREE;
     request.req_args.free.thread_id = thread_id;
-    TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+    TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		(char *) &request, sizeof(request)));
   }
   return 0;
@@ -222,7 +224,7 @@ int pthread_detach(pthread_t thread_id)
     request.req_thread = thread_self();
     request.req_kind = REQ_FREE;
     request.req_args.free.thread_id = thread_id;
-    TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+    TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		(char *) &request, sizeof(request)));
   }
   return 0;

@@ -66,11 +66,10 @@
 #include <crypt.h>
 #include "libcrypt.h"
 
-/* Re-entrantify me -- all this junk needs to be in 
+/* Re-entrantify me -- all this junk needs to be in
  * struct crypt_data to make this really reentrant... */
 static u_char	inv_key_perm[64];
 static u_char	inv_comp_perm[56];
-static u_char	u_sbox[8][64];
 static u_char	un_pbox[32];
 static u_int32_t en_keysl[16], en_keysr[16];
 static u_int32_t de_keysl[16], de_keysr[16];
@@ -83,8 +82,8 @@ static u_int32_t old_salt;
 static u_int32_t old_rawkey0, old_rawkey1;
 
 
-/* Static stuff that stays resident and doesn't change after 
- * being initialized, and therefore doesn't need to be made 
+/* Static stuff that stays resident and doesn't change after
+ * being initialized, and therefore doesn't need to be made
  * reentrant. */
 static u_char	init_perm[64], final_perm[64];
 static u_char	m_sbox[4][4096];
@@ -194,10 +193,9 @@ static const u_int32_t bits32[32] =
 };
 
 static const u_char	bits8[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-static const u_int32_t *bits28, *bits24;
 
 
-static int 
+static int
 ascii_to_bin(char ch)
 {
 	if (ch > 'z')
@@ -218,12 +216,15 @@ ascii_to_bin(char ch)
 static void
 des_init(void)
 {
-	int	i, j, b, k, inbit, obit;
-	u_int32_t	*p, *il, *ir, *fl, *fr;
 	static int des_initialised = 0;
 
+	int	i, j, b, k, inbit, obit;
+	u_int32_t	*p, *il, *ir, *fl, *fr;
+	const u_int32_t *bits28, *bits24;
+	u_char	u_sbox[8][64];
+
 	if (des_initialised==1)
-	    return;
+		return;
 
 	old_rawkey0 = old_rawkey1 = 0L;
 	saltbits = 0L;
@@ -371,7 +372,7 @@ setup_salt(u_int32_t salt)
 }
 
 
-static int
+static void
 des_setkey(const char *key)
 {
 	u_int32_t	k0, k1, rawkey0, rawkey1;
@@ -391,7 +392,7 @@ des_setkey(const char *key)
 		 * has bad parity anyway) in order to simplify the starting
 		 * conditions.
 		 */
-		return(0);
+		return;
 	}
 	old_rawkey0 = rawkey0;
 	old_rawkey1 = rawkey1;
@@ -447,40 +448,32 @@ des_setkey(const char *key)
 				| comp_maskr[6][(t1 >> 7) & 0x7f]
 				| comp_maskr[7][t1 & 0x7f];
 	}
-	return(0);
 }
 
 
 static int
 do_des(	u_int32_t l_in, u_int32_t r_in, u_int32_t *l_out, u_int32_t *r_out, int count)
 {
-	/*
-	 *	l_in, r_in, l_out, and r_out are in pseudo-"big-endian" format.
-	 */
+	/* l_in, r_in, l_out, and r_out are in pseudo-"big-endian" format. */
 	u_int32_t	l, r, *kl, *kr, *kl1, *kr1;
 	u_int32_t	f, r48l, r48r;
 	int		round;
 
 	if (count == 0) {
-		return(1);
-	} else if (count > 0) {
-		/*
-		 * Encrypting
-		 */
+		return 1;
+	}
+	if (count > 0) {
+		/* Encrypting */
 		kl1 = en_keysl;
 		kr1 = en_keysr;
 	} else {
-		/*
-		 * Decrypting
-		 */
+		/* Decrypting */
 		count = -count;
 		kl1 = de_keysl;
 		kr1 = de_keysr;
 	}
 
-	/*
-	 *	Do initial permutation (IP).
-	 */
+	/* Do initial permutation (IP). */
 	l = ip_maskl[0][l_in >> 24]
 	  | ip_maskl[1][(l_in >> 16) & 0xff]
 	  | ip_maskl[2][(l_in >> 8) & 0xff]
@@ -499,22 +492,17 @@ do_des(	u_int32_t l_in, u_int32_t r_in, u_int32_t *l_out, u_int32_t *r_out, int 
 	  | ip_maskr[7][r_in & 0xff];
 
 	while (count--) {
-		/*
-		 * Do each round.
-		 */
+		/* Do each round. */
 		kl = kl1;
 		kr = kr1;
 		round = 16;
-		while (round--) {
-			/*
-			 * Expand R to 48 bits (simulate the E-box).
-			 */
+		do {
+			/* Expand R to 48 bits (simulate the E-box). */
 			r48l	= ((r & 0x00000001) << 23)
 				| ((r & 0xf8000000) >> 9)
 				| ((r & 0x1f800000) >> 11)
 				| ((r & 0x01f80000) >> 13)
 				| ((r & 0x001f8000) >> 15);
-
 			r48r	= ((r & 0x0001f800) << 7)
 				| ((r & 0x00001f80) << 5)
 				| ((r & 0x000001f8) << 3)
@@ -535,19 +523,15 @@ do_des(	u_int32_t l_in, u_int32_t r_in, u_int32_t *l_out, u_int32_t *r_out, int 
 			  | psbox[1][m_sbox[1][r48l & 0xfff]]
 			  | psbox[2][m_sbox[2][r48r >> 12]]
 			  | psbox[3][m_sbox[3][r48r & 0xfff]];
-			/*
-			 * Now that we've permuted things, complete f().
-			 */
+			/* Now that we've permuted things, complete f(). */
 			f ^= l;
 			l = r;
 			r = f;
-		}
+		} while (--round);
 		r = l;
 		l = f;
 	}
-	/*
-	 * Do final permutation (inverse of IP).
-	 */
+	/* Do final permutation (inverse of IP). */
 	*l_out	= fp_maskl[0][l >> 24]
 		| fp_maskl[1][(l >> 16) & 0xff]
 		| fp_maskl[2][(l >> 8) & 0xff]
@@ -657,8 +641,7 @@ char *__des_crypt(const unsigned char *key, const unsigned char *setting)
 		if (*(q - 1))
 			key++;
 	}
-	if (des_setkey((char *)keybuf))
-		return(NULL);
+	des_setkey((char *)keybuf);
 
 #if 0
 	if (*setting == _PASSWORD_EFMT1) {
@@ -687,8 +670,7 @@ char *__des_crypt(const unsigned char *key, const unsigned char *setting)
 			while (q - (u_char *)keybuf - 8 && *key)
 				*q++ ^= *key++ << 1;
 
-			if (des_setkey((char *)keybuf))
-				return(NULL);
+			des_setkey((char *)keybuf);
 		}
 		strncpy(output, setting, 9);
 
@@ -701,7 +683,7 @@ char *__des_crypt(const unsigned char *key, const unsigned char *setting)
 		 */
 		output[9] = '\0';
 		p = (u_char *)output + strlen(output);
-	} else 
+	} else
 #endif
 	{
 		/*

@@ -20,7 +20,6 @@
 #include <string.h>
 #include "../misc/internals/tempname.h"
 
-libc_hidden_proto(memcpy)
 
 static char tmpnam_buffer[L_tmpnam];
 
@@ -42,7 +41,7 @@ tmpnam (char *s)
 			0))
     return NULL;
 
-  if (__builtin_expect (__gen_tempname (tmpbuf, __GT_NOCREATE), 0))
+  if (__builtin_expect (__gen_tempname (tmpbuf, __GT_NOCREATE, 0), 0))
     return NULL;
 
   if (s == NULL)

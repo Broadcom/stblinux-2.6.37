@@ -148,8 +148,9 @@ void out_size_t(FILE *f, const size_t *p, size_t n, char *comment)
 }
 
 
-int main(void)
+int main(int argc, char **argv)
 {
+	char *output_file = "locale_data.c";
 	FILE *lso;					/* static object */
 	int i;
 #ifdef __LOCALE_DATA_MAGIC_SIZE
@@ -158,8 +159,10 @@ int main(void)
 	memset(magic, 0, __LOCALE_DATA_MAGIC_SIZE);
 #endif /* __LOCALE_DATA_MAGIC_SIZE */
 
-	if (!(lso = fopen("locale_data.c", "w"))) {
-		printf("can't open locale_data.c!\n");
+	if (argc == 2)
+		output_file = argv[1];
+	if (!(lso = fopen(output_file, "w"))) {
+		printf("cannot open output file '%s'!\n", output_file);
 		return EXIT_FAILURE;
 	}
 
@@ -238,7 +241,7 @@ int main(void)
 	/* collate should be last*/
 	assert(sizeof(__locale_collate_tbl)/sizeof(__locale_collate_tbl[0]) == __lc_collate_data_LEN) ;
 	out_u16(lso, __locale_collate_tbl, __lc_collate_data_LEN, "collate_data");
-	
+
 
 	{
 		unsigned char co_buf[__LOCALE_DATA_CATEGORIES] = {
@@ -251,7 +254,7 @@ int main(void)
 		};
 		out_uc(lso, co_buf, __LOCALE_DATA_CATEGORIES, "lc_common_item_offsets_LEN");
 	}
-	
+
 	out_size_t(lso, common_tbl_offsets, __LOCALE_DATA_CATEGORIES * 4, "lc_common_tbl_offsets");
 	/* offsets from start of locale_mmap_t */
 	/* rows, item_offsets, item_idx, data */

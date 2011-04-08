@@ -8,34 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mntent.h>
+#include <bits/uClibc_mutex.h>
 
-libc_hidden_proto(getmntent_r)
-libc_hidden_proto(setmntent)
-libc_hidden_proto(endmntent)
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
-libc_hidden_proto(strstr)
-libc_hidden_proto(strtok_r)
-libc_hidden_proto(atoi)
-libc_hidden_proto(fopen)
-libc_hidden_proto(fclose)
-libc_hidden_proto(fseek)
-libc_hidden_proto(fgets)
-libc_hidden_proto(abort)
-libc_hidden_proto(fprintf)
 
-#ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
-static pthread_mutex_t mylock = PTHREAD_MUTEX_INITIALIZER;
-#endif
-#define LOCK	__PTHREAD_MUTEX_LOCK(&mylock)
-#define UNLOCK	__PTHREAD_MUTEX_UNLOCK(&mylock)
 
 /* Reentrant version of getmntent.  */
-struct mntent *getmntent_r (FILE *filep, 
+struct mntent *getmntent_r (FILE *filep,
 	struct mntent *mnt, char *buff, int bufsize)
 {
+	static const char sep[] = " \t\n";
+
 	char *cp, *ptrptr;
-	const char *sep = " \t\n";
 
 	if (!filep || !mnt || !buff)
 	    return NULL;
@@ -85,16 +70,16 @@ struct mntent *getmntent(FILE * filep)
     struct mntent *tmp;
     static char *buff = NULL;
     static struct mntent mnt;
-    LOCK;
-    
+    __UCLIBC_MUTEX_LOCK(mylock);
+
     if (!buff) {
             buff = malloc(BUFSIZ);
 		if (!buff)
 		    abort();
     }
-    
+
     tmp = getmntent_r(filep, &mnt, buff, BUFSIZ);
-    UNLOCK;
+    __UCLIBC_MUTEX_UNLOCK(mylock);
     return(tmp);
 }
 
@@ -103,11 +88,8 @@ int addmntent(FILE * filep, const struct mntent *mnt)
 	if (fseek(filep, 0, SEEK_END) < 0)
 		return 1;
 
-	if (fprintf (filep, "%s %s %s %s %d %d\n", mnt->mnt_fsname, mnt->mnt_dir,
-		 mnt->mnt_type, mnt->mnt_opts, mnt->mnt_freq, mnt->mnt_passno) < 1)
-		return 1;
-
-	return 0;
+	return (fprintf (filep, "%s %s %s %s %d %d\n", mnt->mnt_fsname, mnt->mnt_dir,
+		 mnt->mnt_type, mnt->mnt_opts, mnt->mnt_freq, mnt->mnt_passno) < 0 ? 1 : 0);
 }
 
 char *hasmntopt(const struct mntent *mnt, const char *opt)

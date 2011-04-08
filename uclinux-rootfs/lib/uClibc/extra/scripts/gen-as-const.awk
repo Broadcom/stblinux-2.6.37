@@ -13,6 +13,7 @@ BEGIN { started = 0 }
 /^#/ { print; next }
 
 NF >= 1 && !started {
+  printf "void dummy(void);\n";
   print "void dummy(void) {";
   started = 1;
 }
@@ -25,7 +26,7 @@ NF == 1 { sub(/^.*$/, "& &"); }
 NF > 1 {
   name = $1;
   sub(/^[^ 	]+[ 	]+/, "");
-  printf "asm (\"@@@name@@@%s@@@value@@@%%0@@@end@@@\" : : \"i\" (%s));\n",
+  printf "__asm__ (\"@@@name@@@%s@@@value@@@%%0@@@end@@@\" : : \"i\" ((long) %s));\n",
     name, $0;
 }
 

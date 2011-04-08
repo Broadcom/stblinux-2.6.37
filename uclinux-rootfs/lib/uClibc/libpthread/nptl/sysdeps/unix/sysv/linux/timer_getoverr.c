@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sysdep.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 #include "kernel-posix-timers.h"
 
 
@@ -38,8 +38,8 @@ static int compat_timer_getoverrun (timer_t timerid);
 
 
 int
-timer_getoverrun (timerid)
-     timer_t timerid;
+timer_getoverrun (
+     timer_t timerid)
 {
 # undef timer_getoverrun
 # ifndef __ASSUME_POSIX_TIMERS

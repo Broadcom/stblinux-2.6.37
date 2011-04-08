@@ -32,7 +32,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: count.c,v 1.3 2008/04/19 14:12:49 ldv Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -50,7 +50,6 @@ static struct timeval shortest = { 1000000, 0 };
 int
 count_syscall(struct tcb *tcp, struct timeval *tv)
 {
-	tcp->flags &= ~TCB_INSYSCALL;
 	if (tcp->scno < 0 || tcp->scno >= nsyscalls)
 		return 0;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1997, 1998, 1999, 2000, 2002, 2003 
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998, 1999, 2000, 2002, 2003
    Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Brendan Kehoe (brendan@zen.org).
@@ -20,16 +20,16 @@
 
 #include <sys/asm.h>
 #include <sysdep.h>
-#include <bits/errno_values.h>
+#include <bits/errno.h>
 
-#ifdef __UCLIBC_HAS_THREADS__
+#ifdef _LIBC_REENTRANT
 
 LOCALSZ= 3
 FRAMESZ= (((NARGSAVE+LOCALSZ)*SZREG)+ALSZ)&ALMASK
 RAOFF= FRAMESZ-(1*SZREG)
 GPOFF= FRAMESZ-(2*SZREG)
 V0OFF= FRAMESZ-(3*SZREG)
-	
+
 ENTRY(__syscall_error)
 #ifdef __PIC__
 	.set noat
@@ -61,15 +61,17 @@ ENTRY(__syscall_error)
 	j	ra
 	END(__syscall_error)
 
-#else /* __UCLIBC_HAS_THREADS__ */
+#else /* __LIBC_REENTRANT */
 
 
 ENTRY(__syscall_error)
 #ifdef __PIC__
+	.set noat
 	SETUP_GPX (AT)
+	.set at
 #endif
 	SETUP_GPX64 (t9, AT)
-	
+
 	/* Store it in errno... */
 	sw v0, errno
 
@@ -79,4 +81,4 @@ ENTRY(__syscall_error)
 	RESTORE_GP64
 	j ra
 	END(__syscall_error)
-#endif  /* __UCLIBC_HAS_THREADS__ */
+#endif  /* _LIBC_REENTRANT*/

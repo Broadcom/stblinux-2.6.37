@@ -8,22 +8,21 @@
  */
 
 #define getrlimit64 __hide_getrlimit64
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 #include <sys/resource.h>
 #undef getrlimit64
 
-libc_hidden_proto(getrlimit)
 
 /* Only wrap getrlimit if the new ugetrlimit is not present and getrlimit sucks */
 
-#if defined(__NR_ugetrlimit)
+#if defined __NR_ugetrlimit
 
 /* just call ugetrlimit() */
 # define __NR___syscall_ugetrlimit __NR_ugetrlimit
-static inline
+static __always_inline
 _syscall2(int, __syscall_ugetrlimit, enum __rlimit_resource, resource,
-          struct rlimit *, rlim);
+          struct rlimit *, rlim)
 int getrlimit(__rlimit_resource_t resource, struct rlimit *rlimits)
 {
 	return (__syscall_ugetrlimit(resource, rlimits));
@@ -33,14 +32,14 @@ int getrlimit(__rlimit_resource_t resource, struct rlimit *rlimits)
 
 /* We don't need to wrap getrlimit() */
 _syscall2(int, getrlimit, __rlimit_resource_t, resource,
-		struct rlimit *, rlim);
+		struct rlimit *, rlim)
 
 #else
 
 /* we have to handle old style getrlimit() */
 # define __NR___syscall_getrlimit __NR_getrlimit
-static inline
-_syscall2(int, __syscall_getrlimit, int, resource, struct rlimit *, rlim);
+static __always_inline
+_syscall2(int, __syscall_getrlimit, int, resource, struct rlimit *, rlim)
 
 int getrlimit(__rlimit_resource_t resource, struct rlimit *rlimits)
 {

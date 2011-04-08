@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: time.c,v 1.24 2008/05/20 04:56:13 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -70,9 +70,8 @@ printtv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness, int special)
 		tprintf("NULL");
 	else if (!verbose(tcp))
 		tprintf("%#lx", addr);
-	else
-	{
-		int     rc;
+	else {
+		int rc;
 
 		if (bitness == BITNESS_32
 #if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
@@ -92,8 +91,7 @@ printtv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness, int special)
 				else
 					tprint_timeval32(tcp, &tv);
 			}
-		} else
-		{
+		} else {
 			struct timeval tv;
 
 			if ((rc = umove(tcp, addr, &tv)) >= 0) {
@@ -107,7 +105,6 @@ printtv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness, int special)
 					tprint_timeval(tcp, &tv);
 			}
 		}
-
 		if (rc < 0)
 			tprintf("{...}");
 	}
@@ -120,9 +117,8 @@ sprinttv(struct tcb *tcp, long addr, enum bitness_t bitness, char *buf)
 		strcpy(buf, "NULL");
 	else if (!verbose(tcp))
 		sprintf(buf, "%#lx", addr);
-	else
-	{
-		int     rc;
+	else {
+		int rc;
 
 		if (bitness == BITNESS_32
 #if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
@@ -135,8 +131,7 @@ sprinttv(struct tcb *tcp, long addr, enum bitness_t bitness, char *buf)
 			if ((rc = umove(tcp, addr, &tv)) >= 0)
 				sprintf(buf, "{%u, %u}",
 					tv.tv_sec, tv.tv_usec);
-		} else
-		{
+		} else {
 			struct timeval tv;
 
 			if ((rc = umove(tcp, addr, &tv)) >= 0)
@@ -144,77 +139,68 @@ sprinttv(struct tcb *tcp, long addr, enum bitness_t bitness, char *buf)
 					(unsigned long) tv.tv_sec,
 					(unsigned long) tv.tv_usec);
 		}
-
 		if (rc < 0)
 			strcpy(buf, "{...}");
 	}
 }
 
-void print_timespec (struct tcb *tcp, long addr)
+void print_timespec(struct tcb *tcp, long addr)
 {
 	if (addr == 0)
 		tprintf("NULL");
 	else if (!verbose(tcp))
 		tprintf("%#lx", addr);
 	else {
-		int     rc;
+		int rc;
 
 #if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
-		if (personality_wordsize[current_personality] == 4)
-		{
+		if (personality_wordsize[current_personality] == 4) {
 			struct timeval32 tv;
 
 			if ((rc = umove(tcp, addr, &tv)) >= 0)
 				tprintf("{%u, %u}",
 					tv.tv_sec, tv.tv_usec);
 		} else
-		{
 #endif
+		{
 			struct timespec ts;
 
 			if ((rc = umove(tcp, addr, &ts)) >= 0)
 				tprintf("{%lu, %lu}",
 					(unsigned long) ts.tv_sec,
 					(unsigned long) ts.tv_nsec);
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
 		}
-#endif
-
 		if (rc < 0)
 			tprintf("{...}");
 	}
 }
 
-void sprint_timespec (char *buf, struct tcb *tcp, long addr)
+void sprint_timespec(char *buf, struct tcb *tcp, long addr)
 {
 	if (addr == 0)
 		strcpy(buf, "NULL");
 	else if (!verbose(tcp))
 		sprintf(buf, "%#lx", addr);
 	else {
-		int     rc;
+		int rc;
 
 #if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
-		if (personality_wordsize[current_personality] == 4)
-		{
+		if (personality_wordsize[current_personality] == 4) {
 			struct timeval32 tv;
 
 			if ((rc = umove(tcp, addr, &tv)) >= 0)
 				sprintf(buf, "{%u, %u}",
 					tv.tv_sec, tv.tv_usec);
 		} else
-		{
 #endif
+		{
 			struct timespec ts;
 
 			if ((rc = umove(tcp, addr, &ts)) >= 0)
 				sprintf(buf, "{%lu, %lu}",
 					(unsigned long) ts.tv_sec,
 					(unsigned long) ts.tv_nsec);
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
 		}
-#endif
-
 		if (rc < 0)
 			strcpy(buf, "{...}");
 	}
@@ -267,19 +253,18 @@ int
 sys_osf_gettimeofday(tcp)
 struct tcb *tcp;
 {
-    if (exiting(tcp)) {
-	if (syserror(tcp)) {
-	    tprintf("%#lx, %#lx",
-		    tcp->u_arg[0], tcp->u_arg[1]);
-	    return 0;
-	}
-	printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
+	if (exiting(tcp)) {
+		if (syserror(tcp)) {
+			tprintf("%#lx, %#lx", tcp->u_arg[0], tcp->u_arg[1]);
+			return 0;
+		}
+		printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
 #ifndef SVR4
-	tprintf(", ");
-	printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
+		tprintf(", ");
+		printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
 #endif /* !SVR4 */
-    }
-    return 0;
+	}
+	return 0;
 }
 #endif
 
@@ -302,14 +287,14 @@ int
 sys_osf_settimeofday(tcp)
 struct tcb *tcp;
 {
-    if (entering(tcp)) {
-	printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
+	if (entering(tcp)) {
+		printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
 #ifndef SVR4
-	tprintf(", ");
-	printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
+		tprintf(", ");
+		printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
 #endif /* !SVR4 */
-    }
-    return 0;
+	}
+	return 0;
 }
 #endif
 
@@ -329,6 +314,21 @@ struct tcb *tcp;
 	return 0;
 }
 
+int
+sys_nanosleep(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		print_timespec(tcp, tcp->u_arg[0]);
+		tprintf(", ");
+	} else {
+		if (!tcp->u_arg[1] || is_restart_error(tcp))
+			print_timespec(tcp, tcp->u_arg[1]);
+		else
+			tprintf("%#lx", tcp->u_arg[1]);
+	}
+	return 0;
+}
+
 static const struct xlat which[] = {
 	{ ITIMER_REAL,	"ITIMER_REAL"	},
 	{ ITIMER_VIRTUAL,"ITIMER_VIRTUAL"},
@@ -343,9 +343,8 @@ printitv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness)
 		tprintf("NULL");
 	else if (!verbose(tcp))
 		tprintf("%#lx", addr);
-	else
-	{
-		int     rc;
+	else {
+		int rc;
 
 		if (bitness == BITNESS_32
 #if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
@@ -353,8 +352,7 @@ printitv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness)
 #endif
 			)
 		{
-			struct
-			{
+			struct {
 				struct timeval32 it_interval, it_value;
 			} itv;
 
@@ -365,8 +363,7 @@ printitv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness)
 				tprint_timeval32(tcp, &itv.it_value);
 				tprintf("}");
 			}
-		} else
-		{
+		} else {
 			struct itimerval itv;
 
 			if ((rc = umove(tcp, addr, &itv)) >= 0)	{
@@ -377,7 +374,6 @@ printitv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness)
 				tprintf("}");
 			}
 		}
-
 		if (rc < 0)
 			tprintf("{...}");
 	}
@@ -408,16 +404,16 @@ int
 sys_osf_getitimer(tcp)
 struct tcb *tcp;
 {
-    if (entering(tcp)) {
-	printxval(which, tcp->u_arg[0], "ITIMER_???");
-	tprintf(", ");
-    } else {
-	if (syserror(tcp))
-	    tprintf("%#lx", tcp->u_arg[1]);
-	else
-	    printitv_bitness(tcp, tcp->u_arg[1], BITNESS_32);
-    }
-    return 0;
+	if (entering(tcp)) {
+		printxval(which, tcp->u_arg[0], "ITIMER_???");
+		tprintf(", ");
+	} else {
+		if (syserror(tcp))
+			tprintf("%#lx", tcp->u_arg[1]);
+		else
+			printitv_bitness(tcp, tcp->u_arg[1], BITNESS_32);
+	}
+	return 0;
 }
 #endif
 
@@ -444,18 +440,18 @@ int
 sys_osf_setitimer(tcp)
 struct tcb *tcp;
 {
-    if (entering(tcp)) {
-	printxval(which, tcp->u_arg[0], "ITIMER_???");
-	tprintf(", ");
-	printitv_bitness(tcp, tcp->u_arg[1], BITNESS_32);
-	tprintf(", ");
-    } else {
-	if (syserror(tcp))
-	    tprintf("%#lx", tcp->u_arg[2]);
-	else
-	    printitv_bitness(tcp, tcp->u_arg[2], BITNESS_32);
-    }
-    return 0;
+	if (entering(tcp)) {
+		printxval(which, tcp->u_arg[0], "ITIMER_???");
+		tprintf(", ");
+		printitv_bitness(tcp, tcp->u_arg[1], BITNESS_32);
+		tprintf(", ");
+	} else {
+		if (syserror(tcp))
+			tprintf("%#lx", tcp->u_arg[2]);
+		else
+			printitv_bitness(tcp, tcp->u_arg[2], BITNESS_32);
+	}
+	return 0;
 }
 #endif
 
@@ -559,8 +555,7 @@ static const struct xlat adjtimex_state[] = {
 static int
 tprint_timex32(struct tcb *tcp, long addr)
 {
-	struct
-	{
+	struct {
 		unsigned int modes;
 		int     offset;
 		int     freq;
@@ -659,6 +654,8 @@ sys_adjtimex(struct tcb *tcp)
 			tprintf("%#lx", tcp->u_arg[0]);
 		else if (tprint_timex(tcp, tcp->u_arg[0]) < 0)
 			tprintf("{...}");
+		if (syserror(tcp))
+			return 0;
 		tcp->auxstr = xlookup(adjtimex_state, tcp->u_rval);
 		if (tcp->auxstr)
 			return RVAL_STR;
@@ -744,17 +741,14 @@ static const struct xlat sigev_value[] = {
 static void
 printsigevent32(struct tcb *tcp, long arg)
 {
-	struct
-	{
+	struct {
 		int     sigev_value;
 		int     sigev_signo;
 		int     sigev_notify;
 
-		union
-		{
+		union {
 			int     tid;
-			struct
-			{
+			struct {
 				int     function, attribute;
 			} thread;
 		} un;
@@ -762,8 +756,7 @@ printsigevent32(struct tcb *tcp, long arg)
 
 	if (umove(tcp, arg, &sev) < 0)
 		tprintf("{...}");
-	else
-	{
+	else {
 		tprintf("{%#x, ", sev.sigev_value);
 		if (sev.sigev_notify == SIGEV_SIGNAL)
 			tprintf("%s, ", signame(sev.sigev_signo));

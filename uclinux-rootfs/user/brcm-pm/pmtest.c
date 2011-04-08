@@ -60,7 +60,6 @@ void usage(void)
 	printf("examples:\n");
 	printf("  status       show current power status\n");
 	printf("  usb 0        power down USB controllers\n");
-	printf("  enet 1       power up ENET controller(s)\n");
 	printf("  moca 1       power up MoCA controller(s)\n");
 	printf("  sata 1       power up SATA controller\n");
 	printf("  tp1 0        power down TP1 (second CPU thread)\n");
@@ -70,9 +69,6 @@ void usage(void)
 	printf("  ddr 0        disable DDR self-refresh\n");
 	printf("  standby 0x1  enter passive standby (flags = 0x1)\n");
 	printf("  irw_halt     enter irw_halt mode\n");
-	printf("\n");
-	printf("options:\n");
-	printf("  -d <0|1>     disable/enable DHCP on ENET\n");
 	exit(1);
 }
 
@@ -87,14 +83,11 @@ int main(int argc, char **argv)
 	struct brcm_pm_state state;
 	struct brcm_pm_cfg cfg;
 	void *brcm_pm_ctx;
-	int val, has_val = 0, use_dhcp = 1, ret;
+	int val, has_val = 0, ret;
 	char *cmd, *arg;
 
-	while((ret = getopt(argc, argv, "d:h")) != -1) {
+	while((ret = getopt(argc, argv, "h")) != -1) {
 		switch(ret) {
-			case 'd':
-				use_dhcp = atoi(optarg);
-				break;
 			case 'h':
 			default:
 				usage();
@@ -115,14 +108,12 @@ int main(int argc, char **argv)
 	
 	if(brcm_pm_get_cfg(brcm_pm_ctx, &cfg) != 0)
 		fatal("can't get PM config");
-	cfg.use_dhcp = use_dhcp;
 	if(brcm_pm_set_cfg(brcm_pm_ctx, &cfg) != 0)
 		fatal("can't set PM config");
 
 	if(! strcmp(cmd, "status"))
 	{
 		printf("usb:          %d\n", state.usb_status);
-		printf("enet:         %d\n", state.enet_status);
 		printf("sata:         %d\n", state.sata_status);
 		printf("tp1:          %d\n", state.tp1_status);
 		printf("cpu_base:     %d\n", state.cpu_base);
@@ -174,14 +165,6 @@ int main(int argc, char **argv)
 	if(! strcmp(cmd, "usb"))
 	{
 		state.usb_status = val;
-		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
-		return(0);
-	}
-
-	if(! strcmp(cmd, "enet"))
-	{
-		state.enet_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
 			fatal("can't set PM state");
 		return(0);

@@ -2,6 +2,7 @@
  *
  * (C) 2000 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -56,7 +57,7 @@ print_reject_types(void)
 
 	printf("Valid reject types:\n");
 
-	for (i = 0; i < sizeof(reject_table)/sizeof(struct reject_names); i++) {
+	for (i = 0; i < ARRAY_SIZE(reject_table); ++i) {
 		printf("    %-25s\t%s\n", reject_table[i].name, reject_table[i].desc);
 		printf("    %-25s\talias\n", reject_table[i].alias);
 	}
@@ -76,8 +77,8 @@ static void REJECT_help(void)
 }
 
 static const struct option REJECT_opts[] = {
-	{ "reject-with", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "reject-with", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void REJECT_init(struct xt_entry_target *t)
@@ -93,12 +94,12 @@ static int REJECT_parse(int c, char **argv, int invert, unsigned int *flags,
                         const void *entry, struct xt_entry_target **target)
 {
 	struct ipt_reject_info *reject = (struct ipt_reject_info *)(*target)->data;
-	unsigned int limit = sizeof(reject_table)/sizeof(struct reject_names);
+	static const unsigned int limit = ARRAY_SIZE(reject_table);
 	unsigned int i;
 
 	switch(c) {
 	case '1':
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --reject-with");
 		for (i = 0; i < limit; i++) {
@@ -128,10 +129,9 @@ static void REJECT_print(const void *ip, const struct xt_entry_target *target,
 		= (const struct ipt_reject_info *)target->data;
 	unsigned int i;
 
-	for (i = 0; i < sizeof(reject_table)/sizeof(struct reject_names); i++) {
+	for (i = 0; i < ARRAY_SIZE(reject_table); ++i)
 		if (reject_table[i].with == reject->with)
 			break;
-	}
 	printf("reject-with %s ", reject_table[i].name);
 }
 
@@ -141,7 +141,7 @@ static void REJECT_save(const void *ip, const struct xt_entry_target *target)
 		= (const struct ipt_reject_info *)target->data;
 	unsigned int i;
 
-	for (i = 0; i < sizeof(reject_table)/sizeof(struct reject_names); i++)
+	for (i = 0; i < ARRAY_SIZE(reject_table); ++i)
 		if (reject_table[i].with == reject->with)
 			break;
 

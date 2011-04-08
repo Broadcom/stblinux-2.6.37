@@ -21,9 +21,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-libc_hidden_proto(brk)
-
-void *__curbrk = 0;
+void *__curbrk attribute_hidden = 0;
 
 int brk (void *addr)
 {
@@ -32,7 +30,7 @@ int brk (void *addr)
   {
     register long int res __asm__ ("$2");
 
-    asm ("move\t$4,%2\n\t"
+    __asm__ ("move\t$4,%2\n\t"
 	 "li\t%0,%1\n\t"
 	 "syscall"		/* Perform the system call.  */
 	 : "=r" (res)

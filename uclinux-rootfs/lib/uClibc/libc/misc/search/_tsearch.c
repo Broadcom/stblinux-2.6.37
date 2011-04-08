@@ -50,7 +50,6 @@ register node	**rootp;	 address of tree root
 int	(*compar)();		 ordering function
 */
 
-libc_hidden_proto(tsearch)
 void *tsearch(__const void *key, void **vrootp, __compar_fn_t compar)
 {
     register node *q;
@@ -81,7 +80,6 @@ libc_hidden_def(tsearch)
 #endif
 
 #ifdef L_tfind
-libc_hidden_proto(tfind)
 void *tfind(__const void *key, void * __const *vrootp, __compar_fn_t compar)
 {
     register node **rootp = (node **) vrootp;
@@ -177,7 +175,7 @@ static void trecurse(__const void *vroot, __action_fn_t action, int level)
     }
 }
 
-/* void twalk(root, action)		Walk the nodes of a tree 
+/* void twalk(root, action)		Walk the nodes of a tree
 node	*root;			Root of the tree to be walked
 void	(*action)();		Function to be called at each node
 PTR
@@ -208,7 +206,6 @@ tdestroy_recurse (node *root, __free_fn_t freefct)
     free (root);
 }
 
-libc_hidden_proto(tdestroy)
 void tdestroy (void *vroot, __free_fn_t freefct)
 {
     node *root = (node *) vroot;

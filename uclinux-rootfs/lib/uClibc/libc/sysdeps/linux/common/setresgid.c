@@ -7,21 +7,22 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #ifdef __USE_GNU
 #include <unistd.h>
-
-libc_hidden_proto(setresgid)
 
 #if defined(__NR_setresgid32)
 # undef __NR_setresgid
 # define __NR_setresgid __NR_setresgid32
+
 _syscall3(int, setresgid, gid_t, rgid, gid_t, egid, gid_t, sgid)
+libc_hidden_def(setresgid)
 
 #elif defined(__NR_setresgid)
+
 # define __NR___syscall_setresgid __NR_setresgid
-static inline _syscall3(int, __syscall_setresgid,
-		__kernel_gid_t, rgid, __kernel_gid_t, egid, __kernel_gid_t, sgid);
+static __inline__ _syscall3(int, __syscall_setresgid,
+		__kernel_gid_t, rgid, __kernel_gid_t, egid, __kernel_gid_t, sgid)
 
 int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
@@ -33,7 +34,8 @@ int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 	}
 	return (__syscall_setresgid(rgid, egid, sgid));
 }
+libc_hidden_def(setresgid)
+
 #endif
 
-libc_hidden_def(setresgid)
 #endif

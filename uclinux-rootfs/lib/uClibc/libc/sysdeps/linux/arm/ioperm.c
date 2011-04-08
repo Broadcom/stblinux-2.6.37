@@ -43,25 +43,10 @@
 
 #include <sys/types.h>
 #include <sys/mman.h>
-
-#include <asm/page.h>
 #include <sys/sysctl.h>
-
 #include <sys/io.h>
 
-libc_hidden_proto(ioperm)
 
-libc_hidden_proto(readlink)
-libc_hidden_proto(mmap)
-libc_hidden_proto(sscanf)
-libc_hidden_proto(fscanf)
-libc_hidden_proto(fprintf)
-libc_hidden_proto(fgets)
-libc_hidden_proto(fopen)
-libc_hidden_proto(fclose)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(open)
-libc_hidden_proto(close)
 
 #include <linux/version.h>
 
@@ -120,7 +105,7 @@ init_iosys (void)
 {
     char systype[256];
     int i, n;
-    
+
 #if LINUX_VERSION_CODE < 132119
     static int iobase_name[] = { CTL_BUS, BUS_ISA, BUS_ISA_PORT_BASE };
     static int ioshift_name[] = { CTL_BUS, BUS_ISA, BUS_ISA_PORT_SHIFT };

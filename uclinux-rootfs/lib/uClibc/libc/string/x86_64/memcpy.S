@@ -26,10 +26,12 @@
 #define MEMPCPY_P (defined memcpy)
 
         .text
-#if defined PIC && !defined NOT_IN_libc
+#if defined __PIC__ && !defined NOT_IN_libc
 ENTRY (__memcpy_chk)
 	cmpq	%rdx, %rcx
+#if defined __UCLIBC_HAS_SSP__
 	jb	HIDDEN_JUMPTARGET (__chk_fail)
+#endif
 END (__memcpy_chk)
 #endif
 ENTRY (BP_SYM (memcpy))
@@ -59,9 +61,9 @@ ENTRY (BP_SYM (memcpy))
 	subq	$32, %rcx
 	js	2f
 
-	.p2align 4
+	/* Next 3 insns are 11 bytes total, make sure we decode them in one go */
+	.p2align 4,,11
 3:
-
 	/* Now correct the loop counter.  Please note that in the following
 	   code the flags are not changed anymore.  */
 	subq	$32, %rcx

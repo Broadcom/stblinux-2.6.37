@@ -54,6 +54,20 @@ config BCM35125A0
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_1GB_MEMC0
 
+config BCM35126A0
+	bool "35126 Ax"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM35126
+	select BMIPS4380
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_HAS_PCU_UARTS
+	select BRCM_HAS_GENET_0
+	select BRCM_GENET_V2
+	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
+	select BRCM_HAS_1GB_MEMC0
+
 config BCM35230C0
 	bool "35230 Cx"
 	select BRCM_PLATFORM_DEFAULTS
@@ -310,6 +324,29 @@ config BCM7344A0
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_1GB_MEMC0
 
+config BCM7344B0
+	bool "7344 Bx"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7344
+	select BMIPS4380
+	select BRCM_HAS_XKS01
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_GENET_0
+	select BRCM_HAS_MOCA_11_PLUS
+	select BRCM_HAS_MOCA_MIDRF
+	select BRCM_MOCA_ON_GENET_1
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SDIO_V1
+	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
+	select BRCM_HAS_1GB_MEMC0
+
 config BCM7346A0
 	bool "7346 Ax"
 	select BRCM_PLATFORM_DEFAULTS
@@ -328,6 +365,30 @@ config BCM7346A0
 	select BRCM_HAS_NAND_MAJOR_5
 	select BRCM_HAS_NAND_MINOR_0
 	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SATA3
+	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
+	select BRCM_HAS_1GB_MEMC0
+
+config BCM7346B0
+	bool "7346 Bx"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7346
+	select BMIPS4380
+	select BRCM_HAS_XKS01
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_GENET_0
+	select BRCM_HAS_MOCA_11_PLUS
+	select BRCM_HAS_MOCA_MIDRF
+	select BRCM_MOCA_ON_GENET_1
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SDIO_V1
 	select BRCM_HAS_SATA3
 	select BRCM_HAS_WKTMR
 	select BRCM_HAS_UPPER_MEMORY
@@ -543,6 +604,39 @@ config BCM7425A0
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_2GB_MEMC0
 	select BRCM_HAS_1GB_MEMC1
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V0
+	select BRCM_HAS_DIGITAL_DDR_PHY
+
+config BCM7425B0
+	bool "7425 Bx"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7425
+	select BMIPS5000
+	select BRCM_HAS_XKS01
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_PCIE
+	select BRCM_HAS_GENET_0
+	select BRCM_HAS_MOCA_11_PLUS
+	select BRCM_MOCA_ON_GENET_1
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_EDU
+	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SDIO_V1
+	select BRCM_HAS_EMMC
+	select BRCM_HAS_SATA3
+	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
+	select BRCM_HAS_2GB_MEMC0
+	select BRCM_HAS_1GB_MEMC1
+	#select BRCM_HAS_AON
+	#select BRCM_PWR_HANDSHAKE_V1
+	#select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7440B0
 	bool "7440 Bx/Cx"
@@ -710,6 +804,24 @@ config BCM7635A0
 
 config BCM7640A0
 	bool "7640 Ax"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7640
+	select MTI_24K
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_GENET_0
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_EDU
+	select BRCM_HAS_SDIO_V0
+	select BRCM_HAS_DVD
+	select BRCM_HAS_1GB_MEMC0
+
+config BCM7640B0
+	bool "7640 Bx"
 	select BRCM_PLATFORM_DEFAULTS
 	select BCM7640
 	select MTI_24K
@@ -1010,12 +1122,19 @@ config BRCM_OVERRIDE_USB
 	help
 	  Say Y to see advanced USB configuration options.
 
+	  Normally the USB driver in the bootloader will enable the
+	  appropriate settings prior to Linux boot, but this step may be
+	  skipped if a customized bootloader is in use.
+
 	  If unsure, say N.
 
-config BRCM_OVERRIDE_USB_PWR
-	bool "Override USB VBUS power signal polarity"
+choice
+	prompt "USB VBUS power enable polarity"
 	depends on BRCM_OVERRIDE_USB
-	default n
+	default BRCM_FORCE_USB_PWR_LO
+
+config BRCM_FORCE_USB_PWR_LO
+	bool "Active low"
 	help
 	  The board's USB VBUS control IC will have either an active low
 	  or an active high enable.  On most Broadcom reference boards,
@@ -1023,19 +1142,28 @@ config BRCM_OVERRIDE_USB_PWR
 	  The output of the hardware signal USBx_PWRON is affected by
 	  this setting, and it applies to all ports and controllers.
 
-	  Normally the USB driver in the bootloader will enable the
-	  appropriate setting prior to Linux boot.  Say Y here to have
-	  the Linux driver override this setting.
+config BRCM_FORCE_USB_PWR_HI
+	bool "Active high"
+
+endchoice
 
 choice
-	prompt "USB VBUS power enable"
-	depends on BRCM_OVERRIDE_USB_PWR
-	default BRCM_FORCE_USB_PWR_LO
+	prompt "USB overcurrent polarity"
+	depends on BRCM_OVERRIDE_USB
+	default BRCM_FORCE_USB_OC_LO
 
-config BRCM_FORCE_USB_PWR_LO
+config BRCM_FORCE_USB_OC_LO
 	bool "Active low"
+	help
+	  Controls the handling of the overcurrent indicator line (input
+	  to BCM7xxx).  Active low is typically used when USBx_PWRFLT is
+	  connected to a power switch chip, as is the case on Broadcom
+	  reference boards.  Active high may be used if USBx_PWRFLT is
+	  connected "downstream" from a fuse.
 
-config BRCM_FORCE_USB_PWR_HI
+	  This setting applies to all USB ports and controllers.
+
+config BRCM_FORCE_USB_OC_HI
 	bool "Active high"
 
 endchoice
@@ -1408,6 +1536,13 @@ config BRCM_HAS_MOCA_20
 	bool
 	select BRCM_HAS_MOCA
 
+config BRCM_MOCA_VERS
+	hex
+	default 0x1100 if BRCM_HAS_MOCA_11
+	default 0x1101 if BRCM_HAS_MOCA_11_LITE
+	default 0x1102 if BRCM_HAS_MOCA_11_PLUS
+	default 0x2000 if BRCM_HAS_MOCA_20
+
 # select for MoCA on GENET_0
 config BRCM_MOCA_ON_GENET_0
 	bool
@@ -1612,6 +1747,10 @@ config BRCM_HAS_DIGITAL_DDR_PHY
 config BRCM_HAS_STANDBY
 	bool
 
+config BRCM_HAS_AON
+	bool
+	select BRCM_HAS_STANDBY
+
 # no handshake (no bsp_rdy signal) means the SW has to manually set SSPD
 config BRCM_PWR_HANDSHAKE
 	bool
@@ -1653,6 +1792,9 @@ config BCM3548
 	bool
 
 config BCM35125
+	bool
+
+config BCM35126
 	bool
 
 config BCM35230

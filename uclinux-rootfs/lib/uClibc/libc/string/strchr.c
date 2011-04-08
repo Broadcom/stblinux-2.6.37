@@ -13,8 +13,6 @@
 # define Wstrchr strchr
 #endif
 
-libc_hidden_proto(Wstrchr)
-
 Wchar *Wstrchr(register const Wchar *s, Wint c)
 {
 	do {
@@ -28,5 +26,5 @@ Wchar *Wstrchr(register const Wchar *s, Wint c)
 libc_hidden_def(Wstrchr)
 
 #if !defined WANT_WIDE && defined __UCLIBC_SUSV3_LEGACY__
-strong_alias(strchr,index)
+weak_alias(strchr,index)
 #endif

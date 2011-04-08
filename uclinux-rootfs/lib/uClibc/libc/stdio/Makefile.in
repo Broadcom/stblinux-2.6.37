@@ -1,12 +1,14 @@
 # Makefile for uClibc
 #
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
-# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
 #
 # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
 #
 # Dedicated to Toni.  See uClibc/DEDICATION.mjn3 for details.
 #
+
+subdirs += libc/stdio
 
 # SUSv3 functions
 CSRC := \
@@ -59,6 +61,7 @@ CUSRC := \
 ifneq ($(USE_OLD_VFPRINTF),y)
 VF_CSRC := \
 	vfprintf.c \
+	_vfprintf_internal.c \
 	_ppfs_init.c _ppfs_prepargs.c _ppfs_setargs.c _ppfs_parsespec.c \
 	register_printf_function.c parse_printf_format.c
 CSRC += $(VF_CSRC)
@@ -77,7 +80,7 @@ CSRC += _wfwrite.c fwprintf.c swprintf.c vswprintf.c vwprintf.c wprintf.c \
 CUSRC += fgetwc.c getwchar.c fgetws.c fputwc.c putwchar.c fputws.c
 # getwc (fgetwc alias) getwc_unlocked (fgetwc_unlocked alias)
 # putwc (fputwc alias) putwc_unlocked (fputwc_unlocked alias)
-CSRC += vfwprintf.c
+CSRC += vfwprintf.c _vfwprintf_internal.c
 CSRC += wscanf.c swscanf.c fwscanf.c vwscanf.c vswscanf.c vfwscanf.c
 endif
 
@@ -92,8 +95,6 @@ STDIO_SRC := $(patsubst %.c,$(STDIO_DIR)/%.c,$(CSRC))
 STDIO_OBJ := $(patsubst %.c,$(STDIO_OUT)/%.o,$(CSRC))
 
 libc-y += $(STDIO_OBJ)
-libc-a-y += $(STDIO_OBJ)
-libc-so-y += $(STDIO_OBJ:.o=.os)
 
 ifneq ($(USE_OLD_VFPRINTF),y)
 libc-nomulti-y += $(patsubst %.c,$(STDIO_OUT)/%.o,$(VF_CSRC))
@@ -102,7 +103,7 @@ ifeq ($(UCLIBC_HAS_WCHAR),y)
 libc-nomulti-y += $(STDIO_OUT)/vfwprintf.o $(STDIO_OUT)/vfwscanf.o
 endif
 
-objclean-y += stdio_objclean
+objclean-y += CLEAN_libc/stdio
 
-stdio_objclean:
-	$(RM) $(STDIO_OUT)/*.{o,os,oS}
+CLEAN_libc/stdio:
+	$(do_rm) $(addprefix $(STDIO_OUT)/*., o os oS)

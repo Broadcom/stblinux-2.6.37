@@ -22,19 +22,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-libc_hidden_proto(ioctl)
-libc_hidden_proto(getsid)
-libc_hidden_proto(tcgetpgrp)
 
 /* Return the session ID of FD.  */
 pid_t
-tcgetsid (fd)
-     int fd;
+tcgetsid (int fd)
 {
   pid_t pgrp;
   pid_t sid;
 #ifdef TIOCGSID
-  static int tiocgsid_does_not_work;
+  static smallint tiocgsid_does_not_work;
 
   if (! tiocgsid_does_not_work)
     {

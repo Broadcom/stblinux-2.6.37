@@ -1,5 +1,5 @@
 /* Definitions for BSD-style memory management.
-   Copyright (C) 1994-2000, 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1994-2000, 2003, 2004, 2005 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -57,9 +57,10 @@ __BEGIN_DECLS
 #ifndef __USE_FILE_OFFSET64
 extern void *mmap (void *__addr, size_t __len, int __prot,
 		   int __flags, int __fd, __off_t __offset) __THROW;
+libc_hidden_proto(mmap)
 #else
-# ifdef __REDIRECT
-extern void * __REDIRECT (mmap,
+# ifdef __REDIRECT_NTH
+extern void * __REDIRECT_NTH (mmap,
 			      (void *__addr, size_t __len, int __prot,
 			       int __flags, int __fd, __off64_t __offset),
 			      mmap64);
@@ -75,11 +76,14 @@ extern void *mmap64 (void *__addr, size_t __len, int __prot,
 /* Deallocate any mapping for the region starting at ADDR and extending LEN
    bytes.  Returns 0 if successful, -1 for errors (and sets errno).  */
 extern int munmap (void *__addr, size_t __len) __THROW;
+libc_hidden_proto(munmap)
 
 /* Change the memory protection of the region starting at ADDR and
    extending LEN bytes to PROT.  Returns 0 if successful, -1 for errors
    (and sets errno).  */
 extern int mprotect (void *__addr, size_t __len, int __prot) __THROW;
+
+#ifdef __ARCH_USE_MMU__
 
 /* Synchronize the region starting at ADDR and extending LEN bytes with the
    file it maps.  Filesystem operations on a file being mapped are
@@ -89,17 +93,25 @@ extern int mprotect (void *__addr, size_t __len, int __prot) __THROW;
    __THROW.  */
 extern int msync (void *__addr, size_t __len, int __flags);
 
-#ifdef __USE_BSD
+#else
+
+/* On no-mmu systems you can't have real private mappings.  */
+static __inline__ int msync (void *__addr, size_t __len, int __flags) { return 0; }
+
+#endif
+
+#if defined __USE_BSD && (defined __UCLIBC_LINUX_SPECIFIC__ || defined __UCLIBC_HAS_THREADS_NATIVE__)
 /* Advise the system about particular usage patterns the program follows
    for the region starting at ADDR and extending LEN bytes.  */
 extern int madvise (void *__addr, size_t __len, int __advice) __THROW;
 #endif
-#ifdef __USE_XOPEN2K
+#if defined __USE_XOPEN2K && defined __UCLIBC_HAS_ADVANCED_REALTIME__
 /* This is the POSIX name for this function.  */
 extern int posix_madvise (void *__addr, size_t __len, int __advice) __THROW;
 #endif
 
-#ifdef __ARCH_USE_MMU__
+#if defined __UCLIBC_HAS_REALTIME__
+# ifdef __ARCH_USE_MMU__
 
 /* Guarantee all whole pages mapped by the range [ADDR,ADDR+LEN) to
    be memory resident.  */
@@ -120,24 +132,15 @@ extern int munlockall (void) __THROW;
 #else
 
 /* On no-mmu systems, memory cannot be swapped out, so
- * these functions will always succeed.
- */
-static inline int mlock (__const void *__addr, size_t __len) { return 0; }
-static inline int munlock (__const void *__addr, size_t __len) { return 0; }
-static inline int mlockall (int __flags) { return 0; }
-static inline int munlockall (void) { return 0; }
-
+ * these functions will always succeed.  */
+static __inline__ int mlock (__const void *__addr, size_t __len) { return 0; }
+static __inline__ int munlock (__const void *__addr, size_t __len) { return 0; }
+static __inline__ int mlockall (int __flags) { return 0; }
+static __inline__ int munlockall (void) { return 0; }
 #endif
+#endif /* __UCLIBC_HAS_REALTIME__ */
 
-#ifdef __USE_MISC
-/* Remap pages mapped by the range [ADDR,ADDR+OLD_LEN) to new length
-   NEW_LEN.  If MREMAP_MAYMOVE is set in FLAGS the returned address
-   may differ from ADDR.  If MREMAP_FIXED is set in FLAGS the function
-   takes another paramter which is a fixed address at which the block
-   resides after a successful call.  */
-extern void *mremap (void *__addr, size_t __old_len, size_t __new_len,
-		     int __flags, ...) __THROW;
-
+#if defined __USE_MISC && defined __UCLIBC_BSD_SPECIFIC__
 /* mincore returns the memory residency status of the pages in the
    current process's address space specified by [start, start + len).
    The status is returned in a vector of bytes.  The least significant
@@ -145,8 +148,19 @@ extern void *mremap (void *__addr, size_t __old_len, size_t __new_len,
    it is zero.  */
 extern int mincore (void *__start, size_t __len, unsigned char *__vec)
      __THROW;
+#endif
 
-#if 0
+#ifdef __USE_GNU
+/* Remap pages mapped by the range [ADDR,ADDR+OLD_LEN) to new length
+   NEW_LEN.  If MREMAP_MAYMOVE is set in FLAGS the returned address
+   may differ from ADDR.  If MREMAP_FIXED is set in FLAGS the function
+   takes another paramter which is a fixed address at which the block
+   resides after a successful call.  */
+extern void *mremap (void *__addr, size_t __old_len, size_t __new_len,
+		     int __flags, ...) __THROW;
+libc_hidden_proto(mremap)
+
+#ifdef __UCLIBC_LINUX_SPECIFIC__
 /* Remap arbitrary pages of a shared backing store within an existing
    VMA.  */
 extern int remap_file_pages (void *__start, size_t __size, int __prot,

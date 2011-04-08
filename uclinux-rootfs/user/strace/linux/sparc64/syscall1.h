@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscall1.h,v 1.1 2004/07/12 07:44:08 roland Exp $
+ *	$Id$
  */
 
 #define	SOLARIS_syscall	0
@@ -498,4 +498,3 @@ extern int solaris_getcontext(), solaris_setcontext();
 #define SOLARIS_setcontext		(SOLARIS_context_subcall + 1)
 
 #define SOLARIS_context_nsubcalls	2
-

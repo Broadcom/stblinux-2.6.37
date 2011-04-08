@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add Routing header support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -28,13 +29,13 @@ IP6T_RT_HOPS);
 }
 
 static const struct option rt_opts[] = {
-	{ "rt-type", 1, NULL, '1' },
-	{ "rt-segsleft", 1, NULL, '2' },
-	{ "rt-len", 1, NULL, '3' },
-	{ "rt-0-res", 0, NULL, '4' },
-	{ "rt-0-addrs", 1, NULL, '5' },
-	{ "rt-0-not-strict", 0, NULL, '6' },
-	{ .name = NULL }
+	{.name = "rt-type",         .has_arg = true,  .val = '1'},
+	{.name = "rt-segsleft",     .has_arg = true,  .val = '2'},
+	{.name = "rt-len",          .has_arg = true,  .val = '3'},
+	{.name = "rt-0-res",        .has_arg = false, .val = '4'},
+	{.name = "rt-0-addrs",      .has_arg = true,  .val = '5'},
+	{.name = "rt-0-not-strict", .has_arg = false, .val = '6'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -158,8 +159,8 @@ static int rt_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_RT_TYP)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--rt-type' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		rtinfo->rt_type = parse_rt_num(argv[optind-1], "type");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		rtinfo->rt_type = parse_rt_num(optarg, "type");
 		if (invert)
 			rtinfo->invflags |= IP6T_RT_INV_TYP;
 		rtinfo->flags |= IP6T_RT_TYP;
@@ -169,8 +170,8 @@ static int rt_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_RT_SGS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--rt-segsleft' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_rt_segsleft(argv[optind-1], rtinfo->segsleft);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_rt_segsleft(optarg, rtinfo->segsleft);
 		if (invert)
 			rtinfo->invflags |= IP6T_RT_INV_SGS;
 		rtinfo->flags |= IP6T_RT_SGS;
@@ -180,8 +181,8 @@ static int rt_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_RT_LEN)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--rt-len' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		rtinfo->hdrlen = parse_rt_num(argv[optind-1], "length");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		rtinfo->hdrlen = parse_rt_num(optarg, "length");
 		if (invert)
 			rtinfo->invflags |= IP6T_RT_INV_LEN;
 		rtinfo->flags |= IP6T_RT_LEN;
@@ -204,11 +205,11 @@ static int rt_parse(int c, char **argv, int invert, unsigned int *flags,
 		if ( !(*flags & IP6T_RT_TYP) || (rtinfo->rt_type != 0) || (rtinfo->invflags & IP6T_RT_INV_TYP) )
 			xtables_error(PARAMETER_PROBLEM,
 				   "`--rt-type 0' required before `--rt-0-addrs'");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				   " '!' not allowed with `--rt-0-addrs'");
-		rtinfo->addrnr = parse_addresses(argv[optind-1], rtinfo->addrs);
+		rtinfo->addrnr = parse_addresses(optarg, rtinfo->addrs);
 		rtinfo->flags |= IP6T_RT_FST;
 		*flags |= IP6T_RT_FST;
 		break;

@@ -2,14 +2,22 @@
 /*
  * splice() for uClibc
  *
- * Copyright (C) 2010 Broadcom Corp.
+ * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
  *
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
-#include <sys/time.h>
+#include <sys/syscall.h>
+#include <fcntl.h>
 
-libc_hidden_proto(splice)
-_syscall6(int, splice,  int, fd_in, off_t *, off_in, int,  fd_out,  off_t *, off_out, size_t, len, int, flags);
-libc_hidden_def(splice)
+#ifdef __NR_splice
+_syscall6(ssize_t, splice, int, __fdin, __off64_t *, __offin, int, __fdout,
+	__off64_t *, __offout, size_t, __len, unsigned int, __flags)
+#else
+ssize_t splice(int __fdin, __off64_t *__offin, int __fdout,
+	__off64_t *__offout, size_t __len, unsigned int __flags)
+{
+	__set_errno(ENOSYS);
+	return -1;
+}
+#endif

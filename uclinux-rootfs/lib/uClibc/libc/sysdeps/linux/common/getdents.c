@@ -4,7 +4,6 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include <alloca.h>
 #include <assert.h>
 #include <errno.h>
 #include <dirent.h>
@@ -15,10 +14,17 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <bits/kernel_types.h>
+#include <bits/kernel-features.h>
+#include <bits/uClibc_alloc.h>
+
+#if !(defined __UCLIBC_HAS_LFS__ && defined __NR_getdents64 && __WORDSIZE == 64)
+/* If the condition above is met, __getdents is defined as an alias
+ * for __getdents64 (see getdents64.c). Otherwise...
+ */
 
 /* With newer versions of linux, the getdents syscall returns d_type
- * information after the name field.  Someday, we should add support for
- * that instead of always calling getdents64 ...
+ * information after the name field.
  *
  * See __ASSUME_GETDENTS32_D_TYPE in glibc's kernel-features.h for specific
  * version / arch details.
@@ -38,13 +44,39 @@ struct kernel_dirent
 
 ssize_t __getdents (int fd, char *buf, size_t nbytes) attribute_hidden;
 
-#if ! defined __UCLIBC_HAS_LFS__ || ! defined __NR_getdents64
-
-libc_hidden_proto(memcpy)
-libc_hidden_proto(lseek)
-
 #define __NR___syscall_getdents __NR_getdents
-static inline _syscall3(int, __syscall_getdents, int, fd, unsigned char *, kdirp, size_t, count);
+static __always_inline _syscall3(int, __syscall_getdents, int, fd, unsigned char *, kdirp, size_t, count)
+
+#if defined __ASSUME_GETDENTS32_D_TYPE
+
+ssize_t __getdents (int fd, char *buf, size_t nbytes)
+{
+	ssize_t retval;
+
+	retval = __syscall_getdents(fd, (unsigned char *)buf, nbytes);
+
+	/* The kernel added the d_type value after the name.  Change
+	this now.  */
+	if (retval != -1) {
+		union {
+			struct kernel_dirent k;
+			struct dirent u;
+		} *kbuf = (void *) buf;
+
+		while ((char *) kbuf < buf + retval) {
+			char d_type = *((char *) kbuf + kbuf->k.d_reclen - 1);
+			memmove (kbuf->u.d_name, kbuf->k.d_name,
+			strlen (kbuf->k.d_name) + 1);
+			kbuf->u.d_type = d_type;
+
+			kbuf = (void *) ((char *) kbuf + kbuf->k.d_reclen);
+		}
+	}
+
+	return retval;
+}
+
+#elif ! defined __UCLIBC_HAS_LFS__ || ! defined __NR_getdents64
 
 ssize_t __getdents (int fd, char *buf, size_t nbytes)
 {
@@ -56,16 +88,18 @@ ssize_t __getdents (int fd, char *buf, size_t nbytes)
     const size_t size_diff = (offsetof (struct dirent, d_name)
 	    - offsetof (struct kernel_dirent, d_name));
 
-    red_nbytes = MIN (nbytes - ((nbytes / 
-		    (offsetof (struct dirent, d_name) + 14)) * size_diff), 
+    red_nbytes = MIN (nbytes - ((nbytes /
+		    (offsetof (struct dirent, d_name) + 14)) * size_diff),
 	    nbytes - size_diff);
 
     dp = (struct dirent *) buf;
-    skdp = kdp = alloca (red_nbytes);
+    skdp = kdp = stack_heap_alloc(red_nbytes);
 
     retval = __syscall_getdents(fd, (unsigned char *)kdp, red_nbytes);
-    if (retval == -1)
+    if (retval == -1) {
+	stack_heap_free(skdp);
 	return -1;
+    }
 
     while ((char *) kdp < (char *) skdp + retval) {
 	const size_t alignment = __alignof__ (struct dirent);
@@ -82,6 +116,7 @@ ssize_t __getdents (int fd, char *buf, size_t nbytes)
 	    if ((char *) dp == buf) {
 		/* The buffer the user passed in is too small to hold even
 		   one entry.  */
+		stack_heap_free(skdp);
 		__set_errno (EINVAL);
 		return -1;
 	    }
@@ -98,16 +133,11 @@ ssize_t __getdents (int fd, char *buf, size_t nbytes)
 	dp = (struct dirent *) ((char *) dp + new_reclen);
 	kdp = (struct kernel_dirent *) (((char *) kdp) + kdp->d_reclen);
     }
+    stack_heap_free(skdp);
     return (char *) dp - buf;
 }
 
-#if defined __UCLIBC_HAS_LFS__ && ! defined __NR_getdents64
-attribute_hidden strong_alias(__getdents,__getdents64)
-#endif
-
 #elif __WORDSIZE == 32
-
-libc_hidden_proto(memmove)
 
 extern __typeof(__getdents) __getdents64 attribute_hidden;
 ssize_t __getdents (int fd, char *buf, size_t nbytes)
@@ -134,5 +164,11 @@ ssize_t __getdents (int fd, char *buf, size_t nbytes)
 
     return ret;
 }
+
+#endif
+
+#if defined __UCLIBC_HAS_LFS__ && ! defined __NR_getdents64
+attribute_hidden strong_alias(__getdents,__getdents64)
+#endif
 
 #endif

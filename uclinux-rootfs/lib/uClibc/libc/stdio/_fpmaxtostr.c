@@ -11,7 +11,6 @@
 #include <locale.h>
 #include <bits/uClibc_fpmax.h>
 
-libc_hidden_proto(memset)
 
 typedef size_t (__fp_outfunc_t)(FILE *fp, intptr_t type, intptr_t len,
 								intptr_t buf);
@@ -19,7 +18,7 @@ typedef size_t (__fp_outfunc_t)(FILE *fp, intptr_t type, intptr_t len,
 
 /* Copyright (C) 2000, 2001, 2003      Manuel Novoa III
  *
- * Function: 
+ * Function:
  *
  *     ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
  *                         __fp_outfunc_t fp_outfunc);
@@ -185,7 +184,7 @@ static const __fpmax_t exp16_table[] = {
 #if FPMAX_MAX_EXP >= 16384
 	0x1.0p16384L
 #endif
-#if FPMAX_MAX_EXP >= 32768 
+#if FPMAX_MAX_EXP >= 32768
 #error unsupported FPMAX_MAX_EXP.  please increase table
 #endif
 };
@@ -410,7 +409,7 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
 	if (mode < 'a') {
 		*exp_buf -= ('a' - 'A'); /* e->E and p->P */
 		mode += ('a' - 'A');
-	} 
+	}
 
 	o_mode = mode;
 	if ((mode == 'g') && (preci > 0)){
@@ -450,7 +449,7 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
 #ifdef __UCLIBC_HAS_HEXADECIMAL_FLOATS__
 	if ((mode|0x20) == 'a') {
 		char *q;
-			
+
 		for (q = e ; *q ; --q) {
 			if (*q > '9') {
 				*q += (*exp_buf - ('p' - 'a') - '9' - 1);
@@ -501,8 +500,8 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
 			const char *p;
 
 			if (PRINT_INFO_FLAG_VAL(info,group)
-				&& *(p = __UCLIBC_CURLOCALE_DATA.grouping)
-				) {
+			 && *(p = __UCLIBC_CURLOCALE->grouping)
+			) {
 				int nblk1;
 
 				nblk2 = nblk1 = *p;
@@ -522,8 +521,8 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
 						tslen = 1;
 					} else {
 #endif /* __UCLIBC_HAS_WCHAR__ */
-						ts = __UCLIBC_CURLOCALE_DATA.thousands_sep;
-						tslen = __UCLIBC_CURLOCALE_DATA.thousands_sep_len;
+						ts = __UCLIBC_CURLOCALE->thousands_sep;
+						tslen = __UCLIBC_CURLOCALE->thousands_sep_len;
 #ifdef __UCLIBC_HAS_WCHAR__
 					}
 #endif /* __UCLIBC_HAS_WCHAR__ */
@@ -576,8 +575,8 @@ ssize_t _fpmaxtostr(FILE * fp, __fpmax_t x, struct printf_info *info,
 				ppc[2] = (intptr_t)(fmt + DECPT_OFFSET);
 			} else {
 #endif /* __UCLIBC_HAS_WCHAR__ */
-				ppc[1] = __UCLIBC_CURLOCALE_DATA.decimal_point_len;
-				ppc[2] = (intptr_t)(__UCLIBC_CURLOCALE_DATA.decimal_point);
+				ppc[1] = __UCLIBC_CURLOCALE->decimal_point_len;
+				ppc[2] = (intptr_t)(__UCLIBC_CURLOCALE->decimal_point);
 #ifdef __UCLIBC_HAS_WCHAR__
 			}
 #endif /* __UCLIBC_HAS_WCHAR__ */

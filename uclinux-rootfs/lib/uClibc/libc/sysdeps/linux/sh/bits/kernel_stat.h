@@ -5,8 +5,8 @@
 #error bits/kernel_stat.h is for internal uClibc use only!
 #endif
 
-/* This file provides whatever this particular arch's kernel thinks 
- * struct kernel_stat should look like...  It turns out each arch has a 
+/* This file provides whatever this particular arch's kernel thinks
+ * struct kernel_stat should look like...  It turns out each arch has a
  * different opinion on the subject... */
 #include <endian.h>
 
@@ -23,12 +23,9 @@ struct kernel_stat {
 	unsigned long  st_size;
 	unsigned long  st_blksize;
 	unsigned long  st_blocks;
-	unsigned long  st_atime;
-	unsigned long  __unused1;
-	unsigned long  st_mtime;
-	unsigned long  __unused2;
-	unsigned long  st_ctime;
-	unsigned long  __unused3;
+	struct timespec st_atim;
+	struct timespec st_mtim;
+	struct timespec st_ctim;
 	unsigned long  __unused4;
 	unsigned long  __unused5;
 };
@@ -72,14 +69,9 @@ struct kernel_stat64 {
 	unsigned long	__pad4;		/* Future possible st_blocks hi bits */
 #endif
 
-	unsigned long	st_atime;
-	unsigned long	__pad5;
-
-	unsigned long	st_mtime;
-	unsigned long	__pad6;
-
-	unsigned long	st_ctime;
-	unsigned long	__pad7;		/* will be high 32 bits of ctime someday */
+	struct timespec	st_atim;
+	struct timespec	st_mtim;
+	struct timespec	st_ctim;
 
 	unsigned long	__unused1;
 	unsigned long	__unused2;

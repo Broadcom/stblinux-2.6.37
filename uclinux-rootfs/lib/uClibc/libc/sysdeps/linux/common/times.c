@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/times.h>
 
-libc_hidden_proto(times)
 
-_syscall1(clock_t, times, struct tms *, buf);
+_syscall_noerr1(clock_t, times, struct tms *, buf)
 libc_hidden_def(times)

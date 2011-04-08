@@ -12,110 +12,154 @@
  *
  */
 
+#include <sgidefs.h>
 .text
 .align	2
 .globl	_dl_runtime_resolve
 .type	_dl_runtime_resolve,@function
 .ent	_dl_runtime_resolve
 _dl_runtime_resolve:
+#if _MIPS_SIM == _MIPS_SIM_ABI32
 	.frame	$29, 40, $31
 	.set noreorder
 
-	# Save GP.
+	/* Save GP. */
 	move	$3, $28
 
-	# Save arguments and sp value on stack.
+	/* Save arguments and sp value on stack. */
 	subu	$29, 40
 
-	# Modify t9 ($25) so as to point .cpload instruction.
+	/* Modify t9 ($25) so as to point .cpload instruction. */
 	addiu	$25, 12
 
-	# Compute GP.
+	/* Compute GP. */
 	.set noreorder
 	.cpload $25
 	.set reorder
 
-	# Save slot call pc.
+	/* Save slot call pc. */
 	move	$2, $31
 	.cprestore 32
 
-	# Store function arguments from registers to stack
+	/* Store function arguments from registers to stack */
 	sw	$15, 36($29)
 	sw	$4, 16($29)
 	sw	$5, 20($29)
 	sw	$6, 24($29)
 	sw	$7, 28($29)
 
-	# Setup functions args and call __dl_runtime_resolve
+	/* Setup functions args and call __dl_runtime_resolve */
 	move	$4, $24
 	move	$5, $3
 	jal	__dl_runtime_resolve
 
-	# Restore function arguments from stack to registers
+	/* Restore function arguments from stack to registers */
 	lw	$31, 36($29)
 	lw	$4, 16($29)
 	lw	$5, 20($29)
 	lw	$6, 24($29)
 	lw	$7, 28($29)
 
-	# Do a tail call to the original function
+	/* Do a tail call to the original function */
 	addiu	$29, 40
+#else	/* N32 || N64 */
+	.set noreorder
+
+	/* Save GP. */
+	move	$3, $28
+
+	/* Save arguments and sp value on stack. */
+	dsubu	$29, 80
+
+	/* Compute GP. */
+	.set noreorder
+	.cpsetup	$25, 0, _dl_runtime_resolve
+	.set reorder
+
+	/* Store function arguments from registers to stack */
+	sd	$15, 72($29)
+	sd	$4, 8($29)
+	sd	$5, 16($29)
+	sd	$6, 24($29)
+	sd	$7, 32($29)
+	sd	$8, 40($29)
+	sd	$9, 48($29)
+	sd	$10, 56($29)
+	sd	$11, 64($29)
+
+	/* Setup functions args and call __dl_runtime_resolve */
+	move	$4, $24
+	move	$5, $3
+	jal	__dl_runtime_resolve
+
+	/* Restore function arguments from stack to registers */
+	ld	$31, 72($29)
+	ld	$4, 8($29)
+	ld	$5, 16($29)
+	ld	$6, 24($29)
+	ld	$7, 32($29)
+	ld	$8, 40($29)
+	ld	$9, 48($29)
+	ld	$10, 56($29)
+	ld	$11, 64($29)
+
+	/* Do a tail call to the original function */
+	.cpreturn
+	daddu	$29, 80
+#endif	/* N32 || N64 */
 	move	$25, $2
-	jr	$2
+	jr	$25
 .end	_dl_runtime_resolve
+.previous
 
-	# On entry:
-	#
-	#	$14 points to the beginning of the .got.plt section
-	#	$15 points to _GLOBAL_OFFSET_TABLE_ + 8
-	#	$24 points to the function's .got.plt entry
-.align	2
-.globl	_dl_linux_resolve
-.type	_dl_linux_resolve,@function
-.ent	_dl_linux_resolve
-_dl_linux_resolve:
-	.frame	$29, 48, $31
+/* Assembler veneer called from the PLT header code when using the
+   non-PIC ABI.
+
+   Code in each PLT entry puts the caller's return address into t7 ($15),
+   the PLT entry index into t8 ($24), the address of _dl_runtime_pltresolve
+   into t9 ($25) and the address of .got.plt into gp ($28).  __dl_runtime_pltresolve
+   needs a0 ($4) to hold the link map and a1 ($5) to hold the index into
+   .rel.plt (== PLT entry index * 4).  */
+
+	.text
+	.align	2
+	.globl	_dl_runtime_pltresolve
+	.type	_dl_runtime_pltresolve,@function
+	.ent	_dl_runtime_pltresolve
+_dl_runtime_pltresolve:
+	.frame	$29, 40, $31
 	.set noreorder
-
+	# Save arguments and sp value in stack.
+	subu    $29, 40
+	lw      $10, 4($28)
+	# Modify t9 ($25) so as to point .cpload instruction.
+	addiu   $25, 12
 	# Compute GP.
-	.set noreorder
 	.cpload $25
 	.set reorder
 
-	addiu	$29, -48
+	/* Store function arguments from registers to stack */
+	sw	$15, 36($29)
+	sw	$4, 16($29)
+	sw	$5, 20($29)
+	sw	$6, 24($29)
+	sw	$7, 28($29)
 
-	# Save slot call pc.
-	.cprestore 40
+	/* Setup functions args and call __dl_runtime_pltresolve.  */
+	move	$4, $10
+	sll     $5, $24, 3
+	jal	__dl_runtime_pltresolve
 
-	# Save the function arguments.  Also save $2 and $3, which are used
-	# as inputs to __mips16_ret_* functions.
-	sw	$2, 16($29)
-	sw	$3, 20($29)
-	sw	$4, 24($29)
-	sw	$5, 28($29)
-	sw	$6, 32($29)
-	sw	$7, 36($29)
-	sw	$31, 44($29)
+	/* Restore function arguments from stack to registers */
+	lw	$31, 36($29)
+	lw	$4, 16($29)
+	lw	$5, 20($29)
+	lw	$6, 24($29)
+	lw	$7, 28($29)
 
-	# Setup functions args and call _dl_linux_resolver.
-	lw	$4, -4($15)
-	subu	$5, $24, $14
-	srl	$5, 2
-	jal	_dl_linux_resolver
+	/* Do a tail call to the original function */
+	addiu	$29, 40
 	move	$25, $2
-
-	# Restore the saved registers.
-	lw	$2, 16($29)
-	lw	$3, 20($29)
-	lw	$4, 24($29)
-	lw	$5, 28($29)
-	lw	$6, 32($29)
-	lw	$7, 36($29)
-	lw	$31, 44($29)
-
-	# Do a tail call to the original function.
-	addiu	$29, 48
 	jr	$25
-.end	_dl_linux_resolve
-.previous
-
+	.end	_dl_runtime_pltresolve
+	.previous

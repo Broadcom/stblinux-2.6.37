@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "ip6tables-multi.h"
+#include "xshared.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -80,9 +81,10 @@
 #define CMD_SET_POLICY		0x0400U
 #define CMD_RENAME_CHAIN	0x0800U
 #define CMD_LIST_RULES		0x1000U
-#define NUMBER_OF_CMD	14
+#define CMD_ZERO_NUM		0x2000U
+#define NUMBER_OF_CMD	15
 static const char cmdflags[] = { 'I', 'D', 'D', 'R', 'A', 'L', 'F', 'Z',
-				 'N', 'X', 'P', 'E', 'S' };
+				 'Z', 'N', 'X', 'P', 'E', 'S' };
 
 #define OPT_NONE	0x00000U
 #define OPT_NUMERIC	0x00001U
@@ -171,6 +173,7 @@ static char commands_v_options[NUMBER_OF_CMD][NUMBER_OF_OPT] =
 /*LIST*/      {' ','x','x','x','x',' ',' ','x','x',' ','x'},
 /*FLUSH*/     {'x','x','x','x','x',' ','x','x','x','x','x'},
 /*ZERO*/      {'x','x','x','x','x',' ','x','x','x','x','x'},
+/*ZERO_NUM*/  {'x','x','x','x','x',' ','x','x','x','x','x'},
 /*NEW_CHAIN*/ {'x','x','x','x','x',' ','x','x','x','x','x'},
 /*DEL_CHAIN*/ {'x','x','x','x','x',' ','x','x','x','x','x'},
 /*SET_POLICY*/{'x','x','x','x','x',' ','x','x','x','x',' '},
@@ -221,7 +224,7 @@ proto_to_name(u_int8_t proto, int nolookup)
 	return NULL;
 }
 
-static void
+static void __attribute__((noreturn))
 exit_tryhelp(int status)
 {
 	if (line != -1)
@@ -235,9 +238,6 @@ exit_tryhelp(int status)
 static void
 exit_printhelp(struct xtables_rule_match *matches)
 {
-	struct xtables_rule_match *matchp = NULL;
-	struct xtables_target *t = NULL;
-
 	printf("%s v%s\n\n"
 "Usage: %s -[AD] chain rule-specification [options]\n"
 "       %s -I chain [rulenum] rule-specification [options]\n"
@@ -269,7 +269,8 @@ exit_printhelp(struct xtables_rule_match *matches)
 "  --list-rules -S [chain [rulenum]]\n"
 "				Print the rules in a chain or all chains\n"
 "  --flush   -F [chain]		Delete all rules in  chain or all chains\n"
-"  --zero    -Z [chain]		Zero counters in chain or all chains\n"
+"  --zero    -Z [chain [rulenum]]\n"
+"				Zero counters in chain or all chains\n"
 "  --new     -N chain		Create a new user-defined chain\n"
 "  --delete-chain\n"
 "            -X [chain]		Delete a user-defined chain\n"
@@ -281,9 +282,9 @@ exit_printhelp(struct xtables_rule_match *matches)
 
 "Options:\n"
 "[!] --proto	-p proto	protocol: by number or name, eg. `tcp'\n"
-"[!] --source	-s address[/mask]\n"
+"[!] --source	-s address[/mask][,...]\n"
 "				source specification\n"
-"[!] --destination -d address[/mask]\n"
+"[!] --destination -d address[/mask][,...]\n"
 "				destination specification\n"
 "[!] --in-interface -i input name[+]\n"
 "				network interface name ([+] for wildcard)\n"
@@ -307,19 +308,7 @@ exit_printhelp(struct xtables_rule_match *matches)
 "  --set-counters PKTS BYTES	set the counter during insert/append\n"
 "[!] --version	-V		print package version.\n");
 
-	/* Print out any special helps. A user might like to be able to add a --help
-	   to the commandline, and see expected results. So we call help for all
-	   specified matches & targets */
-	for (t = xtables_targets; t; t = t->next) {
-		if (t->used) {
-			printf("\n");
-			t->help();
-		}
-	}
-	for (matchp = matches; matchp; matchp = matchp->next) {
-		printf("\n");
-		matchp->match->help();
-	}
+	print_extension_helps(xtables_targets, matches);
 	exit(0);
 }
 
@@ -467,10 +456,10 @@ parse_target(const char *targetname)
 		xtables_error(PARAMETER_PROBLEM,
 			   "Invalid target name (too short)");
 
-	if (strlen(targetname)+1 > sizeof(ip6t_chainlabel))
+	if (strlen(targetname) >= XT_EXTENSION_MAXNAMELEN)
 		xtables_error(PARAMETER_PROBLEM,
 			   "Invalid target name `%s' (%u chars max)",
-			   targetname, (unsigned int)sizeof(ip6t_chainlabel)-1);
+			   targetname, XT_EXTENSION_MAXNAMELEN - 1);
 
 	for (ptr = targetname; *ptr; ptr++)
 		if (isspace(*ptr))
@@ -740,8 +729,10 @@ append_entry(const ip6t_chainlabel chain,
 	     struct ip6t_entry *fw,
 	     unsigned int nsaddrs,
 	     const struct in6_addr saddrs[],
+	     const struct in6_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in6_addr daddrs[],
+	     const struct in6_addr dmasks[],
 	     int verbose,
 	     struct ip6tc_handle *handle)
 {
@@ -750,8 +741,10 @@ append_entry(const ip6t_chainlabel chain,
 
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ipv6.src = saddrs[i];
+		fw->ipv6.smsk = smasks[i];
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ipv6.dst = daddrs[j];
+			fw->ipv6.dmsk = dmasks[j];
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= ip6tc_append_entry(chain, fw, handle);
@@ -765,13 +758,15 @@ static int
 replace_entry(const ip6t_chainlabel chain,
 	      struct ip6t_entry *fw,
 	      unsigned int rulenum,
-	      const struct in6_addr *saddr,
-	      const struct in6_addr *daddr,
+	      const struct in6_addr *saddr, const struct in6_addr *smask,
+	      const struct in6_addr *daddr, const struct in6_addr *dmask,
 	      int verbose,
 	      struct ip6tc_handle *handle)
 {
 	fw->ipv6.src = *saddr;
 	fw->ipv6.dst = *daddr;
+	fw->ipv6.smsk = *smask;
+	fw->ipv6.dmsk = *dmask;
 
 	if (verbose)
 		print_firewall_line(fw, handle);
@@ -784,8 +779,10 @@ insert_entry(const ip6t_chainlabel chain,
 	     unsigned int rulenum,
 	     unsigned int nsaddrs,
 	     const struct in6_addr saddrs[],
+	     const struct in6_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in6_addr daddrs[],
+	     const struct in6_addr dmasks[],
 	     int verbose,
 	     struct ip6tc_handle *handle)
 {
@@ -794,8 +791,10 @@ insert_entry(const ip6t_chainlabel chain,
 
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ipv6.src = saddrs[i];
+		fw->ipv6.smsk = smasks[i];
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ipv6.dst = daddrs[j];
+			fw->ipv6.dmsk = dmasks[j];
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= ip6tc_insert_entry(chain, fw, rulenum, handle);
@@ -806,7 +805,8 @@ insert_entry(const ip6t_chainlabel chain,
 }
 
 static unsigned char *
-make_delete_mask(struct ip6t_entry *fw, struct xtables_rule_match *matches)
+make_delete_mask(struct xtables_rule_match *matches,
+		 const struct xtables_target *target)
 {
 	/* Establish mask for comparison */
 	unsigned int size;
@@ -819,7 +819,7 @@ make_delete_mask(struct ip6t_entry *fw, struct xtables_rule_match *matches)
 
 	mask = xtables_calloc(1, size
 			 + IP6T_ALIGN(sizeof(struct ip6t_entry_target))
-			 + xtables_targets->size);
+			 + target->size);
 
 	memset(mask, 0xFF, sizeof(struct ip6t_entry));
 	mptr = mask + sizeof(struct ip6t_entry);
@@ -833,7 +833,7 @@ make_delete_mask(struct ip6t_entry *fw, struct xtables_rule_match *matches)
 
 	memset(mptr, 0xFF,
 	       IP6T_ALIGN(sizeof(struct ip6t_entry_target))
-	       + xtables_targets->userspacesize);
+	       + target->userspacesize);
 
 	return mask;
 }
@@ -843,21 +843,26 @@ delete_entry(const ip6t_chainlabel chain,
 	     struct ip6t_entry *fw,
 	     unsigned int nsaddrs,
 	     const struct in6_addr saddrs[],
+	     const struct in6_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in6_addr daddrs[],
+	     const struct in6_addr dmasks[],
 	     int verbose,
 	     struct ip6tc_handle *handle,
-	     struct xtables_rule_match *matches)
+	     struct xtables_rule_match *matches,
+	     const struct xtables_target *target)
 {
 	unsigned int i, j;
 	int ret = 1;
 	unsigned char *mask;
 
-	mask = make_delete_mask(fw, matches);
+	mask = make_delete_mask(matches, target);
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ipv6.src = saddrs[i];
+		fw->ipv6.smsk = smasks[i];
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ipv6.dst = daddrs[j];
+			fw->ipv6.dmsk = dmasks[j];
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= ip6tc_delete_entry(chain, fw, mask, handle);
@@ -1006,7 +1011,7 @@ print_iface(char letter, const char *iface, const unsigned char *mask,
 	if (mask[0] == 0)
 		return;
 
-	printf("-%c %s", letter, invert ? "! " : "");
+	printf("%s-%c ", invert ? "! " : "", letter);
 
 	for (i = 0; i < IFNAMSIZ; i++) {
 		if (mask[i] != 0) {
@@ -1033,19 +1038,19 @@ static void print_proto(u_int16_t proto, int invert)
 
 		struct protoent *pent = getprotobynumber(proto);
 		if (pent) {
-			printf("-p %s%s ",
+			printf("%s-p %s ",
 			       invertstr, pent->p_name);
 			return;
 		}
 
 		for (i = 0; xtables_chain_protos[i].name != NULL; ++i)
 			if (xtables_chain_protos[i].num == proto) {
-				printf("-p %s%s ",
+				printf("%s-p %s ",
 				       invertstr, xtables_chain_protos[i].name);
 				return;
 			}
 
-		printf("-p %s%u ", invertstr, proto);
+		printf("%s-p %u ", invertstr, proto);
 	}
 }
 
@@ -1081,9 +1086,9 @@ static void print_ip(char *prefix, const struct in6_addr *ip, const struct in6_a
 	if (l == 0 && !invert)
 		return;
 
-	printf("%s %s%s",
-		prefix,
+	printf("%s%s %s",
 		invert ? "! " : "",
+		prefix,
 		inet_ntop(AF_INET6, ip, buf, sizeof buf));
 
 	if (l == -1)
@@ -1291,9 +1296,9 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 	int invert = 0;
 	unsigned int nsaddrs = 0, ndaddrs = 0;
 	struct in6_addr *saddrs = NULL, *daddrs = NULL;
+	struct in6_addr *smasks = NULL, *dmasks = NULL;
 
 	int c, verbose = 0;
-	unsigned i;
 	const char *chain = NULL;
 	const char *shostnetworkmask = NULL, *dhostnetworkmask = NULL;
 	const char *policy = NULL, *newname = NULL;
@@ -1378,8 +1383,8 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			break;
 
 		case 'L':
-			add_command(&command, CMD_LIST, CMD_ZERO,
-				    invert);
+			add_command(&command, CMD_LIST,
+				    CMD_ZERO | CMD_ZERO_NUM, invert);
 			if (optarg) chain = optarg;
 			else if (optind < argc && argv[optind][0] != '-'
 				 && argv[optind][0] != '!')
@@ -1390,8 +1395,8 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			break;
 
 		case 'S':
-			add_command(&command, CMD_LIST_RULES, CMD_ZERO,
-				    invert);
+			add_command(&command, CMD_LIST_RULES,
+				    CMD_ZERO | CMD_ZERO_NUM, invert);
 			if (optarg) chain = optarg;
 			else if (optind < argc && argv[optind][0] != '-'
 				 && argv[optind][0] != '!')
@@ -1417,6 +1422,11 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			else if (optind < argc && argv[optind][0] != '-'
 				&& argv[optind][0] != '!')
 				chain = argv[optind++];
+			if (optind < argc && argv[optind][0] != '-'
+				&& argv[optind][0] != '!') {
+				rulenum = parse_rulenumber(argv[optind++]);
+				command = CMD_ZERO_NUM;
+			}
 			break;
 
 		case 'N':
@@ -1484,15 +1494,15 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			 * Option selection
 			 */
 		case 'p':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_PROTOCOL, &fw.ipv6.invflags,
 				   invert);
 
 			/* Canonicalize into lower case */
-			for (protocol = argv[optind-1]; *protocol; protocol++)
+			for (protocol = optarg; *protocol; protocol++)
 				*protocol = tolower(*protocol);
 
-			protocol = argv[optind-1];
+			protocol = optarg;
 			fw.ipv6.proto = xtables_parse_protocol(protocol);
 			fw.ipv6.flags |= IP6T_F_PROTO;
 
@@ -1510,17 +1520,17 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			break;
 
 		case 's':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_SOURCE, &fw.ipv6.invflags,
 				   invert);
-			shostnetworkmask = argv[optind-1];
+			shostnetworkmask = optarg;
 			break;
 
 		case 'd':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_DESTINATION, &fw.ipv6.invflags,
 				   invert);
-			dhostnetworkmask = argv[optind-1];
+			dhostnetworkmask = optarg;
 			break;
 
 #ifdef IP6T_F_GOTO
@@ -1548,8 +1558,7 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 				target->t = xtables_calloc(1, size);
 				target->t->u.target_size = size;
 				strcpy(target->t->u.user.name, jumpto);
-				xtables_set_revision(target->t->u.user.name,
-					     target->revision);
+				target->t->u.user.revision = target->revision;
 				if (target->init != NULL)
 					target->init(target->t);
 				opts = xtables_merge_options(opts,
@@ -1563,19 +1572,19 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 
 
 		case 'i':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_VIANAMEIN, &fw.ipv6.invflags,
 				   invert);
-			xtables_parse_interface(argv[optind-1],
+			xtables_parse_interface(optarg,
 					fw.ipv6.iniface,
 					fw.ipv6.iniface_mask);
 			break;
 
 		case 'o':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_VIANAMEOUT, &fw.ipv6.invflags,
 				   invert);
-			xtables_parse_interface(argv[optind-1],
+			xtables_parse_interface(optarg,
 					fw.ipv6.outiface,
 					fw.ipv6.outiface_mask);
 			break;
@@ -1601,7 +1610,7 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			m->m = xtables_calloc(1, size);
 			m->m->u.match_size = size;
 			strcpy(m->m->u.user.name, m->name);
-			xtables_set_revision(m->m->u.user.name, m->revision);
+			m->m->u.user.revision = m->revision;
 			if (m->init != NULL)
 				m->init(m->m);
 			if (m != m->next)
@@ -1687,13 +1696,14 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 			exit_tryhelp(2);
 
 		default:
-			if (!target
-			    || !(target->parse(c - target->option_offset,
+			if (target == NULL || target->parse == NULL ||
+			    !target->parse(c - target->option_offset,
 					       argv, invert,
 					       &target->tflags,
-					       &fw, &target->t))) {
+					       &fw, &target->t)) {
 				for (matchp = matches; matchp; matchp = matchp->next) {
-					if (matchp->completed)
+					if (matchp->completed ||
+					    matchp->match->parse == NULL)
 						continue;
 					if (matchp->match->parse(c - matchp->match->option_offset,
 						     argv, invert,
@@ -1748,8 +1758,7 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 					m->m = xtables_calloc(1, size);
 					m->m->u.match_size = size;
 					strcpy(m->m->u.user.name, m->name);
-					xtables_set_revision(m->m->u.user.name,
-						     m->revision);
+					m->m->u.user.revision = m->revision;
 					if (m->init != NULL)
 						m->init(m->m);
 
@@ -1811,12 +1820,12 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 	}
 
 	if (shostnetworkmask)
-		xtables_ip6parse_any(shostnetworkmask, &saddrs,
-		                         &fw.ipv6.smsk, &nsaddrs);
+		xtables_ip6parse_multiple(shostnetworkmask, &saddrs,
+					  &smasks, &nsaddrs);
 
 	if (dhostnetworkmask)
-		xtables_ip6parse_any(dhostnetworkmask, &daddrs,
-		                         &fw.ipv6.dmsk, &ndaddrs);
+		xtables_ip6parse_multiple(dhostnetworkmask, &daddrs,
+					  &dmasks, &ndaddrs);
 
 	if ((nsaddrs > 1 || ndaddrs > 1) &&
 	    (fw.ipv6.invflags & (IP6T_INV_SRCIP | IP6T_INV_DSTIP)))
@@ -1829,10 +1838,10 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 
 	generic_opt_check(command, options);
 
-	if (chain && strlen(chain) > IP6T_FUNCTION_MAXNAMELEN)
+	if (chain != NULL && strlen(chain) >= XT_EXTENSION_MAXNAMELEN)
 		xtables_error(PARAMETER_PROBLEM,
-			   "chain name `%s' too long (must be under %i chars)",
-			   chain, IP6T_FUNCTION_MAXNAMELEN);
+			   "chain name `%s' too long (must be under %u chars)",
+			   chain, XT_EXTENSION_MAXNAMELEN);
 
 	/* only allocate handle if we weren't called with a handle */
 	if (!*handle)
@@ -1921,27 +1930,30 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 	switch (command) {
 	case CMD_APPEND:
 		ret = append_entry(chain, e,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
 				   *handle);
 		break;
 	case CMD_DELETE:
 		ret = delete_entry(chain, e,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
-				   *handle, matches);
+				   *handle, matches, target);
 		break;
 	case CMD_DELETE_NUM:
 		ret = ip6tc_delete_num_entry(chain, rulenum - 1, *handle);
 		break;
 	case CMD_REPLACE:
 		ret = replace_entry(chain, e, rulenum - 1,
-				    saddrs, daddrs, options&OPT_VERBOSE,
-				    *handle);
+				    saddrs, smasks, daddrs, dmasks,
+				    options&OPT_VERBOSE, *handle);
 		break;
 	case CMD_INSERT:
 		ret = insert_entry(chain, e, rulenum - 1,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
 				   *handle);
 		break;
@@ -1951,8 +1963,12 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 	case CMD_ZERO:
 		ret = zero_entries(chain, options&OPT_VERBOSE, *handle);
 		break;
+	case CMD_ZERO_NUM:
+		ret = ip6tc_zero_counter(chain, rulenum, *handle);
+		break;
 	case CMD_LIST:
 	case CMD_LIST|CMD_ZERO:
+	case CMD_LIST|CMD_ZERO_NUM:
 		ret = list_entries(chain,
 				   rulenum,
 				   options&OPT_VERBOSE,
@@ -1963,9 +1979,12 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 		if (ret && (command & CMD_ZERO))
 			ret = zero_entries(chain,
 					   options&OPT_VERBOSE, *handle);
+		if (ret && (command & CMD_ZERO_NUM))
+			ret = ip6tc_zero_counter(chain, rulenum, *handle);
 		break;
 	case CMD_LIST_RULES:
 	case CMD_LIST_RULES|CMD_ZERO:
+	case CMD_LIST_RULES|CMD_ZERO_NUM:
 		ret = list_rules(chain,
 				   rulenum,
 				   options&OPT_VERBOSE,
@@ -1973,6 +1992,8 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 		if (ret && (command & CMD_ZERO))
 			ret = zero_entries(chain,
 					   options&OPT_VERBOSE, *handle);
+		if (ret && (command & CMD_ZERO_NUM))
+			ret = ip6tc_zero_counter(chain, rulenum, *handle);
 		break;
 	case CMD_NEW_CHAIN:
 		ret = ip6tc_create_chain(chain, *handle);
@@ -2001,12 +2022,10 @@ int do_command6(int argc, char *argv[], char **table, struct ip6tc_handle **hand
 		e = NULL;
 	}
 
-	for (i = 0; i < nsaddrs; i++)
-		free(&saddrs[i]);
-
-	for (i = 0; i < ndaddrs; i++)
-		free(&daddrs[i]);
-
+	free(saddrs);
+	free(smasks);
+	free(daddrs);
+	free(dmasks);
 	xtables_free_opts(1);
 
 	return ret;

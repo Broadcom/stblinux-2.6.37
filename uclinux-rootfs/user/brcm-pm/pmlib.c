@@ -77,7 +77,6 @@ struct brcm_pm_priv
 #define BUF_SIZE	64
 #define MAX_ARGS	16
 
-#define SYS_ENET_STAT	"/sys/devices/platform/brcmstb/enet_power"
 #define SYS_MOCA_STAT	"/sys/devices/platform/brcmstb/moca_power"
 #define SYS_SATA_STAT	"/sys/devices/platform/brcmstb/sata_power"
 #define SYS_DDR_STAT	"/sys/devices/platform/brcmstb/ddr_timeout"
@@ -87,12 +86,6 @@ struct brcm_pm_priv
 #define SYS_CPU_PLL	"/sys/devices/platform/brcmstb/cpu_pll"
 #define SYS_CPU_DIV	"/sys/devices/platform/brcmstb/cpu_div"
 #define SYS_STANDBY	"/sys/power/state"
-#define DHCPCD_PID0_A	"/var/run/dhcpcd-eth0.pid"
-#define DHCPCD_PID0_B	"/var/run/dhcpcd-eth0.pid.bak"
-#define DHCPCD_PID1_A	"/var/run/dhcpcd-eth1.pid"
-#define DHCPCD_PID1_B	"/var/run/dhcpcd-eth1.pid.bak"
-#define DHCPCD_PATH	"/bin/dhcpcd"
-#define IFCONFIG_PATH	"/bin/ifconfig"
 #define HALT_PATH	"/sbin/halt"
 #define SATA_RESCAN_GLOB "/sys/class/scsi_host/host*/scan"
 #define SATA_DEVICE_GLOB "/sys/class/scsi_device/*/device/block:*"
@@ -486,9 +479,6 @@ int brcm_pm_get_status(void *vctx, struct brcm_pm_state *st)
 	st->usb_status = brcm_pm_usb_get_status();
 
 	/* read status from /proc */
-	if(sysfs_get(SYS_ENET_STAT, (unsigned int *)&st->enet_status) != 0) {
-		st->enet_status = BRCM_PM_UNDEF;
-	}
 	if(sysfs_get(SYS_MOCA_STAT, (unsigned int *)&st->moca_status) != 0) {
 		st->moca_status = BRCM_PM_UNDEF;
 	}
@@ -580,51 +570,6 @@ int brcm_pm_set_status(void *vctx, struct brcm_pm_state *st)
 	{
 		brcm_pm_usb_set_status(!!st->usb_status);
 		ctx->last_state.usb_status = st->usb_status;
-	}
-
-	if(CHANGED(enet_status))
-	{
-		unsigned int pid;
-
-		if(st->enet_status)
-		{
-			if(ctx->cfg.use_dhcp) {
-				if(sysfs_get(DHCPCD_PID0_A, &pid) == 0) {
-					kill(pid, SIGKILL);
-					unlink(DHCPCD_PID0_A);
-				}
-				ret |= run(DHCPCD_PATH, "-Hd", "-L",
-					"/var/run", "eth0", NULL);
-				
-				if(ctx->has_eth1) {
-					if(sysfs_get(DHCPCD_PID1_A, &pid) == 0) {
-						kill(pid, SIGKILL);
-						unlink(DHCPCD_PID1_A);
-					}
-					ret |= run(DHCPCD_PATH, "-Hd", "-L",
-						"/var/run", "eth1", NULL);
-				}
-			} else {
-				ret |= sysfs_set(SYS_ENET_STAT, 1);
-			}
-		} else {
-			if(ctx->cfg.use_dhcp &&
-			   ((sysfs_get(DHCPCD_PID0_A, &pid) == 0) ||
-			    (sysfs_get(DHCPCD_PID0_B, &pid) == 0)))
-				kill(pid, SIGTERM);
-			ret |= run(IFCONFIG_PATH, "eth0", "down", NULL);
-
-			if(ctx->has_eth1) {
-				if(ctx->cfg.use_dhcp &&
-				   ((sysfs_get(DHCPCD_PID1_A, &pid) == 0) ||
-				    (sysfs_get(DHCPCD_PID1_B, &pid) == 0)))
-					kill(pid, SIGTERM);
-				ret |= run(IFCONFIG_PATH, "eth1", "down", NULL);
-			}
-
-			ret |= sysfs_set(SYS_ENET_STAT, 0);
-		}
-		ctx->last_state.enet_status = st->enet_status;
 	}
 
 	if(CHANGED(sata_status))

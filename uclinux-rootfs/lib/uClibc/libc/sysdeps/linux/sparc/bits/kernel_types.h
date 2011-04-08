@@ -1,12 +1,13 @@
 /* Note that we use the exact same include guard #define names
- * as asm/posix_types.h.  This will avoid gratuitous conflicts 
- * with the posix_types.h kernel header, and will ensure that 
+ * as asm/posix_types.h.  This will avoid gratuitous conflicts
+ * with the posix_types.h kernel header, and will ensure that
  * our private content, and not the kernel header, will win.
  *  -Erik
  */
-#if ! defined __ARCH_SPARC_POSIX_TYPES_H && ! defined __ARCH_SPARC64_POSIX_TYPES_H
+#if ! defined __ARCH_SPARC_POSIX_TYPES_H && ! defined __ARCH_SPARC64_POSIX_TYPES_H && !defined __SPARC_POSIX_TYPES_H
 #define __ARCH_SPARC_POSIX_TYPES_H
 #define __ARCH_SPARC64_POSIX_TYPES_H
+#define __SPARC_POSIX_TYPES_H
 
 # if __WORDSIZE == 64
 typedef unsigned long          __kernel_size_t;

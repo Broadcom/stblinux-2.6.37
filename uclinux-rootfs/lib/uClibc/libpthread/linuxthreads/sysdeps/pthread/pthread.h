@@ -252,6 +252,7 @@ extern int pthread_attr_getguardsize (__const pthread_attr_t *__restrict
      __THROW;
 #endif
 
+#if 0 /* uClibc: deprecated stuff disabled. def __UCLIBC_SUSV3_LEGACY__ */
 /* Set the starting address of the stack of the thread to be created.
    Depending on whether the stack grows up or down the value must either
    be higher or lower than all the address in the memory block.  The
@@ -263,6 +264,7 @@ extern int pthread_attr_setstackaddr (pthread_attr_t *__attr,
 extern int pthread_attr_getstackaddr (__const pthread_attr_t *__restrict
 				      __attr, void **__restrict __stackaddr)
      __THROW;
+#endif
 
 #ifdef __USE_XOPEN2K
 /* The following two interfaces are intended to replace the last two.  They
@@ -290,7 +292,7 @@ extern int pthread_attr_getstacksize (__const pthread_attr_t *__restrict
 
 #ifdef __USE_GNU
 /* Initialize thread attribute *ATTR with attributes corresponding to the
-   already running thread TH.  It shall be called on unitialized ATTR
+   already running thread TH.  It shall be called on uninitialized ATTR
    and destroyed with pthread_attr_destroy when no longer needed.  */
 extern int pthread_getattr_np (pthread_t __th, pthread_attr_t *__attr) __THROW;
 #endif

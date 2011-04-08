@@ -68,7 +68,7 @@ static pthread_descr manager_thread;
 #if FLOATING_STACKS
 # define thread_segment(seq) NULL
 #else
-static inline pthread_descr thread_segment(int seg)
+static __inline__ pthread_descr thread_segment(int seg)
 {
 # ifdef _STACK_GROWS_UP
   return (pthread_descr)(THREAD_STACK_START_ADDRESS + (seg - 1) * STACK_SIZE)
@@ -132,7 +132,7 @@ __pthread_manager(void *arg)
   self->p_h_errnop = &self->p_h_errno;
 #endif
   /* Block all signals except __pthread_sig_cancel and SIGTRAP */
-  sigfillset(&manager_mask);
+  __sigfillset(&manager_mask);
   sigdelset(&manager_mask, __pthread_sig_cancel); /* for thread termination */
   sigdelset(&manager_mask, SIGTRAP);            /* for debugging purposes */
   if (__pthread_threads_debug && __pthread_sig_debug > 0)
@@ -601,7 +601,7 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
   new_thread = _dl_allocate_tls (NULL);
   if (new_thread == NULL)
     return EAGAIN;
-# if TLS_DTV_AT_TP
+# if defined(TLS_DTV_AT_TP)
   /* pthread_descr is below TP.  */
   new_thread = (pthread_descr) ((char *) new_thread - TLS_PRE_TCB_SIZE);
 # endif
@@ -622,7 +622,7 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
       if (sseg >= PTHREAD_THREADS_MAX)
 	{
 #ifdef USE_TLS
-# if TLS_DTV_AT_TP
+# if defined(TLS_DTV_AT_TP)
 	  new_thread = (pthread_descr) ((char *) new_thread + TLS_PRE_TCB_SIZE);
 # endif
 	  _dl_deallocate_tls (new_thread, true);
@@ -742,15 +742,15 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
 	  pid = __clone2(pthread_start_thread_event,
   		 (void **)new_thread_bottom,
 			 (char *)stack_addr - new_thread_bottom,
-			 CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+			 CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 			 __pthread_sig_cancel, new_thread);
 #elif _STACK_GROWS_UP
 	  pid = __clone(pthread_start_thread_event, (void *) new_thread_bottom,
-			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 			__pthread_sig_cancel, new_thread);
 #else
 	  pid = __clone(pthread_start_thread_event, stack_addr,
-			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 			__pthread_sig_cancel, new_thread);
 #endif
 	  saved_errno = errno;
@@ -783,15 +783,15 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
       pid = __clone2(pthread_start_thread,
 		     (void **)new_thread_bottom,
                      (char *)stack_addr - new_thread_bottom,
-		     CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+		     CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 		     __pthread_sig_cancel, new_thread);
 #elif _STACK_GROWS_UP
       pid = __clone(pthread_start_thread, (void *) new_thread_bottom,
-		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 		    __pthread_sig_cancel, new_thread);
 #else
       pid = __clone(pthread_start_thread, stack_addr,
-		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND |
+		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM |
 		    __pthread_sig_cancel, new_thread);
 #endif /* !NEED_SEPARATE_REGISTER_STACK */
       saved_errno = errno;
@@ -824,7 +824,7 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
 #endif
       }
 #ifdef USE_TLS
-# if TLS_DTV_AT_TP
+# if defined(TLS_DTV_AT_TP)
     new_thread = (pthread_descr) ((char *) new_thread + TLS_PRE_TCB_SIZE);
 # endif
     _dl_deallocate_tls (new_thread, true);
@@ -892,10 +892,11 @@ static void pthread_free(pthread_descr th)
 #ifdef _STACK_GROWS_UP
 # ifdef USE_TLS
       size_t stacksize = guardaddr - th->p_stackaddr;
+      guardaddr = th->p_stackaddr;
 # else
       size_t stacksize = guardaddr - (char *)th;
-# endif
       guardaddr = (char *)th;
+# endif
 #else
       /* Guardaddr is always set, even if guardsize is 0.  This allows
 	 us to compute everything else.  */
@@ -916,7 +917,7 @@ static void pthread_free(pthread_descr th)
     }
 
 #ifdef USE_TLS
-# if TLS_DTV_AT_TP
+# if defined(TLS_DTV_AT_TP)
   th = (pthread_descr) ((char *) th + TLS_PRE_TCB_SIZE);
 # endif
   _dl_deallocate_tls (th, true);

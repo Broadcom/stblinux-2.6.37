@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
-libc_hidden_proto(dup2)
 
-_syscall2(int, dup2, int, oldfd, int, newfd);
+_syscall2(int, dup2, int, oldfd, int, newfd)
 libc_hidden_def(dup2)

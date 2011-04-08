@@ -1,6 +1,6 @@
 /* vi: set sw=8 ts=8: */
 /*
- * Various assmbly language/system dependent  hacks that are required
+ * Various assembly language/system dependent hacks that are required
  * so that we can minimize the amount of platform specific code.
  */
 
@@ -19,16 +19,15 @@
 /* Here we define the magic numbers that this dynamic loader should accept */
 #define MAGIC1 EM_SH
 #undef  MAGIC2
+
 /* Used for error messages */
 #define ELF_TARGET "sh64"
 
+/* Need bootstrap relocations */
+#define ARCH_NEEDS_BOOTSTRAP_RELOCS
+
 struct elf_resolve;
 extern unsigned long _dl_linux_resolver(struct elf_resolve * tpnt, int reloc_entry);
-
-/* 4096 bytes alignment */
-#define PAGE_ALIGN 0xfffff000
-#define ADDR_ALIGN 0xfff
-#define OFFS_ALIGN 0x7ffff000
 
 /* ELF_RTYPE_CLASS_PLT iff TYPE describes relocation of a PLT entry or
    TLS variable, so undefined references should not be allowed to
@@ -42,7 +41,7 @@ extern unsigned long _dl_linux_resolver(struct elf_resolve * tpnt, int reloc_ent
 /* Return the link-time address of _DYNAMIC.  Conveniently, this is the
    first element of the GOT.  This must be inlined in a function which
    uses global data.  */
-static inline Elf32_Addr elf_machine_dynamic(void)
+static __always_inline Elf32_Addr elf_machine_dynamic(void)
 {
 	register Elf32_Addr *got;
 
@@ -70,7 +69,7 @@ static inline Elf32_Addr elf_machine_dynamic(void)
 }
 
 /* Return the run-time load address of the shared object.  */
-static inline Elf32_Addr elf_machine_load_address(void)
+static __always_inline Elf32_Addr elf_machine_load_address(void)
 {
 	Elf32_Addr addr;
 
@@ -123,7 +122,7 @@ static inline Elf32_Addr elf_machine_load_address(void)
 	}						\
 }
 
-static inline void
+static __always_inline void
 elf_machine_relative(Elf32_Addr load_off, const Elf32_Addr rel_addr,
 		     Elf32_Word relative_count)
 {

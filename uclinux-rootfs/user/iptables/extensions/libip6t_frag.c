@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add Fragmentation header support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -21,13 +22,13 @@ static void frag_help(void)
 }
 
 static const struct option frag_opts[] = {
-	{ .name = "fragid",    .has_arg = 1, .val = '1' },
-	{ .name = "fraglen",   .has_arg = 1, .val = '2' },
-	{ .name = "fragres",   .has_arg = 0, .val = '3' },
-	{ .name = "fragfirst", .has_arg = 0, .val = '4' },
-	{ .name = "fragmore",  .has_arg = 0, .val = '5' },
-	{ .name = "fraglast",  .has_arg = 0, .val = '6' },
-	{ .name = NULL }
+	{.name = "fragid",    .has_arg = true,  .val = '1'},
+	{.name = "fraglen",   .has_arg = true,  .val = '2'},
+	{.name = "fragres",   .has_arg = false, .val = '3'},
+	{.name = "fragfirst", .has_arg = false, .val = '4'},
+	{.name = "fragmore",  .has_arg = false, .val = '5'},
+	{.name = "fraglast",  .has_arg = false, .val = '6'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -94,8 +95,8 @@ static int frag_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_FRAG_IDS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--fragid' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_frag_ids(argv[optind-1], fraginfo->ids);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_frag_ids(optarg, fraginfo->ids);
 		if (invert)
 			fraginfo->invflags |= IP6T_FRAG_INV_IDS;
 		fraginfo->flags |= IP6T_FRAG_IDS;
@@ -105,8 +106,8 @@ static int frag_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_FRAG_LEN)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--fraglen' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		fraginfo->hdrlen = parse_frag_id(argv[optind-1], "length");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		fraginfo->hdrlen = parse_frag_id(optarg, "length");
 		if (invert)
 			fraginfo->invflags |= IP6T_FRAG_INV_LEN;
 		fraginfo->flags |= IP6T_FRAG_LEN;

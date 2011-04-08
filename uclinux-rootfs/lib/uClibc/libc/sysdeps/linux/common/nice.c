@@ -8,24 +8,22 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 #include <sys/resource.h>
 
-libc_hidden_proto(getpriority)
 
 #ifdef __NR_nice
 
 # define __NR___syscall_nice __NR_nice
-static inline _syscall1(int, __syscall_nice, int, incr);
+static __inline__ _syscall1(int, __syscall_nice, int, incr)
 
 #else
 
 # include <limits.h>
 
-libc_hidden_proto(setpriority)
 
-static inline int int_add_no_wrap(int a, int b)
+static __inline__ int int_add_no_wrap(int a, int b)
 {
 	int s = a + b;
 
@@ -38,7 +36,7 @@ static inline int int_add_no_wrap(int a, int b)
 	return s;
 }
 
-static inline int __syscall_nice(int incr)
+static __inline__ int __syscall_nice(int incr)
 {
 	int old_priority;
 # if 1

@@ -1,4 +1,3 @@
-/* @(#)e_atanh.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_atanh.c,v 1.8 1995/05/10 20:44:55 jtc Exp $";
-#endif
 
 /* __ieee754_atanh(x)
  * Method :
@@ -35,26 +30,11 @@ static char rcsid[] = "$NetBSD: e_atanh.c,v 1.8 1995/05/10 20:44:55 jtc Exp $";
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(log1p)
-
-#ifdef __STDC__
 static const double one = 1.0, huge = 1e300;
-#else
-static double one = 1.0, huge = 1e300;
-#endif
 
-#ifdef __STDC__
 static const double zero = 0.0;
-#else
-static double zero = 0.0;
-#endif
 
-#ifdef __STDC__
-	double attribute_hidden __ieee754_atanh(double x)
-#else
-	double attribute_hidden __ieee754_atanh(x)
-	double x;
-#endif
+double attribute_hidden __ieee754_atanh(double x)
 {
 	double t;
 	int32_t hx,ix;
@@ -74,3 +54,26 @@ static double zero = 0.0;
 	    t = 0.5*log1p((x+x)/(one-x));
 	if(hx>=0) return t; else return -t;
 }
+
+/*
+ * wrapper atanh(x)
+ */
+#ifndef _IEEE_LIBM
+double atanh(double x)
+{
+	double z, y;
+	z = __ieee754_atanh(x);
+	if (_LIB_VERSION == _IEEE_ || isnan(x))
+		return z;
+	y = fabs(x);
+	if (y >= 1.0) {
+		if (y > 1.0)
+			return __kernel_standard(x, x, 30); /* atanh(|x|>1) */
+		return __kernel_standard(x, x, 31); /* atanh(|x|==1) */
+	}
+	return z;
+}
+#else
+strong_alias(__ieee754_atanh, atanh)
+#endif
+libm_hidden_def(atanh)

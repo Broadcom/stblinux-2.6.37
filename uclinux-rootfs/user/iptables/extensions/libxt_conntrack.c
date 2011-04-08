@@ -12,6 +12,7 @@
 #include <getopt.h>
 #include <netdb.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,39 @@
 #include <linux/netfilter/xt_conntrack.h>
 #include <linux/netfilter/nf_conntrack_common.h>
 #include <arpa/inet.h>
+
+struct ip_conntrack_old_tuple {
+	struct {
+		__be32 ip;
+		union {
+			__u16 all;
+		} u;
+	} src;
+
+	struct {
+		__be32 ip;
+		union {
+			__u16 all;
+		} u;
+
+		/* The protocol. */
+		__u16 protonum;
+	} dst;
+};
+
+struct xt_conntrack_info {
+	unsigned int statemask, statusmask;
+
+	struct ip_conntrack_old_tuple tuple[IP_CT_DIR_MAX];
+	struct in_addr sipmsk[IP_CT_DIR_MAX], dipmsk[IP_CT_DIR_MAX];
+
+	unsigned long expires_min, expires_max;
+
+	/* Flags word */
+	u_int8_t flags;
+	/* Inverse flags */
+	u_int8_t invflags;
+};
 
 static void conntrack_mt_help(void)
 {
@@ -54,7 +88,7 @@ static const struct option conntrack_mt_opts_v0[] = {
 	{.name = "ctrepldst", .has_arg = true, .val = '6'},
 	{.name = "ctstatus",  .has_arg = true, .val = '7'},
 	{.name = "ctexpire",  .has_arg = true, .val = '8'},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option conntrack_mt_opts[] = {
@@ -115,7 +149,7 @@ parse_states(const char *arg, struct xt_conntrack_info *sinfo)
 }
 
 static bool
-conntrack_ps_state(struct xt_conntrack_mtinfo1 *info, const char *state,
+conntrack_ps_state(struct xt_conntrack_mtinfo2 *info, const char *state,
                    size_t z)
 {
 	if (strncasecmp(state, "INVALID", z) == 0)
@@ -138,7 +172,7 @@ conntrack_ps_state(struct xt_conntrack_mtinfo1 *info, const char *state,
 }
 
 static void
-conntrack_ps_states(struct xt_conntrack_mtinfo1 *info, const char *arg)
+conntrack_ps_states(struct xt_conntrack_mtinfo2 *info, const char *arg)
 {
 	const char *comma;
 
@@ -189,7 +223,7 @@ parse_statuses(const char *arg, struct xt_conntrack_info *sinfo)
 }
 
 static bool
-conntrack_ps_status(struct xt_conntrack_mtinfo1 *info, const char *status,
+conntrack_ps_status(struct xt_conntrack_mtinfo2 *info, const char *status,
                     size_t z)
 {
 	if (strncasecmp(status, "NONE", z) == 0)
@@ -208,7 +242,7 @@ conntrack_ps_status(struct xt_conntrack_mtinfo1 *info, const char *status,
 }
 
 static void
-conntrack_ps_statuses(struct xt_conntrack_mtinfo1 *info, const char *arg)
+conntrack_ps_statuses(struct xt_conntrack_mtinfo2 *info, const char *arg)
 {
 	const char *comma;
 
@@ -263,7 +297,7 @@ parse_expires(const char *s, struct xt_conntrack_info *sinfo)
 }
 
 static void
-conntrack_ps_expires(struct xt_conntrack_mtinfo1 *info, const char *s)
+conntrack_ps_expires(struct xt_conntrack_mtinfo2 *info, const char *s)
 {
 	unsigned int min, max;
 	char *end;
@@ -272,7 +306,7 @@ conntrack_ps_expires(struct xt_conntrack_mtinfo1 *info, const char *s)
 		xtables_param_act(XTF_BAD_VALUE, "conntrack", "--expires", s);
 	max = min;
 	if (*end == ':')
-		if (!xtables_strtoui(s, &end, &max, 0, UINT32_MAX))
+		if (!xtables_strtoui(end + 1, &end, &max, 0, UINT32_MAX))
 			xtables_param_act(XTF_BAD_VALUE, "conntrack", "--expires", s);
 	if (*end != '\0')
 		xtables_param_act(XTF_BAD_VALUE, "conntrack", "--expires", s);
@@ -297,9 +331,9 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
-		parse_states(argv[optind-1], sinfo);
+		parse_states(optarg, sinfo);
 		if (invert) {
 			sinfo->invflags |= XT_CONNTRACK_STATE;
 		}
@@ -307,16 +341,16 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '2':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if(invert)
 			sinfo->invflags |= XT_CONNTRACK_PROTO;
 
 		/* Canonicalize into lower case */
-		for (protocol = argv[optind-1]; *protocol; protocol++)
+		for (protocol = optarg; *protocol; protocol++)
 			*protocol = tolower(*protocol);
 
-		protocol = argv[optind-1];
+		protocol = optarg;
 		sinfo->tuple[IP_CT_DIR_ORIGINAL].dst.protonum =
 			xtables_parse_protocol(protocol);
 
@@ -329,12 +363,12 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '3':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (invert)
 			sinfo->invflags |= XT_CONNTRACK_ORIGSRC;
 
-		xtables_ipparse_any(argv[optind-1], &addrs,
+		xtables_ipparse_any(optarg, &addrs,
 					&sinfo->sipmsk[IP_CT_DIR_ORIGINAL],
 					&naddrs);
 		if(naddrs > 1)
@@ -349,12 +383,12 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '4':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (invert)
 			sinfo->invflags |= XT_CONNTRACK_ORIGDST;
 
-		xtables_ipparse_any(argv[optind-1], &addrs,
+		xtables_ipparse_any(optarg, &addrs,
 					&sinfo->dipmsk[IP_CT_DIR_ORIGINAL],
 					&naddrs);
 		if(naddrs > 1)
@@ -369,12 +403,12 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '5':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (invert)
 			sinfo->invflags |= XT_CONNTRACK_REPLSRC;
 
-		xtables_ipparse_any(argv[optind-1], &addrs,
+		xtables_ipparse_any(optarg, &addrs,
 					&sinfo->sipmsk[IP_CT_DIR_REPLY],
 					&naddrs);
 		if(naddrs > 1)
@@ -389,12 +423,12 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '6':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
 		if (invert)
 			sinfo->invflags |= XT_CONNTRACK_REPLDST;
 
-		xtables_ipparse_any(argv[optind-1], &addrs,
+		xtables_ipparse_any(optarg, &addrs,
 					&sinfo->dipmsk[IP_CT_DIR_REPLY],
 					&naddrs);
 		if(naddrs > 1)
@@ -409,9 +443,9 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '7':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
-		parse_statuses(argv[optind-1], sinfo);
+		parse_statuses(optarg, sinfo);
 		if (invert) {
 			sinfo->invflags |= XT_CONNTRACK_STATUS;
 		}
@@ -419,9 +453,9 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 		break;
 
 	case '8':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
-		parse_expires(argv[optind-1], sinfo);
+		parse_expires(optarg, sinfo);
 		if (invert) {
 			sinfo->invflags |= XT_CONNTRACK_EXPIRES;
 		}
@@ -437,10 +471,9 @@ static int conntrack_parse(int c, char **argv, int invert, unsigned int *flags,
 }
 
 static int
-conntrack_mt_parse(int c, char **argv, int invert, unsigned int *flags,
-                   struct xt_entry_match **match)
+conntrack_mt_parse(int c, bool invert, unsigned int *flags,
+                   struct xt_conntrack_mtinfo2 *info)
 {
-	struct xt_conntrack_mtinfo1 *info = (void *)(*match)->data;
 	unsigned int port;
 	char *p;
 
@@ -543,10 +576,9 @@ conntrack_mt_parse(int c, char **argv, int invert, unsigned int *flags,
 }
 
 static int
-conntrack_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
-                    const void *entry, struct xt_entry_match **match)
+conntrack_mt4_parse(int c, bool invert, unsigned int *flags,
+                    struct xt_conntrack_mtinfo2 *info)
 {
-	struct xt_conntrack_mtinfo1 *info = (void *)(*match)->data;
 	struct in_addr *addr = NULL;
 	unsigned int naddrs = 0;
 
@@ -605,7 +637,7 @@ conntrack_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 
 
 	default:
-		return conntrack_mt_parse(c, argv, invert, flags, match);
+		return conntrack_mt_parse(c, invert, flags, info);
 	}
 
 	*flags = info->match_flags;
@@ -613,10 +645,9 @@ conntrack_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 }
 
 static int
-conntrack_mt6_parse(int c, char **argv, int invert, unsigned int *flags,
-                    const void *entry, struct xt_entry_match **match)
+conntrack_mt6_parse(int c, bool invert, unsigned int *flags,
+                    struct xt_conntrack_mtinfo2 *info)
 {
-	struct xt_conntrack_mtinfo1 *info = (void *)(*match)->data;
 	struct in6_addr *addr = NULL;
 	unsigned int naddrs = 0;
 
@@ -675,11 +706,60 @@ conntrack_mt6_parse(int c, char **argv, int invert, unsigned int *flags,
 
 
 	default:
-		return conntrack_mt_parse(c, argv, invert, flags, match);
+		return conntrack_mt_parse(c, invert, flags, info);
 	}
 
 	*flags = info->match_flags;
 	return true;
+}
+
+#define cinfo_transform(r, l) \
+	do { \
+		memcpy((r), (l), offsetof(typeof(*(l)), state_mask)); \
+		(r)->state_mask  = (l)->state_mask; \
+		(r)->status_mask = (l)->status_mask; \
+	} while (false);
+
+static int
+conntrack1_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
+                     const void *entry, struct xt_entry_match **match)
+{
+	struct xt_conntrack_mtinfo1 *info = (void *)(*match)->data;
+	struct xt_conntrack_mtinfo2 up;
+
+	cinfo_transform(&up, info);
+	if (!conntrack_mt4_parse(c, invert, flags, &up))
+		return false;
+	cinfo_transform(info, &up);
+	return true;
+}
+
+static int
+conntrack1_mt6_parse(int c, char **argv, int invert, unsigned int *flags,
+                     const void *entry, struct xt_entry_match **match)
+{
+	struct xt_conntrack_mtinfo1 *info = (void *)(*match)->data;
+	struct xt_conntrack_mtinfo2 up;
+
+	cinfo_transform(&up, info);
+	if (!conntrack_mt6_parse(c, invert, flags, &up))
+		return false;
+	cinfo_transform(info, &up);
+	return true;
+}
+
+static int
+conntrack2_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
+                     const void *entry, struct xt_entry_match **match)
+{
+	return conntrack_mt4_parse(c, invert, flags, (void *)(*match)->data);
+}
+
+static int
+conntrack2_mt6_parse(int c, char **argv, int invert, unsigned int *flags,
+                     const void *entry, struct xt_entry_match **match)
+{
+	return conntrack_mt6_parse(c, invert, flags, (void *)(*match)->data);
 }
 
 static void conntrack_mt_check(unsigned int flags)
@@ -762,9 +842,13 @@ conntrack_dump_addr(const union nf_inet_addr *addr,
 			return;
 		}
 		if (numeric)
-			printf("%s ", xtables_ipaddr_to_numeric(&addr->in));
+			printf("%s%s ",
+			       xtables_ipaddr_to_numeric(&addr->in),
+			       xtables_ipmask_to_numeric(&mask->in));
 		else
-			printf("%s ", xtables_ipaddr_to_anyname(&addr->in));
+			printf("%s%s ",
+			       xtables_ipaddr_to_anyname(&addr->in),
+			       xtables_ipmask_to_numeric(&mask->in));
 	} else if (family == NFPROTO_IPV6) {
 		if (!numeric && addr->ip6[0] == 0 && addr->ip6[1] == 0 &&
 		    addr->ip6[2] == 0 && addr->ip6[3] == 0) {
@@ -772,14 +856,19 @@ conntrack_dump_addr(const union nf_inet_addr *addr,
 			return;
 		}
 		if (numeric)
-			printf("%s ", xtables_ip6addr_to_numeric(&addr->in6));
+			printf("%s%s ",
+			       xtables_ip6addr_to_numeric(&addr->in6),
+			       xtables_ip6mask_to_numeric(&mask->in6));
 		else
-			printf("%s ", xtables_ip6addr_to_anyname(&addr->in6));
+			printf("%s%s ",
+			       xtables_ip6addr_to_anyname(&addr->in6),
+			       xtables_ip6mask_to_numeric(&mask->in6));
 	}
 }
 
 static void
-print_addr(struct in_addr *addr, struct in_addr *mask, int inv, int numeric)
+print_addr(const struct in_addr *addr, const struct in_addr *mask,
+           int inv, int numeric)
 {
 	char buf[BUFSIZ];
 
@@ -801,7 +890,7 @@ print_addr(struct in_addr *addr, struct in_addr *mask, int inv, int numeric)
 static void
 matchinfo_print(const void *ip, const struct xt_entry_match *match, int numeric, const char *optpfx)
 {
-	struct xt_conntrack_info *sinfo = (void *)match->data;
+	const struct xt_conntrack_info *sinfo = (const void *)match->data;
 
 	if(sinfo->flags & XT_CONNTRACK_STATE) {
         	if (sinfo->invflags & XT_CONNTRACK_STATE)
@@ -893,7 +982,7 @@ matchinfo_print(const void *ip, const struct xt_entry_match *match, int numeric,
 }
 
 static void
-conntrack_dump(const struct xt_conntrack_mtinfo1 *info, const char *prefix,
+conntrack_dump(const struct xt_conntrack_mtinfo2 *info, const char *prefix,
                unsigned int family, bool numeric)
 {
 	if (info->match_flags & XT_CONNTRACK_STATE) {
@@ -910,7 +999,7 @@ conntrack_dump(const struct xt_conntrack_mtinfo1 *info, const char *prefix,
 	}
 
 	if (info->match_flags & XT_CONNTRACK_ORIGSRC) {
-		if (info->invert_flags & XT_CONNTRACK_PROTO)
+		if (info->invert_flags & XT_CONNTRACK_ORIGSRC)
 			printf("! ");
 		printf("%sctorigsrc ", prefix);
 		conntrack_dump_addr(&info->origsrc_addr, &info->origsrc_mask,
@@ -918,7 +1007,7 @@ conntrack_dump(const struct xt_conntrack_mtinfo1 *info, const char *prefix,
 	}
 
 	if (info->match_flags & XT_CONNTRACK_ORIGDST) {
-		if (info->invert_flags & XT_CONNTRACK_PROTO)
+		if (info->invert_flags & XT_CONNTRACK_ORIGDST)
 			printf("! ");
 		printf("%sctorigdst ", prefix);
 		conntrack_dump_addr(&info->origdst_addr, &info->origdst_mask,
@@ -926,7 +1015,7 @@ conntrack_dump(const struct xt_conntrack_mtinfo1 *info, const char *prefix,
 	}
 
 	if (info->match_flags & XT_CONNTRACK_REPLSRC) {
-		if (info->invert_flags & XT_CONNTRACK_PROTO)
+		if (info->invert_flags & XT_CONNTRACK_REPLSRC)
 			printf("! ");
 		printf("%sctreplsrc ", prefix);
 		conntrack_dump_addr(&info->replsrc_addr, &info->replsrc_mask,
@@ -934,7 +1023,7 @@ conntrack_dump(const struct xt_conntrack_mtinfo1 *info, const char *prefix,
 	}
 
 	if (info->match_flags & XT_CONNTRACK_REPLDST) {
-		if (info->invert_flags & XT_CONNTRACK_PROTO)
+		if (info->invert_flags & XT_CONNTRACK_REPLDST)
 			printf("! ");
 		printf("%sctrepldst ", prefix);
 		conntrack_dump_addr(&info->repldst_addr, &info->repldst_mask,
@@ -1003,6 +1092,28 @@ static void conntrack_print(const void *ip, const struct xt_entry_match *match,
 }
 
 static void
+conntrack1_mt4_print(const void *ip, const struct xt_entry_match *match,
+                     int numeric)
+{
+	const struct xt_conntrack_mtinfo1 *info = (void *)match->data;
+	struct xt_conntrack_mtinfo2 up;
+
+	cinfo_transform(&up, info);
+	conntrack_dump(&up, "", NFPROTO_IPV4, numeric);
+}
+
+static void
+conntrack1_mt6_print(const void *ip, const struct xt_entry_match *match,
+                     int numeric)
+{
+	const struct xt_conntrack_mtinfo1 *info = (void *)match->data;
+	struct xt_conntrack_mtinfo2 up;
+
+	cinfo_transform(&up, info);
+	conntrack_dump(&up, "", NFPROTO_IPV6, numeric);
+}
+
+static void
 conntrack_mt_print(const void *ip, const struct xt_entry_match *match,
                    int numeric)
 {
@@ -1033,54 +1144,100 @@ static void conntrack_mt6_save(const void *ip,
 	conntrack_dump((const void *)match->data, "--", NFPROTO_IPV6, true);
 }
 
-static struct xtables_match conntrack_match = {
-	.version       = XTABLES_VERSION,
-	.name          = "conntrack",
-	.revision      = 0,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct xt_conntrack_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_info)),
-	.help          = conntrack_mt_help,
-	.parse         = conntrack_parse,
-	.final_check   = conntrack_mt_check,
-	.print         = conntrack_print,
-	.save          = conntrack_save,
-	.extra_opts    = conntrack_mt_opts_v0,
-};
+static void
+conntrack1_mt4_save(const void *ip, const struct xt_entry_match *match)
+{
+	const struct xt_conntrack_mtinfo1 *info = (void *)match->data;
+	struct xt_conntrack_mtinfo2 up;
 
-static struct xtables_match conntrack_mt_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "conntrack",
-	.revision      = 1,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-	.help          = conntrack_mt_help,
-	.parse         = conntrack_mt4_parse,
-	.final_check   = conntrack_mt_check,
-	.print         = conntrack_mt_print,
-	.save          = conntrack_mt_save,
-	.extra_opts    = conntrack_mt_opts,
-};
+	cinfo_transform(&up, info);
+	conntrack_dump(&up, "--", NFPROTO_IPV4, true);
+}
 
-static struct xtables_match conntrack_mt6_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "conntrack",
-	.revision      = 1,
-	.family        = NFPROTO_IPV6,
-	.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
-	.help          = conntrack_mt_help,
-	.parse         = conntrack_mt6_parse,
-	.final_check   = conntrack_mt_check,
-	.print         = conntrack_mt6_print,
-	.save          = conntrack_mt6_save,
-	.extra_opts    = conntrack_mt_opts,
+static void
+conntrack1_mt6_save(const void *ip, const struct xt_entry_match *match)
+{
+	const struct xt_conntrack_mtinfo1 *info = (void *)match->data;
+	struct xt_conntrack_mtinfo2 up;
+
+	cinfo_transform(&up, info);
+	conntrack_dump(&up, "--", NFPROTO_IPV6, true);
+}
+
+static struct xtables_match conntrack_mt_reg[] = {
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "conntrack",
+		.revision      = 0,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct xt_conntrack_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_info)),
+		.help          = conntrack_mt_help,
+		.parse         = conntrack_parse,
+		.final_check   = conntrack_mt_check,
+		.print         = conntrack_print,
+		.save          = conntrack_save,
+		.extra_opts    = conntrack_mt_opts_v0,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "conntrack",
+		.revision      = 1,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
+		.help          = conntrack_mt_help,
+		.parse         = conntrack1_mt4_parse,
+		.final_check   = conntrack_mt_check,
+		.print         = conntrack1_mt4_print,
+		.save          = conntrack1_mt4_save,
+		.extra_opts    = conntrack_mt_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "conntrack",
+		.revision      = 1,
+		.family        = NFPROTO_IPV6,
+		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo1)),
+		.help          = conntrack_mt_help,
+		.parse         = conntrack1_mt6_parse,
+		.final_check   = conntrack_mt_check,
+		.print         = conntrack1_mt6_print,
+		.save          = conntrack1_mt6_save,
+		.extra_opts    = conntrack_mt_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "conntrack",
+		.revision      = 2,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
+		.help          = conntrack_mt_help,
+		.parse         = conntrack2_mt4_parse,
+		.final_check   = conntrack_mt_check,
+		.print         = conntrack_mt_print,
+		.save          = conntrack_mt_save,
+		.extra_opts    = conntrack_mt_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "conntrack",
+		.revision      = 2,
+		.family        = NFPROTO_IPV6,
+		.size          = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_conntrack_mtinfo2)),
+		.help          = conntrack_mt_help,
+		.parse         = conntrack2_mt6_parse,
+		.final_check   = conntrack_mt_check,
+		.print         = conntrack_mt6_print,
+		.save          = conntrack_mt6_save,
+		.extra_opts    = conntrack_mt_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&conntrack_match);
-	xtables_register_match(&conntrack_mt_reg);
-	xtables_register_match(&conntrack_mt6_reg);
+	xtables_register_matches(conntrack_mt_reg, ARRAY_SIZE(conntrack_mt_reg));
 }

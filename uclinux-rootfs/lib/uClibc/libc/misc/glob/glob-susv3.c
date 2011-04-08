@@ -23,16 +23,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-libc_hidden_proto(memcpy)
-libc_hidden_proto(strcat)
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strlen)
-libc_hidden_proto(opendir)
-libc_hidden_proto(closedir)
-libc_hidden_proto(qsort)
-libc_hidden_proto(fnmatch)
 
 struct match
 {
@@ -53,12 +43,8 @@ extern int __glob_match_in_dir(const char *d, const char *p, int flags, int (*er
 # define stat stat64
 # define readdir_r readdir64_r
 # define dirent dirent64
-libc_hidden_proto(readdir64_r)
-libc_hidden_proto(stat64)
 # define struct_stat struct stat64
 #else
-libc_hidden_proto(readdir_r)
-libc_hidden_proto(stat)
 # define struct_stat struct stat
 #endif
 
@@ -197,7 +183,8 @@ int __glob_match_in_dir(const char *d, const char *p, int flags, int (*errfunc)(
 # ifndef BUILD_GLOB64
 static
 # endif
-int __glob_ignore_err(const char *path, int err)
+int __glob_ignore_err(const char * path attribute_unused,
+			int err attribute_unused)
 {
 	return 0;
 }
@@ -223,11 +210,6 @@ int __glob_sort(const void *a, const void *b)
 }
 #endif /* !__GLOB64 */
 
-#ifdef __GLOB64
-libc_hidden_proto(glob64)
-#else
-libc_hidden_proto(glob)
-#endif
 int glob(const char *pat, int flags, int (*errfunc)(const char *path, int err), glob_t *g)
 {
 	const char *p=pat, *d;
@@ -235,7 +217,7 @@ int glob(const char *pat, int flags, int (*errfunc)(const char *path, int err), 
 	size_t cnt, i;
 	size_t offs = (flags & GLOB_DOOFFS) ? g->gl_offs : 0;
 	int error = 0;
-	
+
 	if (*p == '/') {
 		for (; *p == '/'; p++);
 		d = "/";
@@ -256,7 +238,7 @@ int glob(const char *pat, int flags, int (*errfunc)(const char *path, int err), 
 		__glob_freelist(&head);
 		return error;
 	}
-	
+
 	for (cnt=0, tail=head.next; tail; tail=tail->next, cnt++);
 	if (!cnt) {
 		if (flags & GLOB_NOCHECK) {
@@ -292,7 +274,7 @@ int glob(const char *pat, int flags, int (*errfunc)(const char *path, int err), 
 
 	if (!(flags & GLOB_NOSORT))
 		qsort(g->gl_pathv+offs, cnt, sizeof(char *), __glob_sort);
-	
+
 	return error;
 }
 #ifdef __GLOB64
@@ -301,11 +283,6 @@ libc_hidden_def(glob64)
 libc_hidden_def(glob)
 #endif
 
-#ifdef __GLOB64
-libc_hidden_proto(globfree64)
-#else
-libc_hidden_proto(globfree)
-#endif
 void globfree(glob_t *g)
 {
 	size_t i;

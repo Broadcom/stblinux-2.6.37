@@ -7,7 +7,7 @@
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License.  See the file COPYING.LIB in the main
  * directory of this archive for more details.
- * 
+ *
  * Written by Miles Bader <miles@gnu.org>
  */
 
@@ -16,44 +16,29 @@
 
 /* On multi-threaded systems, the heap includes a lock.  */
 #ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
+# include <bits/uClibc_mutex.h>
 # define HEAP_USE_LOCKING
+# define __heap_lock(heap_lock) __UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE(*(heap_lock))
+# define __heap_unlock(heap_lock) __UCLIBC_MUTEX_UNLOCK_CANCEL_UNSAFE(*(heap_lock))
+#else
+# define __heap_lock(heap_lock)
+# define __heap_unlock(heap_lock)
 #endif
 
 
 /* The heap allocates in multiples of, and aligned to, HEAP_GRANULARITY.
    HEAP_GRANULARITY must be a power of 2.  Malloc depends on this being the
    same as MALLOC_ALIGNMENT.  */
-#define HEAP_GRANULARITY_TYPE	double
+#define HEAP_GRANULARITY_TYPE	double __attribute_aligned__ (sizeof (size_t))
 #define HEAP_GRANULARITY	(__alignof__ (HEAP_GRANULARITY_TYPE))
 
-
-/* A heap is a collection of memory blocks, from which smaller blocks
-   of memory can be allocated.  */
-struct heap
-{
-  /* A list of memory in the heap available for allocation.  */
-  struct heap_free_area *free_areas;
-
-#ifdef HEAP_USE_LOCKING
-  /* A lock that can be used by callers to control access to the heap.
-     The heap code _does not_ use this lock, it's merely here for the
-     convenience of users!  */
-  pthread_mutex_t lock;
-#endif
-};
 
 /* The HEAP_INIT macro can be used as a static initializer for a heap
    variable.  The HEAP_INIT_WITH_FA variant is used to initialize a heap
    with an initial static free-area; its argument FA should be declared
    using HEAP_DECLARE_STATIC_FREE_AREA.  */
-#ifdef HEAP_USE_LOCKING
-# define HEAP_INIT 		{ 0, PTHREAD_MUTEX_INITIALIZER }
-# define HEAP_INIT_WITH_FA(fa)	{ &fa._fa, PTHREAD_MUTEX_INITIALIZER }
-#else
-# define HEAP_INIT 		{ 0 }
-# define HEAP_INIT_WITH_FA(fa) 	{ &fa._fa }
-#endif
+# define HEAP_INIT 		0
+# define HEAP_INIT_WITH_FA(fa)	&fa._fa
 
 /* A free-list area `header'.  These are actually stored at the _ends_ of
    free areas (to make allocating from the beginning of the area simpler),
@@ -128,35 +113,31 @@ extern int __heap_debug;
 #endif
 
 /* Output a text representation of HEAP to stderr, labelling it with STR.  */
-extern void __heap_dump (struct heap *heap, const char *str);
+extern void __heap_dump (struct heap_free_area *heap, const char *str);
 
 /* Do some consistency checks on HEAP.  If they fail, output an error
    message to stderr, and exit.  STR is printed with the failure message.  */
-extern void __heap_check (struct heap *heap, const char *str);
-
-
-#define __heap_lock(heap)	__PTHREAD_MUTEX_LOCK (&(heap)->lock)
-#define __heap_unlock(heap)	__PTHREAD_MUTEX_UNLOCK (&(heap)->lock)
+extern void __heap_check (struct heap_free_area *heap, const char *str);
 
 
 /* Delete the free-area FA from HEAP.  */
-static inline void
-__heap_delete (struct heap *heap, struct heap_free_area *fa)
+static __inline__ void
+__heap_delete (struct heap_free_area **heap, struct heap_free_area *fa)
 {
   if (fa->next)
     fa->next->prev = fa->prev;
   if (fa->prev)
     fa->prev->next = fa->next;
   else
-    heap->free_areas = fa->next;
+    *heap = fa->next;
 }
 
 
 /* Link the free-area FA between the existing free-area's PREV and NEXT in
    HEAP.  PREV and NEXT may be 0; if PREV is 0, FA is installed as the
    first free-area.  */
-static inline void
-__heap_link_free_area (struct heap *heap, struct heap_free_area *fa,
+static __inline__ void
+__heap_link_free_area (struct heap_free_area **heap, struct heap_free_area *fa,
 		       struct heap_free_area *prev,
 		       struct heap_free_area *next)
 {
@@ -166,7 +147,7 @@ __heap_link_free_area (struct heap *heap, struct heap_free_area *fa,
   if (prev)
     prev->next = fa;
   else
-    heap->free_areas = fa;
+    *heap = fa;
   if (next)
     next->prev = fa;
 }
@@ -174,15 +155,15 @@ __heap_link_free_area (struct heap *heap, struct heap_free_area *fa,
 /* Update the mutual links between the free-areas PREV and FA in HEAP.
    PREV may be 0, in which case FA is installed as the first free-area (but
    FA may not be 0).  */
-static inline void
-__heap_link_free_area_after (struct heap *heap,
+static __inline__ void
+__heap_link_free_area_after (struct heap_free_area **heap,
 			     struct heap_free_area *fa,
 			     struct heap_free_area *prev)
 {
   if (prev)
     prev->next = fa;
   else
-    heap->free_areas = fa;
+    *heap = fa;
   fa->prev = prev;
 }
 
@@ -190,8 +171,8 @@ __heap_link_free_area_after (struct heap *heap,
    free-area's PREV and NEXT in HEAP, and return a pointer to its header.
    PREV and NEXT may be 0; if PREV is 0, MEM is installed as the first
    free-area.  */
-static inline struct heap_free_area *
-__heap_add_free_area (struct heap *heap, void *mem, size_t size,
+static __inline__ struct heap_free_area *
+__heap_add_free_area (struct heap_free_area **heap, void *mem, size_t size,
 		      struct heap_free_area *prev,
 		      struct heap_free_area *next)
 {
@@ -208,8 +189,8 @@ __heap_add_free_area (struct heap *heap, void *mem, size_t size,
 
 /* Allocate SIZE bytes from the front of the free-area FA in HEAP, and
    return the amount actually allocated (which may be more than SIZE).  */
-static inline size_t
-__heap_free_area_alloc (struct heap *heap,
+static __inline__ size_t
+__heap_free_area_alloc (struct heap_free_area **heap,
 			struct heap_free_area *fa, size_t size)
 {
   size_t fa_size = fa->size;
@@ -233,16 +214,16 @@ __heap_free_area_alloc (struct heap *heap,
 /* Allocate and return a block at least *SIZE bytes long from HEAP.
    *SIZE is adjusted to reflect the actual amount allocated (which may be
    greater than requested).  */
-extern void *__heap_alloc (struct heap *heap, size_t *size);
+extern void *__heap_alloc (struct heap_free_area **heap, size_t *size);
 
 /* Allocate SIZE bytes at address MEM in HEAP.  Return the actual size
    allocated, or 0 if we failed.  */
-extern size_t __heap_alloc_at (struct heap *heap, void *mem, size_t size);
+extern size_t __heap_alloc_at (struct heap_free_area **heap, void *mem, size_t size);
 
 /* Return the memory area MEM of size SIZE to HEAP.
    Returns the heap free area into which the memory was placed.  */
-extern struct heap_free_area *__heap_free (struct heap *heap,
+extern struct heap_free_area *__heap_free (struct heap_free_area **heap,
 					   void *mem, size_t size);
 
 /* Return true if HEAP contains absolutely no memory.  */
-#define __heap_is_empty(heap) (! (heap)->free_areas)
+#define __heap_is_empty(heap) (! (heap))

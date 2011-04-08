@@ -21,20 +21,24 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* see comment in forward.c */
+#define GCC_RENAME_BUG 1
+#ifdef GCC_RENAME_BUG
+# include <ctype.h>
+# include <signal.h>
+# include <unistd.h>
+# include <sys/time.h>
+# include <sys/wait.h>
+#endif
+
 #include "internals.h"
 #include "sysdeps/pthread/pthread-functions.h"
 
-libc_hidden_proto(memcpy)
-
-#if !(USE_TLS && HAVE___THREAD) && defined __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(uselocale)
-#endif
 
 int __libc_multiple_threads attribute_hidden __attribute__((nocommon));
 
-int *
-__libc_pthread_init (functions)
-     const struct pthread_functions *functions;
+int * __libc_pthread_init (const struct pthread_functions *functions)
 {
 #ifdef SHARED
   /* We copy the content of the variable pointed to by the FUNCTIONS
@@ -44,7 +48,7 @@ __libc_pthread_init (functions)
 	  sizeof (__libc_pthread_functions));
 #endif
 
-#if !(USE_TLS && HAVE___THREAD) && defined __UCLIBC_HAS_XLOCALE__
+#if ! defined USE___THREAD && defined __UCLIBC_HAS_XLOCALE__
   /* Initialize thread-locale current locale to point to the global one.
      With __thread support, the variable's initializer takes care of this.  */
   uselocale (LC_GLOBAL_LOCALE);

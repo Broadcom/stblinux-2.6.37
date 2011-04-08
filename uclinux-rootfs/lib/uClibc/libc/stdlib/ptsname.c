@@ -29,13 +29,6 @@
 #include <unistd.h>
 #include <bits/uClibc_uintmaxtostr.h>
 
-libc_hidden_proto(strcat)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strlen)
-libc_hidden_proto(isatty)
-libc_hidden_proto(ioctl)
-libc_hidden_proto(fstat)
-libc_hidden_proto(stat)
 
 #if !defined __UNIX98PTY_ONLY__
 
@@ -55,7 +48,7 @@ libc_hidden_proto(stat)
    terminal devices.  As of Linux 2.1.115 these are no longer
    supported.  They have been replaced by major numbers 2 (masters)
    and 3 (slaves).  */
-     
+
 /* The are declared in getpt.c.  */
 extern const char __libc_ptyname1[] attribute_hidden;
 extern const char __libc_ptyname2[] attribute_hidden;
@@ -68,7 +61,6 @@ extern const char __libc_ptyname2[] attribute_hidden;
 /* Store at most BUFLEN characters of the pathname of the slave pseudo
    terminal associated with the master FD is open on in BUF.
    Return 0 on success, otherwise an error number.  */
-libc_hidden_proto(ptsname_r)
 int ptsname_r (int fd, char *buf, size_t buflen)
 {
   int save_errno = errno;
@@ -129,7 +121,7 @@ int ptsname_r (int fd, char *buf, size_t buflen)
       return ENOTTY;
     }
 #else
-# if !defined TIOCGPTN
+# if defined TIOCGPTN
   else if (errno == EINVAL)
 # endif
     {

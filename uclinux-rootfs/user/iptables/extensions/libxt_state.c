@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add state tracking support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -22,8 +23,8 @@ state_help(void)
 }
 
 static const struct option state_opts[] = {
-	{ "state", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "state", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static int
@@ -71,9 +72,9 @@ state_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 
-		state_parse_states(argv[optind-1], sinfo);
+		state_parse_states(optarg, sinfo);
 		if (invert)
 			sinfo->statemask = ~sinfo->statemask;
 		*flags = 1;
@@ -124,7 +125,7 @@ state_print(const void *ip,
       const struct xt_entry_match *match,
       int numeric)
 {
-	struct xt_state_info *sinfo = (struct xt_state_info *)match->data;
+	const struct xt_state_info *sinfo = (const void *)match->data;
 
 	printf("state ");
 	state_print_state(sinfo->statemask);
@@ -132,28 +133,14 @@ state_print(const void *ip,
 
 static void state_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_state_info *sinfo = (struct xt_state_info *)match->data;
+	const struct xt_state_info *sinfo = (const void *)match->data;
 
 	printf("--state ");
 	state_print_state(sinfo->statemask);
 }
 
 static struct xtables_match state_match = { 
-	.family		= NFPROTO_IPV4,
-	.name		= "state",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_state_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_state_info)),
-	.help		= state_help,
-	.parse		= state_parse,
-	.final_check	= state_final_check,
-	.print		= state_print,
-	.save		= state_save,
-	.extra_opts	= state_opts,
-};
-
-static struct xtables_match state_match6 = { 
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "state",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_state_info)),
@@ -169,5 +156,4 @@ static struct xtables_match state_match6 = {
 void _init(void)
 {
 	xtables_register_match(&state_match);
-	xtables_register_match(&state_match6);
 }

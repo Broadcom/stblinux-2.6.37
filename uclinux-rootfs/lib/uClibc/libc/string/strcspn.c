@@ -10,7 +10,6 @@
 #ifdef WANT_WIDE
 # define Wstrcspn wcscspn
 #else
-libc_hidden_proto(strcspn)
 # define Wstrcspn strcspn
 #endif
 

@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add connection limit support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -18,15 +19,17 @@ static void connlimit_help(void)
 }
 
 static const struct option connlimit_opts[] = {
-	{"connlimit-above", 1, NULL, 'A'},
-	{"connlimit-mask",  1, NULL, 'M'},
-	{ .name = NULL }
+	{.name = "connlimit-above", .has_arg = true, .val = 'A'},
+	{.name = "connlimit-mask",  .has_arg = true, .val = 'M'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void connlimit_init(struct xt_entry_match *match)
 {
 	struct xt_connlimit_info *info = (void *)match->data;
-	info->v4_mask = 0xFFFFFFFFUL;
+
+	/* This will also initialize the v4 mask correctly */
+	memset(info->v6_mask, 0xFF, sizeof(info->v6_mask));
 }
 
 static void prefix_to_netmask(u_int32_t *mask, unsigned int prefix_len)
@@ -63,8 +66,8 @@ static int connlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				"--connlimit-above may be given only once");
 		*flags |= 0x1;
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		info->limit   = strtoul(argv[optind-1], NULL, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		info->limit   = strtoul(optarg, NULL, 0);
 		info->inverse = invert;
 		break;
 	case 'M':
@@ -73,7 +76,7 @@ static int connlimit_parse(int c, char **argv, int invert, unsigned int *flags,
 				"--connlimit-mask may be given only once");
 
 		*flags |= 0x2;
-		i = strtoul(argv[optind-1], &err, 0);
+		i = strtoul(optarg, &err, 0);
 		if (family == NFPROTO_IPV6) {
 			if (i > 128 || *err != '\0')
 				xtables_error(PARAMETER_PROBLEM,
@@ -177,38 +180,38 @@ static void connlimit_save6(const void *ip, const struct xt_entry_match *match)
 	       count_bits6(info->v6_mask));
 }
 
-static struct xtables_match connlimit_match = {
-	.name          = "connlimit",
-	.family        = NFPROTO_IPV4,
-	.version       = XTABLES_VERSION,
-	.size          = XT_ALIGN(sizeof(struct xt_connlimit_info)),
-	.userspacesize = offsetof(struct xt_connlimit_info, data),
-	.help          = connlimit_help,
-	.init          = connlimit_init,
-	.parse         = connlimit_parse4,
-	.final_check   = connlimit_check,
-	.print         = connlimit_print4,
-	.save          = connlimit_save4,
-	.extra_opts    = connlimit_opts,
-};
-
-static struct xtables_match connlimit_match6 = {
-	.name          = "connlimit",
-	.family        = NFPROTO_IPV6,
-	.version       = XTABLES_VERSION,
-	.size          = XT_ALIGN(sizeof(struct xt_connlimit_info)),
-	.userspacesize = offsetof(struct xt_connlimit_info, data),
-	.help          = connlimit_help,
-	.init          = connlimit_init,
-	.parse         = connlimit_parse6,
-	.final_check   = connlimit_check,
-	.print         = connlimit_print6,
-	.save          = connlimit_save6,
-	.extra_opts    = connlimit_opts,
+static struct xtables_match connlimit_mt_reg[] = {
+	{
+		.name          = "connlimit",
+		.family        = NFPROTO_IPV4,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_connlimit_info)),
+		.userspacesize = offsetof(struct xt_connlimit_info, data),
+		.help          = connlimit_help,
+		.init          = connlimit_init,
+		.parse         = connlimit_parse4,
+		.final_check   = connlimit_check,
+		.print         = connlimit_print4,
+		.save          = connlimit_save4,
+		.extra_opts    = connlimit_opts,
+	},
+	{
+		.name          = "connlimit",
+		.family        = NFPROTO_IPV6,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_connlimit_info)),
+		.userspacesize = offsetof(struct xt_connlimit_info, data),
+		.help          = connlimit_help,
+		.init          = connlimit_init,
+		.parse         = connlimit_parse6,
+		.final_check   = connlimit_check,
+		.print         = connlimit_print6,
+		.save          = connlimit_save6,
+		.extra_opts    = connlimit_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&connlimit_match);
-	xtables_register_match(&connlimit_match6);
+	xtables_register_matches(connlimit_mt_reg, ARRAY_SIZE(connlimit_mt_reg));
 }

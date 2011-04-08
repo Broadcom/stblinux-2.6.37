@@ -40,6 +40,7 @@
 #include <xtables.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
+#include "xshared.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -77,9 +78,10 @@
 #define CMD_SET_POLICY		0x0400U
 #define CMD_RENAME_CHAIN	0x0800U
 #define CMD_LIST_RULES		0x1000U
-#define NUMBER_OF_CMD	14
+#define CMD_ZERO_NUM		0x2000U
+#define NUMBER_OF_CMD	15
 static const char cmdflags[] = { 'I', 'D', 'D', 'R', 'A', 'L', 'F', 'Z',
-				 'N', 'X', 'P', 'E', 'S' };
+				 'Z', 'N', 'X', 'P', 'E', 'S' };
 
 #define OPT_NONE	0x00000U
 #define OPT_NUMERIC	0x00001U
@@ -171,6 +173,7 @@ static char commands_v_options[NUMBER_OF_CMD][NUMBER_OF_OPT] =
 /*LIST*/      {' ','x','x','x','x',' ',' ','x','x','x',' ','x'},
 /*FLUSH*/     {'x','x','x','x','x',' ','x','x','x','x','x','x'},
 /*ZERO*/      {'x','x','x','x','x',' ','x','x','x','x','x','x'},
+/*ZERO_NUM*/  {'x','x','x','x','x',' ','x','x','x','x','x','x'},
 /*NEW_CHAIN*/ {'x','x','x','x','x',' ','x','x','x','x','x','x'},
 /*DEL_CHAIN*/ {'x','x','x','x','x',' ','x','x','x','x','x','x'},
 /*SET_POLICY*/{'x','x','x','x','x',' ','x','x','x','x','x',' '},
@@ -234,7 +237,7 @@ enum {
 	IPT_DOTTED_MASK
 };
 
-static void
+static void __attribute__((noreturn))
 exit_tryhelp(int status)
 {
 	if (line != -1)
@@ -248,9 +251,6 @@ exit_tryhelp(int status)
 static void
 exit_printhelp(struct xtables_rule_match *matches)
 {
-	struct xtables_rule_match *matchp = NULL;
-	struct xtables_target *t = NULL;
-
 	printf("%s v%s\n\n"
 "Usage: %s -[AD] chain rule-specification [options]\n"
 "       %s -I chain [rulenum] rule-specification [options]\n"
@@ -282,7 +282,8 @@ exit_printhelp(struct xtables_rule_match *matches)
 "  --list-rules -S [chain [rulenum]]\n"
 "				Print the rules in a chain or all chains\n"
 "  --flush   -F [chain]		Delete all rules in  chain or all chains\n"
-"  --zero    -Z [chain]		Zero counters in chain or all chains\n"
+"  --zero    -Z [chain [rulenum]]\n"
+"				Zero counters in chain or all chains\n"
 "  --new     -N chain		Create a new user-defined chain\n"
 "  --delete-chain\n"
 "            -X [chain]		Delete a user-defined chain\n"
@@ -294,9 +295,9 @@ exit_printhelp(struct xtables_rule_match *matches)
 
 "Options:\n"
 "[!] --proto	-p proto	protocol: by number or name, eg. `tcp'\n"
-"[!] --source	-s address[/mask]\n"
+"[!] --source	-s address[/mask][...]\n"
 "				source specification\n"
-"[!] --destination -d address[/mask]\n"
+"[!] --destination -d address[/mask][...]\n"
 "				destination specification\n"
 "[!] --in-interface -i input name[+]\n"
 "				network interface name ([+] for wildcard)\n"
@@ -320,19 +321,7 @@ exit_printhelp(struct xtables_rule_match *matches)
 "  --set-counters PKTS BYTES	set the counter during insert/append\n"
 "[!] --version	-V		print package version.\n");
 
-	/* Print out any special helps. A user might like to be able
-	   to add a --help to the commandline, and see expected
-	   results. So we call help for all specified matches & targets */
-	for (t = xtables_targets; t ;t = t->next) {
-		if (t->used) {
-			printf("\n");
-			t->help();
-		}
-	}
-	for (matchp = matches; matchp; matchp = matchp->next) {
-		printf("\n");
-		matchp->match->help();
-	}
+	print_extension_helps(xtables_targets, matches);
 	exit(0);
 }
 
@@ -471,10 +460,10 @@ parse_target(const char *targetname)
 		xtables_error(PARAMETER_PROBLEM,
 			   "Invalid target name (too short)");
 
-	if (strlen(targetname)+1 > sizeof(ipt_chainlabel))
+	if (strlen(targetname) >= XT_EXTENSION_MAXNAMELEN)
 		xtables_error(PARAMETER_PROBLEM,
 			   "Invalid target name `%s' (%u chars max)",
-			   targetname, (unsigned int)sizeof(ipt_chainlabel)-1);
+			   targetname, XT_EXTENSION_MAXNAMELEN - 1);
 
 	for (ptr = targetname; *ptr; ptr++)
 		if (isspace(*ptr))
@@ -742,8 +731,10 @@ append_entry(const ipt_chainlabel chain,
 	     struct ipt_entry *fw,
 	     unsigned int nsaddrs,
 	     const struct in_addr saddrs[],
+	     const struct in_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in_addr daddrs[],
+	     const struct in_addr dmasks[],
 	     int verbose,
 	     struct iptc_handle *handle)
 {
@@ -752,8 +743,10 @@ append_entry(const ipt_chainlabel chain,
 
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ip.src.s_addr = saddrs[i].s_addr;
+		fw->ip.smsk.s_addr = smasks[i].s_addr;
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ip.dst.s_addr = daddrs[j].s_addr;
+			fw->ip.dmsk.s_addr = dmasks[j].s_addr;
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= iptc_append_entry(chain, fw, handle);
@@ -767,13 +760,15 @@ static int
 replace_entry(const ipt_chainlabel chain,
 	      struct ipt_entry *fw,
 	      unsigned int rulenum,
-	      const struct in_addr *saddr,
-	      const struct in_addr *daddr,
+	      const struct in_addr *saddr, const struct in_addr *smask,
+	      const struct in_addr *daddr, const struct in_addr *dmask,
 	      int verbose,
 	      struct iptc_handle *handle)
 {
 	fw->ip.src.s_addr = saddr->s_addr;
 	fw->ip.dst.s_addr = daddr->s_addr;
+	fw->ip.smsk.s_addr = smask->s_addr;
+	fw->ip.dmsk.s_addr = dmask->s_addr;
 
 	if (verbose)
 		print_firewall_line(fw, handle);
@@ -786,8 +781,10 @@ insert_entry(const ipt_chainlabel chain,
 	     unsigned int rulenum,
 	     unsigned int nsaddrs,
 	     const struct in_addr saddrs[],
+	     const struct in_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in_addr daddrs[],
+	     const struct in_addr dmasks[],
 	     int verbose,
 	     struct iptc_handle *handle)
 {
@@ -796,8 +793,10 @@ insert_entry(const ipt_chainlabel chain,
 
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ip.src.s_addr = saddrs[i].s_addr;
+		fw->ip.smsk.s_addr = smasks[i].s_addr;
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ip.dst.s_addr = daddrs[j].s_addr;
+			fw->ip.dmsk.s_addr = dmasks[j].s_addr;
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= iptc_insert_entry(chain, fw, rulenum, handle);
@@ -808,7 +807,8 @@ insert_entry(const ipt_chainlabel chain,
 }
 
 static unsigned char *
-make_delete_mask(struct ipt_entry *fw, struct xtables_rule_match *matches)
+make_delete_mask(struct xtables_rule_match *matches,
+		 const struct xtables_target *target)
 {
 	/* Establish mask for comparison */
 	unsigned int size;
@@ -821,7 +821,7 @@ make_delete_mask(struct ipt_entry *fw, struct xtables_rule_match *matches)
 
 	mask = xtables_calloc(1, size
 			 + IPT_ALIGN(sizeof(struct ipt_entry_target))
-			 + xtables_targets->size);
+			 + target->size);
 
 	memset(mask, 0xFF, sizeof(struct ipt_entry));
 	mptr = mask + sizeof(struct ipt_entry);
@@ -835,7 +835,7 @@ make_delete_mask(struct ipt_entry *fw, struct xtables_rule_match *matches)
 
 	memset(mptr, 0xFF,
 	       IPT_ALIGN(sizeof(struct ipt_entry_target))
-	       + xtables_targets->userspacesize);
+	       + target->userspacesize);
 
 	return mask;
 }
@@ -845,21 +845,26 @@ delete_entry(const ipt_chainlabel chain,
 	     struct ipt_entry *fw,
 	     unsigned int nsaddrs,
 	     const struct in_addr saddrs[],
+	     const struct in_addr smasks[],
 	     unsigned int ndaddrs,
 	     const struct in_addr daddrs[],
+	     const struct in_addr dmasks[],
 	     int verbose,
 	     struct iptc_handle *handle,
-	     struct xtables_rule_match *matches)
+	     struct xtables_rule_match *matches,
+	     const struct xtables_target *target)
 {
 	unsigned int i, j;
 	int ret = 1;
 	unsigned char *mask;
 
-	mask = make_delete_mask(fw, matches);
+	mask = make_delete_mask(matches, target);
 	for (i = 0; i < nsaddrs; i++) {
 		fw->ip.src.s_addr = saddrs[i].s_addr;
+		fw->ip.smsk.s_addr = smasks[i].s_addr;
 		for (j = 0; j < ndaddrs; j++) {
 			fw->ip.dst.s_addr = daddrs[j].s_addr;
+			fw->ip.dmsk.s_addr = dmasks[j].s_addr;
 			if (verbose)
 				print_firewall_line(fw, handle);
 			ret &= iptc_delete_entry(chain, fw, mask, handle);
@@ -1006,18 +1011,18 @@ static void print_proto(u_int16_t proto, int invert)
 
 		struct protoent *pent = getprotobynumber(proto);
 		if (pent) {
-			printf("-p %s%s ", invertstr, pent->p_name);
+			printf("%s-p %s ", invertstr, pent->p_name);
 			return;
 		}
 
 		for (i = 0; xtables_chain_protos[i].name != NULL; ++i)
 			if (xtables_chain_protos[i].num == proto) {
-				printf("-p %s%s ",
+				printf("%s-p %s ",
 				       invertstr, xtables_chain_protos[i].name);
 				return;
 			}
 
-		printf("-p %s%u ", invertstr, proto);
+		printf("%s-p %u ", invertstr, proto);
 	}
 }
 
@@ -1039,7 +1044,7 @@ print_iface(char letter, const char *iface, const unsigned char *mask,
 	if (mask[0] == 0)
 		return;
 
-	printf("-%c %s", letter, invert ? "! " : "");
+	printf("%s-%c ", invert ? "! " : "", letter);
 
 	for (i = 0; i < IFNAMSIZ; i++) {
 		if (mask[i] != 0) {
@@ -1089,9 +1094,9 @@ static void print_ip(char *prefix, u_int32_t ip, u_int32_t mask, int invert)
 	if (!mask && !ip && !invert)
 		return;
 
-	printf("%s %s%u.%u.%u.%u",
-		prefix,
+	printf("%s%s %u.%u.%u.%u",
 		invert ? "! " : "",
+		prefix,
 		IP_PARTS(ip));
 
 	if (mask == 0xFFFFFFFFU) {
@@ -1313,7 +1318,8 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 	struct ipt_entry fw, *e = NULL;
 	int invert = 0;
 	unsigned int nsaddrs = 0, ndaddrs = 0;
-	struct in_addr *saddrs = NULL, *daddrs = NULL;
+	struct in_addr *saddrs = NULL, *smasks = NULL;
+	struct in_addr *daddrs = NULL, *dmasks = NULL;
 
 	int c, verbose = 0;
 	const char *chain = NULL;
@@ -1400,8 +1406,8 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			break;
 
 		case 'L':
-			add_command(&command, CMD_LIST, CMD_ZERO,
-				    invert);
+			add_command(&command, CMD_LIST,
+				    CMD_ZERO | CMD_ZERO_NUM, invert);
 			if (optarg) chain = optarg;
 			else if (optind < argc && argv[optind][0] != '-'
 				 && argv[optind][0] != '!')
@@ -1412,8 +1418,8 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			break;
 
 		case 'S':
-			add_command(&command, CMD_LIST_RULES, CMD_ZERO,
-				    invert);
+			add_command(&command, CMD_LIST_RULES,
+				    CMD_ZERO|CMD_ZERO_NUM, invert);
 			if (optarg) chain = optarg;
 			else if (optind < argc && argv[optind][0] != '-'
 				 && argv[optind][0] != '!')
@@ -1439,6 +1445,11 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			else if (optind < argc && argv[optind][0] != '-'
 				&& argv[optind][0] != '!')
 				chain = argv[optind++];
+			if (optind < argc && argv[optind][0] != '-'
+				&& argv[optind][0] != '!') {
+				rulenum = parse_rulenumber(argv[optind++]);
+				command = CMD_ZERO_NUM;
+			}
 			break;
 
 		case 'N':
@@ -1506,15 +1517,15 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			 * Option selection
 			 */
 		case 'p':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_PROTOCOL, &fw.ip.invflags,
 				   invert);
 
 			/* Canonicalize into lower case */
-			for (protocol = argv[optind-1]; *protocol; protocol++)
+			for (protocol = optarg; *protocol; protocol++)
 				*protocol = tolower(*protocol);
 
-			protocol = argv[optind-1];
+			protocol = optarg;
 			fw.ip.proto = xtables_parse_protocol(protocol);
 
 			if (fw.ip.proto == 0
@@ -1524,17 +1535,17 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			break;
 
 		case 's':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_SOURCE, &fw.ip.invflags,
 				   invert);
-			shostnetworkmask = argv[optind-1];
+			shostnetworkmask = optarg;
 			break;
 
 		case 'd':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_DESTINATION, &fw.ip.invflags,
 				   invert);
-			dhostnetworkmask = argv[optind-1];
+			dhostnetworkmask = optarg;
 			break;
 
 #ifdef IPT_F_GOTO
@@ -1562,8 +1573,7 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 				target->t = xtables_calloc(1, size);
 				target->t->u.target_size = size;
 				strcpy(target->t->u.user.name, jumpto);
-				xtables_set_revision(target->t->u.user.name,
-					     target->revision);
+				target->t->u.user.revision = target->revision;
 				if (target->init != NULL)
 					target->init(target->t);
 				opts = xtables_merge_options(opts,
@@ -1577,19 +1587,19 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 
 
 		case 'i':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_VIANAMEIN, &fw.ip.invflags,
 				   invert);
-			xtables_parse_interface(argv[optind-1],
+			xtables_parse_interface(optarg,
 					fw.ip.iniface,
 					fw.ip.iniface_mask);
 			break;
 
 		case 'o':
-			xtables_check_inverse(optarg, &invert, &optind, argc);
+			xtables_check_inverse(optarg, &invert, &optind, argc, argv);
 			set_option(&options, OPT_VIANAMEOUT, &fw.ip.invflags,
 				   invert);
-			xtables_parse_interface(argv[optind-1],
+			xtables_parse_interface(optarg,
 					fw.ip.outiface,
 					fw.ip.outiface_mask);
 			break;
@@ -1621,7 +1631,7 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			m->m = xtables_calloc(1, size);
 			m->m->u.match_size = size;
 			strcpy(m->m->u.user.name, m->name);
-			xtables_set_revision(m->m->u.user.name, m->revision);
+			m->m->u.user.revision = m->revision;
 			if (m->init != NULL)
 				m->init(m->m);
 			if (m != m->next) {
@@ -1714,13 +1724,14 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			exit_tryhelp(2);
 
 		default:
-			if (!target
-			    || !(target->parse(c - target->option_offset,
+			if (target == NULL || target->parse == NULL ||
+			    !target->parse(c - target->option_offset,
 					       argv, invert,
 					       &target->tflags,
-					       &fw, &target->t))) {
+					       &fw, &target->t)) {
 				for (matchp = matches; matchp; matchp = matchp->next) {
-					if (matchp->completed)
+					if (matchp->completed ||
+					    matchp->match->parse == NULL)
 						continue;
 					if (matchp->match->parse(c - matchp->match->option_offset,
 						     argv, invert,
@@ -1775,8 +1786,7 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 					m->m = xtables_calloc(1, size);
 					m->m->u.match_size = size;
 					strcpy(m->m->u.user.name, m->name);
-					xtables_set_revision(m->m->u.user.name,
-						     m->revision);
+					m->m->u.user.revision = m->revision;
 					if (m->init != NULL)
 						m->init(m->m);
 
@@ -1848,12 +1858,12 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 	}
 
 	if (shostnetworkmask)
-		xtables_ipparse_any(shostnetworkmask, &saddrs,
-					&fw.ip.smsk, &nsaddrs);
+		xtables_ipparse_multiple(shostnetworkmask, &saddrs,
+					 &smasks, &nsaddrs);
 
 	if (dhostnetworkmask)
-		xtables_ipparse_any(dhostnetworkmask, &daddrs,
-					&fw.ip.dmsk, &ndaddrs);
+		xtables_ipparse_multiple(dhostnetworkmask, &daddrs,
+					 &dmasks, &ndaddrs);
 
 	if ((nsaddrs > 1 || ndaddrs > 1) &&
 	    (fw.ip.invflags & (IPT_INV_SRCIP | IPT_INV_DSTIP)))
@@ -1866,10 +1876,10 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 
 	generic_opt_check(command, options);
 
-	if (chain && strlen(chain) > IPT_FUNCTION_MAXNAMELEN)
+	if (chain != NULL && strlen(chain) >= XT_EXTENSION_MAXNAMELEN)
 		xtables_error(PARAMETER_PROBLEM,
-			   "chain name `%s' too long (must be under %i chars)",
-			   chain, IPT_FUNCTION_MAXNAMELEN);
+			   "chain name `%s' too long (must be under %u chars)",
+			   chain, XT_EXTENSION_MAXNAMELEN);
 
 	/* only allocate handle if we weren't called with a handle */
 	if (!*handle)
@@ -1935,8 +1945,7 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 			target->t->u.target_size = size;
 			strcpy(target->t->u.user.name, jumpto);
 			if (!iptc_is_chain(jumpto, *handle))
-				xtables_set_revision(target->t->u.user.name,
-					     target->revision);
+				target->t->u.user.revision = target->revision;
 			if (target->init != NULL)
 				target->init(target->t);
 		}
@@ -1961,27 +1970,30 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 	switch (command) {
 	case CMD_APPEND:
 		ret = append_entry(chain, e,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
 				   *handle);
 		break;
 	case CMD_DELETE:
 		ret = delete_entry(chain, e,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
-				   *handle, matches);
+				   *handle, matches, target);
 		break;
 	case CMD_DELETE_NUM:
 		ret = iptc_delete_num_entry(chain, rulenum - 1, *handle);
 		break;
 	case CMD_REPLACE:
 		ret = replace_entry(chain, e, rulenum - 1,
-				    saddrs, daddrs, options&OPT_VERBOSE,
-				    *handle);
+				    saddrs, smasks, daddrs, dmasks,
+				    options&OPT_VERBOSE, *handle);
 		break;
 	case CMD_INSERT:
 		ret = insert_entry(chain, e, rulenum - 1,
-				   nsaddrs, saddrs, ndaddrs, daddrs,
+				   nsaddrs, saddrs, smasks,
+				   ndaddrs, daddrs, dmasks,
 				   options&OPT_VERBOSE,
 				   *handle);
 		break;
@@ -1991,8 +2003,12 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 	case CMD_ZERO:
 		ret = zero_entries(chain, options&OPT_VERBOSE, *handle);
 		break;
+	case CMD_ZERO_NUM:
+		ret = iptc_zero_counter(chain, rulenum, *handle);
+		break;
 	case CMD_LIST:
 	case CMD_LIST|CMD_ZERO:
+	case CMD_LIST|CMD_ZERO_NUM:
 		ret = list_entries(chain,
 				   rulenum,
 				   options&OPT_VERBOSE,
@@ -2003,9 +2019,12 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 		if (ret && (command & CMD_ZERO))
 			ret = zero_entries(chain,
 					   options&OPT_VERBOSE, *handle);
+		if (ret && (command & CMD_ZERO_NUM))
+			ret = iptc_zero_counter(chain, rulenum, *handle);
 		break;
 	case CMD_LIST_RULES:
 	case CMD_LIST_RULES|CMD_ZERO:
+	case CMD_LIST_RULES|CMD_ZERO_NUM:
 		ret = list_rules(chain,
 				   rulenum,
 				   options&OPT_VERBOSE,
@@ -2013,6 +2032,8 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 		if (ret && (command & CMD_ZERO))
 			ret = zero_entries(chain,
 					   options&OPT_VERBOSE, *handle);
+		if (ret && (command & CMD_ZERO_NUM))
+			ret = iptc_zero_counter(chain, rulenum, *handle);
 		break;
 	case CMD_NEW_CHAIN:
 		ret = iptc_create_chain(chain, *handle);
@@ -2042,7 +2063,9 @@ int do_command(int argc, char *argv[], char **table, struct iptc_handle **handle
 	}
 
 	free(saddrs);
+	free(smasks);
 	free(daddrs);
+	free(dmasks);
 	xtables_free_opts(1);
 
 	return ret;

@@ -1,4 +1,3 @@
-/* @(#)e_remainder.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_remainder.c,v 1.8 1995/05/10 20:46:05 jtc Exp $";
-#endif
 
 /* __ieee754_remainder(x,p)
  * Return :
@@ -26,21 +21,9 @@ static char rcsid[] = "$NetBSD: e_remainder.c,v 1.8 1995/05/10 20:46:05 jtc Exp 
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(fabs)
-
-#ifdef __STDC__
 static const double zero = 0.0;
-#else
-static double zero = 0.0;
-#endif
 
-
-#ifdef __STDC__
-	double attribute_hidden __ieee754_remainder(double x, double p)
-#else
-	double attribute_hidden __ieee754_remainder(x,p)
-	double x,p;
-#endif
+double attribute_hidden __ieee754_remainder(double x, double p)
 {
 	int32_t hx,hp;
 	u_int32_t sx,lx,lp;
@@ -80,3 +63,23 @@ static double zero = 0.0;
 	SET_HIGH_WORD(x,hx^sx);
 	return x;
 }
+
+/*
+ * wrapper remainder(x,p)
+ */
+#ifndef _IEEE_LIBM
+double remainder(double x, double y)
+{
+	double z = __ieee754_remainder(x, y);
+	if (_LIB_VERSION == _IEEE_ || isnan(y))
+		return z;
+	if (y == 0.0)
+		return __kernel_standard(x, y, 28); /* remainder(x,0) */
+	return z;
+}
+strong_alias(remainder, drem)
+#else
+strong_alias(__ieee754_remainder, remainder)
+strong_alias(__ieee754_remainder, drem)
+#endif
+libm_hidden_def(remainder)

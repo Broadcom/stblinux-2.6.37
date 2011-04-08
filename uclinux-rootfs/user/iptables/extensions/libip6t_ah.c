@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add AH support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -18,10 +19,10 @@ static void ah_help(void)
 }
 
 static const struct option ah_opts[] = {
-	{ .name = "ahspi", .has_arg = 1, .val = '1' },
-	{ .name = "ahlen", .has_arg = 1, .val = '2' },
-	{ .name = "ahres", .has_arg = 0, .val = '3' },
-	{ .name = NULL }
+	{.name = "ahspi", .has_arg = true,  .val = '1'},
+	{.name = "ahlen", .has_arg = true,  .val = '2'},
+	{.name = "ahres", .has_arg = false, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -86,8 +87,8 @@ static int ah_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_AH_SPI)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--ahspi' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_ah_spis(argv[optind-1], ahinfo->spis);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_ah_spis(optarg, ahinfo->spis);
 		if (invert)
 			ahinfo->invflags |= IP6T_AH_INV_SPI;
 		*flags |= IP6T_AH_SPI;
@@ -96,8 +97,8 @@ static int ah_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_AH_LEN)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--ahlen' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		ahinfo->hdrlen = parse_ah_spi(argv[optind-1], "length");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		ahinfo->hdrlen = parse_ah_spi(optarg, "length");
 		if (invert)
 			ahinfo->invflags |= IP6T_AH_INV_LEN;
 		*flags |= IP6T_AH_LEN;

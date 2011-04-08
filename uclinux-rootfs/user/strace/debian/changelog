@@ -1,3 +1,80 @@
+strace (4.5.20-1) unstable; urgency=low
+
+  [ Dmitry V. Levin ]
+  * New upstream version.
+    + Corrected decoding of 64bit syscalls, closes: #570603
+    + Corrected getsockopt decoding on architectures where
+      sizeof(long) > sizeof(int), closes: #494844
+    + Corrected decoding of epoll_pwait, closes: #513014
+    + Implemented -C option to combine regular and -c output, closes: #466196
+
+  [ Frederik Schüler ]
+  * Update standards-version to 3.8.4.
+  * debian/rules: allow parallel building.
+  * debian/rules: comment out verbose build, only needed for debugging.
+  * debian/rules: clean up clean: target, dh_clean does most of the work
+    already.
+  * debian/rules: use *-stamp instead of stamp-*, so dh_clean can tidy
+    up for us.
+
+ -- Frederik Schüler <fs@debian.org>  Tue, 13 Apr 2010 13:02:57 +0200
+
+strace (4.5.19-2) unstable; urgency=low
+
+  * Add sparc64 to the architectures list, closes: #560062
+  * Fix FTBFS, thanks to Aurelien Jarno <aurelien@aurel32.net> for pointing
+    out the solution. Closes: #560516
+  * Rebuild as normal package, closes: #566968
+  * Update standards-version to 3.8.3.
+  * Lower package priority to optional, matching the archive override.
+  * Add watch file.
+
+ -- Frederik Schüler <fs@debian.org>  Tue, 26 Jan 2010 12:20:51 +0100
+
+strace (4.5.19-1) unstable; urgency=low
+
+  [ Dmitry V. Levin ]
+  * New upstream release.
+    + Fixed FTBFS on armel, closes: #520084, #535564
+    + Marked sendfile(2) as a network syscall, closes: #509499
+    + Fixed syscall numbers for tee and sync_file_range, closes: #503124
+    + Corrected accept(2) decoding, closes: #507573
+    + Changed strace to exit/kill with traced process
+      exitcode/signal, closes: #37665
+
+  [ Frederik Schüler ]
+  * Move myself from uploaders to maintainers, and drop Roland from the list,
+    closes: #521458
+  * Apply hppa fixes, thanks to Carlos O'Donell <carlos@systemhalted.org>
+    and Helge Deller <deller@gmx.de> for the fixes, closes: #546619, #437928
+  * Update standards-version to 3.8.1.
+
+ -- Frederik Schüler <fs@debian.org>  Mon, 05 Oct 2009 22:39:54 +0200
+
+strace (4.5.18-1) unstable; urgency=low
+
+  * New upstream release, closes: #515655
+    + Fix FTBFS, closes: #518852
+  * Backported patch from CVS: Fix support for NUL-terminated
+    string, closes: #508484
+  * Build-depend on debhelper (>= 7.0.0).
+
+ -- Frederik Schüler <fs@debian.org>  Mon, 09 Mar 2009 14:39:42 +0100
+
+strace (4.5.17+cvs080723-2) unstable; urgency=low
+
+  * Pull Fix for sparc FTBFS from CVS, closes: #492774
+  * Make strace64 priority extra.
+
+ -- Frederik Schüler <fs@debian.org>  Sat, 02 Aug 2008 10:36:59 +0200
+
+strace (4.5.17+cvs080723-1) unstable; urgency=low
+
+  * New upstream cvs snapshot.
+    - fixes arm and armel FTBFS.
+
+ -- Frederik Schüler <fs@debian.org>  Wed, 23 Jul 2008 15:23:22 +0200
+
 strace (4.5.17-1) unstable; urgency=low
 
   * New upstream release.
@@ -7,7 +84,7 @@ strace (4.5.17-1) unstable; urgency=low
 strace (4.5.16+cvs20080708-2) unstable; urgency=low
 
   * Rerun autotools in correct order.
-  * Add strace64 package on i386, powerpc, s390 and sparc, 
+  * Add strace64 package on i386, powerpc, s390 and sparc,
     closes: #491167, #491188
 
  -- Frederik Schüler <fs@debian.org>  Thu, 17 Jul 2008 17:21:27 +0200
@@ -569,7 +646,7 @@ strace (3.1-14) unstable; urgency=low
 strace (3.1-13) unstable; urgency=low
 
   * Corrected error on PowerPC patch that broke other archictectures
-  		(Bug# 13837)
+    (Bug# 13837)
 
  -- Wichert Akkerman <wakkerma@debian.org>  Tue, 14 Oct 1997 15:41:29 +0200
 

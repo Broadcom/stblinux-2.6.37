@@ -7,7 +7,7 @@
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License.  See the file COPYING.LIB in the main
  * directory of this archive for more details.
- * 
+ *
  * Written by Miles Bader <miles@gnu.org>
  */
 
@@ -16,10 +16,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 
-libc_hidden_proto(atoi)
-libc_hidden_proto(vfprintf)
-libc_hidden_proto(putc)
-libc_hidden_proto(getenv)
 
 #include "malloc.h"
 #include "heap.h"

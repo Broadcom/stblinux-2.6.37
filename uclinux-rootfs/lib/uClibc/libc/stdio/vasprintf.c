@@ -22,15 +22,6 @@
 #warning Skipping vasprintf since no vsnprintf!
 #else
 
-#ifdef __UCLIBC_HAS_GLIBC_CUSTOM_STREAMS__
-libc_hidden_proto(open_memstream)
-libc_hidden_proto(fclose)
-libc_hidden_proto(vfprintf)
-#else
-libc_hidden_proto(vsnprintf)
-#endif
-
-libc_hidden_proto(vasprintf)
 int vasprintf(char **__restrict buf, const char * __restrict format,
 			 va_list arg)
 {
@@ -57,7 +48,7 @@ int vasprintf(char **__restrict buf, const char * __restrict format,
 
 #else  /* __UCLIBC_HAS_GLIBC_CUSTOM_STREAMS__ */
 
-	/* This implementation actually calls the printf machinery twice, but only
+	/* This implementation actually calls the printf machinery twice, but
 	 * only does one malloc.  This can be a problem though when custom printf
 	 * specs or the %m specifier are involved because the results of the
 	 * second call might be different from the first. */

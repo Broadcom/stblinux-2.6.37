@@ -1,4 +1,3 @@
-/* @(#)e_sinh.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_sinh.c,v 1.7 1995/05/10 20:46:13 jtc Exp $";
-#endif
 
 /* __ieee754_sinh(x)
  * Method :
@@ -35,21 +30,9 @@ static char rcsid[] = "$NetBSD: e_sinh.c,v 1.7 1995/05/10 20:46:13 jtc Exp $";
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(expm1)
-libm_hidden_proto(fabs)
-
-#ifdef __STDC__
 static const double one = 1.0, shuge = 1.0e307;
-#else
-static double one = 1.0, shuge = 1.0e307;
-#endif
 
-#ifdef __STDC__
-	double attribute_hidden __ieee754_sinh(double x)
-#else
-	double attribute_hidden __ieee754_sinh(x)
-	double x;
-#endif
+double attribute_hidden __ieee754_sinh(double x)
 {
 	double t,w,h;
 	int32_t ix,jx;
@@ -87,3 +70,21 @@ static double one = 1.0, shuge = 1.0e307;
     /* |x| > overflowthresold, sinh(x) overflow */
 	return x*shuge;
 }
+
+/*
+ * wrapper sinh(x)
+ */
+#ifndef _IEEE_LIBM
+double sinh(double x)
+{
+	double z = __ieee754_sinh(x);
+	if (_LIB_VERSION == _IEEE_)
+		return z;
+	if (!isfinite(z) && isfinite(x))
+		return __kernel_standard(x, x, 25); /* sinh overflow */
+	return z;
+}
+#else
+strong_alias(__ieee754_sinh, sinh)
+#endif
+libm_hidden_def(sinh)

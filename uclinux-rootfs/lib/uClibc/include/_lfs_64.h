@@ -7,7 +7,7 @@
 
 #ifdef __UCLIBC_HAS_LFS__
 
-#if defined _FILE_OFFSET_BITS && _FILE_OFFSET_BITS != 64 
+#if defined _FILE_OFFSET_BITS && _FILE_OFFSET_BITS != 64
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS   64
 #endif
@@ -17,7 +17,7 @@
 #endif
 
 /* We absolutely do _NOT_ want interfaces silently
- *  * renamed under us or very bad things will happen... */
+ * renamed under us or very bad things will happen... */
 #ifdef __USE_FILE_OFFSET64
 # undef __USE_FILE_OFFSET64
 #endif

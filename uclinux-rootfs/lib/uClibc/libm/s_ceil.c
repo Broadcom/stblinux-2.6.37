@@ -1,4 +1,3 @@
-/* @(#)s_ceil.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -10,10 +9,6 @@
  * ====================================================
  */
 
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: s_ceil.c,v 1.8 1995/05/10 20:46:53 jtc Exp $";
-#endif
-
 /*
  * ceil(x)
  * Return x rounded toward -inf to integral value
@@ -23,22 +18,15 @@ static char rcsid[] = "$NetBSD: s_ceil.c,v 1.8 1995/05/10 20:46:53 jtc Exp $";
  *	Inexact flag raised if x not equal to ceil(x).
  */
 
+#include <features.h>
+/* Prevent math.h from defining a colliding inline */
+#undef __USE_EXTERN_INLINES
 #include "math.h"
 #include "math_private.h"
 
-#ifdef __STDC__
 static const double huge = 1.0e300;
-#else
-static double huge = 1.0e300;
-#endif
 
-libm_hidden_proto(ceil)
-#ifdef __STDC__
-	double ceil(double x)
-#else
-	double ceil(x)
-	double x;
-#endif
+double ceil(double x)
 {
 	int32_t i0,i1,j0;
 	u_int32_t i,j;

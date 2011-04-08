@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <limits.h>				/* for PATH_MAX */
 #include <sys/param.h>			/* for MAXPATHLEN */
 #include <errno.h>
@@ -22,11 +21,6 @@
 
 #include <sys/stat.h>			/* for S_IFLNK */
 
-libc_hidden_proto(strcat)
-libc_hidden_proto(strcpy)
-libc_hidden_proto(strlen)
-libc_hidden_proto(readlink)
-libc_hidden_proto(getcwd)
 
 #ifndef PATH_MAX
 #ifdef _POSIX_VERSION
@@ -42,39 +36,40 @@ libc_hidden_proto(getcwd)
 
 #define MAX_READLINKS 32
 
-#ifdef __STDC__
-char *realpath(const char *path, char resolved_path[])
-#else
-char *realpath(path, resolved_path)
-const char *path;
-char resolved_path[];
-#endif
+char *realpath(const char *path, char got_path[])
 {
 	char copy_path[PATH_MAX];
-	char link_path[PATH_MAX];
-	char got_path[PATH_MAX];
-	char *new_path = got_path;
-	char *max_path;
+	char *max_path, *new_path, *allocated_path;
+	size_t path_len;
 	int readlinks = 0;
-	int n;
+#ifdef S_IFLNK
+	int link_len;
+#endif
 
+	if (path == NULL) {
+		__set_errno(EINVAL);
+		return NULL;
+	}
+	if (*path == '\0') {
+		__set_errno(ENOENT);
+		return NULL;
+	}
 	/* Make a copy of the source path since we may need to modify it. */
-	if (strlen(path) >= PATH_MAX - 2) {
+	path_len = strlen(path);
+	if (path_len >= PATH_MAX - 2) {
 		__set_errno(ENAMETOOLONG);
 		return NULL;
 	}
-	strcpy(copy_path, path);
-	path = copy_path;
-	max_path = copy_path + PATH_MAX - 2;
-	/* If it's a relative pathname use getwd for starters. */
+	/* Copy so that path is at the end of copy_path[] */
+	strcpy(copy_path + (PATH_MAX-1) - path_len, path);
+	path = copy_path + (PATH_MAX-1) - path_len;
+	allocated_path = got_path ? NULL : (got_path = malloc(PATH_MAX));
+	max_path = got_path + PATH_MAX - 2; /* points to last non-NUL char */
+	new_path = got_path;
 	if (*path != '/') {
-		/* Ohoo... */
-#define HAVE_GETCWD
-#ifdef HAVE_GETCWD
-		getcwd(new_path, PATH_MAX - 1);
-#else
-		getwd(new_path);
-#endif
+		/* If it's a relative pathname use getcwd for starters. */
+		if (!getcwd(new_path, PATH_MAX - 1))
+			goto err;
 		new_path += strlen(new_path);
 		if (new_path[-1] != '/')
 			*new_path++ = '/';
@@ -109,8 +104,10 @@ char resolved_path[];
 		}
 		/* Safely copy the next pathname component. */
 		while (*path != '\0' && *path != '/') {
-			if (path > max_path) {
+			if (new_path > max_path) {
 				__set_errno(ENAMETOOLONG);
+ err:
+				free(allocated_path);
 				return NULL;
 			}
 			*new_path++ = *path++;
@@ -119,37 +116,38 @@ char resolved_path[];
 		/* Protect against infinite loops. */
 		if (readlinks++ > MAX_READLINKS) {
 			__set_errno(ELOOP);
-			return NULL;
+			goto err;
 		}
-		/* See if latest pathname component is a symlink. */
+		path_len = strlen(path);
+		/* See if last (so far) pathname component is a symlink. */
 		*new_path = '\0';
-		n = readlink(got_path, link_path, PATH_MAX - 1);
-		if (n < 0) {
-			/* EINVAL means the file exists but isn't a symlink. */
-			if (errno != EINVAL) {
-				/* Make sure it's null terminated. */
-				*new_path = '\0';
-				strcpy(resolved_path, got_path);
-				return NULL;
+		{
+			int sv_errno = errno;
+			link_len = readlink(got_path, copy_path, PATH_MAX - 1);
+			if (link_len < 0) {
+				/* EINVAL means the file exists but isn't a symlink. */
+				if (errno != EINVAL) {
+					goto err;
+				}
+			} else {
+				/* Safe sex check. */
+				if (path_len + link_len >= PATH_MAX - 2) {
+					__set_errno(ENAMETOOLONG);
+					goto err;
+				}
+				/* Note: readlink doesn't add the null byte. */
+				/* copy_path[link_len] = '\0'; - we don't need it too */
+				if (*copy_path == '/')
+					/* Start over for an absolute symlink. */
+					new_path = got_path;
+				else
+					/* Otherwise back up over this component. */
+					while (*(--new_path) != '/');
+				/* Prepend symlink contents to path. */
+				memmove(copy_path + (PATH_MAX-1) - link_len - path_len, copy_path, link_len);
+				path = copy_path + (PATH_MAX-1) - link_len - path_len;
 			}
-		} else {
-			/* Note: readlink doesn't add the null byte. */
-			link_path[n] = '\0';
-			if (*link_path == '/')
-				/* Start over for an absolute symlink. */
-				new_path = got_path;
-			else
-				/* Otherwise back up over this component. */
-				while (*(--new_path) != '/');
-			/* Safe sex check. */
-			if (strlen(path) + n >= PATH_MAX - 2) {
-				__set_errno(ENAMETOOLONG);
-				return NULL;
-			}
-			/* Insert symlink contents into path. */
-			strcat(link_path, path);
-			strcpy(copy_path, link_path);
-			path = copy_path;
+			__set_errno(sv_errno);
 		}
 #endif							/* S_IFLNK */
 		*new_path++ = '/';
@@ -159,6 +157,6 @@ char resolved_path[];
 		new_path--;
 	/* Make sure it's null terminated. */
 	*new_path = '\0';
-	strcpy(resolved_path, got_path);
-	return resolved_path;
+	return got_path;
 }
+libc_hidden_def(realpath)

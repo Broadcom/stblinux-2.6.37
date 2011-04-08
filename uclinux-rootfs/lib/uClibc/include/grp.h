@@ -133,6 +133,7 @@ extern struct group *getgrnam (__const char *__name);
 extern int getgrent_r (struct group *__restrict __resultbuf,
 		       char *__restrict __buffer, size_t __buflen,
 		       struct group **__restrict __result);
+libc_hidden_proto(getgrent_r)
 # endif
 
 /* Search for an entry with a matching group ID.
@@ -142,6 +143,7 @@ extern int getgrent_r (struct group *__restrict __resultbuf,
 extern int getgrgid_r (__gid_t __gid, struct group *__restrict __resultbuf,
 		       char *__restrict __buffer, size_t __buflen,
 		       struct group **__restrict __result);
+libc_hidden_proto(getgrgid_r)
 
 /* Search for an entry with a matching group name.
 
@@ -151,6 +153,7 @@ extern int getgrnam_r (__const char *__restrict __name,
 		       struct group *__restrict __resultbuf,
 		       char *__restrict __buffer, size_t __buflen,
 		       struct group **__restrict __result);
+libc_hidden_proto(getgrnam_r)
 
 # ifdef	__USE_SVID
 /* Read a group entry from STREAM.  This function is not standardized
@@ -164,23 +167,21 @@ extern int fgetgrent_r (FILE *__restrict __stream,
 			struct group *__restrict __resultbuf,
 			char *__restrict __buffer, size_t __buflen,
 			struct group **__restrict __result);
+libc_hidden_proto(fgetgrent_r)
 # endif
 
 #endif	/* POSIX or reentrant */
 
 
-#ifdef	__USE_BSD
+#if defined __USE_BSD || defined __USE_GNU
 
 # define __need_size_t
 # include <stddef.h>
 
-/* Set the group set for the current user to GROUPS (N of them).  */
-extern int setgroups (size_t __n, __const __gid_t *__groups) __THROW;
-
-#if 0
 /* Store at most *NGROUPS members of the group set for USER into
    *GROUPS.  Also include GROUP.  The actual number of groups found is
    returned in *NGROUPS.  Return -1 if the if *NGROUPS is too small.
+   In all cases the actual number of groups is stored in *NGROUPS.
 
    This function is not part of POSIX and therefore no official
    cancellation point.  But due to similarity with an POSIX interface
@@ -188,7 +189,14 @@ extern int setgroups (size_t __n, __const __gid_t *__groups) __THROW;
    therefore not marked with __THROW.  */
 extern int getgrouplist (__const char *__user, __gid_t __group,
 			 __gid_t *__groups, int *__ngroups);
+
 #endif
+
+#if defined __USE_BSD
+
+/* Set the group set for the current user to GROUPS (N of them).  */
+extern int setgroups (size_t __n, __const __gid_t *__groups) __THROW;
+libc_hidden_proto(setgroups)
 
 /* Initialize the group set for the current user
    by reading the group database and using all groups

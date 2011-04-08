@@ -40,8 +40,18 @@ int mii_read(struct net_device *dev, int phy_id, int location)
 	struct BcmEnet_devctrl *pDevCtrl = netdev_priv(dev);
 	volatile struct uniMacRegs *umac = pDevCtrl->umac;
 
-	if (phy_id == BRCM_PHY_ID_NONE)
-		return location == MII_BMSR ? 0x782d : 0;
+	if (phy_id == BRCM_PHY_ID_NONE) {
+		switch (location) {
+		case MII_BMCR:
+			return pDevCtrl->phyType == BRCM_PHY_TYPE_EXT_MII ?
+				BMCR_FULLDPLX | BMCR_SPEED100 :
+				BMCR_FULLDPLX | BMCR_SPEED1000;
+		case MII_BMSR:
+			return BMSR_LSTATUS;
+		default:
+			return 0;
+		}
+	}
 
 	mutex_lock(&pDevCtrl->mdio_mutex);
 
@@ -89,10 +99,11 @@ int mii_probe(struct net_device *dev, void *p)
 		 * internal 10/100 MII.
 		 */
 		GENET_RGMII_OOB_CTRL(pDevCtrl) |= RGMII_MODE_EN;
-		/* Power down EPHY */
-		pDevCtrl->ext->ext_pwr_mgmt |= (EXT_PWR_DOWN_PHY |
-				EXT_PWR_DOWN_DLL | EXT_PWR_DOWN_BIAS);
 	}
+	/* Power down EPHY */
+	if (pDevCtrl->ext)
+		pDevCtrl->ext->ext_pwr_mgmt |= (EXT_PWR_DOWN_PHY |
+			EXT_PWR_DOWN_DLL | EXT_PWR_DOWN_BIAS);
 
 	for (i = 0; i < 32; i++) {
 		if (mii_read(dev, i, MII_BMSR) != 0) {
@@ -239,7 +250,8 @@ int mii_init(struct net_device *dev)
 		printk(KERN_INFO "Config MoCA...\n");
 		umac->cmd = umac->cmd  | (UMAC_SPEED_1000 << CMD_SPEED_SHIFT);
 		pDevCtrl->mii.force_media = 1;
-		pDevCtrl->sys->sys_port_ctrl = PORT_MODE_INT_GPHY;
+		pDevCtrl->sys->sys_port_ctrl = PORT_MODE_INT_GPHY |
+			LED_ACT_SOURCE_MAC;
 		break;
 	default:
 		printk(KERN_ERR "unknown phy_type : %d\n", pDevCtrl->phyType);

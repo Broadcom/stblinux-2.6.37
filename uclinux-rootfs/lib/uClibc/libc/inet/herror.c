@@ -23,10 +23,8 @@
 #include <string.h>
 #include <netdb.h>
 
-libc_hidden_proto(fprintf)
-libc_hidden_proto(__h_errno_location)
 
-static const char *error_msg = "Resolver error";
+static const char error_msg[] = "Resolver error";
 static const char *const h_errlist[] = {
 	"Error 0",
 	"Unknown host",			    /* 1 HOST_NOT_FOUND */
@@ -39,7 +37,6 @@ static const int h_nerr = { sizeof(h_errlist)/sizeof(h_errlist[0]) };
 /*
  * herror -- print the error indicated by the h_errno value.
  */
-libc_hidden_proto(herror)
 void herror(const char *s)
 {
 	static const char colon_space[] = ": ";
@@ -52,7 +49,7 @@ void herror(const char *s)
 	}
 	p = error_msg;
 	if ((h_errno >= 0) && (h_errno < h_nerr)) {
-	    p = h_errlist[h_errno];
+		p = h_errlist[h_errno];
 	}
 	fprintf(stderr, "%s%s%s\n", s, c, p);
 }
@@ -61,10 +58,8 @@ libc_hidden_def(herror)
 
 const char *hstrerror(int err)
 {
-    if (err < 0) {
-	return(error_msg);
-    } else if (err < h_nerr) {
-	return(h_errlist[err]);
-    }
-    return(error_msg);
+	if ((unsigned)err < h_nerr)
+		return(h_errlist[err]);
+
+	return error_msg;
 }

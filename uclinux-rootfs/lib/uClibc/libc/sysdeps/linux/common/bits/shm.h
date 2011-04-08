@@ -66,13 +66,14 @@ struct shmid_ds
 #ifdef __USE_MISC
 
 /* ipcs ctl commands */
-# define SHM_STAT 	13
-# define SHM_INFO 	14
+# define SHM_STAT	13
+# define SHM_INFO	14
 
 /* shm_mode upper byte flags */
 # define SHM_DEST	01000	/* segment will be destroyed on last detach */
 # define SHM_LOCKED	02000   /* segment will not be swapped */
 # define SHM_HUGETLB	04000	/* segment is mapped via hugetlb */
+# define SHM_NORESERVE	010000	/* don't check for reservations */
 
 struct	shminfo
   {

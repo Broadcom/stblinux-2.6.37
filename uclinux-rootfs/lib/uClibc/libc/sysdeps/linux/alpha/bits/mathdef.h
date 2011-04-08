@@ -27,27 +27,9 @@
 #if defined __USE_ISOC99 && defined _MATH_H && !defined _MATH_H_MATHDEF
 # define _MATH_H_MATHDEF	1
 
-# ifdef __GNUC__
-#  if __STDC__ == 1
-
-/* In GNU or ANSI mode, gcc leaves `float' expressions as-is.  */
+/* Alpha has both `float' and `double' arithmetic.  */
 typedef float float_t;
 typedef double double_t;
-
-#  else
-
-/* For `gcc -traditional', `float' expressions are evaluated as `double'. */
-typedef double float_t;
-typedef double double_t;
-
-#  endif
-# else
-
-/* Wild guess at types for float_t and double_t. */
-typedef double float_t;
-typedef double double_t;
-
-# endif
 
 /* The values returned by `ilogb' for 0 and NaN respectively.  */
 # define FP_ILOGB0     (-2147483647)
@@ -62,12 +44,12 @@ typedef double double_t;
 /* Due to an ABI change, we need to remap the complex float symbols.  */
 #  define _Mdouble_		float
 #  define __MATHCALL(function, args) \
-    __MATHDECL (_Complex float, function, args)
+	__MATHDECL(_Complex float, function, args)
 #  define __MATHDECL(type, function, args) \
-    __MATHDECL_1(type, function##f, args, __c1_##function##f); \
-    __MATHDECL_1(type, __##function##f, args, __c1_##function##f)
+	__MATHDECL_1(type, function##f, args, __c1_##function##f); \
+	__MATHDECL_1(type, __##function##f, args, __c1_##function##f)
 #  define __MATHDECL_1(type, function, args, alias) \
-    extern type function args __asm__(#alias) __THROW
+	extern type function args __asm__(#alias) __THROW
 
 #  include <bits/cmathcalls.h>
 

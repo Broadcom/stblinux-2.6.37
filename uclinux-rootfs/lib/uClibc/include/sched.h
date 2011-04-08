@@ -63,7 +63,7 @@ extern int sched_get_priority_min (int __algorithm) __THROW;
 extern int sched_rr_get_interval (__pid_t __pid, struct timespec *__t) __THROW;
 
 
-#ifdef __USE_GNU
+#if defined __USE_GNU && defined __UCLIBC_LINUX_SPECIFIC__
 /* Access macros for `cpu_set'.  */
 #define CPU_SETSIZE __CPU_SETSIZE
 #define CPU_SET(cpu, cpusetp)	__CPU_SET (cpu, cpusetp)
@@ -79,14 +79,14 @@ extern int sched_setaffinity (__pid_t __pid, size_t __cpusetsize,
 /* Get the CPU affinity for a task */
 extern int sched_getaffinity (__pid_t __pid, size_t __cpusetsize,
 			      cpu_set_t *__cpuset) __THROW;
-#endif
 
-__END_DECLS
-
-/* These are Linux specific.  */
 extern int __clone (int (*__fn) (void *__arg), void *__child_stack,
 		    int __flags, void *__arg, ...);
 extern int __clone2 (int (*__fn) (void *__arg), void *__child_stack_base,
 		     size_t __child_stack_size, int __flags, void *__arg, ...);
+
+#endif
+
+__END_DECLS
 
 #endif /* sched.h */

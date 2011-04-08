@@ -21,26 +21,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unwind.h>
+#include <libgcc_s.h>
+
+#define __libc_dlopen(x)        dlopen(x, (RTLD_LOCAL | RTLD_LAZY))
+#define __libc_dlsym            dlsym
+#define __libc_dlclose          dlclose
 
 static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
 static _Unwind_Reason_Code (*libgcc_s_personality)
   (int, _Unwind_Action, _Unwind_Exception_Class, struct _Unwind_Exception *,
    struct _Unwind_Context *);
 
+extern
+void abort(void);
+
 static void
 init (void)
 {
-  void *resume = NULL;
-  void *personality = NULL;
+  void *resume, *personality;
   void *handle;
-
-  handle = dlopen ("libgcc_s.so.1", (RTLD_LOCAL | RTLD_LAZY));
+  resume = personality = NULL;
+  handle = dlopen (LIBGCC_S_SO, (RTLD_LOCAL | RTLD_LAZY));
 
   if (handle == NULL
       || (resume = dlsym (handle, "_Unwind_Resume")) == NULL
       || (personality = dlsym (handle, "__gcc_personality_v0")) == NULL)
   {
-    printf("libgcc_s.so.1 must be installed for pthread_cancel to work\n");
+    printf (LIBGCC_S_SO " must be installed for pthread_cancel to work\n");
     abort();
   }
 

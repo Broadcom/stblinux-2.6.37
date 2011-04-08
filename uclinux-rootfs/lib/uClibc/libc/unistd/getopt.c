@@ -25,7 +25,7 @@
  * Modified for uClibc by Manuel Novoa III on 1/5/01.
  * Modified once again for uClibc by Erik Andersen 8/7/02
  */
-
+
 /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
    Ditto for AIX 3.2 and <stdlib.h>.  */
 #ifndef _NO_PROTO
@@ -121,12 +121,6 @@
 #include <getopt.h>
 #include "getopt_int.h"
 
-libc_hidden_proto(strchr)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(strlen)
-libc_hidden_proto(strncmp)
-libc_hidden_proto(getenv)
-libc_hidden_proto(fprintf)
 
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,
@@ -166,7 +160,7 @@ int optopt = '?';
 
 static struct _getopt_data getopt_data;
 
-
+
 #ifndef __GNU_LIBRARY__
 
 /* Avoid depending on library functions or files
@@ -177,7 +171,7 @@ extern char *getenv ();
 #endif
 
 #endif /* not __GNU_LIBRARY__ */
-
+
 #ifdef _LIBC
 /* Stored original parameters.
    XXX This is no good solution.  We should rather copy the args so
@@ -359,7 +353,7 @@ _getopt_initialize (attribute_unused int argc, attribute_unused char *const *arg
 
   return optstring;
 }
-
+
 /* Scan elements of ARGV (whose length is ARGC) for option characters
    given in OPTSTRING.
 
@@ -1180,6 +1174,7 @@ getopt (int argc, char *const *argv, const char *optstring)
 			   (int *) 0,
 			   0);
 }
+libc_hidden_def(getopt)
 
 int
 getopt_long (int argc, char *const *argv, const char *options,

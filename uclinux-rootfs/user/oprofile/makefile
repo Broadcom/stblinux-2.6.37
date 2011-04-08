@@ -25,7 +25,8 @@ export CC CFLAGS CXXFLAGS
 all::
 	if [ ! -e Makefile ]; then \
 		./configure --host=$(MACHINE)-linux --disable-shared \
-			--prefix=/usr CXXFLAGS="$(CXXFLAGS)" \
+			--prefix=/usr --with-kernel-support \
+			CXXFLAGS="$(CXXFLAGS)" \
 			CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" || exit 1 ; \
 	fi
 	$(MAKE) -f Makefile

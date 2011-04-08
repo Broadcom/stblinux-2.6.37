@@ -20,13 +20,15 @@
 #ifndef _ELF_H
 #define	_ELF_H 1
 
-#include <features.h>
-
-__BEGIN_DECLS
+/* Avoid features.h here for portability.  This stuff matches sys/cdefs.h.  */
+#ifdef	__cplusplus
+extern "C" {
+#endif
 
 /* Standard ELF types.  */
 
 #include <stdint.h>
+#include <endian.h>
 
 /* Type for a 16-bit quantity.  */
 typedef uint16_t Elf32_Half;
@@ -120,6 +122,11 @@ typedef struct
 /* Conglomeration of the identification bytes, for easy testing as a word.  */
 #define	ELFMAG		"\177ELF"
 #define	SELFMAG		4
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+# define ELFMAG_U32 ((uint32_t)(ELFMAG0 + 0x100 * (ELFMAG1 + (0x100 * (ELFMAG2 + 0x100 * ELFMAG3)))))
+#elif __BYTE_ORDER == __BIG_ENDIAN
+# define ELFMAG_U32 ((uint32_t)((((ELFMAG0 * 0x100) + ELFMAG1) * 0x100 + ELFMAG2) * 0x100 + ELFMAG3))
+#endif
 
 #define EI_CLASS	4		/* File class byte index */
 #define ELFCLASSNONE	0		/* Invalid class */
@@ -354,6 +361,9 @@ typedef struct
 /* NIOS magic number - no EABI available.  */
 #define EM_NIOS32	0xFEBB
 
+/* AVR32 magic number from ATMEL */
+#define EM_AVR32       0x18ad
+
 /* V850 backend magic number.  Written in the absense of an ABI.  */
 #define EM_CYGNUS_V850 0x9080
 
@@ -431,6 +441,7 @@ typedef struct
 #define SHT_SYMTAB_SHNDX  18		/* Extended section indeces */
 #define	SHT_NUM		  19		/* Number of defined types.  */
 #define SHT_LOOS	  0x60000000	/* Start OS-specific */
+#define SHT_GNU_HASH	  0x6ffffff6	/* GNU-style hash table.  */
 #define SHT_GNU_LIBLIST	  0x6ffffff7	/* Prelink library list */
 #define SHT_CHECKSUM	  0x6ffffff8	/* Checksum for DSO content.  */
 #define SHT_LOSUNW	  0x6ffffffa	/* Sun-specific low bound.  */
@@ -813,6 +824,7 @@ typedef struct
    If any adjustment is made to the ELF object after it has been
    built these entries will need to be adjusted.  */
 #define DT_ADDRRNGLO	0x6ffffe00
+#define DT_GNU_HASH	0x6ffffef5	/* GNU-style hash table.  */
 #define DT_GNU_CONFLICT	0x6ffffef8	/* Start of conflict section */
 #define DT_GNU_LIBLIST	0x6ffffef9	/* Library list */
 #define DT_CONFIG	0x6ffffefa	/* Configuration information.  */
@@ -1254,26 +1266,26 @@ typedef struct
 #define R_386_NUM	   38
 
 /* Blackfin specific definitions.  */
-#define R_BFIN_unused0			0x00
-#define R_BFIN_pcrel5m2			0x01
-#define R_BFIN_unused1			0x02
-#define R_BFIN_pcrel10			0x03
-#define R_BFIN_pcrel12_jump		0x04
-#define R_BFIN_rimm16			0x05
-#define R_BFIN_luimm16			0x06
-#define R_BFIN_huimm16			0x07
-#define R_BFIN_pcrel12_jump_s		0x08
-#define R_BFIN_pcrel24_jump_x		0x09
-#define R_BFIN_pcrel24			0x0a
-#define R_BFIN_unusedb			0x0b
-#define R_BFIN_unusedc			0x0c
-#define R_BFIN_pcrel24_jump_l		0x0d
-#define R_BFIN_pcrel24_call_x		0x0e
+#define R_BFIN_UNUSED0			0x00
+#define R_BFIN_PCREL5M2			0x01
+#define R_BFIN_UNUSED1			0x02
+#define R_BFIN_PCREL10			0x03
+#define R_BFIN_PCREL12_JUMP		0x04
+#define R_BFIN_RIMM16			0x05
+#define R_BFIN_LUIMM16			0x06
+#define R_BFIN_HUIMM16			0x07
+#define R_BFIN_PCREL12_JUMP_S		0x08
+#define R_BFIN_PCREL24_JUMP_X		0x09
+#define R_BFIN_PCREL24			0x0a
+#define R_BFIN_UNUSEDB			0x0b
+#define R_BFIN_UNUSEDC			0x0c
+#define R_BFIN_PCREL24_JUMP_L		0x0d
+#define R_BFIN_PCREL24_CALL_X		0x0e
 #define R_BFIN_var_eq_symb		0x0f
-#define R_BFIN_byte_data		0x10
-#define R_BFIN_byte2_data		0x11
-#define R_BFIN_byte4_data		0x12
-#define R_BFIN_pcrel11			0x13
+#define R_BFIN_BYTE_DATA		0x10
+#define R_BFIN_BYTE2_DATA		0x11
+#define R_BFIN_BYTE4_DATA		0x12
+#define R_BFIN_PCREL11			0x13
 
 #define R_BFIN_GOT17M4			0x14
 #define R_BFIN_GOTHI			0x15
@@ -1539,7 +1551,7 @@ typedef struct
 #define STO_MIPS_INTERNAL		0x1
 #define STO_MIPS_HIDDEN			0x2
 #define STO_MIPS_PROTECTED		0x3
-#define STO_MIPS_PLT			0x10
+#define STO_MIPS_PLT			0x8
 #define STO_MIPS_SC_ALIGN_UNUSED	0xff
 
 /* MIPS specific values for `st_info'.  */
@@ -1685,8 +1697,10 @@ typedef struct
 #define R_MIPS_TLS_TPREL64	48	/* TP-relative offset, 64 bit */
 #define R_MIPS_TLS_TPREL_HI16	49	/* TP-relative offset, high 16 bits */
 #define R_MIPS_TLS_TPREL_LO16	50	/* TP-relative offset, low 16 bits */
+#define R_MIPS_GLOB_DAT		51
 #define R_MIPS_COPY		126
-#define R_MIPS_JUMP_SLOT	127
+#define R_MIPS_JUMP_SLOT        127
+/* Keep this the last entry.  */
 #define R_MIPS_NUM		128
 
 /* Legal values for p_type field of Elf32_Phdr.  */
@@ -1753,7 +1767,13 @@ typedef struct
 #define DT_MIPS_COMPACT_SIZE 0x7000002f /* (O32)Size of compact rel section. */
 #define DT_MIPS_GP_VALUE     0x70000030 /* GP value for aux GOTs.  */
 #define DT_MIPS_AUX_DYNAMIC  0x70000031 /* Address of aux .dynamic.  */
-#define DT_MIPS_NUM	     0x32
+/* The address of .got.plt in an executable using the new non-PIC ABI.  */
+#define DT_MIPS_PLTGOT	     0x70000032
+/* The base of the PLT in an executable using the new non-PIC ABI if that
+   PLT is writable.  For a non-writable PLT, this is omitted or has a zero
+   value.  */
+#define DT_MIPS_RWPLT        0x70000034
+#define DT_MIPS_NUM	     0x35
 
 /* Legal values for DT_MIPS_FLAGS Elf32_Dyn entry.  */
 
@@ -2160,10 +2180,10 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_PPC_DIAB_RELSDA_HA	185	/* like EMB_RELSDA, adjusted high 16 */
 
 /* GNU relocs used in PIC code sequences.  */
-#define R_PPC_REL16		249	/* word32   (sym-.) */
-#define R_PPC_REL16_LO		250	/* half16   (sym-.)@l */
-#define R_PPC_REL16_HI		251	/* half16   (sym-.)@h */
-#define R_PPC_REL16_HA		252	/* half16   (sym-.)@ha */
+#define R_PPC_REL16		249	/* word32   (sym+add-.) */
+#define R_PPC_REL16_LO		250	/* half16   (sym+add-.)@l */
+#define R_PPC_REL16_HI		251	/* half16   (sym+add-.)@h */
+#define R_PPC_REL16_HA		252	/* half16   (sym+add-.)@ha */
 
 /* This is a phony reloc to handle any old fashioned TOC16 references
    that may still be in object files.  */
@@ -2354,6 +2374,9 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_ARM_THM_SWI8		14
 #define R_ARM_XPC25		15
 #define R_ARM_THM_XPC22		16
+#define R_ARM_TLS_DTPMOD32	17
+#define R_ARM_TLS_DTPOFF32	18
+#define R_ARM_TLS_TPOFF32	19
 #define R_ARM_COPY		20	/* Copy symbol at runtime */
 #define R_ARM_GLOB_DAT		21	/* Create GOT entry */
 #define R_ARM_JUMP_SLOT		22	/* Create PLT entry */
@@ -2372,6 +2395,14 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_ARM_GNU_VTINHERIT	101
 #define R_ARM_THM_PC11		102	/* thumb unconditional branch */
 #define R_ARM_THM_PC9		103	/* thumb conditional branch */
+#define R_ARM_TLS_GD32		104
+#define R_ARM_TLS_LDM32		105
+#define R_ARM_TLS_LDO32		106
+#define R_ARM_TLS_IE32		107
+#define R_ARM_TLS_LE32		108
+#define R_ARM_TLS_LDO12		109
+#define R_ARM_TLS_LE12		110
+#define R_ARM_TLS_IE12GP	111
 #define R_ARM_RXPC25		249
 #define R_ARM_RSBREL32		250
 #define R_ARM_THM_RPC22		251
@@ -2830,6 +2861,55 @@ typedef Elf32_Addr Elf32_Conflict;
 /* Keep this the last entry.  */
 #define R_V850_NUM		25
 
+/* Atmel AVR32 relocations.  */
+#define R_AVR32_NONE           0
+#define R_AVR32_32             1
+#define R_AVR32_16             2
+#define R_AVR32_8              3
+#define R_AVR32_32_PCREL       4
+#define R_AVR32_16_PCREL       5
+#define R_AVR32_8_PCREL                6
+#define R_AVR32_DIFF32         7
+#define R_AVR32_DIFF16         8
+#define R_AVR32_DIFF8          9
+#define R_AVR32_GOT32          10
+#define R_AVR32_GOT16          11
+#define R_AVR32_GOT8           12
+#define R_AVR32_21S            13
+#define R_AVR32_16U            14
+#define R_AVR32_16S            15
+#define R_AVR32_8S             16
+#define R_AVR32_8S_EXT         17
+#define R_AVR32_22H_PCREL      18
+#define R_AVR32_18W_PCREL      19
+#define R_AVR32_16B_PCREL      20
+#define R_AVR32_16N_PCREL      21
+#define R_AVR32_14UW_PCREL     22
+#define R_AVR32_11H_PCREL      23
+#define R_AVR32_10UW_PCREL     24
+#define R_AVR32_9H_PCREL       25
+#define R_AVR32_9UW_PCREL      26
+#define R_AVR32_HI16           27
+#define R_AVR32_LO16           28
+#define R_AVR32_GOTPC          29
+#define R_AVR32_GOTCALL                30
+#define R_AVR32_LDA_GOT                31
+#define R_AVR32_GOT21S         32
+#define R_AVR32_GOT18SW                33
+#define R_AVR32_GOT16S         34
+#define R_AVR32_GOT7UW         35
+#define R_AVR32_32_CPENT       36
+#define R_AVR32_CPCALL         37
+#define R_AVR32_16_CP          38
+#define R_AVR32_9W_CP          39
+#define R_AVR32_RELATIVE       40
+#define R_AVR32_GLOB_DAT       41
+#define R_AVR32_JMP_SLOT       42
+#define R_AVR32_ALIGN          43
+#define R_AVR32_NUM            44
+
+/* AVR32 dynamic tags */
+#define DT_AVR32_GOTSZ         0x70000001 /* Total size of GOT in bytes */
 
 /* Renesas H8/300 Relocations */
 #define R_H8_NONE       0
@@ -2906,18 +2986,18 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_NIOS2_PCREL16			3
 #define R_NIOS2_CALL26			4
 #define R_NIOS2_IMM5			5
-#define R_NIOS2_CACHE_OPX 		6
+#define R_NIOS2_CACHE_OPX		6
 #define R_NIOS2_IMM6			7
 #define R_NIOS2_IMM8			8
 #define R_NIOS2_HI16			9
 #define R_NIOS2_LO16			10
-#define R_NIOS2_HIADJ16 		11
+#define R_NIOS2_HIADJ16		11
 #define R_NIOS2_BFD_RELOC_32	12
 #define R_NIOS2_BFD_RELOC_16	13
-#define R_NIOS2_BFD_RELOC_8 	14
+#define R_NIOS2_BFD_RELOC_8	14
 #define R_NIOS2_GPREL			15
-#define R_NIOS2_GNU_VTINHERIT 	16
-#define R_NIOS2_GNU_VTENTRY  	17
+#define R_NIOS2_GNU_VTINHERIT	16
+#define R_NIOS2_GNU_VTENTRY	17
 #define R_NIOS2_UJMP			18
 #define R_NIOS2_CJMP			19
 #define R_NIOS2_CALLR			20
@@ -2925,6 +3005,66 @@ typedef Elf32_Addr Elf32_Conflict;
 /* Keep this the last entry.  */
 #define R_NIOS2_NUM				22
 
-__END_DECLS
+/* Xtensa-specific declarations */
+
+/* Xtensa values for the Dyn d_tag field.  */
+#define DT_XTENSA_GOT_LOC_OFF	(DT_LOPROC + 0)
+#define DT_XTENSA_GOT_LOC_SZ	(DT_LOPROC + 1)
+#define DT_XTENSA_NUM		2
+
+/* Xtensa relocations.  */
+#define R_XTENSA_NONE		0
+#define R_XTENSA_32		1
+#define R_XTENSA_RTLD		2
+#define R_XTENSA_GLOB_DAT	3
+#define R_XTENSA_JMP_SLOT	4
+#define R_XTENSA_RELATIVE	5
+#define R_XTENSA_PLT		6
+#define R_XTENSA_OP0		8
+#define R_XTENSA_OP1		9
+#define R_XTENSA_OP2		10
+#define R_XTENSA_ASM_EXPAND	11
+#define R_XTENSA_ASM_SIMPLIFY	12
+#define R_XTENSA_GNU_VTINHERIT	15
+#define R_XTENSA_GNU_VTENTRY	16
+#define R_XTENSA_DIFF8		17
+#define R_XTENSA_DIFF16		18
+#define R_XTENSA_DIFF32		19
+#define R_XTENSA_SLOT0_OP	20
+#define R_XTENSA_SLOT1_OP	21
+#define R_XTENSA_SLOT2_OP	22
+#define R_XTENSA_SLOT3_OP	23
+#define R_XTENSA_SLOT4_OP	24
+#define R_XTENSA_SLOT5_OP	25
+#define R_XTENSA_SLOT6_OP	26
+#define R_XTENSA_SLOT7_OP	27
+#define R_XTENSA_SLOT8_OP	28
+#define R_XTENSA_SLOT9_OP	29
+#define R_XTENSA_SLOT10_OP	30
+#define R_XTENSA_SLOT11_OP	31
+#define R_XTENSA_SLOT12_OP	32
+#define R_XTENSA_SLOT13_OP	33
+#define R_XTENSA_SLOT14_OP	34
+#define R_XTENSA_SLOT0_ALT	35
+#define R_XTENSA_SLOT1_ALT	36
+#define R_XTENSA_SLOT2_ALT	37
+#define R_XTENSA_SLOT3_ALT	38
+#define R_XTENSA_SLOT4_ALT	39
+#define R_XTENSA_SLOT5_ALT	40
+#define R_XTENSA_SLOT6_ALT	41
+#define R_XTENSA_SLOT7_ALT	42
+#define R_XTENSA_SLOT8_ALT	43
+#define R_XTENSA_SLOT9_ALT	44
+#define R_XTENSA_SLOT10_ALT	45
+#define R_XTENSA_SLOT11_ALT	46
+#define R_XTENSA_SLOT12_ALT	47
+#define R_XTENSA_SLOT13_ALT	48
+#define R_XTENSA_SLOT14_ALT	49
+/* Keep this the last entry.  */
+#define R_XTENSA_NUM		50
+
+#ifdef	__cplusplus
+}
+#endif
 
 #endif	/* elf.h */

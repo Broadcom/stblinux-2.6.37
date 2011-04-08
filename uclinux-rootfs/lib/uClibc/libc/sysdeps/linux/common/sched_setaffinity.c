@@ -19,7 +19,6 @@
 #include <features.h>
 #ifdef __USE_GNU
 
-#include <errno.h>
 #include <sched.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -27,7 +26,6 @@
 #include <unistd.h>
 #include <sys/param.h>
 #include <alloca.h>
-#include <sysdep.h>
 
 #if defined __NR_sched_setaffinity
 

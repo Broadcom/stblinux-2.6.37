@@ -7,14 +7,13 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/time.h>
 
 #ifdef __USE_BSD
 
-libc_hidden_proto(settimeofday)
 
 _syscall2(int, settimeofday, const struct timeval *, tv,
-		  const struct timezone *, tz);
+		  const struct timezone *, tz)
 libc_hidden_def(settimeofday)
 #endif

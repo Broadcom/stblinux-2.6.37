@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscallent.h,v 1.34 2008/07/22 00:22:04 roland Exp $
+ *	$Id$
  */
 
 /*
@@ -134,7 +134,7 @@
 #define sys_fstat64		printargs
 #define sys_fcntl64		printargs
 
-#include "../syscallent.h"
+#include "i386/syscallent.h"
 
 #undef sys_getrlimit
 #undef sys_afs_syscall
@@ -242,15 +242,13 @@
 
 #include "../dummy.h"
 
-/* You must be careful to check ../syscallent.h so that this table
+/* You must be careful to check ../i386/syscallent.h so that this table
    starts where that one leaves off.
 */
-#if SYS_ipc_subcall + SYS_ipc_nsubcalls != 443
+#if SYS_ipc_subcall + SYS_ipc_nsubcalls != 445
 # error fix me
 #endif
 
-	{ 8,	0,	printargs,		"SYS_443"	}, /* 443 */
-	{ 8,	0,	printargs,		"SYS_444"	}, /* 444 */
 	{ 8,	0,	printargs,		"SYS_445"	}, /* 445 */
 	{ 8,	0,	printargs,		"SYS_446"	}, /* 446 */
 	{ 8,	0,	printargs,		"SYS_447"	}, /* 447 */
@@ -962,7 +960,7 @@
 	{ 2,	0,	sys_mlock,		"mlock"		}, /* 1153 */
 	{ 1,	0,	sys_mlockall,		"mlockall"	}, /* 1154 */
 	{ 3,	0,	sys_mprotect,		"mprotect"	}, /* 1155 */
-	{ 4,	0,	sys_mremap,		"mremap"	}, /* 1156 */
+	{ 5,	0,	sys_mremap,		"mremap"	}, /* 1156 */
 	{ 3,	0,	sys_msync,		"msync"		}, /* 1157 */
 	{ 2,	0,	sys_munlock,		"munlock"	}, /* 1158 */
 	{ 0,	0,	sys_munlockall,		"munlockall"	}, /* 1159 */
@@ -993,7 +991,7 @@
 	{ 2,	TF,	sys_getcwd,		"getcwd"	}, /* 1184 */
 	{ 2,	0,	sys_capget,		"capget"	}, /* 1185 */
 	{ 2,	0,	sys_capset,		"capset"	}, /* 1186 */
-	{ 4,	TD,	sys_sendfile,		"sendfile"	}, /* 1187 */
+	{ 4,	TD|TN,	sys_sendfile,		"sendfile"	}, /* 1187 */
 	{ 5,	TN,	printargs,		"getpmsg"	}, /* 1188 */
 	{ 5,	TN,	printargs,		"putpmsg"	}, /* 1189 */
 	{ 3,	TN,	sys_socket,		"socket"	}, /* 1190 */
@@ -1074,7 +1072,7 @@
 	{ 5,	0,	sys_mq_timedreceive,	"mq_timedreceive" }, /* 1265 */
 	{ 2,	0,	sys_mq_notify,		"mq_notify"	}, /* 1266 */
 	{ 3,	0,	sys_mq_getsetattr,	"mq_getsetattr"	}, /* 1267 */
-	{ 5,	0,	printargs,		"sys_kexec_load" }, /* 1268 */
+	{ 5,	0,	printargs,		"kexec_load"	}, /* 1268 */
 	{ 5,	0,	printargs,		"vserver"	}, /* 1269 */
 	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 1270 */
 	{ 5,	0,	printargs,		"add_key"	}, /* 1271 */
@@ -1116,3 +1114,7 @@
 	{ 3,	TD|TS,	sys_signalfd,		"signalfd"	}, /* 1307 */
 	{ 4,	TD,	sys_timerfd,		"timerfd"	}, /* 1308 */
 	{ 1,	TD,	sys_eventfd,		"eventfd"	}, /* 1309 */
+	{ 5,	TD,	printargs,		"preadv"	}, /* 1319 */
+	{ 5,	TD,	printargs,		"pwritev"	}, /* 1320 */
+	{ 4,	TS,	printargs,		"rt_tgsigqueueinfo"}, /* 1321 */
+	{ 5,	TN,	sys_recvmmsg,		"recvmmsg"	}, /* 1322 */

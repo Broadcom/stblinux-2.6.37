@@ -53,11 +53,8 @@ static char sccsid[] = "@(#)xdr.c 1.35 87/08/12";
 
 #ifdef USE_IN_LIBIO
 # include <wchar.h>
-libc_hidden_proto(fwprintf)
 #endif
 
-libc_hidden_proto(strlen)
-libc_hidden_proto(fputs)
 
 /*
  * constants specific to the xdr "protocol"
@@ -87,7 +84,6 @@ xdr_free (xdrproc_t proc, char *objp)
 /*
  * XDR nothing
  */
-libc_hidden_proto(xdr_void)
 bool_t
 xdr_void (void)
 {
@@ -100,11 +96,9 @@ libc_hidden_def(xdr_void)
  * The definition of xdr_long() is kept for backward
  * compatibility. Instead xdr_int() should be used.
  */
-libc_hidden_proto(xdr_long)
 bool_t
 xdr_long (XDR *xdrs, long *lp)
 {
-
   if (xdrs->x_op == XDR_ENCODE
       && (sizeof (int32_t) == sizeof (long)
 	  || (int32_t) *lp == *lp))
@@ -123,7 +117,6 @@ libc_hidden_def(xdr_long)
 /*
  * XDR short integers
  */
-libc_hidden_proto(xdr_short)
 bool_t
 xdr_short (XDR *xdrs, short *sp)
 {
@@ -153,7 +146,6 @@ libc_hidden_def(xdr_short)
 /*
  * XDR integers
  */
-libc_hidden_proto(xdr_int)
 bool_t
 xdr_int (XDR *xdrs, int *ip)
 {
@@ -192,7 +184,6 @@ libc_hidden_def(xdr_int)
  * The definition of xdr_u_long() is kept for backward
  * compatibility. Instead xdr_u_int() should be used.
  */
-libc_hidden_proto(xdr_u_long)
 bool_t
 xdr_u_long (XDR *xdrs, u_long *ulp)
 {
@@ -226,7 +217,6 @@ libc_hidden_def(xdr_u_long)
 /*
  * XDR unsigned integers
  */
-libc_hidden_proto(xdr_u_int)
 bool_t
 xdr_u_int (XDR *xdrs, u_int *up)
 {
@@ -237,10 +227,10 @@ xdr_u_int (XDR *xdrs, u_int *up)
     {
     case XDR_ENCODE:
       l = (u_long) * up;
-      return XDR_PUTLONG (xdrs, &l);
+      return XDR_PUTLONG (xdrs, (long *) &l);
 
     case XDR_DECODE:
-      if (!XDR_GETLONG (xdrs, &l))
+      if (!XDR_GETLONG (xdrs, (long *) &l))
 	{
 	  return FALSE;
 	}
@@ -263,24 +253,24 @@ libc_hidden_def(xdr_u_int)
  * XDR hyper integers
  * same as xdr_u_hyper - open coded to save a proc call!
  */
-libc_hidden_proto(xdr_hyper)
 bool_t
 xdr_hyper (XDR *xdrs, quad_t *llp)
 {
   long t1;
-  unsigned long int t2;
+  unsigned long t2;
 
   if (xdrs->x_op == XDR_ENCODE)
     {
       t1 = (long) ((*llp) >> 32);
       t2 = (long) (*llp);
-      return (XDR_PUTLONG(xdrs, &t1) && XDR_PUTLONG(xdrs, &t2));
+      return (XDR_PUTLONG(xdrs, &t1) && XDR_PUTLONG(xdrs, (long *) &t2));
     }
 
   if (xdrs->x_op == XDR_DECODE)
     {
-      if (!XDR_GETLONG(xdrs, &t1) || !XDR_GETLONG(xdrs, &t2))
+      if (!XDR_GETLONG(xdrs, &t1) || !XDR_GETLONG(xdrs, (long *) &t2))
 	return FALSE;
+      /* t2 must be unsigned for this to work */
       *llp = ((quad_t) t1) << 32;
       *llp |= t2;
       return TRUE;
@@ -298,7 +288,6 @@ libc_hidden_def(xdr_hyper)
  * XDR hyper integers
  * same as xdr_hyper - open coded to save a proc call!
  */
-libc_hidden_proto(xdr_u_hyper)
 bool_t
 xdr_u_hyper (XDR *xdrs, u_quad_t *ullp)
 {
@@ -309,12 +298,12 @@ xdr_u_hyper (XDR *xdrs, u_quad_t *ullp)
     {
       t1 = (unsigned long) ((*ullp) >> 32);
       t2 = (unsigned long) (*ullp);
-      return (XDR_PUTLONG(xdrs, &t1) && XDR_PUTLONG(xdrs, &t2));
+      return (XDR_PUTLONG(xdrs, (long *) &t1) && XDR_PUTLONG(xdrs, (long *) &t2));
     }
 
   if (xdrs->x_op == XDR_DECODE)
     {
-      if (!XDR_GETLONG(xdrs, &t1) || !XDR_GETLONG(xdrs, &t2))
+      if (!XDR_GETLONG(xdrs, (long *) &t1) || !XDR_GETLONG(xdrs, (long *) &t2))
 	return FALSE;
       *ullp = ((u_quad_t) t1) << 32;
       *ullp |= t2;
@@ -343,7 +332,6 @@ xdr_u_longlong_t (XDR *xdrs, u_quad_t *ullp)
 /*
  * XDR unsigned short integers
  */
-libc_hidden_proto(xdr_u_short)
 bool_t
 xdr_u_short (XDR *xdrs, u_short *usp)
 {
@@ -353,10 +341,10 @@ xdr_u_short (XDR *xdrs, u_short *usp)
     {
     case XDR_ENCODE:
       l = (u_long) * usp;
-      return XDR_PUTLONG (xdrs, &l);
+      return XDR_PUTLONG (xdrs, (long *) &l);
 
     case XDR_DECODE:
-      if (!XDR_GETLONG (xdrs, &l))
+      if (!XDR_GETLONG (xdrs, (long *) &l))
 	{
 	  return FALSE;
 	}
@@ -408,7 +396,6 @@ xdr_u_char (XDR *xdrs, u_char *cp)
 /*
  * XDR booleans
  */
-libc_hidden_proto(xdr_bool)
 bool_t
 xdr_bool (XDR *xdrs, bool_t *bp)
 {
@@ -438,7 +425,6 @@ libc_hidden_def(xdr_bool)
 /*
  * XDR enumerations
  */
-libc_hidden_proto(xdr_enum)
 bool_t
 xdr_enum (XDR *xdrs, enum_t *ep)
 {
@@ -492,7 +478,6 @@ libc_hidden_def(xdr_enum)
  * Allows the specification of a fixed size sequence of opaque bytes.
  * cp points to the opaque object and cnt gives the byte length.
  */
-libc_hidden_proto(xdr_opaque)
 bool_t
 xdr_opaque (XDR *xdrs, caddr_t cp, u_int cnt)
 {
@@ -544,7 +529,6 @@ libc_hidden_def(xdr_opaque)
  * *cpp is a pointer to the bytes, *sizep is the count.
  * If *cpp is NULL maxsize bytes are allocated
  */
-libc_hidden_proto(xdr_bytes)
 bool_t
 xdr_bytes (XDR *xdrs, char **cpp, u_int *sizep, u_int maxsize)
 {
@@ -609,9 +593,7 @@ libc_hidden_def(xdr_bytes)
  * Implemented here due to commonality of the object.
  */
 bool_t
-xdr_netobj (xdrs, np)
-     XDR *xdrs;
-     struct netobj *np;
+xdr_netobj (XDR *xdrs, struct netobj *np)
 {
 
   return xdr_bytes (xdrs, &np->n_bytes, &np->n_len, MAX_NETOBJ_SZ);
@@ -628,7 +610,6 @@ xdr_netobj (xdrs, np)
  * routine may be called.
  * If there is no specific or default routine an error is returned.
  */
-libc_hidden_proto(xdr_union)
 bool_t
 xdr_union (XDR *xdrs, enum_t *dscmp, char *unp, const struct xdr_discrim *choices, xdrproc_t dfault)
 {
@@ -675,7 +656,6 @@ libc_hidden_def(xdr_union)
  * storage is allocated.  The last parameter is the max allowed length
  * of the string as specified by a protocol.
  */
-libc_hidden_proto(xdr_string)
 bool_t
 xdr_string (XDR *xdrs, char **cpp, u_int maxsize)
 {
@@ -755,9 +735,7 @@ libc_hidden_def(xdr_string)
  * routines like clnt_call
  */
 bool_t
-xdr_wrapstring (xdrs, cpp)
-     XDR *xdrs;
-     char **cpp;
+xdr_wrapstring (XDR *xdrs, char **cpp)
 {
   if (xdr_string (xdrs, cpp, LASTUNSIGNED))
     {

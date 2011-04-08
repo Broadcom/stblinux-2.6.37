@@ -8,14 +8,13 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <time.h>
 #include <sys/time.h>
 
 #ifdef __NR_clock_gettime
-_syscall2(int, clock_gettime, clockid_t, clock_id, struct timespec*, tp);
+_syscall2(int, clock_gettime, clockid_t, clock_id, struct timespec*, tp)
 #else
-libc_hidden_proto(gettimeofday)
 
 int clock_gettime(clockid_t clock_id, struct timespec* tp)
 {
@@ -24,10 +23,12 @@ int clock_gettime(clockid_t clock_id, struct timespec* tp)
 
 	switch (clock_id) {
 		case CLOCK_REALTIME:
-			retval = gettimeofday(&tv, NULL);
-			if (retval == 0) {
-				TIMEVAL_TO_TIMESPEC(&tv, tp);
-			}
+			/* In Linux, gettimeofday fails only on bad parameter.
+			 * We know that here parameter isn't bad.
+			 */
+			gettimeofday(&tv, NULL);
+			TIMEVAL_TO_TIMESPEC(&tv, tp);
+			retval = 0;
 			break;
 
 		default:

@@ -11,6 +11,7 @@
  *
  * Based on libip6t_{icmpv6,udp}.c
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -48,7 +49,7 @@ static void print_types_all(void)
 	unsigned int i;
 	printf("Valid MH types:");
 
-	for (i = 0; i < sizeof(mh_names)/sizeof(struct mh_name); i++) {
+	for (i = 0; i < ARRAY_SIZE(mh_names); ++i) {
 		if (i && mh_names[i].type == mh_names[i-1].type)
 			printf(" (%s)", mh_names[i].name);
 		else
@@ -75,7 +76,7 @@ static void mh_init(struct xt_entry_match *m)
 static unsigned int name_to_type(const char *name)
 {
 	int namelen = strlen(name);
-	unsigned int limit = sizeof(mh_names)/sizeof(struct mh_name);
+	static const unsigned int limit = ARRAY_SIZE(mh_names);
 	unsigned int match = limit;
 	unsigned int i;
 
@@ -133,8 +134,8 @@ static int mh_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & MH_TYPES)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--mh-type' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_mh_types(argv[optind-1], mhinfo->types);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_mh_types(optarg, mhinfo->types);
 		if (invert)
 			mhinfo->invflags |= IP6T_MH_INV_TYPE;
 		*flags |= MH_TYPES;
@@ -151,10 +152,9 @@ static const char *type_to_name(u_int8_t type)
 {
 	unsigned int i;
 
-	for (i = 0; i < sizeof(mh_names)/sizeof(struct mh_name); i++) {
+	for (i = 0; i < ARRAY_SIZE(mh_names); ++i)
 		if (mh_names[i].type == type)
 			return mh_names[i].name;
-	}
 
 	return NULL;
 }
@@ -217,8 +217,8 @@ static void mh_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static const struct option mh_opts[] = {
-	{ "mh-type", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "mh-type", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static struct xtables_match mh_mt6_reg = {

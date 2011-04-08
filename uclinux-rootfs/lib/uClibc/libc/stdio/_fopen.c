@@ -7,9 +7,6 @@
 
 #include "_stdio.h"
 
-libc_hidden_proto(isatty)
-libc_hidden_proto(open)
-libc_hidden_proto(fcntl)
 
 /*
  * Cases:
@@ -76,13 +73,13 @@ FILE attribute_hidden *_stdio_fopen(intptr_t fname_or_mode,
 
 	while (*++mode) {
 # ifdef __UCLIBC_HAS_FOPEN_EXCLUSIVE_MODE__
-		if (*mode == 'x') {	/* Open exclusive (a glibc extension). */
+		if (*mode == 'x') {	   /* Open exclusive (a glibc extension). */
 			open_mode |= O_EXCL;
 			continue;
 		}
 # endif
 # ifdef __UCLIBC_HAS_FOPEN_LARGEFILE_MODE__
-		if (*mode == 'F') {	/* Open as large file (uClibc extension). */
+		if (*mode == 'F') {		/* Open as large file (uClibc extension). */
 			open_mode |= O_LARGEFILE;
 			continue;
 		}
@@ -102,11 +99,7 @@ FILE attribute_hidden *_stdio_fopen(intptr_t fname_or_mode,
 #ifdef __UCLIBC_HAS_THREADS__
 		/* We only initialize the mutex in the non-freopen case. */
 		/* stream->__user_locking = _stdio_user_locking; */
-#ifdef __USE_STDIO_FUTEXES__
-		_IO_lock_init (stream->_lock);
-#else
-		__stdio_init_mutex(&stream->__lock);
-#endif
+		STDIO_INIT_MUTEX(stream->__lock);
 #endif
 	}
 
@@ -125,11 +118,11 @@ FILE attribute_hidden *_stdio_fopen(intptr_t fname_or_mode,
 		i = (open_mode & (O_ACCMODE|O_LARGEFILE)) + 1;
 
 		/* NOTE: fopencookie needs changing if the basic check changes! */
-		if (((i & (((int) fname_or_mode) + 1)) != i) /* Basic agreement? */
-			|| (((open_mode & ~((__mode_t) fname_or_mode)) & O_APPEND)
-				&& fcntl(filedes, F_SETFL, O_APPEND))	/* Need O_APPEND. */
-			) {
+		if ((i & ((int)fname_or_mode + 1)) != i) /* Basic agreement? */
 			goto DO_EINVAL;
+		if ((open_mode & ~(__mode_t)fname_or_mode) & O_APPEND) {
+			if (fcntl(filedes, F_SETFL, O_APPEND))	/* Need O_APPEND. */
+				goto DO_EINVAL;
 		}
 		/* For later... to reflect largefile setting in stream flags. */
 		__STDIO_WHEN_LFS( open_mode |= (((__mode_t) fname_or_mode)
@@ -163,9 +156,15 @@ FILE attribute_hidden *_stdio_fopen(intptr_t fname_or_mode,
 		((((open_mode & O_ACCMODE) + 1) ^ 0x03) * __FLAG_WRITEONLY);
 
 #ifdef __STDIO_BUFFERS
-	i = errno;					/* Preserve errno against isatty call. */
-	stream->__modeflags |= (isatty(stream->__filedes) * __FLAG_LBF);
-	__set_errno(i);
+	if (stream->__filedes != INT_MAX) {
+		/* NB: fopencookie uses bogus filedes == INT_MAX,
+		 * avoiding isatty() in that case.
+		 */
+		i = errno; /* preserve errno against isatty call. */
+		if (isatty(stream->__filedes))
+			stream->__modeflags |= __FLAG_LBF;
+		__set_errno(i);
+	}
 
 	if (!stream->__bufstart) {
 		if ((stream->__bufstart = malloc(BUFSIZ)) != NULL) {
@@ -198,18 +197,27 @@ FILE attribute_hidden *_stdio_fopen(intptr_t fname_or_mode,
 #ifdef __UCLIBC_HAS_THREADS__
 	/* Even in the freopen case, we reset the user locking flag. */
 	stream->__user_locking = _stdio_user_locking;
-#ifdef __USE_STDIO_FUTEXES__
-	/* _IO_lock_init (stream->_lock); */
-#else
-	/* __stdio_init_mutex(&stream->__lock); */
-#endif
+	/* STDIO_INIT_MUTEX(stream->__lock); */
 #endif
 
 #ifdef __STDIO_HAS_OPENLIST
-	__STDIO_THREADLOCK_OPENLIST;
-	stream->__nextopen = _stdio_openlist; /* New files are inserted at */
-	_stdio_openlist = stream;			  /*   the head of the list. */
-	__STDIO_THREADUNLOCK_OPENLIST;
+#if defined(__UCLIBC_HAS_THREADS__) && defined(__STDIO_BUFFERS)
+	if (!(stream->__modeflags & __FLAG_FREEFILE))
+	{
+		/* An freopen call so the file was never removed from the list. */
+	}
+	else
+#endif
+	{
+		/* We have to lock the del mutex in case another thread wants to fclose()
+		 * the last file. */
+		__STDIO_THREADLOCK_OPENLIST_DEL;
+		__STDIO_THREADLOCK_OPENLIST_ADD;
+		stream->__nextopen = _stdio_openlist; /* New files are inserted at */
+		_stdio_openlist = stream;			  /*   the head of the list. */
+		__STDIO_THREADUNLOCK_OPENLIST_ADD;
+		__STDIO_THREADUNLOCK_OPENLIST_DEL;
+	}
 #endif
 
 	__STDIO_STREAM_VALIDATE(stream);

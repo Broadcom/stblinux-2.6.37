@@ -18,13 +18,12 @@
 
 #include <string.h>
 
-libc_hidden_proto(memmove)
 
 /* Copy memory like memmove, but no return value required.  Can't
    alias to memmove because it's not defined in the same translation
    unit.  */
-void
-__aeabi_memmove (void *dest, const void *src, size_t n)
+void __aeabi_memmove (void *dest, const void *src, size_t n);
+void __aeabi_memmove (void *dest, const void *src, size_t n)
 {
   memmove (dest, src, n);
 }

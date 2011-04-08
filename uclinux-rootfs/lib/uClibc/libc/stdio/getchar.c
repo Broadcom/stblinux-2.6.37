@@ -7,11 +7,11 @@
 
 #include "_stdio.h"
 
-libc_hidden_proto(__fgetc_unlocked)
 
 #undef getchar
 #ifdef __DO_UNLOCKED
 
+/* the only use of the hidden getchar_unlocked is in gets.c */
 #undef getchar_unlocked
 int getchar_unlocked(void)
 {
@@ -19,6 +19,7 @@ int getchar_unlocked(void)
 
 	return __GETC_UNLOCKED_MACRO(stream);
 }
+libc_hidden_def(getchar_unlocked)
 
 #ifndef __UCLIBC_HAS_THREADS__
 strong_alias(getchar_unlocked,getchar)

@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add multiple TCP port support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -44,12 +45,12 @@ static void multiport_help_v1(void)
 }
 
 static const struct option multiport_opts[] = {
-	{ "source-ports", 1, NULL, '1' },
-	{ "sports", 1, NULL, '1' }, /* synonym */
-	{ "destination-ports", 1, NULL, '2' },
-	{ "dports", 1, NULL, '2' }, /* synonym */
-	{ "ports", 1, NULL, '3' },
-	{ .name = NULL }
+	{.name = "source-ports",      .has_arg = true, .val = '1'},
+	{.name = "sports",            .has_arg = true, .val = '1'}, /* synonym */
+	{.name = "destination-ports", .has_arg = true, .val = '2'},
+	{.name = "dports",            .has_arg = true, .val = '2'}, /* synonym */
+	{.name = "ports",             .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static char *
@@ -164,25 +165,25 @@ __multiport_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		multiinfo->count = parse_multi_ports(argv[optind-1],
+		multiinfo->count = parse_multi_ports(optarg,
 						     multiinfo->ports, proto);
 		multiinfo->flags = XT_MULTIPORT_SOURCE;
 		break;
 
 	case '2':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		multiinfo->count = parse_multi_ports(argv[optind-1],
+		multiinfo->count = parse_multi_ports(optarg,
 						     multiinfo->ports, proto);
 		multiinfo->flags = XT_MULTIPORT_DESTINATION;
 		break;
 
 	case '3':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		multiinfo->count = parse_multi_ports(argv[optind-1],
+		multiinfo->count = parse_multi_ports(optarg,
 						     multiinfo->ports, proto);
 		multiinfo->flags = XT_MULTIPORT_EITHER;
 		break;
@@ -215,7 +216,7 @@ static int
 multiport_parse6(int c, char **argv, int invert, unsigned int *flags,
                  const void *e, struct xt_entry_match **match)
 {
-	const struct ip6t_entry *entry = (const struct ip6t_entry *)e;
+	const struct ip6t_entry *entry = e;
 	return __multiport_parse(c, argv, invert, flags, match,
 	       entry->ipv6.proto, entry->ipv6.invflags);
 }
@@ -231,23 +232,23 @@ __multiport_parse_v1(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		parse_multi_ports_v1(argv[optind-1], multiinfo, proto);
+		parse_multi_ports_v1(optarg, multiinfo, proto);
 		multiinfo->flags = XT_MULTIPORT_SOURCE;
 		break;
 
 	case '2':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		parse_multi_ports_v1(argv[optind-1], multiinfo, proto);
+		parse_multi_ports_v1(optarg, multiinfo, proto);
 		multiinfo->flags = XT_MULTIPORT_DESTINATION;
 		break;
 
 	case '3':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		proto = check_proto(pnum, invflags);
-		parse_multi_ports_v1(argv[optind-1], multiinfo, proto);
+		parse_multi_ports_v1(optarg, multiinfo, proto);
 		multiinfo->flags = XT_MULTIPORT_EITHER;
 		break;
 
@@ -278,7 +279,7 @@ static int
 multiport_parse6_v1(int c, char **argv, int invert, unsigned int *flags,
                     const void *e, struct xt_entry_match **match)
 {
-	const struct ip6t_entry *entry = (const struct ip6t_entry *)e;
+	const struct ip6t_entry *entry = e;
 	return __multiport_parse_v1(c, argv, invert, flags, match,
 	       entry->ipv6.proto, entry->ipv6.invflags);
 }
@@ -358,7 +359,7 @@ static void multiport_print(const void *ip_void,
 static void multiport_print6(const void *ip_void,
                              const struct xt_entry_match *match, int numeric)
 {
-	const struct ip6t_ip6 *ip = (const struct ip6t_ip6 *)ip_void;
+	const struct ip6t_ip6 *ip = ip_void;
 	__multiport_print(match, numeric, ip->proto);
 }
 
@@ -413,7 +414,7 @@ static void multiport_print_v1(const void *ip_void,
 static void multiport_print6_v1(const void *ip_void,
                                 const struct xt_entry_match *match, int numeric)
 {
-	const struct ip6t_ip6 *ip = (const struct ip6t_ip6 *)ip_void;
+	const struct ip6t_ip6 *ip = ip_void;
 	__multiport_print_v1(match, numeric, ip->proto);
 }
 
@@ -456,7 +457,7 @@ static void multiport_save(const void *ip_void,
 static void multiport_save6(const void *ip_void,
                             const struct xt_entry_match *match)
 {
-	const struct ip6t_ip6 *ip = (const struct ip6t_ip6 *)ip_void;
+	const struct ip6t_ip6 *ip = ip_void;
 	__multiport_save(match, ip->proto);
 }
 
@@ -505,75 +506,71 @@ static void multiport_save_v1(const void *ip_void,
 static void multiport_save6_v1(const void *ip_void,
                                const struct xt_entry_match *match)
 {
-	const struct ip6t_ip6 *ip = (const struct ip6t_ip6 *)ip_void;
+	const struct ip6t_ip6 *ip = ip_void;
 	__multiport_save_v1(match, ip->proto);
 }
 
-static struct xtables_match multiport_match = {
-	.family		= NFPROTO_IPV4,
-	.name		= "multiport",
-	.revision	= 0,
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_multiport)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_multiport)),
-	.help		= multiport_help,
-	.parse		= multiport_parse,
-	.final_check	= multiport_check,
-	.print		= multiport_print,
-	.save		= multiport_save,
-	.extra_opts	= multiport_opts,
-};
-
-static struct xtables_match multiport_match6 = {
-	.family		= NFPROTO_IPV6,
-	.name		= "multiport",
-	.revision	= 0,
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_multiport)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_multiport)),
-	.help		= multiport_help,
-	.parse		= multiport_parse6,
-	.final_check	= multiport_check,
-	.print		= multiport_print6,
-	.save		= multiport_save6,
-	.extra_opts	= multiport_opts,
-};
-
-static struct xtables_match multiport_match_v1 = {
-	.family		= NFPROTO_IPV4,
-	.name		= "multiport",
-	.version	= XTABLES_VERSION,
-	.revision	= 1,
-	.size		= XT_ALIGN(sizeof(struct xt_multiport_v1)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_multiport_v1)),
-	.help		= multiport_help_v1,
-	.parse		= multiport_parse_v1,
-	.final_check	= multiport_check,
-	.print		= multiport_print_v1,
-	.save		= multiport_save_v1,
-	.extra_opts	= multiport_opts,
-};
-
-static struct xtables_match multiport_match6_v1 = {
-	.family		= NFPROTO_IPV6,
-	.name		= "multiport",
-	.version	= XTABLES_VERSION,
-	.revision	= 1,
-	.size		= XT_ALIGN(sizeof(struct xt_multiport_v1)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_multiport_v1)),
-	.help		= multiport_help_v1,
-	.parse		= multiport_parse6_v1,
-	.final_check	= multiport_check,
-	.print		= multiport_print6_v1,
-	.save		= multiport_save6_v1,
-	.extra_opts	= multiport_opts,
+static struct xtables_match multiport_mt_reg[] = {
+	{
+		.family        = NFPROTO_IPV4,
+		.name          = "multiport",
+		.revision      = 0,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_multiport)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_multiport)),
+		.help          = multiport_help,
+		.parse         = multiport_parse,
+		.final_check   = multiport_check,
+		.print         = multiport_print,
+		.save          = multiport_save,
+		.extra_opts    = multiport_opts,
+	},
+	{
+		.family        = NFPROTO_IPV6,
+		.name          = "multiport",
+		.revision      = 0,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_multiport)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_multiport)),
+		.help          = multiport_help,
+		.parse         = multiport_parse6,
+		.final_check   = multiport_check,
+		.print         = multiport_print6,
+		.save          = multiport_save6,
+		.extra_opts    = multiport_opts,
+	},
+	{
+		.family        = NFPROTO_IPV4,
+		.name          = "multiport",
+		.version       = XTABLES_VERSION,
+		.revision      = 1,
+		.size          = XT_ALIGN(sizeof(struct xt_multiport_v1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_multiport_v1)),
+		.help          = multiport_help_v1,
+		.parse         = multiport_parse_v1,
+		.final_check   = multiport_check,
+		.print         = multiport_print_v1,
+		.save          = multiport_save_v1,
+		.extra_opts    = multiport_opts,
+	},
+	{
+		.family        = NFPROTO_IPV6,
+		.name          = "multiport",
+		.version       = XTABLES_VERSION,
+		.revision      = 1,
+		.size          = XT_ALIGN(sizeof(struct xt_multiport_v1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_multiport_v1)),
+		.help          = multiport_help_v1,
+		.parse         = multiport_parse6_v1,
+		.final_check   = multiport_check,
+		.print         = multiport_print6_v1,
+		.save          = multiport_save6_v1,
+		.extra_opts    = multiport_opts,
+	},
 };
 
 void
 _init(void)
 {
-	xtables_register_match(&multiport_match);
-	xtables_register_match(&multiport_match6);
-	xtables_register_match(&multiport_match_v1);
-	xtables_register_match(&multiport_match6_v1);
+	xtables_register_matches(multiport_mt_reg, ARRAY_SIZE(multiport_mt_reg));
 }

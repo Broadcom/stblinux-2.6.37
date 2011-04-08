@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2005, 2007, 2008 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -18,17 +18,9 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
-#include <shlib-compat.h>
 #include <pthread-errnos.h>
-
-#ifndef UP
-# define LOCK lock
-#else
-# define
-#endif
-
-#define SYS_futex		240
-#define FUTEX_WAKE		1
+#include <structsem.h>
+#include <lowlevellock.h>
 
 
 	.text
@@ -37,28 +29,52 @@
 	.type	__new_sem_post,@function
 	.align	16
 __new_sem_post:
+	cfi_startproc
 	pushl	%ebx
+	cfi_adjust_cfa_offset(4)
+	cfi_offset(%ebx, -8)
 
 	movl	8(%esp), %ebx
-	movl	$1, %edx
-	LOCK
-	xaddl	%edx, (%ebx)
 
-	movl	$SYS_futex, %eax
+#if VALUE == 0
+	movl	(%ebx), %eax
+#else
+	movl	VALUE(%ebx), %eax
+#endif
+0:	cmpl	$SEM_VALUE_MAX, %eax
+	je	3f
+	leal	1(%eax), %edx
+	LOCK
+#if VALUE == 0
+	cmpxchgl %edx, (%ebx)
+#else
+	cmpxchgl %edx, VALUE(%ebx)
+#endif
+	jnz	0b
+
+	cmpl	$0, NWAITERS(%ebx)
+	je	2f
+
 	movl	$FUTEX_WAKE, %ecx
-	addl	$1, %edx
+	orl	PRIVATE(%ebx), %ecx
+	movl	$1, %edx
+	movl	$SYS_futex, %eax
 	ENTER_KERNEL
 
 	testl	%eax, %eax
 	js	1f
 
-	xorl	%eax, %eax
+2:	xorl	%eax, %eax
 	popl	%ebx
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%ebx)
 	ret
 
+	cfi_adjust_cfa_offset(4)
+	cfi_offset(%ebx, -8)
 1:
-#ifdef PIC
-	call	__i686.get_pc_thunk.bx
+#ifdef __PIC__
+	call	__x86.get_pc_thunk.bx
 #else
 	movl	$4f, %ebx
 4:
@@ -81,17 +97,46 @@ __new_sem_post:
 	orl	$-1, %eax
 	popl	%ebx
 	ret
+
+3:
+#ifdef __PIC__
+	call	__x86.get_pc_thunk.bx
+#else
+	movl	$5f, %ebx
+5:
+#endif
+	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
+#if USE___THREAD
+# ifdef NO_TLS_DIRECT_SEG_REFS
+	movl	errno@gotntpoff(%ebx), %edx
+	addl	%gs:0, %edx
+	movl	$EOVERFLOW, (%edx)
+# else
+	movl	errno@gotntpoff(%ebx), %edx
+	movl	$EOVERFLOW, %gs:(%edx)
+# endif
+#else
+	call	__errno_location@plt
+	movl	$EOVERFLOW, (%eax)
+#endif
+
+	orl	$-1, %eax
+	popl	%ebx
+	cfi_adjust_cfa_offset(-4)
+	cfi_restore(%ebx)
+	ret
+	cfi_endproc
 	.size	__new_sem_post,.-__new_sem_post
-	versioned_symbol(libpthread, __new_sem_post, sem_post, GLIBC_2_1)
+weak_alias(__new_sem_post, sem_post)
 
 
-#ifdef PIC
-	.section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
-	.globl	__i686.get_pc_thunk.bx
-	.hidden	__i686.get_pc_thunk.bx
-	.type	__i686.get_pc_thunk.bx,@function
-__i686.get_pc_thunk.bx:
+#ifdef __PIC__
+	.section .gnu.linkonce.t.__x86.get_pc_thunk.bx,"ax",@progbits
+	.globl	__x86.get_pc_thunk.bx
+	.hidden	__x86.get_pc_thunk.bx
+	.type	__x86.get_pc_thunk.bx,@function
+__x86.get_pc_thunk.bx:
 	movl (%esp), %ebx;
 	ret
-	.size	__i686.get_pc_thunk.bx,.-__i686.get_pc_thunk.bx
+	.size	__x86.get_pc_thunk.bx,.-__x86.get_pc_thunk.bx
 #endif

@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: dummy.h,v 1.18 2007/07/05 19:28:35 roland Exp $
+ *	$Id$
  */
 
 /* still unfinished */
@@ -58,7 +58,6 @@
 #define	sys_fchdir		sys_close
 #define	sys_setfsuid		sys_setuid
 #define	sys_setfsgid		sys_setgid
-#define sys_nanosleep		sys_adjtime
 #define	sys_acct		sys_chdir
 #define sys_fdatasync		sys_close
 #define sys_mlock		sys_munmap

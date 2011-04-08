@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add tcp MSS matching support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -17,8 +18,8 @@ static void tcpmss_help(void)
 }
 
 static const struct option tcpmss_opts[] = {
-	{ "mss", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "mss", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int16_t
@@ -26,7 +27,7 @@ parse_tcp_mssvalue(const char *mssvalue)
 {
 	unsigned int mssvaluenum;
 
-	if (!xtables_strtoui(mssvalue, NULL, &mssvaluenum, 0, UINT16_MAX))
+	if (xtables_strtoui(mssvalue, NULL, &mssvaluenum, 0, UINT16_MAX))
 		return mssvaluenum;
 
 	xtables_error(PARAMETER_PROBLEM,
@@ -65,8 +66,8 @@ tcpmss_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--mss' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_tcp_mssvalues(argv[optind-1],
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_tcp_mssvalues(optarg,
 				    &mssinfo->mss_min, &mssinfo->mss_max);
 		if (invert)
 			mssinfo->invert = 1;
@@ -109,21 +110,7 @@ static void tcpmss_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match tcpmss_match = {
-	.family		= NFPROTO_IPV4,
-	.name		= "tcpmss",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_tcpmss_match_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_tcpmss_match_info)),
-	.help		= tcpmss_help,
-	.parse		= tcpmss_parse,
-	.final_check	= tcpmss_check,
-	.print		= tcpmss_print,
-	.save		= tcpmss_save,
-	.extra_opts	= tcpmss_opts,
-};
-
-static struct xtables_match tcpmss_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "tcpmss",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_tcpmss_match_info)),
@@ -139,5 +126,4 @@ static struct xtables_match tcpmss_match6 = {
 void _init(void)
 {
 	xtables_register_match(&tcpmss_match);
-	xtables_register_match(&tcpmss_match6);
 }

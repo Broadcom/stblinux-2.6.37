@@ -1,5 +1,5 @@
 /* Definition for thread-local data handling.  NPTL/SH version.
-   Copyright (C) 2003, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2005, 2006, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -24,6 +24,10 @@
 # include <stdbool.h>
 # include <stddef.h>
 # include <stdint.h>
+# include <stdlib.h>
+# include <list.h>
+# include <sysdep.h>
+# include <bits/kernel-features.h>
 
 /* Type for the dtv.  */
 typedef union dtv
@@ -39,7 +43,7 @@ typedef union dtv
 typedef struct
 {
   dtv_t *dtv;
-  void *private;
+  uintptr_t pointer_guard;
 } tcbhead_t;
 
 # define TLS_MULTIPLE_THREADS_IN_TCB 1
@@ -50,12 +54,11 @@ typedef struct
 
 
 /* We require TLS support in the tools.  */
-#ifndef HAVE_TLS_SUPPORT
-# error "TLS support is required."
-#endif
-
+#define HAVE_TLS_SUPPORT
+#define HAVE___THREAD   1
+#define HAVE_TLS_MODEL_ATTRIBUTE       1
 /* Signal that TLS support is available.  */
-# define USE_TLS	1
+# define USE_TLS       1
 
 #ifndef __ASSEMBLER__
 
@@ -81,7 +84,7 @@ typedef struct
 # define TLS_DTV_AT_TP	1
 
 /* Get the thread descriptor definition.  */
-# include <nptl/descr.h>
+# include <descr.h>
 
 /* Install the dtv pointer.  The pointer passed is to the element with
    index -1 which contain the length.  */
@@ -91,7 +94,7 @@ typedef struct
 /* Install new dtv for current thread.  */
 # define INSTALL_NEW_DTV(dtv) \
   ({ tcbhead_t *__tcbp;							      \
-     __asm __volatile ("stc gbr,%0" : "=r" (__tcbp));			      \
+     __asm__ __volatile__ ("stc gbr,%0" : "=r" (__tcbp));			      \
      __tcbp->dtv = (dtv);})
 
 /* Return dtv of given thread descriptor.  */
@@ -102,12 +105,12 @@ typedef struct
    special attention since 'errno' is not yet available and if the
    operation can cause a failure 'errno' must not be touched.  */
 # define TLS_INIT_TP(tcbp, secondcall) \
-  ({ __asm __volatile ("ldc %0,gbr" : : "r" (tcbp)); 0; })
+  ({ __asm__ __volatile__ ("ldc %0,gbr" : : "r" (tcbp)); 0; })
 
 /* Return the address of the dtv for the current thread.  */
 # define THREAD_DTV() \
   ({ tcbhead_t *__tcbp;							      \
-     __asm __volatile ("stc gbr,%0" : "=r" (__tcbp));			      \
+     __asm__ __volatile__ ("stc gbr,%0" : "=r" (__tcbp));			      \
      __tcbp->dtv;})
 
 /* Return the thread descriptor for the current thread.
@@ -117,7 +120,7 @@ typedef struct
    do not get optimized away.  */
 # define THREAD_SELF \
   ({ struct pthread *__self;						      \
-     __asm ("stc gbr,%0" : "=r" (__self));				      \
+     __asm__ ("stc gbr,%0" : "=r" (__self));				      \
      __self - 1;})
 
 /* Magic for libthread_db to know how to do THREAD_SELF.  */
@@ -137,6 +140,42 @@ typedef struct
 /* Same as THREAD_SETMEM, but the member offset can be non-constant.  */
 # define THREAD_SETMEM_NC(descr, member, idx, value) \
     descr->member[idx] = (value)
+
+#define THREAD_GET_POINTER_GUARD() \
+  ({ tcbhead_t *__tcbp;							      \
+     __asm__ __volatile__ ("stc gbr,%0" : "=r" (__tcbp));			      \
+     __tcbp->pointer_guard;})
+ #define THREAD_SET_POINTER_GUARD(value) \
+  ({ tcbhead_t *__tcbp;							      \
+     __asm__ __volatile__ ("stc gbr,%0" : "=r" (__tcbp));			      \
+     __tcbp->pointer_guard = (value);})
+#define THREAD_COPY_POINTER_GUARD(descr) \
+  ({ tcbhead_t *__tcbp;							      \
+     __asm__ __volatile__ ("stc gbr,%0" : "=r" (__tcbp));			      \
+     ((tcbhead_t *) (descr + 1))->pointer_guard	= __tcbp->pointer_guard;})
+
+/* Get and set the global scope generation counter in struct pthread.  */
+#define THREAD_GSCOPE_FLAG_UNUSED 0
+#define THREAD_GSCOPE_FLAG_USED   1
+#define THREAD_GSCOPE_FLAG_WAIT   2
+#define THREAD_GSCOPE_RESET_FLAG() \
+  do									     \
+    { int __res								     \
+	= atomic_exchange_rel (&THREAD_SELF->header.gscope_flag,	     \
+			       THREAD_GSCOPE_FLAG_UNUSED);		     \
+      if (__res == THREAD_GSCOPE_FLAG_WAIT)				     \
+	lll_futex_wake (&THREAD_SELF->header.gscope_flag, 1, LLL_PRIVATE);   \
+    }									     \
+  while (0)
+#define THREAD_GSCOPE_SET_FLAG() \
+  do									     \
+    {									     \
+      THREAD_SELF->header.gscope_flag = THREAD_GSCOPE_FLAG_USED;	     \
+      atomic_write_barrier ();						     \
+    }									     \
+  while (0)
+#define THREAD_GSCOPE_WAIT() \
+  GL(dl_wait_lookup_done) ()
 
 #endif /* __ASSEMBLER__ */
 

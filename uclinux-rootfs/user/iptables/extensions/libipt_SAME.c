@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add simple non load-balancing SNAT support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -25,10 +26,10 @@ static void SAME_help(void)
 }
 
 static const struct option SAME_opts[] = {
-	{ "to", 1, NULL, '1' },
-	{ "nodst", 0, NULL, '2'},
-	{ "random", 0, NULL, '3' },
-	{ .name = NULL }
+	{.name = "to",     .has_arg = true,  .val = '1'},
+	{.name = "nodst",  .has_arg = false, .val = '2'},
+	{.name = "random", .has_arg = false, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void SAME_init(struct xt_entry_target *t)
@@ -92,7 +93,7 @@ static int SAME_parse(int c, char **argv, int invert, unsigned int *flags,
 				   "Too many ranges specified, maximum "
 				   "is %i ranges.\n",
 				   IPT_SAME_MAX_RANGE);
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --to");
 
@@ -138,14 +139,13 @@ static void SAME_print(const void *ip, const struct xt_entry_target *target,
                        int numeric)
 {
 	unsigned int count;
-	struct ipt_same_info *mr
-		= (struct ipt_same_info *)target->data;
+	const struct ipt_same_info *mr = (const void *)target->data;
 	int random_selection = 0;
 	
 	printf("same:");
 	
 	for (count = 0; count < mr->rangesize; count++) {
-		struct nf_nat_range *r = &mr->range[count];
+		const struct nf_nat_range *r = &mr->range[count];
 		struct in_addr a;
 
 		a.s_addr = r->min_ip;
@@ -171,12 +171,11 @@ static void SAME_print(const void *ip, const struct xt_entry_target *target,
 static void SAME_save(const void *ip, const struct xt_entry_target *target)
 {
 	unsigned int count;
-	struct ipt_same_info *mr
-		= (struct ipt_same_info *)target->data;
+	const struct ipt_same_info *mr = (const void *)target->data;
 	int random_selection = 0;
 
 	for (count = 0; count < mr->rangesize; count++) {
-		struct nf_nat_range *r = &mr->range[count];
+		const struct nf_nat_range *r = &mr->range[count];
 		struct in_addr a;
 
 		a.s_addr = r->min_ip;

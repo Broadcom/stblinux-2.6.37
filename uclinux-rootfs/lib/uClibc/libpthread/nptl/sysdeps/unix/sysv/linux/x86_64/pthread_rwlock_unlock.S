@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2005, 2007, 2009 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -18,26 +18,19 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
+#include <lowlevellock.h>
 #include <lowlevelrwlock.h>
-
-
-#define SYS_futex		202
-#define FUTEX_WAIT		0
-#define FUTEX_WAKE		1
-
-#ifndef UP
-# define LOCK lock
-#else
-# define LOCK
-#endif
+#include <bits/kernel-features.h>
 
 
 	.text
 
 	.globl	__pthread_rwlock_unlock
 	.type	__pthread_rwlock_unlock,@function
+	.protected	__pthread_rwlock_unlock
 	.align	16
 __pthread_rwlock_unlock:
+	cfi_startproc
 	/* Get the lock.  */
 	movl	$1, %esi
 	xorl	%eax, %eax
@@ -56,9 +49,8 @@ __pthread_rwlock_unlock:
 
 5:	movl	$0, WRITER(%rdi)
 
-	movl	$1, %esi
+	movl	$1, %edx
 	leaq	WRITERS_WAKEUP(%rdi), %r10
-	movq	%rsi, %rdx
 	cmpl	$0, WRITERS_QUEUED(%rdi)
 	jne	0f
 
@@ -78,7 +70,16 @@ __pthread_rwlock_unlock:
 #endif
 	jne	7f
 
-8:	movl	$SYS_futex, %eax
+8:
+#ifdef __ASSUME_PRIVATE_FUTEX
+	movl	$FUTEX_PRIVATE_FLAG|FUTEX_WAKE, %esi
+	xorl	PSHARED(%rdi), %esi
+#else
+	movl	$FUTEX_WAKE, %esi
+	orl	PSHARED(%rdi), %esi
+	xorl	%fs:PRIVATE_FUTEX, %esi
+#endif
+	movl	$SYS_futex, %eax
 	movq	%r10, %rdi
 	syscall
 
@@ -97,30 +98,30 @@ __pthread_rwlock_unlock:
 4:	xorl	%eax, %eax
 	retq
 
-1:
+1:	movl	PSHARED(%rdi), %esi
 #if MUTEX != 0
 	addq	$MUTEX, %rdi
 #endif
-	callq	__lll_mutex_lock_wait
+	callq	__lll_lock_wait
 #if MUTEX != 0
 	subq	$MUTEX, %rdi
 #endif
 	jmp	2b
 
-3:
+3:	movl	PSHARED(%rdi), %esi
 #if MUTEX != 0
 	addq	$MUTEX, %rdi
 #endif
-	callq	__lll_mutex_unlock_wake
+	callq	__lll_unlock_wake
 	jmp	4b
 
-7:
+7:	movl	PSHARED(%rdi), %esi
 #if MUTEX != 0
 	addq	$MUTEX, %rdi
 #endif
-	callq	__lll_mutex_unlock_wake
+	callq	__lll_unlock_wake
 	jmp	8b
-
+	cfi_endproc
 	.size	__pthread_rwlock_unlock,.-__pthread_rwlock_unlock
 
 	.globl	pthread_rwlock_unlock

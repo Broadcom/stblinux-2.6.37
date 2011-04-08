@@ -19,13 +19,12 @@
 #include "pthreadP.h"
 
 int
-pthread_spin_lock (lock)
-     pthread_spinlock_t *lock;
+pthread_spin_lock (pthread_spinlock_t *lock)
 {
   unsigned int val;
 
   do
-    asm volatile ("tas.b @%1; movt %0"
+    __asm__ __volatile__ ("tas.b @%1; movt %0"
 		  : "=&r" (val)
 		  : "r" (lock)
 		  : "memory");

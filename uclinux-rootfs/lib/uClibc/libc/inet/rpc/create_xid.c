@@ -25,28 +25,21 @@
 #include <sys/time.h>
 #include <rpc/rpc.h>
 
-libc_hidden_proto(lrand48_r)
-libc_hidden_proto(srand48_r)
-libc_hidden_proto(gettimeofday)
 
 /* The RPC code is not threadsafe, but new code should be threadsafe. */
 
-#ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
-static pthread_mutex_t createxid_lock = PTHREAD_MUTEX_INITIALIZER;
-#endif
-#define LOCK	__PTHREAD_MUTEX_LOCK(&createxid_lock)
-#define UNLOCK	__PTHREAD_MUTEX_UNLOCK(&createxid_lock)
+#include <bits/uClibc_mutex.h>
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
-static int is_initialized;
+static smallint is_initialized;
 static struct drand48_data __rpc_lrand48_data;
 
 u_long _create_xid (void) attribute_hidden;
 u_long _create_xid (void)
 {
-  unsigned long res;
+  long res;
 
-  LOCK;
+  __UCLIBC_MUTEX_LOCK(mylock);
 
   if (!is_initialized)
     {
@@ -59,7 +52,7 @@ u_long _create_xid (void)
 
   lrand48_r (&__rpc_lrand48_data, &res);
 
-  UNLOCK;
+  __UCLIBC_MUTEX_UNLOCK(mylock);
 
   return res;
 }

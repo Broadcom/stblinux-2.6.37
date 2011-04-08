@@ -20,9 +20,11 @@
 /* clone() is even more special than fork() as it mucks with stacks
    and invokes a function in the right context after its all over.  */
 
+#include <features.h>
 #include <sys/asm.h>
 #include <sysdep.h>
-#include <bits/errno_values.h>
+#define _ERRNO_H        1
+#include <bits/errno.h>
 #ifdef RESET_PID
 #include <tls.h>
 #endif
@@ -42,22 +44,16 @@
 LOCALSZ= 4
 FRAMESZ= (((NARGSAVE+LOCALSZ)*SZREG)+ALSZ)&ALMASK
 GPOFF= FRAMESZ-(1*SZREG)
-NESTED(__clone,4*SZREG,sp)
+NESTED(clone,4*SZREG,sp)
 #ifdef __PIC__
 	SETUP_GP
 #endif
 	PTR_SUBU sp, FRAMESZ
-	SETUP_GP64 (GPOFF, __clone)
+	SETUP_GP64 (GPOFF, clone)
 #ifdef __PIC__
 	SAVE_GP (GPOFF)
 #endif
 #ifdef PROF
-	.set		noat
-	move		$1,ra
-	jal		_mcount
-	.set		at
-#endif
-#ifdef __UCLIBC_PROFILING__
 	.set		noat
 	move		$1,ra
 	jal		_mcount
@@ -102,22 +98,27 @@ NESTED(__clone,4*SZREG,sp)
 	/* Successful return from the parent */
 	RESTORE_GP64
 	PTR_ADDU	sp, FRAMESZ
-	ret
+	j $31  ; nop
 
 	/* Something bad happened -- no child created */
 L(error):
-	move		a0,v0
 #ifdef __PIC__
 	PTR_LA		t9,__syscall_error
 	RESTORE_GP64
 	PTR_ADDU	sp, FRAMESZ
+	/* uClibc change -- start */
+	move            a0,v0           /* Pass return val to C function. */
+	/* uClibc change -- stop */
 	jr		t9
 #else
 	RESTORE_GP64
 	PTR_ADDU	sp, FRAMESZ
+	/* uClibc change -- start */
+	move            a0,v0           /* Pass return val to C function. */
+	/* uClibc change -- stop */
 	j		__syscall_error
 #endif
-	END(__clone)
+	END(clone)
 
 /* Load up the arguments to the function.  Put this block of code in
    its own function so that we can terminate the stack trace with our
@@ -169,4 +170,4 @@ L(gotpid):
 
 	END(__thread_start)
 
-weak_alias (__clone, clone)
+weak_alias(clone, __clone)

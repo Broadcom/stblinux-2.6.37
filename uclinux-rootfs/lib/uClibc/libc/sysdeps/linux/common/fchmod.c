@@ -7,12 +7,12 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/stat.h>
 
 #define __NR___syscall_fchmod __NR_fchmod
-static inline _syscall2(int, __syscall_fchmod,
-		int, fildes, __kernel_mode_t, mode);
+static __inline__ _syscall2(int, __syscall_fchmod,
+		int, fildes, __kernel_mode_t, mode)
 
 int fchmod(int fildes, mode_t mode)
 {

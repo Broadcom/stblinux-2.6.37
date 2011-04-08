@@ -14,7 +14,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, write to the Free
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307 USA.  
+   02111-1307 USA.
    */
 
 /* Modified for uClibc by Erik Andersen
@@ -30,15 +30,9 @@
 #include <sys/types.h>
 #include "dirstream.h"
 
-libc_hidden_proto(memcpy)
-libc_hidden_proto(opendir)
-libc_hidden_proto(closedir)
-libc_hidden_proto(qsort)
-libc_hidden_proto(readdir64)
-
-int scandir64(const char *dir, struct dirent64 ***namelist, 
+int scandir64(const char *dir, struct dirent64 ***namelist,
 	int (*selector) (const struct dirent64 *),
-	int (*compar) (const void *, const void *))
+	int (*compar) (const struct dirent64 **, const struct dirent64 **))
 {
     DIR *dp = opendir (dir);
     struct dirent64 *current;
@@ -53,8 +47,19 @@ int scandir64(const char *dir, struct dirent64 ***namelist,
     __set_errno (0);
 
     pos = 0;
-    while ((current = readdir64 (dp)) != NULL)
-	if (selector == NULL || (*selector) (current))
+    while ((current = readdir64 (dp)) != NULL) {
+	int use_it = selector == NULL;
+
+	if (! use_it)
+	{
+	    use_it = (*selector) (current);
+	    /* The selector function might have changed errno.
+	     * It was zero before and it need to be again to make
+	     * the latter tests work.  */
+	    if (! use_it)
+		__set_errno (0);
+	}
+	if (use_it)
 	{
 	    struct dirent64 *vnew;
 	    size_t dsize;
@@ -69,20 +74,21 @@ int scandir64(const char *dir, struct dirent64 ***namelist,
 		    names_size = 10;
 		else
 		    names_size *= 2;
-		new = (struct dirent64 **) realloc (names, names_size * sizeof (struct dirent64 *));
+		new = (struct dirent64 **) realloc (names,
+				      names_size * sizeof (struct dirent64 *));
 		if (new == NULL)
 		    break;
 		names = new;
 	    }
 
-	    dsize = &current->d_name[_D_ALLOC_NAMLEN (current)] - (char *) current;
+	    dsize = &current->d_name[_D_ALLOC_NAMLEN(current)] - (char*)current;
 	    vnew = (struct dirent64 *) malloc (dsize);
 	    if (vnew == NULL)
 		break;
 
 	    names[pos++] = (struct dirent64 *) memcpy (vnew, current, dsize);
 	}
-
+    }
     if (unlikely(errno != 0))
     {
 	save = errno;
@@ -99,7 +105,7 @@ int scandir64(const char *dir, struct dirent64 ***namelist,
 
     /* Sort the list if we have a comparison function to sort with.  */
     if (compar != NULL)
-	qsort (names, pos, sizeof (struct dirent64 *), compar);
+	qsort (names, pos, sizeof (struct dirent64 *), (comparison_fn_t) compar);
     *namelist = names;
     return pos;
 }

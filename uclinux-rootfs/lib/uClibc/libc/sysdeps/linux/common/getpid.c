@@ -7,7 +7,7 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
 extern __typeof(getpid) __libc_getpid;
@@ -15,7 +15,6 @@ extern __typeof(getpid) __libc_getpid;
 # define __NR_getpid __NR_getxpid
 #endif
 #define __NR___libc_getpid __NR_getpid
-_syscall0(pid_t, __libc_getpid);
-libc_hidden_proto(getpid)
+_syscall0(pid_t, __libc_getpid)
 weak_alias(__libc_getpid, getpid)
 libc_hidden_weak(getpid)

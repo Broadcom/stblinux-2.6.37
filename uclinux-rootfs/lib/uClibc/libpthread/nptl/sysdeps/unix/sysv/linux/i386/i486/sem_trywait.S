@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2005, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -18,14 +18,8 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
-#include <shlib-compat.h>
 #include <pthread-errnos.h>
-
-#ifndef UP
-# define LOCK lock
-#else
-# define
-#endif
+#include <lowlevellock.h>
 
 	.text
 
@@ -42,13 +36,13 @@ __new_sem_trywait:
 	leal	-1(%eax), %edx
 	LOCK
 	cmpxchgl %edx, (%ecx)
-	jne,pn	2b
+	jne	2b
 	xorl	%eax, %eax
 	ret
 
 1:
-#ifdef PIC
-	call	__i686.get_pc_thunk.cx
+#ifdef __PIC__
+	call	__x86.get_pc_thunk.cx
 #else
 	movl	$3f, %ecx
 3:
@@ -70,16 +64,16 @@ __new_sem_trywait:
 	orl	$-1, %eax
 	ret
 	.size	__new_sem_trywait,.-__new_sem_trywait
-	versioned_symbol(libpthread, __new_sem_trywait, sem_trywait, GLIBC_2_1)
+weak_alias(__new_sem_trywait, sem_trywait)
 
 
-#ifdef PIC
-	.section .gnu.linkonce.t.__i686.get_pc_thunk.cx,"ax",@progbits
-	.globl	__i686.get_pc_thunk.cx
-	.hidden	__i686.get_pc_thunk.cx
-	.type	__i686.get_pc_thunk.cx,@function
-__i686.get_pc_thunk.cx:
+#ifdef __PIC__
+	.section .gnu.linkonce.t.__x86.get_pc_thunk.cx,"ax",@progbits
+	.globl	__x86.get_pc_thunk.cx
+	.hidden	__x86.get_pc_thunk.cx
+	.type	__x86.get_pc_thunk.cx,@function
+__x86.get_pc_thunk.cx:
 	movl (%esp), %ecx;
 	ret
-	.size	__i686.get_pc_thunk.cx,.-__i686.get_pc_thunk.cx
+	.size	__x86.get_pc_thunk.cx,.-__x86.get_pc_thunk.cx
 #endif

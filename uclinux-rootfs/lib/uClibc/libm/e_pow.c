@@ -1,4 +1,3 @@
-/* @(#)e_pow.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_pow.c,v 1.9 1995/05/12 04:57:32 jtc Exp $";
-#endif
 
 /* __ieee754_pow(x,y) return x**y
  *
@@ -26,25 +21,26 @@ static char rcsid[] = "$NetBSD: e_pow.c,v 1.9 1995/05/12 04:57:32 jtc Exp $";
  *	3. Return x**y = 2**n*exp(y'*log2)
  *
  * Special cases:
- *	1.  (anything) ** 0  is 1
- *	2.  (anything) ** 1  is itself
- *	3.  (anything) ** NAN is NAN
- *	4.  NAN ** (anything except 0) is NAN
- *	5.  +-(|x| > 1) **  +INF is +INF
- *	6.  +-(|x| > 1) **  -INF is +0
- *	7.  +-(|x| < 1) **  +INF is +0
- *	8.  +-(|x| < 1) **  -INF is +INF
- *	9.  +-1         ** +-INF is NAN
- *	10. +0 ** (+anything except 0, NAN)               is +0
- *	11. -0 ** (+anything except 0, NAN, odd integer)  is +0
- *	12. +0 ** (-anything except 0, NAN)               is +INF
- *	13. -0 ** (-anything except 0, NAN, odd integer)  is +INF
- *	14. -0 ** (odd integer) = -( +0 ** (odd integer) )
- *	15. +INF ** (+anything except 0,NAN) is +INF
- *	16. +INF ** (-anything except 0,NAN) is +0
- *	17. -INF ** (anything)  = -0 ** (-anything)
- *	18. (-anything) ** (integer) is (-1)**(integer)*(+anything**integer)
- *	19. (-anything except 0 and inf) ** (non-integer) is NAN
+ *	1.  +-1 ** anything  is 1.0
+ *	2.  +-1 ** +-INF     is 1.0
+ *	3.  (anything) ** 0  is 1
+ *	4.  (anything) ** 1  is itself
+ *	5.  (anything) ** NAN is NAN
+ *	6.  NAN ** (anything except 0) is NAN
+ *	7.  +-(|x| > 1) **  +INF is +INF
+ *	8.  +-(|x| > 1) **  -INF is +0
+ *	9.  +-(|x| < 1) **  +INF is +0
+ *	10  +-(|x| < 1) **  -INF is +INF
+ *	11. +0 ** (+anything except 0, NAN)               is +0
+ *	12. -0 ** (+anything except 0, NAN, odd integer)  is +0
+ *	13. +0 ** (-anything except 0, NAN)               is +INF
+ *	14. -0 ** (-anything except 0, NAN, odd integer)  is +INF
+ *	15. -0 ** (odd integer) = -( +0 ** (odd integer) )
+ *	16. +INF ** (+anything except 0,NAN) is +INF
+ *	17. +INF ** (-anything except 0,NAN) is +0
+ *	18. -INF ** (anything)  = -0 ** (-anything)
+ *	19. (-anything) ** (integer) is (-1)**(integer)*(+anything**integer)
+ *	20. (-anything except 0 and inf) ** (non-integer) is NAN
  *
  * Accuracy:
  *	pow(x,y) returns x**y nearly rounded. In particular
@@ -62,14 +58,7 @@ static char rcsid[] = "$NetBSD: e_pow.c,v 1.9 1995/05/12 04:57:32 jtc Exp $";
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(scalbn)
-libm_hidden_proto(fabs)
-
-#ifdef __STDC__
 static const double
-#else
-static double
-#endif
 bp[] = {1.0, 1.5,},
 dp_h[] = { 0.0, 5.84962487220764160156e-01,}, /* 0x3FE2B803, 0x40000000 */
 dp_l[] = { 0.0, 1.35003920212974897128e-08,}, /* 0x3E4CFDEB, 0x43CFD006 */
@@ -102,12 +91,7 @@ ivln2    =  1.44269504088896338700e+00, /* 0x3FF71547, 0x652B82FE =1/ln2 */
 ivln2_h  =  1.44269502162933349609e+00, /* 0x3FF71547, 0x60000000 =24b 1/ln2*/
 ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
-#ifdef __STDC__
-	double attribute_hidden __ieee754_pow(double x, double y)
-#else
-	double attribute_hidden __ieee754_pow(x,y)
-	double x, y;
-#endif
+double attribute_hidden __ieee754_pow(double x, double y)
 {
 	double z,ax,z_h,z_l,p_h,p_l;
 	double y1,t1,t2,r,s,t,u,v,w;
@@ -116,8 +100,14 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	u_int32_t lx,ly;
 
 	EXTRACT_WORDS(hx,lx,x);
+    /* x==1: 1**y = 1 (even if y is NaN) */
+	if (hx==0x3ff00000 && lx==0) {
+		return x;
+	}
+	ix = hx&0x7fffffff;
+
 	EXTRACT_WORDS(hy,ly,y);
-	ix = hx&0x7fffffff;  iy = hy&0x7fffffff;
+	iy = hy&0x7fffffff;
 
     /* y==zero: x**0 = 1 */
 	if((iy|ly)==0) return one;
@@ -149,13 +139,13 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
     /* special value of y */
 	if(ly==0) {
-	    if (iy==0x7ff00000) {	/* y is +-inf */
-	        if(((ix-0x3ff00000)|lx)==0)
-		    return  y - y;	/* inf**+-1 is NaN */
-	        else if (ix >= 0x3ff00000)/* (|x|>1)**+-inf = inf,0 */
-		    return (hy>=0)? y: zero;
-	        else			/* (|x|<1)**-,+inf = inf,0 */
-		    return (hy<0)?-y: zero;
+	    if (iy==0x7ff00000) {       /* y is +-inf */
+	        if (((ix-0x3ff00000)|lx)==0)
+		    return one;	        /* +-1**+-inf is 1 (yes, weird rule) */
+	        if (ix >= 0x3ff00000)   /* (|x|>1)**+-inf = inf,0 */
+		    return (hy>=0) ? y : zero;
+	        /* (|x|<1)**-,+inf = inf,0 */
+		return (hy<0) ? -y : zero;
 	    }
 	    if(iy==0x3ff00000) {	/* y is  +-1 */
 		if(hy<0) return one/x; else return x;
@@ -163,7 +153,7 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	    if(hy==0x40000000) return x*x; /* y is  2 */
 	    if(hy==0x3fe00000) {	/* y is  0.5 */
 		if(hx>=0)	/* x >= +0 */
-		return __ieee754_sqrt(x);
+		    return __ieee754_sqrt(x);
 	    }
 	}
 
@@ -309,3 +299,40 @@ ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 	else SET_HIGH_WORD(z,j);
 	return s*z;
 }
+
+/*
+ * wrapper pow(x,y) return x**y
+ */
+#ifndef _IEEE_LIBM
+double pow(double x, double y)
+{
+	double z = __ieee754_pow(x, y);
+	if (_LIB_VERSION == _IEEE_|| isnan(y))
+		return z;
+	if (isnan(x)) {
+		if (y == 0.0)
+			return __kernel_standard(x, y, 42); /* pow(NaN,0.0) */
+		return z;
+	}
+	if (x == 0.0) {
+		if (y == 0.0)
+	    		return __kernel_standard(x, y, 20); /* pow(0.0,0.0) */
+		if (isfinite(y) && y < 0.0)
+			return __kernel_standard(x,y,23); /* pow(0.0,negative) */
+		return z;
+	}
+	if (!isfinite(z)) {
+		if (isfinite(x) && isfinite(y)) {
+			if (isnan(z))
+				return __kernel_standard(x, y, 24); /* pow neg**non-int */
+			return __kernel_standard(x, y, 21); /* pow overflow */
+		}
+	}
+	if (z == 0.0 && isfinite(x) && isfinite(y))
+		return __kernel_standard(x, y, 22); /* pow underflow */
+	return z;
+}
+#else
+strong_alias(__ieee754_pow, pow)
+#endif
+libm_hidden_def(pow)

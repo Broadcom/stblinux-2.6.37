@@ -20,20 +20,25 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
-#include <sys/statfs.h>
-#include <errno.h>
 #include <stddef.h>
-#include <unistd.h>
-#include <limits.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
-//#include <sys/statvfs.h>
 
-//#include "linux_fsinfo.h"
 
-libc_hidden_proto(fstat)
-libc_hidden_proto(fstatfs)
+#ifndef __USE_FILE_OFFSET64
+extern int fstatfs (int __fildes, struct statfs *__buf)
+     __THROW __nonnull ((2));
+#else
+# ifdef __REDIRECT_NTH
+	 extern int __REDIRECT_NTH (fstatfs, (int __fildes, struct statfs *__buf),
+	                            fstatfs64) __nonnull ((2));
+# else
+#  define fstatfs fstatfs64
+# endif
+#endif
+
+extern __typeof(fstatfs) __libc_fstatfs;
 
 /* The Linux kernel headers mention this as a kind of generic value.  */
 #define LINUX_LINK_MAX	127
@@ -41,12 +46,12 @@ libc_hidden_proto(fstatfs)
 
 /* Get file-specific information about descriptor FD.  */
 long int fpathconf(int fd, int name)
-{     
+{
     if (fd < 0)
     {
 	__set_errno (EBADF);
 	return -1;
-    }   
+    }
 
     if (name == _PC_LINK_MAX)
     {
@@ -55,7 +60,7 @@ long int fpathconf(int fd, int name)
 	struct statfs fsbuf;
 
 	/* Determine the filesystem type.  */
-	if (fstatfs (fd, &fsbuf) < 0)
+	if (__libc_fstatfs (fd, &fsbuf) < 0)
 	{
 	    if (errno == ENOSYS)
 		/* not possible, return the default value.  */
@@ -129,7 +134,7 @@ long int fpathconf(int fd, int name)
 		struct statfs buf;
 		int save_errno = errno;
 
-		if (fstatfs (fd, &buf) < 0)
+		if (__libc_fstatfs (fd, &buf) < 0)
 		{
 		    if (errno == ENOSYS)
 		    {
@@ -198,7 +203,7 @@ long int fpathconf(int fd, int name)
 #endif
 
 	case _PC_ASYNC_IO:
-#if defined _POSIX_ASYNC_IO && defined __UCLIBC_HAS_LFS__ 
+#if defined _POSIX_ASYNC_IO && defined __UCLIBC_HAS_LFS__
 	    {
 		/* AIO is only allowed on regular files and block devices.  */
 		struct stat st;

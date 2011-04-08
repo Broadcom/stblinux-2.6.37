@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,10 +32,10 @@ enum RATEEST_options {
 };
 
 static const struct option RATEEST_opts[] = {
-	{ "rateest-name",	1, NULL, RATEEST_OPT_NAME },
-	{ "rateest-interval",	1, NULL, RATEEST_OPT_INTERVAL },
-	{ "rateest-ewmalog",	1, NULL, RATEEST_OPT_EWMALOG },
-	{ .name = NULL },
+	{.name = "rateest-name",     .has_arg = true, .val = RATEEST_OPT_NAME},
+	{.name = "rateest-interval", .has_arg = true, .val = RATEEST_OPT_INTERVAL},
+	{.name = "rateest-ewmalog",  .has_arg = true, .val = RATEEST_OPT_EWMALOG},
+	XT_GETOPT_TABLEEND,
 };
 
 /* Copied from iproute */
@@ -174,7 +175,7 @@ RATEEST_final_check(unsigned int flags)
 static void
 __RATEEST_print(const struct xt_entry_target *target, const char *prefix)
 {
-	struct xt_rateest_target_info *info = (void *)target->data;
+	const struct xt_rateest_target_info *info = (const void *)target->data;
 	unsigned int local_interval;
 	unsigned int local_ewma_log;
 
@@ -202,7 +203,7 @@ RATEEST_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target rateest_tg_reg = {
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "RATEEST",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_rateest_target_info)),

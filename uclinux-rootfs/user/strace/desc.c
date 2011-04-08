@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: desc.c,v 1.33 2007/11/01 21:52:20 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -148,6 +148,18 @@ static const struct xlat fcntlcmds[] = {
 #ifdef F_UNSHARE
 	{ F_UNSHARE,	"F_UNSHARE"	},
 #endif
+#ifdef F_SETLEASE
+	{ F_SETLEASE,	"F_SETLEASE"	},
+#endif
+#ifdef F_GETLEASE
+	{ F_GETLEASE,	"F_GETLEASE"	},
+#endif
+#ifdef F_NOTIFY
+	{ F_NOTIFY,	"F_NOTIFY"	},
+#endif
+#ifdef F_DUPFD_CLOEXEC
+	{ F_DUPFD_CLOEXEC,"F_DUPFD_CLOEXEC"},
+#endif
 	{ 0,		NULL		},
 };
 
@@ -183,6 +195,33 @@ static const struct xlat lockfcmds[] = {
 	{ 0,		NULL		},
 };
 
+#ifdef F_NOTIFY
+static const struct xlat notifyflags[] = {
+#ifdef DN_ACCESS
+	{ DN_ACCESS,	"DN_ACCESS"	},
+#endif
+#ifdef DN_MODIFY
+	{ DN_MODIFY,	"DN_MODIFY"	},
+#endif
+#ifdef DN_CREATE
+	{ DN_CREATE,	"DN_CREATE"	},
+#endif
+#ifdef DN_DELETE
+	{ DN_DELETE,	"DN_DELETE"	},
+#endif
+#ifdef DN_RENAME
+	{ DN_RENAME,	"DN_RENAME"	},
+#endif
+#ifdef DN_ATTRIB
+	{ DN_ATTRIB,	"DN_ATTRIB"	},
+#endif
+#ifdef DN_MULTISHOT
+	{ DN_MULTISHOT,	"DN_MULTISHOT"	},
+#endif
+	{ 0,		NULL		},
+};
+#endif
+
 static const struct xlat whence[] = {
 	{ SEEK_SET,	"SEEK_SET"	},
 	{ SEEK_CUR,	"SEEK_CUR"	},
@@ -193,16 +232,43 @@ static const struct xlat whence[] = {
 #ifndef HAVE_LONG_LONG_OFF_T
 /* fcntl/lockf */
 static void
-printflock(tcp, addr, getlk)
-struct tcb *tcp;
-long addr;
-int getlk;
+printflock(struct tcb *tcp, long addr, int getlk)
 {
 	struct flock fl;
 
-	if (umove(tcp, addr, &fl) < 0) {
-		tprintf("{...}");
-		return;
+#if SUPPORTED_PERSONALITIES > 1
+	if (personality_wordsize[current_personality] != sizeof(fl.l_start)) {
+		if (personality_wordsize[current_personality] == 4) {
+			/* 32-bit x86 app on x86_64 and similar cases */
+			struct {
+				short int l_type;
+				short int l_whence;
+				int32_t l_start; /* off_t */
+				int32_t l_len; /* off_t */
+				int32_t l_pid; /* pid_t */
+			} fl32;
+			if (umove(tcp, addr, &fl32) < 0) {
+				tprintf("{...}");
+				return;
+			}
+			fl.l_type = fl32.l_type;
+			fl.l_whence = fl32.l_whence;
+			fl.l_start = fl32.l_start;
+			fl.l_len = fl32.l_len;
+			fl.l_pid = fl32.l_pid;
+		} else {
+			/* let people know we have a problem here */
+			tprintf("{ <decode error: unsupported wordsize %d> }",
+				personality_wordsize[current_personality]);
+			return;
+		}
+	} else
+#endif
+	{
+		if (umove(tcp, addr, &fl) < 0) {
+			tprintf("{...}");
+			return;
+		}
 	}
 	tprintf("{type=");
 	printxval(lockfcmds, fl.l_type, "F_???");
@@ -219,10 +285,7 @@ int getlk;
 #if _LFS64_LARGEFILE || HAVE_LONG_LONG_OFF_T
 /* fcntl/lockf */
 static void
-printflock64(tcp, addr, getlk)
-struct tcb *tcp;
-long addr;
-int getlk;
+printflock64(struct tcb *tcp, long addr, int getlk)
 {
 	struct flock64 fl;
 
@@ -242,45 +305,6 @@ int getlk;
 }
 #endif
 
-/*
- * low bits of the open(2) flags define access mode,
- * other bits are real flags.
- */
-static const char *
-sprint_open_modes(mode_t flags)
-{
-	extern const struct xlat open_access_modes[];
-	extern const struct xlat open_mode_flags[];
-	static char outstr[1024];
-	const char *str = xlookup(open_access_modes, flags & 3);
-	const char *sep = "";
-	const struct xlat *x;
-
-	strcpy(outstr, "flags ");
-	if (str)
-	{
-		strcat(outstr, str);
-		flags &= ~3;
-		if (!flags)
-			return outstr;
-		strcat(outstr, "|");
-	}
-
-	for (x = open_mode_flags; x->str; x++)
-	{
-		if ((flags & x->val) == x->val)
-		{
-			sprintf(outstr + strlen(outstr),
-				"%s%s", sep, x->str);
-			sep = "|";
-			flags &= ~x->val;
-		}
-	}
-	if (flags)
-		sprintf(outstr + strlen(outstr), "%s%#x", sep, flags);
-	return outstr;
-}
-
 int
 sys_fcntl(struct tcb *tcp)
 {
@@ -293,11 +317,14 @@ sys_fcntl(struct tcb *tcp)
 			printflags(fdflags, tcp->u_arg[2], "FD_???");
 			break;
 		case F_SETOWN: case F_DUPFD:
+#ifdef F_DUPFD_CLOEXEC
+		case F_DUPFD_CLOEXEC:
+#endif
 			tprintf(", %ld", tcp->u_arg[2]);
 			break;
 		case F_SETFL:
 			tprintf(", ");
-			tprint_open_modes(tcp, tcp->u_arg[2]);
+			tprint_open_modes(tcp->u_arg[2]);
 			break;
 		case F_SETLK: case F_SETLKW:
 #ifdef F_FREESP
@@ -312,32 +339,54 @@ sys_fcntl(struct tcb *tcp)
 #endif
 		/* Linux glibc defines SETLK64 as SETLK,
 		   even though the kernel has different values - as does Solaris. */
-#if defined(F_SETLK64) && F_SETLK64+0!=F_SETLK
+#if defined(F_SETLK64) && F_SETLK64 + 0 != F_SETLK
 		case F_SETLK64:
 #endif
-#if defined(F_SETLKW64) && F_SETLKW64+0!=F_SETLKW
+#if defined(F_SETLKW64) && F_SETLKW64 + 0 != F_SETLKW
 		case F_SETLKW64:
 #endif
 			tprintf(", ");
 			printflock64(tcp, tcp->u_arg[2], 0);
 			break;
 #endif
- 		}
+#ifdef F_NOTIFY
+		case F_NOTIFY:
+			tprintf(", ");
+			printflags(notifyflags, tcp->u_arg[2], "DN_???");
+			break;
+#endif
+#ifdef F_SETLEASE
+		case F_SETLEASE:
+			tprintf(", ");
+			printxval(lockfcmds, tcp->u_arg[2], "F_???");
+			break;
+#endif
+		}
 	}
 	else {
 		switch (tcp->u_arg[1]) {
 		case F_DUPFD:
+#ifdef F_DUPFD_CLOEXEC
+		case F_DUPFD_CLOEXEC:
+#endif
 		case F_SETFD: case F_SETFL:
 		case F_SETLK: case F_SETLKW:
 		case F_SETOWN: case F_GETOWN:
+#ifdef F_NOTIFY
+		case F_NOTIFY:
+#endif
+#ifdef F_SETLEASE
+		case F_SETLEASE:
+#endif
 			break;
 		case F_GETFD:
-			if (tcp->u_rval == 0)
+			if (syserror(tcp) || tcp->u_rval == 0)
 				return 0;
-			tcp->auxstr =
-				sprintflags("flags ", fdflags, tcp->u_rval);
+			tcp->auxstr = sprintflags("flags ", fdflags, tcp->u_rval);
 			return RVAL_HEX|RVAL_STR;
 		case F_GETFL:
+			if (syserror(tcp))
+				return 0;
 			tcp->auxstr = sprint_open_modes(tcp->u_rval);
 			return RVAL_HEX|RVAL_STR;
 		case F_GETLK:
@@ -352,7 +401,14 @@ sys_fcntl(struct tcb *tcp)
 			printflock64(tcp, tcp->u_arg[2], 1);
 			break;
 #endif
- 		default:
+#ifdef F_GETLEASE
+		case F_GETLEASE:
+			if (syserror(tcp))
+				return 0;
+			tcp->auxstr = xlookup(lockfcmds, tcp->u_rval);
+			return RVAL_HEX|RVAL_STR;
+#endif
+		default:
 			tprintf(", %#lx", tcp->u_arg[2]);
 			break;
 		}
@@ -363,8 +419,7 @@ sys_fcntl(struct tcb *tcp)
 #ifdef LOCK_SH
 
 int
-sys_flock(tcp)
-struct tcb *tcp;
+sys_flock(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%ld, ", tcp->u_arg[0]);
@@ -375,8 +430,7 @@ struct tcb *tcp;
 #endif /* LOCK_SH */
 
 int
-sys_close(tcp)
-struct tcb *tcp;
+sys_close(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%ld", tcp->u_arg[0]);
@@ -385,8 +439,7 @@ struct tcb *tcp;
 }
 
 int
-sys_dup(tcp)
-struct tcb *tcp;
+sys_dup(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%ld", tcp->u_arg[0]);
@@ -394,20 +447,36 @@ struct tcb *tcp;
 	return 0;
 }
 
-int
-sys_dup2(tcp)
-struct tcb *tcp;
+static int
+do_dup2(struct tcb *tcp, int flags_arg)
 {
 	if (entering(tcp)) {
 		tprintf("%ld, %ld", tcp->u_arg[0], tcp->u_arg[1]);
+		if (flags_arg >= 0) {
+			tprintf(", ");
+			printflags(open_mode_flags, tcp->u_arg[flags_arg], "O_???");
+		}
 	}
 	return 0;
 }
 
+int
+sys_dup2(struct tcb *tcp)
+{
+	return do_dup2(tcp, -1);
+}
+
+#ifdef LINUX
+int
+sys_dup3(struct tcb *tcp)
+{
+	return do_dup2(tcp, 2);
+}
+#endif
+
 #if defined(ALPHA) || defined(FREEBSD) || defined(SUNOS4)
 int
-sys_getdtablesize(tcp)
-struct tcb *tcp;
+sys_getdtablesize(struct tcb *tcp)
 {
 	return 0;
 }
@@ -477,7 +546,6 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 		outstr[0] = '\0';
 		for (i = 0; i < 3; i++) {
 			int first = 1;
-			char str[20];
 
 			tcp->auxstr = outstr;
 			arg = args[i+1];
@@ -486,6 +554,8 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 				continue;
 			for (j = 0; j < args[0]; j++) {
 				if (FD_ISSET(j, fds)) {
+					char str[11 + 3 * sizeof(int)];
+
 					if (first) {
 						sprintf(str, "%s%s [%u", sep,
 							i == 0 ? "in" :
@@ -527,8 +597,7 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 #ifdef LINUX
 
 int
-sys_oldselect(tcp)
-struct tcb *tcp;
+sys_oldselect(struct tcb *tcp)
 {
 	long args[5];
 
@@ -541,15 +610,14 @@ struct tcb *tcp;
 
 #ifdef ALPHA
 int
-sys_osf_select(tcp)
-struct tcb *tcp;
+sys_osf_select(struct tcb *tcp)
 {
 	long *args = tcp->u_arg;
 	return decode_select(tcp, args, BITNESS_32);
 }
 #endif
 
-static struct xlat epollctls[] = {
+static const struct xlat epollctls[] = {
 #ifdef EPOLL_CTL_ADD
 	{ EPOLL_CTL_ADD,	"EPOLL_CTL_ADD"	},
 #endif
@@ -562,7 +630,7 @@ static struct xlat epollctls[] = {
 	{ 0,			NULL		}
 };
 
-static struct xlat epollevents[] = {
+static const struct xlat epollevents[] = {
 #ifdef EPOLLIN
 	{ EPOLLIN,	"EPOLLIN"	},
 #endif
@@ -603,18 +671,24 @@ static struct xlat epollevents[] = {
 };
 
 int
-sys_epoll_create(tcp)
-struct tcb *tcp;
+sys_epoll_create(struct tcb *tcp)
 {
 	if (entering(tcp))
 		tprintf("%ld", tcp->u_arg[0]);
 	return 0;
 }
 
+int
+sys_epoll_create1(struct tcb *tcp)
+{
+	if (entering(tcp))
+		printflags(open_mode_flags, tcp->u_arg[0], "O_???");
+	return 0;
+}
+
 #ifdef HAVE_SYS_EPOLL_H
 static void
-print_epoll_event(ev)
-struct epoll_event *ev;
+print_epoll_event(struct epoll_event *ev)
 {
 	tprintf("{");
 	printflags(epollevents, ev->events, "EPOLL???");
@@ -626,12 +700,11 @@ struct epoll_event *ev;
 #endif
 
 int
-sys_epoll_ctl(tcp)
-struct tcb *tcp;
+sys_epoll_ctl(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%ld, ", tcp->u_arg[0]);
-                printxval(epollctls, tcp->u_arg[1], "EPOLL_CTL_???");
+		printxval(epollctls, tcp->u_arg[1], "EPOLL_CTL_???");
 		tprintf(", %ld, ", tcp->u_arg[2]);
 		if (tcp->u_arg[3] == 0)
 			tprintf("NULL");
@@ -649,8 +722,7 @@ struct tcb *tcp;
 }
 
 static void
-epoll_wait_common(tcp)
-struct tcb *tcp;
+epoll_wait_common(struct tcb *tcp)
 {
 	if (entering(tcp))
 		tprintf("%ld, ", tcp->u_arg[0]);
@@ -690,26 +762,25 @@ struct tcb *tcp;
 }
 
 int
-sys_epoll_wait(tcp)
-struct tcb *tcp;
+sys_epoll_wait(struct tcb *tcp)
 {
 	epoll_wait_common(tcp);
 	return 0;
 }
 
 int
-sys_epoll_pwait(tcp)
-struct tcb *tcp;
+sys_epoll_pwait(struct tcb *tcp)
 {
 	epoll_wait_common(tcp);
-	if (exiting(tcp))
+	if (exiting(tcp)) {
+		tprintf(", ");
 		print_sigset(tcp, tcp->u_arg[4], 0);
+	}
 	return 0;
 }
 
 int
-sys_io_setup(tcp)
-struct tcb *tcp;
+sys_io_setup(struct tcb *tcp)
 {
 	if (entering(tcp))
 		tprintf("%ld, ", tcp->u_arg[0]);
@@ -728,8 +799,7 @@ struct tcb *tcp;
 }
 
 int
-sys_io_destroy(tcp)
-struct tcb *tcp;
+sys_io_destroy(struct tcb *tcp)
 {
 	if (entering(tcp))
 		tprintf("%lu", tcp->u_arg[0]);
@@ -737,8 +807,7 @@ struct tcb *tcp;
 }
 
 int
-sys_io_submit(tcp)
-struct tcb *tcp;
+sys_io_submit(struct tcb *tcp)
 {
 	long nr;
 	if (entering(tcp)) {
@@ -780,8 +849,7 @@ struct tcb *tcp;
 }
 
 int
-sys_io_cancel(tcp)
-struct tcb *tcp;
+sys_io_cancel(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 #ifdef HAVE_LIBAIO_H
@@ -807,7 +875,7 @@ struct tcb *tcp;
 				tprintf("{%p, %p, %ld, %ld}",
 					event.data, event.obj,
 					event.res, event.res2);
-			else 
+			else
 #endif
 				tprintf("{...}");
 		}
@@ -816,7 +884,7 @@ struct tcb *tcp;
 }
 
 int
-sys_io_getevents(struct tcb * tcp)
+sys_io_getevents(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%ld, %ld, %ld, ", tcp->u_arg[0], tcp->u_arg[1],
@@ -857,8 +925,7 @@ sys_io_getevents(struct tcb * tcp)
 #endif /* LINUX */
 
 int
-sys_select(tcp)
-struct tcb *tcp;
+sys_select(struct tcb *tcp)
 {
 	return decode_select(tcp, tcp->u_arg, BITNESS_CURRENT);
 }
@@ -887,12 +954,28 @@ sys_pselect6(struct tcb *tcp)
 	return rc;
 }
 
-int
-sys_eventfd(tcp)
-struct tcb *tcp;
+static int
+do_eventfd(struct tcb *tcp, int flags_arg)
 {
-	if (entering(tcp))
+	if (entering(tcp)) {
 		tprintf("%lu", tcp->u_arg[0]);
+		if (flags_arg >= 0) {
+			tprintf(", ");
+			printflags(open_mode_flags, tcp->u_arg[flags_arg], "O_???");
+		}
+	}
 	return 0;
+}
+
+int
+sys_eventfd(struct tcb *tcp)
+{
+	return do_eventfd(tcp, -1);
+}
+
+int
+sys_eventfd2(struct tcb *tcp)
+{
+	return do_eventfd(tcp, 1);
 }
 #endif

@@ -190,7 +190,7 @@ do_one_test (mqd_t q, const char *name, int nonblock)
       else
 	result |= check_attrs (&attr, nonblock, 10);
 
-      unsigned char vr[11] = { };
+      char vr[11] = { };
       unsigned int prio;
       ssize_t rets;
 
@@ -208,8 +208,9 @@ do_one_test (mqd_t q, const char *name, int nonblock)
       for (int i = 0; i < 10; ++i)
 	{
 	  if (i & 1)
-	    rets = mq_receive (q, (char *) &vr[i], 1, &prio);
-	    rets = mq_timedreceive (q, (char *) &vr[i], 1, &prio, &ts);
+	    rets = mq_receive (q, &vr[i], 1, &prio);
+	  else
+	    rets = mq_timedreceive (q, &vr[i], 1, &prio, &ts);
 
 	  if (rets != 1)
 	    {
@@ -235,7 +236,7 @@ do_one_test (mqd_t q, const char *name, int nonblock)
 	  result = 1;
 	}
 
-      rets = mq_timedreceive (q, (char *) &vr[10], 1, &prio, &ts);
+      rets = mq_timedreceive (q, &vr[10], 1, &prio, &ts);
       if (rets != -1)
 	{
 	  puts ("mq_timedreceive on empty queue did not fail");
@@ -250,7 +251,7 @@ do_one_test (mqd_t q, const char *name, int nonblock)
 
       if (nonblock)
 	{
-	  ret = mq_receive (q, (char *) &vr[10], 1, &prio);
+	  ret = mq_receive (q, &vr[10], 1, &prio);
 	  if (ret != -1)
 	    {
 	      puts ("mq_receive on empty non-blocking queue did not fail");

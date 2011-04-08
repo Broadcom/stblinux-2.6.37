@@ -83,33 +83,11 @@ char *alloca ();
 # include <sys/stat.h>
 #endif
 
-libc_hidden_proto(memset)
-libc_hidden_proto(strchr)
-libc_hidden_proto(strlen)
-libc_hidden_proto(dirfd)
-libc_hidden_proto(tsearch)
-libc_hidden_proto(tfind)
-libc_hidden_proto(tdestroy)
-libc_hidden_proto(getcwd)
-libc_hidden_proto(chdir)
-libc_hidden_proto(fchdir)
-libc_hidden_proto(mempcpy)
-libc_hidden_proto(opendir)
-#ifdef __UCLIBC_HAS_LFS__
-libc_hidden_proto(readdir64)
-libc_hidden_proto(lstat64)
-libc_hidden_proto(stat64)
-#endif
-libc_hidden_proto(closedir)
-libc_hidden_proto(stpcpy)
-libc_hidden_proto(lstat)
-libc_hidden_proto(stat)
-
-#if ! _LIBC && !HAVE_DECL_STPCPY && !defined stpcpy
+#if !defined _LIBC && !HAVE_DECL_STPCPY && !defined stpcpy
 char *stpcpy ();
 #endif
 
-#if ! _LIBC && ! defined HAVE_MEMPCPY && ! defined mempcpy
+#if !defined _LIBC && ! defined HAVE_MEMPCPY && ! defined mempcpy
 /* Be CAREFUL that there are no side effects in N.  */
 # define mempcpy(D, S, N) ((void *) ((char *) memcpy (D, S, N) + (N)))
 #endif
@@ -162,7 +140,7 @@ extern char *xgetcwd (void);
 /* Arrange to make lstat calls go through the wrapper function
    on systems with an lstat function that does not dereference symlinks
    that are specified with a trailing slash.  */
-#if ! _LIBC && ! LSTAT_FOLLOWS_SLASHED_SYMLINK && !defined __UCLIBC__
+#if !defined _LIBC && !defined LSTAT_FOLLOWS_SLASHED_SYMLINK && !defined __UCLIBC__
 int rpl_lstat (const char *, struct stat *);
 # undef lstat
 # define lstat(Name, Stat_buf) rpl_lstat(Name, Stat_buf)
@@ -279,7 +257,7 @@ object_compare (const void *p1, const void *p2)
 }
 
 
-static inline int
+static __inline__ int
 add_object (struct ftw_data *data, struct STAT *st)
 {
   struct known_object *newp = malloc (sizeof (struct known_object));
@@ -291,7 +269,7 @@ add_object (struct ftw_data *data, struct STAT *st)
 }
 
 
-static inline int
+static __inline__ int
 find_object (struct ftw_data *data, struct STAT *st)
 {
   struct known_object obj;
@@ -301,7 +279,7 @@ find_object (struct ftw_data *data, struct STAT *st)
 }
 
 
-static inline int
+static __inline__ int
 __attribute ((always_inline))
 open_dir_stream (struct ftw_data *data, struct dir_data *dirp)
 {
@@ -774,23 +752,18 @@ ftw_startup (const char *dir, int is_nftw, void *func, int descriptors,
 
 
 /* Entry points.  */
-
+#if __UCLIBC_HAS_FTW__
 int
-FTW_NAME (path, func, descriptors)
-     const char *path;
-     FTW_FUNC_T func;
-     int descriptors;
+FTW_NAME (const char *path, FTW_FUNC_T func, int descriptors)
 {
   return ftw_startup (path, 0, func, descriptors, 0);
 }
+#endif
 
+#if __UCLIBC_HAS_NFTW__
 #ifndef _LIBC
 int
-NFTW_NAME (path, func, descriptors, flags)
-     const char *path;
-     NFTW_FUNC_T func;
-     int descriptors;
-     int flags;
+NFTW_NAME (const char *path, NFTW_FUNC_T func, int descriptors, int flags)
 {
   return ftw_startup (path, 1, func, descriptors, flags);
 }
@@ -801,11 +774,7 @@ NFTW_NAME (path, func, descriptors, flags)
 int NFTW_NEW_NAME (const char *, NFTW_FUNC_T, int, int);
 
 int
-NFTW_NEW_NAME (path, func, descriptors, flags)
-     const char *path;
-     NFTW_FUNC_T func;
-     int descriptors;
-     int flags;
+NFTW_NEW_NAME (const char *path, NFTW_FUNC_T func, int descriptors, int flags)
 {
   if (flags
       & ~(FTW_PHYS | FTW_MOUNT | FTW_CHDIR | FTW_DEPTH | FTW_ACTIONRETVAL))
@@ -826,16 +795,13 @@ int NFTW_OLD_NAME (const char *, NFTW_FUNC_T, int, int);
 
 int
 attribute_compat_text_section
-NFTW_OLD_NAME (path, func, descriptors, flags)
-     const char *path;
-     NFTW_FUNC_T func;
-     int descriptors;
-     int flags;
+NFTW_OLD_NAME (const char *path, NFTW_FUNC_T func, int descriptors, int flags)
 {
   flags &= (FTW_PHYS | FTW_MOUNT | FTW_CHDIR | FTW_DEPTH);
   return ftw_startup (path, 1, func, descriptors, flags);
 }
 
 compat_symbol (libc, NFTW_OLD_NAME, NFTW_NAME, GLIBC_2_1);
+#endif
 #endif
 #endif

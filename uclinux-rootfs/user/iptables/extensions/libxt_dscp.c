@@ -12,6 +12,7 @@
  * http://www.iana.org/assignments/dscp-registry
  *
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,9 +39,9 @@ static void dscp_help(void)
 }
 
 static const struct option dscp_opts[] = {
-	{ "dscp", 1, NULL, 'F' },
-	{ "dscp-class", 1, NULL, 'G' },
-	{ .name = NULL }
+	{.name = "dscp",       .has_arg = true, .val = 'F'},
+	{.name = "dscp-class", .has_arg = true, .val = 'G'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -82,8 +83,8 @@ dscp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags)
 			xtables_error(PARAMETER_PROBLEM,
 			           "DSCP match: Only use --dscp ONCE!");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_dscp(argv[optind-1], dinfo);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_dscp(optarg, dinfo);
 		if (invert)
 			dinfo->invert = 1;
 		*flags = 1;
@@ -93,8 +94,8 @@ dscp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags)
 			xtables_error(PARAMETER_PROBLEM,
 					"DSCP match: Only use --dscp-class ONCE!");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_class(argv[optind - 1], dinfo);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_class(optarg, dinfo);
 		if (invert)
 			dinfo->invert = 1;
 		*flags = 1;
@@ -131,21 +132,7 @@ static void dscp_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match dscp_match = {
-	.family		= NFPROTO_IPV4,
-	.name 		= "dscp",
-	.version 	= XTABLES_VERSION,
-	.size 		= XT_ALIGN(sizeof(struct xt_dscp_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_dscp_info)),
-	.help		= dscp_help,
-	.parse		= dscp_parse,
-	.final_check	= dscp_check,
-	.print		= dscp_print,
-	.save		= dscp_save,
-	.extra_opts	= dscp_opts,
-};
-
-static struct xtables_match dscp_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name 		= "dscp",
 	.version 	= XTABLES_VERSION,
 	.size 		= XT_ALIGN(sizeof(struct xt_dscp_info)),
@@ -161,5 +148,4 @@ static struct xtables_match dscp_match6 = {
 void _init(void)
 {
 	xtables_register_match(&dscp_match);
-	xtables_register_match(&dscp_match6);
 }

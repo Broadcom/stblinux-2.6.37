@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: syscall.h,v 1.13 2008/05/19 23:50:24 roland Exp $
+ *	$Id$
  */
 #include "dummy.h"
 
@@ -98,7 +98,8 @@ int sys_semtimedop();
 int	sys_socket(),sys_bind(),sys_listen(),sys_accept(),sys_connect();
 int	sys_socketpair(),sys_sendto(),sys_send(),sys_recvfrom(),sys_recv();
 int	sys_sendmsg(),sys_recvmsg(),sys_shutdown(),sys_setsockopt(),sys_getsockopt();
-int	sys_getsockname(),sys_getpeername(),sys_pipe();
+int	sys_getsockname(),sys_getpeername(),sys_pipe(),sys_accept4();
+int	sys_recvmmsg();
 
 int sys_setresuid(), sys_setresgid(), sys_getresuid(), sys_getresgid(), sys_pread();
 int sys_pwrite(), sys_getcwd();
@@ -201,7 +202,7 @@ int	sys_listxattr(), sys_llistxattr(), sys_flistxattr();
 int	sys_removexattr(), sys_lremovexattr(), sys_fremovexattr();
 int	sys_remap_file_pages(), sys_readahead(), sys_tgkill(), sys_statfs64();
 int	sys_fstatfs64(), sys_clock_settime(), sys_clock_gettime();
-int	sys_clock_getres(), sys_clock_nanosleep();
+int	sys_clock_getres(), sys_clock_nanosleep(), sys_nanosleep();
 int	sys_timer_create(), sys_timer_settime(), sys_timer_gettime();
 
 int	sys_io_setup(), sys_io_destroy(), sys_io_submit(), sys_io_cancel(), sys_io_getevents();
@@ -232,8 +233,10 @@ int	sys_signalfd(), sys_timerfd(), sys_eventfd();
 #define SYS_sub_getsockopt	(SYS_socket_subcall + 15)
 #define SYS_sub_sendmsg		(SYS_socket_subcall + 16)
 #define SYS_sub_recvmsg		(SYS_socket_subcall + 17)
+#define SYS_sub_accept4		(SYS_socket_subcall + 18)
+#define SYS_sub_recvmmsg	(SYS_socket_subcall + 19)
 
-#define SYS_socket_nsubcalls	18
+#define SYS_socket_nsubcalls	20
 
 #define SYS_ipc_subcall		((SYS_socket_subcall)+(SYS_socket_nsubcalls))
 #define SYS_sub_semop		(SYS_ipc_subcall + 1)

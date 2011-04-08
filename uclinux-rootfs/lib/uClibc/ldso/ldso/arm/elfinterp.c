@@ -44,32 +44,24 @@ extern int _dl_linux_resolve(void);
 
 unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 {
-	int reloc_type;
 	ELF_RELOC *this_reloc;
 	char *strtab;
 	char *symname;
 	Elf32_Sym *symtab;
 	ELF_RELOC *rel_addr;
 	int symtab_index;
-	char *new_addr;
+	unsigned long new_addr;
 	char **got_addr;
 	unsigned long instr_addr;
 
 	rel_addr = (ELF_RELOC *) tpnt->dynamic_info[DT_JMPREL];
 
 	this_reloc = rel_addr + reloc_entry;
-	reloc_type = ELF32_R_TYPE(this_reloc->r_info);
 	symtab_index = ELF32_R_SYM(this_reloc->r_info);
 
 	symtab = (Elf32_Sym *) tpnt->dynamic_info[DT_SYMTAB];
 	strtab = (char *) tpnt->dynamic_info[DT_STRTAB];
 	symname = strtab + symtab[symtab_index].st_name;
-
-	if (unlikely(reloc_type != R_ARM_JUMP_SLOT)) {
-		_dl_dprintf(2, "%s: Incorrect relocation type in jump relocations\n",
-			_dl_progname);
-		_dl_exit(1);
-	}
 
 	/* Address of jump instruction to fix up */
 	instr_addr = ((unsigned long) this_reloc->r_offset +
@@ -78,7 +70,7 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 
 	/* Get the address of the GOT entry */
 	new_addr = _dl_find_hash(symname, tpnt->symbol_scope,
-				 tpnt, ELF_RTYPE_CLASS_PLT);
+				 tpnt, ELF_RTYPE_CLASS_PLT, NULL);
 	if (unlikely(!new_addr)) {
 		_dl_dprintf(2, "%s: can't resolve symbol '%s'\n",
 			_dl_progname, symname);
@@ -97,13 +89,13 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 		}
 	}
 	if (!_dl_debug_nofixups) {
-		*got_addr = new_addr;
+		*got_addr = (char *)new_addr;
 	}
 #else
-	*got_addr = new_addr;
+	*got_addr = (char *)new_addr;
 #endif
 
-	return (unsigned long) new_addr;
+	return new_addr;
 }
 
 static int
@@ -196,28 +188,43 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 	int symtab_index;
 	unsigned long *reloc_addr;
 	unsigned long symbol_addr;
+	const Elf32_Sym *def = 0;
+	struct symbol_ref sym_ref;
+	struct elf_resolve *def_mod = 0;
 	int goof = 0;
 
 	reloc_addr = (unsigned long *) (tpnt->loadaddr + (unsigned long) rpnt->r_offset);
+
 	reloc_type = ELF32_R_TYPE(rpnt->r_info);
 	symtab_index = ELF32_R_SYM(rpnt->r_info);
 	symbol_addr = 0;
+	sym_ref.sym = &symtab[symtab_index];
+	sym_ref.tpnt = NULL;
 
 	if (symtab_index) {
-
-		symbol_addr = (unsigned long) _dl_find_hash(strtab + symtab[symtab_index].st_name,
-				scope, tpnt, elf_machine_type_class(reloc_type));
+		symbol_addr = _dl_find_hash(strtab + symtab[symtab_index].st_name,
+			scope, tpnt, elf_machine_type_class(reloc_type), &sym_ref);
 
 		/*
 		 * We want to allow undefined references to weak symbols - this might
 		 * have been intentional.  We should not be linking local symbols
 		 * here, so all bases should be covered.
 		 */
-		if (!symbol_addr && ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK) {
-			_dl_dprintf (2, "%s: can't resolve symbol '%s'\n",
-				     _dl_progname, strtab + symtab[symtab_index].st_name);
-			_dl_exit (1);
+		if (!symbol_addr && (ELF_ST_TYPE(symtab[symtab_index].st_info) != STT_TLS)
+			&& (ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK)) {
+			/* This may be non-fatal if called from dlopen.  */
+			return 1;
+
 		}
+		def_mod = sym_ref.tpnt;
+	} else {
+		/*
+		 * Relocs against STN_UNDEF are usually treated as using a
+		 * symbol value of zero, and using the module containing the
+		 * reloc itself.
+		 */
+		symbol_addr = symtab[symtab_index].st_value;
+		def_mod = tpnt;
 	}
 
 #if defined (__SUPPORT_LD_DEBUG__)
@@ -273,6 +280,20 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 				_dl_memcpy((void *) reloc_addr,
 					   (void *) symbol_addr, symtab[symtab_index].st_size);
 				break;
+#if defined USE_TLS && USE_TLS
+			case R_ARM_TLS_DTPMOD32:
+				*reloc_addr = def_mod->l_tls_modid;
+				break;
+
+			case R_ARM_TLS_DTPOFF32:
+				*reloc_addr += symbol_addr;
+				break;
+
+			case R_ARM_TLS_TPOFF32:
+				CHECK_STATIC_TLS ((struct link_map *) def_mod);
+				*reloc_addr += (symbol_addr + def_mod->l_tls_offset);
+				break;
+#endif
 			default:
 				return -1; /*call _dl_exit(1) */
 		}

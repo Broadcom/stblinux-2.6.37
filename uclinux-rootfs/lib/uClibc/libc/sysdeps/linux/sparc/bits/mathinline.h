@@ -94,7 +94,7 @@
 
 #  define __unordered_v9cmp(x, y, op, qop) \
   (__extension__							      \
-   ({ unsigned __r;						      	      \
+   ({ unsigned __r;							      \
       if (sizeof (x) == 4 && sizeof (y) == 4)				      \
 	{								      \
 	  float __x = (x); float __y = (y);				      \
@@ -111,7 +111,7 @@
 	{								      \
 	  long double __x = (x); long double __y = (y);			      \
 	  extern int _Qp_cmp (const long double *a, const long double *b);    \
-	  __r = qop;						      	      \
+	  __r = qop;							      \
 	}								      \
       __r; }))
 
@@ -198,7 +198,7 @@ __MATH_INLINE double
 __NTH (sqrt (double __x))
 {
   register double __r;
-  __asm ("fsqrtd %1,%0" : "=f" (__r) : "f" (__x));
+  __asm__ ("fsqrtd %1,%0" : "=f" (__r) : "f" (__x));
   return __r;
 }
 
@@ -206,7 +206,7 @@ __MATH_INLINE float
 __NTH (sqrtf (float __x))
 {
   register float __r;
-  __asm ("fsqrts %1,%0" : "=f" (__r) : "f" (__x));
+  __asm__ ("fsqrts %1,%0" : "=f" (__r) : "f" (__x));
   return __r;
 }
 
@@ -236,7 +236,7 @@ __MATH_INLINE double
 __ieee754_sqrt (double __x)
 {
   register double __r;
-  __asm ("fsqrtd %1,%0" : "=f" (__r) : "f" (__x));
+  __asm__ ("fsqrtd %1,%0" : "=f" (__r) : "f" (__x));
   return __r;
 }
 
@@ -244,7 +244,7 @@ __MATH_INLINE float
 __ieee754_sqrtf (float __x)
 {
   register float __r;
-  __asm ("fsqrts %1,%0" : "=f" (__r) : "f" (__x));
+  __asm__ ("fsqrts %1,%0" : "=f" (__r) : "f" (__x));
   return __r;
 }
 

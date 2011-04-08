@@ -19,16 +19,9 @@
 #warning REMINDER: Deal with wide oriented stderr case.
 #endif
 
-libc_hidden_proto(vwarn)
-libc_hidden_proto(vwarnx)
-libc_hidden_proto(verr)
-libc_hidden_proto(verrx)
+#if defined __USE_BSD
 
-libc_hidden_proto(fprintf)
-libc_hidden_proto(vfprintf)
-libc_hidden_proto(__xpg_strerror_r)
-libc_hidden_proto(exit)
-libc_hidden_proto(vfprintf)
+
 
 static void vwarn_work(const char *format, va_list args, int showerr)
 {
@@ -124,3 +117,4 @@ void attribute_noreturn errx(int status, const char *format, ...)
 	while(1)
 		va_end(args);
 }
+#endif

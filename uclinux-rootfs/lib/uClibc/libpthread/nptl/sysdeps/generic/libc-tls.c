@@ -26,13 +26,14 @@
 #include <elf.h>
 #include <link.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 #ifdef SHARED
  #error makefile bug, this file is for static only
 #endif
 
-#ifdef USE_TLS
+#if USE_TLS
 extern ElfW(Phdr) *_dl_phdr;
 extern size_t _dl_phnum;
 
@@ -145,10 +146,10 @@ __libc_setup_tls (size_t tcbsize, size_t tcbalign)
      The initialized value of _dl_tls_static_size is provided by dl-open.c
      to request some surplus that permits dynamic loading of modules with
      IE-model TLS.  */
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   tcb_offset = roundup (memsz + GL(dl_tls_static_size), tcbalign);
   tlsblock = sbrk (tcb_offset + tcbsize + max_align);
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   tcb_offset = roundup (tcbsize, align ?: 1);
   tlsblock = sbrk (tcb_offset + memsz + max_align
 		     + TLS_PRE_TCB_SIZE + GL(dl_tls_static_size));
@@ -168,11 +169,11 @@ __libc_setup_tls (size_t tcbsize, size_t tcbalign)
   // static_dtv[1].counter = 0;		would be needed if not already done
 
   /* Initialize the TLS block.  */
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   static_dtv[2].pointer.val = ((char *) tlsblock + tcb_offset
 			       - roundup (memsz, align ?: 1));
   static_map.l_tls_offset = roundup (memsz, align ?: 1);
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   static_dtv[2].pointer.val = (char *) tlsblock + tcb_offset;
   static_map.l_tls_offset = tcb_offset;
 # else
@@ -185,13 +186,13 @@ __libc_setup_tls (size_t tcbsize, size_t tcbalign)
   /* Install the pointer to the dtv.  */
 
   /* Initialize the thread pointer.  */
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   INSTALL_DTV ((char *) tlsblock + tcb_offset, static_dtv);
 
   const char *lossage = TLS_INIT_TP ((char *) tlsblock + tcb_offset, 0);
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   INSTALL_DTV (tlsblock, static_dtv);
-  const char *lossage = TLS_INIT_TP (tlsblock, 0);
+  const char *lossage = (char *)TLS_INIT_TP (tlsblock, 0);
 # else
 #  error "Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined"
 # endif
@@ -213,9 +214,9 @@ __libc_setup_tls (size_t tcbsize, size_t tcbalign)
 
   memsz = roundup (memsz, align ?: 1);
 
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   memsz += tcbsize;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   memsz += tcb_offset;
 # endif
 
@@ -231,7 +232,7 @@ _dl_tls_setup (void)
 {
   init_slotinfo ();
   init_static_tls (
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
 		   TLS_TCB_SIZE,
 # else
 		   0,
@@ -244,7 +245,8 @@ _dl_tls_setup (void)
 /* This is the minimal initialization function used when libpthread is
    not used.  */
 void
-____pthread_initialize_minimal (void)
+__attribute__ ((weak))
+__pthread_initialize_minimal (void)
 {
   __libc_setup_tls (TLS_INIT_TCB_SIZE, TLS_INIT_TCB_ALIGN);
 }
@@ -261,28 +263,3 @@ __pthread_initialize_minimal (void)
 }
 
 #endif
-
-char *_dl_argv0;	/* executable name */
-
-extern __attribute__((weak)) int
-__dl_iterate_phdr (int (*callback) (struct dl_phdr_info *info,
-	size_t size, void *data), void *data);
-
-int
-dl_iterate_phdr (int (*callback) (struct dl_phdr_info *info, size_t size, void *data), void *data)
-{
-	struct dl_phdr_info info;
-	int ret = 0;
-
-	/* not NULL if libdl was linked in */
-	if(__dl_iterate_phdr)
-		return(__dl_iterate_phdr(callback, data));
-
-	info.dlpi_addr = 0;
-	info.dlpi_name = _dl_argv0;
-	info.dlpi_phdr = _dl_phdr;
-	info.dlpi_phnum = _dl_phnum;
-	ret = callback (&info, sizeof (struct dl_phdr_info), data);
-
-	return(ret);
-}

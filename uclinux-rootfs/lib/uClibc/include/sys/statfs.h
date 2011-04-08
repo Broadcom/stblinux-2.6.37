@@ -43,6 +43,7 @@ extern int __REDIRECT_NTH (statfs,
 #ifdef __USE_LARGEFILE64
 extern int statfs64 (__const char *__file, struct statfs64 *__buf)
      __THROW __nonnull ((1, 2));
+libc_hidden_proto(statfs64)
 #endif
 
 /* Return information about the filesystem containing the file FILDES
@@ -61,6 +62,7 @@ extern int __REDIRECT_NTH (fstatfs, (int __fildes, struct statfs *__buf),
 #ifdef __USE_LARGEFILE64
 extern int fstatfs64 (int __fildes, struct statfs64 *__buf)
      __THROW __nonnull ((2));
+libc_hidden_proto(fstatfs64)
 #endif
 
 __END_DECLS

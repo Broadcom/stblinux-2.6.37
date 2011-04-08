@@ -1,17 +1,21 @@
 # Makefile for uClibc
 #
-# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
 #
 # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
 #
 
+subdirs += libc/misc/ctype
+
 # multi source ctype.c
 COM_SRC := \
-	isalnum.c isalpha.c isascii.c iscntrl.c isdigit.c \
+	isalnum.c isalpha.c iscntrl.c isdigit.c \
 	isgraph.c islower.c isprint.c ispunct.c isspace.c \
-	isupper.c isxdigit.c toascii.c tolower.c toupper.c \
+	isupper.c isxdigit.c tolower.c toupper.c \
 	isblank.c
-
+ifeq ($(UCLIBC_SUSV4_LEGACY),y)
+COM_SRC += isascii.c toascii.c
+endif
 CSRC := $(COM_SRC)
 
 ifeq ($(UCLIBC_HAS_CTYPE_TABLES),y)
@@ -31,10 +35,8 @@ MISC_CTYPE_SRC := $(patsubst %.c,$(MISC_CTYPE_DIR)/%.c,$(CSRC))
 MISC_CTYPE_OBJ := $(patsubst %.c,$(MISC_CTYPE_OUT)/%.o,$(CSRC))
 
 libc-y += $(MISC_CTYPE_OBJ)
-libc-a-y += $(MISC_CTYPE_OBJ)
-libc-so-y += $(MISC_CTYPE_OBJ:.o=.os)
 
-objclean-y += misc_ctype_objclean
+objclean-y += CLEAN_libc/misc/ctype
 
-misc_ctype_objclean:
-	$(RM) $(MISC_CTYPE_OUT)/*.{o,os}
+CLEAN_libc/misc/ctype:
+	$(do_rm) $(addprefix $(MISC_CTYPE_OUT)/*., o os)

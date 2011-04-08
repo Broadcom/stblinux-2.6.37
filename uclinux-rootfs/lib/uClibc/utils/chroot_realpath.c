@@ -1,5 +1,5 @@
 /*
- * chroot_realpath.c -- reslove pathname as if inside chroot
+ * chroot_realpath.c -- resolve pathname as if inside chroot
  * Based on realpath.c Copyright (C) 1993 Rick Sladkey <jrs@world.std.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -20,31 +20,15 @@
  * 2005/09/12: Dan Howell (modified from realpath.c to emulate chroot)
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
-#include <limits.h>				/* for PATH_MAX */
-#include <sys/param.h>			/* for MAXPATHLEN */
-#include <errno.h>
-#ifndef __set_errno
-#define __set_errno(val) ((errno) = (val))
-#endif
-
-#include <sys/stat.h>			/* for S_IFLNK */
-
-#ifndef PATH_MAX
-#define PATH_MAX _POSIX_PATH_MAX
-#endif
+#include "porting.h"
 
 #define MAX_READLINKS 32
 
-char *chroot_realpath(const char *chroot, const char *path, char resolved_path[])
+char *chroot_realpath(const char *root, const char *path,
+		      char resolved_path[]);
+
+char *chroot_realpath(const char *root, const char *path,
+		      char resolved_path[])
 {
 	char copy_path[PATH_MAX];
 	char link_path[PATH_MAX];
@@ -57,16 +41,16 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 	int chroot_len;
 
 	/* Trivial case. */
-	if (chroot == NULL || *chroot == '\0' ||
-	    (*chroot == '/' && chroot[1] == '\0')) {
+	if (root == NULL || *root == '\0' ||
+	    (*root == '/' && root[1] == '\0')) {
 		strcpy(resolved_path, path);
 		return resolved_path;
 	}
 
-	chroot_len = strlen(chroot);
+	chroot_len = strlen(root);
 
 	if (chroot_len + strlen(path) >= PATH_MAX - 3) {
-		__set_errno(ENAMETOOLONG);
+		errno = ENAMETOOLONG;
 		return NULL;
 	}
 
@@ -76,7 +60,7 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 	max_path = copy_path + PATH_MAX - chroot_len - 3;
 
 	/* Start with the chroot path. */
-	strcpy(new_path, chroot);
+	strcpy(new_path, root);
 	new_path += chroot_len;
 	while (*new_path == '/' && new_path > got_path)
 		new_path--;
@@ -103,7 +87,7 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 					if (new_path == got_path_root + 1)
 						continue;
 					/* Handle ".." by backing up. */
-					while ((--new_path)[-1] != '/');
+					while ((--new_path)[-1] != '/') ;
 					continue;
 				}
 			}
@@ -111,7 +95,7 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 		/* Safely copy the next pathname component. */
 		while (*path != '\0' && *path != '/') {
 			if (path > max_path) {
-				__set_errno(ENAMETOOLONG);
+				errno = ENAMETOOLONG;
 				return NULL;
 			}
 			*new_path++ = *path++;
@@ -122,7 +106,7 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 #ifdef S_IFLNK
 		/* Protect against infinite loops. */
 		if (readlinks++ > MAX_READLINKS) {
-			__set_errno(ELOOP);
+			errno = ELOOP;
 			return NULL;
 		}
 		/* See if latest pathname component is a symlink. */
@@ -144,10 +128,10 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 				new_path = got_path_root;
 			else
 				/* Otherwise back up over this component. */
-				while (*(--new_path) != '/');
+				while (*(--new_path) != '/') ;
 			/* Safe sex check. */
 			if (strlen(path) + n >= PATH_MAX - 2) {
-				__set_errno(ENAMETOOLONG);
+				errno = ENAMETOOLONG;
 				return NULL;
 			}
 			/* Insert symlink contents into path. */
@@ -155,7 +139,7 @@ char *chroot_realpath(const char *chroot, const char *path, char resolved_path[]
 			strcpy(copy_path, link_path);
 			path = copy_path;
 		}
-#endif							/* S_IFLNK */
+#endif				/* S_IFLNK */
 		*new_path++ = '/';
 	}
 	/* Delete trailing slash but don't whomp a lone slash. */

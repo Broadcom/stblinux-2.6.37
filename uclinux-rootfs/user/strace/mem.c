@@ -29,7 +29,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: mem.c,v 1.45 2008/08/25 03:09:16 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -188,8 +188,48 @@ static const struct xlat mmap_flags[] = {
 #ifdef MAP_NOCORE
 	{ MAP_NOCORE,		"MAP_NOCORE"	},
 #endif
+#ifdef TILE
+	{ MAP_CACHE_NO_LOCAL, "MAP_CACHE_NO_LOCAL" },
+	{ MAP_CACHE_NO_L2, "MAP_CACHE_NO_L2" },
+	{ MAP_CACHE_NO_L1, "MAP_CACHE_NO_L1" },
+#endif
 	{ 0,		NULL		},
 };
+
+#ifdef TILE
+static
+int
+addtileflags(flags)
+long flags;
+{
+	long home = flags & _MAP_CACHE_MKHOME(_MAP_CACHE_HOME_MASK);
+	flags &= ~_MAP_CACHE_MKHOME(_MAP_CACHE_HOME_MASK);
+
+	if (flags & _MAP_CACHE_INCOHERENT) {
+		flags &= ~_MAP_CACHE_INCOHERENT;
+		if (home == MAP_CACHE_HOME_NONE) {
+			tprintf("|MAP_CACHE_INCOHERENT");
+			return flags;
+		}
+		tprintf("|_MAP_CACHE_INCOHERENT");
+	}
+
+	switch (home) {
+	case 0:	break;
+	case MAP_CACHE_HOME_HERE: tprintf("|MAP_CACHE_HOME_HERE"); break;
+	case MAP_CACHE_HOME_NONE: tprintf("|MAP_CACHE_HOME_NONE"); break;
+	case MAP_CACHE_HOME_SINGLE: tprintf("|MAP_CACHE_HOME_SINGLE"); break;
+	case MAP_CACHE_HOME_TASK: tprintf("|MAP_CACHE_HOME_TASK"); break;
+	case MAP_CACHE_HOME_HASH: tprintf("|MAP_CACHE_HOME_HASH"); break;
+	default:
+		tprintf("|MAP_CACHE_HOME(%d)",
+			(home >> _MAP_CACHE_HOME_SHIFT) );
+		break;
+	}
+
+	return flags;
+}
+#endif
 
 #if !HAVE_LONG_LONG_OFF_T
 static
@@ -213,7 +253,11 @@ long long offset;
 		/* flags */
 #ifdef MAP_TYPE
 		printxval(mmap_flags, u_arg[3] & MAP_TYPE, "MAP_???");
+#ifdef TILE
+		addflags(mmap_flags, addtileflags(u_arg[3] & ~MAP_TYPE));
+#else
 		addflags(mmap_flags, u_arg[3] & ~MAP_TYPE);
+#endif
 #else
 		printflags(mmap_flags, u_arg[3], "MAP_???");
 #endif
@@ -229,48 +273,47 @@ long long offset;
 int sys_old_mmap(tcp)
 struct tcb *tcp;
 {
-    long u_arg[6];
+	long u_arg[6];
 
 #if	defined(IA64)
-    int i, v;
-    /*
-     *  IA64 processes never call this routine, they only use the
-     *  new `sys_mmap' interface.  This code converts the integer
-     *  arguments that the IA32 process pushed onto the stack into
-     *  longs.
-     *
-     *  Note that addresses with bit 31 set will be sign extended.
-     *  Fortunately, those addresses are not currently being generated
-     *  for IA32 processes so it's not a problem.
-     */
-    for (i = 0; i < 6; i++)
-	if (umove(tcp, tcp->u_arg[0] + (i * sizeof(int)), &v) == -1)
-		return 0;
-	else
-		u_arg[i] = v;
+	int i, v;
+	/*
+	 *  IA64 processes never call this routine, they only use the
+	 *  new `sys_mmap' interface.  This code converts the integer
+	 *  arguments that the IA32 process pushed onto the stack into
+	 *  longs.
+	 *
+	 *  Note that addresses with bit 31 set will be sign extended.
+	 *  Fortunately, those addresses are not currently being generated
+	 *  for IA32 processes so it's not a problem.
+	 */
+	for (i = 0; i < 6; i++)
+		if (umove(tcp, tcp->u_arg[0] + (i * sizeof(int)), &v) == -1)
+			return 0;
+		else
+			u_arg[i] = v;
 #elif defined(SH) || defined(SH64)
-    /* SH has always passed the args in registers */
-    int i;
-    for (i=0; i<6; i++)
-        u_arg[i] = tcp->u_arg[i];
+	/* SH has always passed the args in registers */
+	int i;
+	for (i=0; i<6; i++)
+		u_arg[i] = tcp->u_arg[i];
 #else
 # if defined(X86_64)
-    if (current_personality == 1) {
-	    int i;
-	    for (i = 0; i < 6; ++i) {
-		    unsigned int val;
-		    if (umove(tcp, tcp->u_arg[0] + i * 4, &val) == -1)
-			    return 0;
-		    u_arg[i] = val;
-	    }
-    }
-    else
+	if (current_personality == 1) {
+		int i;
+		for (i = 0; i < 6; ++i) {
+			unsigned int val;
+			if (umove(tcp, tcp->u_arg[0] + i * 4, &val) == -1)
+				return 0;
+			u_arg[i] = val;
+		}
+	}
+	else
 # endif
-    if (umoven(tcp, tcp->u_arg[0], sizeof u_arg, (char *) u_arg) == -1)
-	    return 0;
+	if (umoven(tcp, tcp->u_arg[0], sizeof u_arg, (char *) u_arg) == -1)
+		return 0;
 #endif	// defined(IA64)
-    return print_mmap(tcp, u_arg, u_arg[5]);
-
+	return print_mmap(tcp, u_arg, u_arg[5]);
 }
 #endif
 
@@ -278,21 +321,21 @@ int
 sys_mmap(tcp)
 struct tcb *tcp;
 {
-    long long offset = tcp->u_arg[5];
+	long long offset = tcp->u_arg[5];
 
 #if defined(LINUX) && defined(SH64)
-    /*
-     * Old mmap differs from new mmap in specifying the
-     * offset in units of bytes rather than pages.  We
-     * pretend it's in byte units so the user only ever
-     * sees bytes in the printout.
-     */
-    offset <<= PAGE_SHIFT;
+	/*
+	 * Old mmap differs from new mmap in specifying the
+	 * offset in units of bytes rather than pages.  We
+	 * pretend it's in byte units so the user only ever
+	 * sees bytes in the printout.
+	 */
+	offset <<= PAGE_SHIFT;
 #endif
 #if defined(LINUX_MIPSN32)
-    offset = tcp->ext_arg[5];
+	offset = tcp->ext_arg[5];
 #endif
-    return print_mmap(tcp, tcp->u_arg, offset);
+	return print_mmap(tcp, tcp->u_arg, offset);
 }
 #endif /* !HAVE_LONG_LONG_OFF_T */
 
@@ -319,7 +362,6 @@ struct tcb *tcp;
 			return 0;
 #endif /* ALPHA */
 #endif /* linux */
-		ALIGN64 (tcp, 5);	/* FreeBSD wierdies */
 
 		/* addr */
 		tprintf("%#lx, ", u_arg[0]);
@@ -338,7 +380,7 @@ struct tcb *tcp;
 		/* fd */
 		tprintf(", %ld, ", u_arg[4]);
 		/* offset */
-		tprintf("%#llx", LONG_LONG(u_arg[5], u_arg[6]));
+		printllval(tcp, "%#llx", 5);
 	}
 	return RVAL_HEX;
 }
@@ -372,17 +414,24 @@ struct tcb *tcp;
 
 static const struct xlat mremap_flags[] = {
 	{ MREMAP_MAYMOVE,	"MREMAP_MAYMOVE"	},
+#ifdef MREMAP_FIXED
+	{ MREMAP_FIXED,		"MREMAP_FIXED"		},
+#endif
 	{ 0,			NULL			}
 };
 
 int
-sys_mremap(tcp)
-struct tcb *tcp;
+sys_mremap(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%#lx, %lu, %lu, ", tcp->u_arg[0], tcp->u_arg[1],
 			tcp->u_arg[2]);
 		printflags(mremap_flags, tcp->u_arg[3], "MREMAP_???");
+#ifdef MREMAP_FIXED
+		if ((tcp->u_arg[3] & (MREMAP_MAYMOVE | MREMAP_FIXED)) ==
+		    (MREMAP_MAYMOVE | MREMAP_FIXED))
+			tprintf(", %#lx", tcp->u_arg[4]);
+#endif
 	}
 	return RVAL_HEX;
 }
@@ -566,8 +615,7 @@ struct tcb *tcp;
 
 #if defined(LINUX) && defined(__i386__)
 void
-print_ldt_entry (ldt_entry)
-struct modify_ldt_ldt_s *ldt_entry;
+print_ldt_entry(struct modify_ldt_ldt_s *ldt_entry)
 {
 	tprintf("base_addr:%#08lx, "
 		"limit:%d, "
@@ -577,7 +625,7 @@ struct modify_ldt_ldt_s *ldt_entry;
 		"limit_in_pages:%d, "
 		"seg_not_present:%d, "
 		"useable:%d}",
-		ldt_entry->base_addr,
+		(long) ldt_entry->base_addr,
 		ldt_entry->limit,
 		ldt_entry->seg_32bit,
 		ldt_entry->contents,
@@ -775,7 +823,7 @@ sys_mbind(tcp)
 struct tcb *tcp;
 {
 	if (entering(tcp)) {
-		tprintf("%lu, %lu, ", tcp->u_arg[0], tcp->u_arg[1]);
+		tprintf("%#lx, %lu, ", tcp->u_arg[0], tcp->u_arg[1]);
 		printxval(policies, tcp->u_arg[2], "MPOL_???");
 		get_nodes(tcp, tcp->u_arg[3], tcp->u_arg[4], 0);
 		tprintf(", ");

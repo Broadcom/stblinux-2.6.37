@@ -20,11 +20,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-libc_hidden_proto(__assert)
 
-void
-__aeabi_assert (const char *assertion, const char *file,
-		unsigned int line)
+void __aeabi_assert(const char *assertion, const char *file, unsigned int line);
+void __aeabi_assert(const char *assertion, const char *file, unsigned int line)
 {
   __assert (assertion, file, line, NULL);
 }

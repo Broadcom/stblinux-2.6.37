@@ -16,7 +16,6 @@
 
 #include "malloc.h"
 
-libc_hidden_proto(munmap)
 
 /* ------------------------- __malloc_trim -------------------------
    __malloc_trim is an inverse of sorts to __malloc_alloc.  It gives memory
@@ -282,7 +281,7 @@ void free(void* mem)
     if (mem == NULL)
 	return;
 
-    LOCK;
+    __MALLOC_LOCK;
     av = get_malloc_state();
     p = mem2chunk(mem);
     size = chunksize(p);
@@ -406,6 +405,6 @@ void free(void* mem)
 	av->mmapped_mem -= (size + offset);
 	munmap((char*)p - offset, size + offset);
     }
-    UNLOCK;
+    __MALLOC_UNLOCK;
 }
 

@@ -11,85 +11,66 @@ endif
 if ENABLE_LIBIPQ
 SUBDIRS         += libipq
 endif
+if HAVE_LIBNFNETLINK
+SUBDIRS         += utils
+endif
 lib_LTLIBRARIES =
 
 # libiptc
-lib_LTLIBRARIES           += libiptc/libiptc.la
-libiptc_libiptc_la_SOURCES = libiptc/libip4tc.c libiptc/libip6tc.c
-libiptc_libiptc_la_LDFLAGS = -version-info 0:0:0
+lib_LTLIBRARIES           += libiptc/libip4tc.la libiptc/libip6tc.la libiptc/libiptc.la
+libiptc_libiptc_la_SOURCES  =
+libiptc_libiptc_la_LIBADD   = libiptc/libip4tc.la libiptc/libip6tc.la
+libiptc_libiptc_la_LDFLAGS  = -version-info 0:0:0 ${libiptc_LDFLAGS2}
+libiptc_libip4tc_la_SOURCES = libiptc/libip4tc.c
+libiptc_libip4tc_la_LDFLAGS = -version-info 0:0:0
+libiptc_libip6tc_la_SOURCES = libiptc/libip6tc.c
+libiptc_libip6tc_la_LDFLAGS = -version-info 0:0:0 ${libiptc_LDFLAGS2}
 
 lib_LTLIBRARIES      += libxtables.la
 libxtables_la_SOURCES = xtables.c
 libxtables_la_LDFLAGS = -version-info ${libxtables_vcurrent}:0:${libxtables_vage}
+if ENABLE_SHARED
+libxtables_la_CFLAGS  = ${AM_CFLAGS}
 libxtables_la_LIBADD  = -ldl
+else
+libxtables_la_CFLAGS  = ${AM_CFLAGS} -DNO_SHARED_LIBS=1
+libxtables_la_LIBADD  =
+endif
 
-# iptables, dynamic
-iptables_SOURCES          = iptables-standalone.c iptables.c
-iptables_LDFLAGS          = -rdynamic
-iptables_LDADD            = -lm libiptc/libiptc.la extensions/libext4.a libxtables.la
-
-iptables_xml_LDADD        = libxtables.la
 iptables_multi_SOURCES    = iptables-multi.c iptables-save.c \
                             iptables-restore.c iptables-xml.c \
-                            iptables-standalone.c iptables.c
+                            iptables-standalone.c iptables.c xshared.c
 iptables_multi_CFLAGS     = ${AM_CFLAGS} -DIPTABLES_MULTI
-iptables_multi_LDFLAGS    = ${iptables_LDFLAGS}
-iptables_multi_LDADD      = ${iptables_LDADD}
-
-iptables_restore_SOURCES  = iptables-restore.c iptables.c
-iptables_restore_LDFLAGS  = ${iptables_LDFLAGS}
-iptables_restore_LDADD    = ${iptables_LDADD}
-
-iptables_save_SOURCES     = iptables-save.c iptables.c
-iptables_save_LDFLAGS     = ${iptables_LDFLAGS}
-iptables_save_LDADD       = ${iptables_LDADD}
-
-# iptables-multi, semi-static
-iptables_static_SOURCES   = ${iptables_multi_SOURCES} xtables.c
-iptables_static_CFLAGS    = ${iptables_multi_CFLAGS} -DNO_SHARED_LIBS=1
-iptables_static_LDADD     = -lm libiptc/libiptc.la extensions/libext4.a
-
-iptables_xml_SOURCES      = iptables-xml.c
-
-# ip6tables, dynamic
-ip6tables_SOURCES         = ip6tables-standalone.c ip6tables.c
-ip6tables_LDFLAGS         = -rdynamic
-ip6tables_LDADD           = -lm libiptc/libiptc.la extensions/libext6.a libxtables.la
+if ENABLE_STATIC
+iptables_multi_CFLAGS    += -DALL_INCLUSIVE
+endif
+iptables_multi_LDFLAGS    = -rdynamic
+iptables_multi_LDADD      = libiptc/libip4tc.la extensions/libext4.a libxtables.la -lm
 
 ip6tables_multi_SOURCES   = ip6tables-multi.c ip6tables-save.c \
                             ip6tables-restore.c ip6tables-standalone.c \
-                            ip6tables.c
+                            ip6tables.c xshared.c
 ip6tables_multi_CFLAGS    = ${AM_CFLAGS} -DIPTABLES_MULTI
-ip6tables_multi_LDFLAGS   = ${ip6tables_LDFLAGS}
-ip6tables_multi_LDADD     = ${ip6tables_LDADD}
+if ENABLE_STATIC
+ip6tables_multi_CFLAGS   += -DALL_INCLUSIVE
+endif
+ip6tables_multi_LDFLAGS   = -rdynamic
+ip6tables_multi_LDADD     = libiptc/libip6tc.la extensions/libext6.a libxtables.la -lm
 
-ip6tables_restore_SOURCES = ip6tables-restore.c ip6tables.c
-ip6tables_restore_LDFLAGS = ${ip6tables_LDFLAGS}
-ip6tables_restore_LDADD   = ${ip6tables_LDADD}
-
-ip6tables_save_SOURCES    = ip6tables-save.c ip6tables.c
-ip6tables_save_LDFLAGS    = ${ip6tables_LDFLAGS}
-ip6tables_save_LDADD      = ${ip6tables_LDADD}
-
-# iptables-multi, semi-static
-ip6tables_static_SOURCES    = ${ip6tables_multi_SOURCES} xtables.c
-ip6tables_static_CFLAGS     = ${ip6tables_multi_CFLAGS} -DNO_SHARED_LIBS=1
-ip6tables_static_LDADD      = -lm libiptc/libiptc.la extensions/libext6.a
-
-bin_PROGRAMS     = iptables-xml
 sbin_PROGRAMS    =
-noinst_PROGRAMS  =
 man_MANS         = iptables.8 iptables-restore.8 iptables-save.8 \
                    iptables-xml.8 ip6tables.8 ip6tables-restore.8 \
                    ip6tables-save.8
 CLEANFILES       = iptables.8 ip6tables.8
 
-if ENABLE_STATIC
-sbin_PROGRAMS += iptables-static ip6tables-static
+if ENABLE_IPV4
+sbin_PROGRAMS += iptables-multi
+v4_bin_links   = iptables-xml
+v4_sbin_links  = iptables iptables-restore iptables-save
 endif
-if ENABLE_SHARED
-sbin_PROGRAMS += iptables iptables-multi iptables-restore iptables-save \
-                 ip6tables ip6tables-multi ip6tables-restore ip6tables-save
+if ENABLE_IPV6
+sbin_PROGRAMS += ip6tables-multi
+v6_sbin_links  = ip6tables ip6tables-restore ip6tables-save
 endif
 
 iptables.8: ${srcdir}/iptables.8.in extensions/matches4.man extensions/targets4.man
@@ -111,7 +92,10 @@ tarball:
 config.status: extensions/GNUmakefile.in \
 	include/xtables.h.in include/iptables/internal.h.in
 
-# ldconfig may fail when we are not root (as is the case in build systems)
-# so add appropriate protection that it does not let `make` fail.
+# Using if..fi avoids an ugly "error (ignored)" message :)
 install-exec-hook:
-	-/sbin/ldconfig || :;
+	-if test -z "${DESTDIR}"; then /sbin/ldconfig; fi;
+	${INSTALL} -dm0755 "${DESTDIR}${bindir}";
+	for i in ${v4_bin_links}; do ${LN_S} -f "${sbindir}/iptables-multi" "${DESTDIR}${bindir}/$$i"; done;
+	for i in ${v4_sbin_links}; do ${LN_S} -f iptables-multi "${DESTDIR}${sbindir}/$$i"; done;
+	for i in ${v6_sbin_links}; do ${LN_S} -f ip6tables-multi "${DESTDIR}${sbindir}/$$i"; done;

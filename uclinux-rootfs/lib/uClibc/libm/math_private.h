@@ -9,11 +9,6 @@
  * ====================================================
  */
 
-/*
- * from: @(#)fdlibm.h 5.1 93/09/24
- * $Id: math_private.h,v 1.3 2004/02/09 07:10:38 andersen Exp $
- */
-
 #ifndef _MATH_PRIVATE_H_
 #define _MATH_PRIVATE_H_
 
@@ -35,13 +30,14 @@
    ints.  */
 
 /*
- * Math on arm is special:
+ * Math on arm is special (read: stupid):
  * For FPA, float words are always big-endian.
- * For VFP, floats words follow the memory system mode.
+ * For VFP, float words follow the memory system mode.
+ * For Maverick, float words are always little-endian.
  */
 
-#if (__BYTE_ORDER == __BIG_ENDIAN) || \
-    (!defined(__VFP_FP__) && (defined(__arm__) || defined(__thumb__)))
+#if !defined(__MAVERICK__) && ((__BYTE_ORDER == __BIG_ENDIAN) || \
+    (!defined(__VFP_FP__) && (defined(__arm__) || defined(__thumb__))))
 
 typedef union
 {
@@ -157,6 +153,7 @@ extern double __ieee754_sqrt (double) attribute_hidden;
 extern double __ieee754_acos (double) attribute_hidden;
 extern double __ieee754_acosh (double) attribute_hidden;
 extern double __ieee754_log (double) attribute_hidden;
+extern double __ieee754_log2 (double) attribute_hidden;
 extern double __ieee754_atanh (double) attribute_hidden;
 extern double __ieee754_asin (double) attribute_hidden;
 extern double __ieee754_atan2 (double,double) attribute_hidden;
@@ -165,9 +162,9 @@ extern double __ieee754_cosh (double) attribute_hidden;
 extern double __ieee754_fmod (double,double) attribute_hidden;
 extern double __ieee754_pow (double,double) attribute_hidden;
 extern double __ieee754_lgamma_r (double,int *) attribute_hidden;
-extern double __ieee754_gamma_r (double,int *) attribute_hidden;
+/*extern double __ieee754_gamma_r (double,int *) attribute_hidden;*/
 extern double __ieee754_lgamma (double) attribute_hidden;
-extern double __ieee754_gamma (double) attribute_hidden;
+/*extern double __ieee754_gamma (double) attribute_hidden;*/
 extern double __ieee754_log10 (double) attribute_hidden;
 extern double __ieee754_sinh (double) attribute_hidden;
 extern double __ieee754_hypot (double,double) attribute_hidden;
@@ -179,11 +176,7 @@ extern double __ieee754_jn (int,double) attribute_hidden;
 extern double __ieee754_yn (int,double) attribute_hidden;
 extern double __ieee754_remainder (double,double) attribute_hidden;
 extern int    __ieee754_rem_pio2 (double,double*) attribute_hidden;
-#if defined(_SCALB_INT)
-extern double __ieee754_scalb (double,int) attribute_hidden;
-#else
 extern double __ieee754_scalb (double,double) attribute_hidden;
-#endif
 
 /* fdlibm kernel function */
 #ifndef _IEEE_LIBM
@@ -193,5 +186,74 @@ extern double __kernel_sin (double,double,int) attribute_hidden;
 extern double __kernel_cos (double,double) attribute_hidden;
 extern double __kernel_tan (double,double,int) attribute_hidden;
 extern int    __kernel_rem_pio2 (double*,double*,int,int,int,const int*) attribute_hidden;
+
+/*
+ * math_opt_barrier(x): safely load x, even if it was manipulated
+ * by non-floationg point operations. This macro returns the value of x.
+ * This ensures compiler does not (ab)use its knowledge about x value
+ * and don't optimize future operations. Example:
+ * float x;
+ * SET_FLOAT_WORD(x, 0x80000001); // sets a bit pattern
+ * y = math_opt_barrier(x); // "compiler, do not cheat!"
+ * y = y * y; // compiler can't optimize, must use real multiply insn
+ *
+ * math_force_eval(x): force expression x to be evaluated.
+ * Useful if otherwise compiler may eliminate the expression
+ * as unused. This macro returns no value.
+ * Example: "void fn(float f) { f = f * f; }"
+ *   versus "void fn(float f) { f = f * f; math_force_eval(f); }"
+ *
+ * Currently, math_force_eval(x) stores x into
+ * a floating point register or memory *of the appropriate size*.
+ * There is no guarantee this will not change.
+ */
+#if defined(__i386__)
+#define math_opt_barrier(x) ({ \
+	__typeof(x) __x = (x); \
+	/* "t": load x into top-of-stack fpreg */ \
+	__asm__ ("" : "=t" (__x) : "0" (__x)); \
+	__x; \
+})
+#define math_force_eval(x) do {	\
+	__typeof(x) __x = (x); \
+	if (sizeof(__x) <= sizeof(double)) \
+		/* "m": store x into a memory location */ \
+		__asm__ __volatile__ ("" : : "m" (__x)); \
+	else /* long double */ \
+		/* "f": load x into (any) fpreg */ \
+		__asm__ __volatile__ ("" : : "f" (__x)); \
+} while (0)
+#endif
+
+#if defined(__x86_64__)
+#define math_opt_barrier(x) ({ \
+	__typeof(x) __x = (x); \
+	if (sizeof(__x) <= sizeof(double)) \
+		/* "x": load into XMM SSE register */ \
+		__asm__ ("" : "=x" (__x) : "0" (__x)); \
+	else /* long double */ \
+		/* "t": load x into top-of-stack fpreg */ \
+		__asm__ ("" : "=t" (__x) : "0" (__x)); \
+	__x; \
+})
+#define math_force_eval(x) do { \
+	__typeof(x) __x = (x); \
+	if (sizeof(__x) <= sizeof(double)) \
+		/* "x": load into XMM SSE register */ \
+		__asm__ __volatile__ ("" : : "x" (__x)); \
+	else /* long double */ \
+		/* "f": load x into (any) fpreg */ \
+		__asm__ __volatile__ ("" : : "f" (__x)); \
+} while (0)
+#endif
+
+/* Default implementations force store to a memory location */
+#ifndef math_opt_barrier
+#define math_opt_barrier(x) ({ __typeof(x) __x = (x); __asm__ ("" : "+m" (__x)); __x; })
+#endif
+#ifndef math_force_eval
+#define math_force_eval(x)  do { __typeof(x) __x = (x); __asm__ __volatile__ ("" : : "m" (__x)); } while (0)
+#endif
+
 
 #endif /* _MATH_PRIVATE_H_ */

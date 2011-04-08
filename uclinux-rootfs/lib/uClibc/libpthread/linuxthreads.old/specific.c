@@ -134,7 +134,7 @@ void * pthread_getspecific(pthread_key_t key)
 
 /* Call the destruction routines on all keys */
 
-void __pthread_destroy_specifics()
+void __pthread_destroy_specifics(void)
 {
     pthread_descr self = thread_self();
     int i, j, round, found_nonzero;
@@ -167,7 +167,7 @@ void __pthread_destroy_specifics()
     __pthread_unlock(THREAD_GETMEM(self, p_lock));
 }
 
-#if !(USE_TLS && HAVE___THREAD)
+#ifndef USE___THREAD
 
 /* Thread-specific data for libc. */
 

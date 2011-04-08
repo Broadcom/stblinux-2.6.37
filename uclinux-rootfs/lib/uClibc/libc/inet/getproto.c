@@ -1,280 +1,182 @@
+/* vi: set sw=4 ts=4: */
 /*
-** protocols.c                           /etc/protocols access functions
-**
-** This file is part of the NYS Library.
-**
-** The NYS Library is free software; you can redistribute it and/or
-** modify it under the terms of the GNU Library General Public License as
-** published by the Free Software Foundation; either version 2 of the
-** License, or (at your option) any later version.
-**
-** The NYS Library is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** Library General Public License for more details.
-** 
-** You should have received a copy of the GNU Library General Public
-** License along with the NYS Library; see the file COPYING.LIB.  If
-** not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-** Cambridge, MA 02139, USA.
-**
-**
-** Copyright (c) 1983 Regents of the University of California.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. All advertising materials mentioning features or use of this software
-**    must display the following acknowledgement:
-**	This product includes software developed by the University of
-**	California, Berkeley and its contributors.
-** 4. Neither the name of the University nor the names of its contributors
-**    may be used to endorse or promote products derived from this software
-**    without specific prior written permission.
-**
-** THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
+ * Copyright (C) 2010 Bernhard Reutner-Fischer <uclibc@uclibc.org>
+ *
+ * Licensed under LGPL v2.1 or later, see the file COPYING.LIB in this tarball.
+ */
+
+/* /etc/protocols
+#   protocol-name   number   [aliases ...]
+ip                  0        IP  # internet protocol, pseudo protocol number
+
+protocol-name: case sensitive friendly name of the IP protocol
+number: decimal protocol number
+aliases: case sensitive optional space or tab separated list of other names
 */
 
-#define __FORCE_GLIBC
 #include <features.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <errno.h>
+#include <unistd.h>
+#include "internal/parse_config.h"
 
-libc_hidden_proto(fopen)
-libc_hidden_proto(strcmp)
-libc_hidden_proto(strpbrk)
-libc_hidden_proto(atoi)
-libc_hidden_proto(rewind)
-libc_hidden_proto(fgets)
-libc_hidden_proto(fclose)
-libc_hidden_proto(abort)
+#include <bits/uClibc_mutex.h>
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP);
 
-#ifdef __UCLIBC_HAS_THREADS__
-# include <pthread.h>
-static pthread_mutex_t mylock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-#endif
-#define LOCK	__PTHREAD_MUTEX_LOCK(&mylock)
-#define UNLOCK	__PTHREAD_MUTEX_UNLOCK(&mylock)
+#define MINTOKENS	2
+#define	MAXALIASES	8 /* will probably never be more than one */
+#define MAXTOKENS	(MINTOKENS + MAXALIASES + 1)
+#define BUFSZ		(255) /* one line */
+#define SBUFSIZE	(BUFSZ + 1 + (sizeof(char *) * MAXTOKENS))
 
+static parser_t *protop = NULL;
+static struct protoent protoe;
+static char *protobuf = NULL;
+static smallint proto_stayopen;
 
-
-#define	MAXALIASES	35
-#define	SBUFSIZE	(BUFSIZ + 1 + (sizeof(char *) * MAXALIASES))
-
-static FILE *protof = NULL;
-static struct protoent proto;
-static char *static_aliases = NULL;
-static int proto_stayopen;
-
-static void __initbuf(void)
+void setprotoent(int stayopen)
 {
-    if (!static_aliases) {
-	static_aliases = malloc(SBUFSIZE);
-	if (!static_aliases)
-	    abort();
-    }
-}
-
-libc_hidden_proto(setprotoent)
-void setprotoent(int f)
-{
-    LOCK;
-    if (protof == NULL)
-	protof = fopen(_PATH_PROTOCOLS, "r" );
-    else
-	rewind(protof);
-    proto_stayopen |= f;
-    UNLOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
+	if (protop)
+		config_close(protop);
+	protop = config_open(_PATH_PROTOCOLS);
+	if (stayopen)
+		proto_stayopen = 1;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 libc_hidden_def(setprotoent)
 
-libc_hidden_proto(endprotoent)
 void endprotoent(void)
 {
-    LOCK;
-    if (protof) {
-	fclose(protof);
-	protof = NULL;
-    }
-    proto_stayopen = 0;
-    UNLOCK;
+	__UCLIBC_MUTEX_LOCK(mylock);
+	if (protop) {
+		config_close(protop);
+		protop = NULL;
+	}
+	proto_stayopen = 0;
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 }
 libc_hidden_def(endprotoent)
 
-libc_hidden_proto(getprotoent_r)
 int getprotoent_r(struct protoent *result_buf,
-		  char *buf, size_t buflen,
-		  struct protoent **result)
+				 char *buf, size_t buflen, struct protoent **result)
 {
-    char *p;
-    register char *cp, **q;
-    char **proto_aliases;
-    char *line;
+	char **tok = NULL;
+	const size_t aliaslen = sizeof(char *) * MAXTOKENS;
+	int ret = ERANGE;
 
-    *result = NULL;
+	*result = NULL;
+	if (buflen < aliaslen
+		|| (buflen - aliaslen) < BUFSZ + 1)
+		goto DONE_NOUNLOCK;
 
-    if (buflen < sizeof(*proto_aliases)*MAXALIASES) {
-	errno=ERANGE;
-	return errno;
-    }
-    LOCK;
-    proto_aliases=(char **)buf;
-    buf+=sizeof(*proto_aliases)*MAXALIASES;
-    buflen-=sizeof(*proto_aliases)*MAXALIASES;
-
-    if (buflen < BUFSIZ+1) {
-	UNLOCK;
-	errno=ERANGE;
-	return errno;
-    }
-    line=buf;
-    buf+=BUFSIZ+1;
-    buflen-=BUFSIZ+1;
-
-    if (protof == NULL && (protof = fopen(_PATH_PROTOCOLS, "r" )) == NULL) {
-	UNLOCK;
-	return errno;
-    }
-again:
-    if ((p = fgets(line, BUFSIZ, protof)) == NULL) {
-	UNLOCK;
-	return TRY_AGAIN;
-    }
-
-    if (*p == '#')
-	goto again;
-    cp = strpbrk(p, "#\n");
-    if (cp == NULL)
-	goto again;
-    *cp = '\0';
-    result_buf->p_name = p;
-    cp = strpbrk(p, " \t");
-    if (cp == NULL)
-	goto again;
-    *cp++ = '\0';
-    while (*cp == ' ' || *cp == '\t')
-	cp++;
-    p = strpbrk(cp, " \t");
-    if (p != NULL)
-	*p++ = '\0';
-    result_buf->p_proto = atoi(cp);
-    q = result_buf->p_aliases = proto_aliases;
-    if (p != NULL) {
-	cp = p;
-	while (cp && *cp) {
-	    if (*cp == ' ' || *cp == '\t') {
-		cp++;
-		continue;
-	    }
-	    if (q < &proto_aliases[MAXALIASES - 1])
-		*q++ = cp;
-	    cp = strpbrk(cp, " \t");
-	    if (cp != NULL)
-		*cp++ = '\0';
+	__UCLIBC_MUTEX_LOCK(mylock);
+	//tok = (char **) buf;
+	ret = ENOENT;
+	if (protop == NULL)
+		setprotoent(proto_stayopen);
+	if (protop == NULL)
+		goto DONE;
+	protop->data = buf;
+	protop->data_len = aliaslen;
+	protop->line_len = buflen - aliaslen;
+	/* <name>[[:space:]]<protonumber>[[:space:]][<aliases>] */
+	if (!config_read(protop, &tok, MAXTOKENS - 1, MINTOKENS, "# \t/", PARSE_NORMAL)) {
+		goto DONE;
 	}
-    }
-    *q = NULL;
-    *result=result_buf;
-    UNLOCK;
-    return 0;
+	result_buf->p_name = *(tok++);
+	result_buf->p_proto = atoi(*(tok++));
+	result_buf->p_aliases = tok;
+	*result = result_buf;
+	ret = 0;
+ DONE:
+	__UCLIBC_MUTEX_UNLOCK(mylock);
+ DONE_NOUNLOCK:
+	errno = ret;
+	return errno;
 }
 libc_hidden_def(getprotoent_r)
 
-struct protoent * getprotoent(void)
+static void __initbuf(void)
 {
-    struct protoent *result;
-
-    __initbuf();
-    getprotoent_r(&proto, static_aliases, SBUFSIZE, &result);
-    return result;
+	if (!protobuf) {
+		protobuf = malloc(SBUFSIZE);
+		if (!protobuf)
+			abort();
+	}
 }
 
-
-libc_hidden_proto(getprotobyname_r)
-int getprotobyname_r(const char *name,
-		    struct protoent *result_buf,
-		    char *buf, size_t buflen,
-		    struct protoent **result)
+struct protoent *getprotoent(void)
 {
-    register char **cp;
-    int ret;
+	struct protoent *result;
 
-    LOCK;
-    setprotoent(proto_stayopen);
-    while (!(ret=getprotoent_r(result_buf, buf, buflen, result))) {
-	if (strcmp(result_buf->p_name, name) == 0)
-	    break;
-	for (cp = result_buf->p_aliases; *cp != 0; cp++)
-	    if (strcmp(*cp, name) == 0)
-		goto found;
-    }
-found:
-    if (!proto_stayopen)
-	endprotoent();
-    UNLOCK;
-    return *result?0:ret;
+	__initbuf();
+	getprotoent_r(&protoe, protobuf, SBUFSIZE, &result);
+	return result;
+}
+
+int getprotobyname_r(const char *name,
+					struct protoent *result_buf, char *buf, size_t buflen,
+					struct protoent **result)
+{
+	register char **cp;
+	int ret;
+
+	__UCLIBC_MUTEX_LOCK(mylock);
+	setprotoent(proto_stayopen);
+	while (!(ret = getprotoent_r(result_buf, buf, buflen, result))) {
+		if (strcmp(name, result_buf->p_name) == 0)
+			break;
+		for (cp = result_buf->p_aliases; *cp; cp++)
+			if (strcmp(name, *cp) == 0)
+				goto gotname;
+	}
+ gotname:
+	if (!proto_stayopen)
+		endprotoent();
+	__UCLIBC_MUTEX_UNLOCK(mylock);
+	return *result ? 0 : ret;
 }
 libc_hidden_def(getprotobyname_r)
 
-
-struct protoent * getprotobyname(const char *name)
+struct protoent *getprotobyname(const char *name)
 {
-    struct protoent *result;
+	struct protoent *result;
 
-    __initbuf();
-    getprotobyname_r(name, &proto, static_aliases, SBUFSIZE, &result);
-    return result;
+	__initbuf();
+	getprotobyname_r(name, &protoe, protobuf, SBUFSIZE, &result);
+	return result;
 }
 
-
-libc_hidden_proto(getprotobynumber_r)
-int getprotobynumber_r (int proto_num,
-			struct protoent *result_buf,
-			char *buf, size_t buflen,
-			struct protoent **result)
+int getprotobynumber_r(int proto,
+					struct protoent *result_buf, char *buf,
+					size_t buflen, struct protoent **result)
 {
-    int ret;
+	int ret;
 
-    LOCK;
-    setprotoent(proto_stayopen);
-    while (!(ret=getprotoent_r(result_buf, buf, buflen, result)))
-	if (result_buf->p_proto == proto_num)
-	    break;
-    if (!proto_stayopen)
-	endprotoent();
-    UNLOCK;
-    return *result?0:ret;
+	__UCLIBC_MUTEX_LOCK(mylock);
+	setprotoent(proto_stayopen);
+	while (!(ret = getprotoent_r(result_buf, buf, buflen, result))) {
+		if (proto == result_buf->p_proto)
+			break;
+	}
+	if (!proto_stayopen)
+		endprotoent();
+	__UCLIBC_MUTEX_UNLOCK(mylock);
+	return *result ? 0 : ret;
 }
 libc_hidden_def(getprotobynumber_r)
 
-struct protoent * getprotobynumber(int proto_num)
+struct protoent *getprotobynumber(int proto)
 {
-    struct protoent *result;
+	struct protoent *result;
 
-    __initbuf();
-    getprotobynumber_r(proto_num, &proto, static_aliases,
-                       SBUFSIZE, &result);
-    return result;
+	__initbuf();
+	getprotobynumber_r(proto, &protoe, protobuf, SBUFSIZE, &result);
+	return result;
 }
 

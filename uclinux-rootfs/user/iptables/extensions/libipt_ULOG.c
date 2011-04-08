@@ -9,6 +9,7 @@
  * 
  * libipt_ULOG.c,v 1.7 2001/01/30 11:55:02 laforge Exp
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -42,11 +43,11 @@ static void ULOG_help(void)
 }
 
 static const struct option ULOG_opts[] = {
-	{"ulog-nlgroup", 1, NULL, '!'},
-	{"ulog-prefix", 1, NULL, '#'},
-	{"ulog-cprange", 1, NULL, 'A'},
-	{"ulog-qthreshold", 1, NULL, 'B'},
-	{ .name = NULL }
+	{.name = "ulog-nlgroup",    .has_arg = true, .val = '!'},
+	{.name = "ulog-prefix",     .has_arg = true, .val = '#'},
+	{.name = "ulog-cprange",    .has_arg = true, .val = 'A'},
+	{.name = "ulog-qthreshold", .has_arg = true, .val = 'B'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void ULOG_init(struct xt_entry_target *t)
@@ -76,7 +77,7 @@ static int ULOG_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --ulog-nlgroup twice");
 
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --ulog-nlgroup");
 		group_d = atoi(optarg);
@@ -94,7 +95,7 @@ static int ULOG_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --ulog-prefix twice");
 
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --ulog-prefix");
 

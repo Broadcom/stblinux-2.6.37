@@ -8,7 +8,7 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <stdarg.h>
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
 #include <sysdep-cancel.h>	/* Must come before <fcntl.h>.  */
@@ -17,11 +17,10 @@
 #include <bits/wordsize.h>
 
 extern __typeof(fcntl) __libc_fcntl;
-libc_hidden_proto(__libc_fcntl) 
+libc_hidden_proto(__libc_fcntl)
 
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
 int __fcntl_nocancel (int fd, int cmd, ...)
-{   
+{
 	va_list ap;
 	void *arg;
 
@@ -41,7 +40,6 @@ int __fcntl_nocancel (int fd, int cmd, ...)
 # endif
 	return INLINE_SYSCALL (fcntl, 3, fd, cmd, arg);
 }
-#endif
 
 int __libc_fcntl (int fd, int cmd, ...)
 {

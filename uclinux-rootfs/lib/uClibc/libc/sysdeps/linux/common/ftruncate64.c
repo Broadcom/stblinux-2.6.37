@@ -5,7 +5,7 @@
  *
  * ftruncate64 syscall.  Copes with 64 bit and 32 bit machines
  * and on 32 bit machines this sends things into the kernel as
- * two 32-bit arguments (high and low 32 bits of length) that 
+ * two 32-bit arguments (high and low 32 bits of length) that
  * are ordered based on endianess.  It turns out endian.h has
  * just the macro we need to order things, __LONG_LONG_PAIR.
  */
@@ -21,28 +21,15 @@
 # include <sys/types.h>
 # include <sys/syscall.h>
 
-libc_hidden_proto(ftruncate64)
 
 # ifdef __NR_ftruncate64
 
 #  if __WORDSIZE == 64
 
 /* For a 64 bit machine, life is simple... */
-_syscall2(int, ftruncate64, int, fd, __off64_t, length);
+_syscall2(int, ftruncate64, int, fd, __off64_t, length)
 
 #  elif __WORDSIZE == 32
-
-#   ifndef INLINE_SYSCALL
-#    define INLINE_SYSCALL(name, nr, args...) __syscall_ftruncate64 (args)
-#    define __NR___syscall_ftruncate64 __NR_ftruncate64
-#    if defined(__UCLIBC_TRUNCATE64_HAS_4_ARGS__)
-static inline _syscall4(int, __syscall_ftruncate64, int, fd, uint32_t, pad,
-	unsigned long, high_length, unsigned long, low_length);
-#    else
-static inline _syscall3(int, __syscall_ftruncate64, int, fd,
-	unsigned long, high_length, unsigned long, low_length);
-#    endif
-#   endif
 
 /* The exported ftruncate64 function.  */
 int ftruncate64 (int fd, __off64_t length)
@@ -64,7 +51,6 @@ int ftruncate64 (int fd, __off64_t length)
 
 # else  /* __NR_ftruncate64 */
 
-libc_hidden_proto(ftruncate)
 
 int ftruncate64 (int fd, __off64_t length)
 {

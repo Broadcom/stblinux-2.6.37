@@ -1,4 +1,3 @@
-/* @(#)e_acosh.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -9,10 +8,6 @@
  * is preserved.
  * ====================================================
  */
-
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: e_acosh.c,v 1.9 1995/05/12 04:57:18 jtc Exp $";
-#endif
 
 /* __ieee754_acosh(x)
  * Method :
@@ -31,23 +26,11 @@ static char rcsid[] = "$NetBSD: e_acosh.c,v 1.9 1995/05/12 04:57:18 jtc Exp $";
 #include "math.h"
 #include "math_private.h"
 
-libm_hidden_proto(log1p)
-libm_hidden_proto(sqrt)
-
-#ifdef __STDC__
 static const double
-#else
-static double
-#endif
 one	= 1.0,
 ln2	= 6.93147180559945286227e-01;  /* 0x3FE62E42, 0xFEFA39EF */
 
-#ifdef __STDC__
-	double attribute_hidden __ieee754_acosh(double x)
-#else
-	double attribute_hidden __ieee754_acosh(x)
-	double x;
-#endif
+double attribute_hidden __ieee754_acosh(double x)
 {
 	double t;
 	int32_t hx;
@@ -70,3 +53,21 @@ ln2	= 6.93147180559945286227e-01;  /* 0x3FE62E42, 0xFEFA39EF */
 	    return log1p(t+sqrt(2.0*t+t*t));
 	}
 }
+
+/*
+ * wrapper acosh(x)
+ */
+#ifndef _IEEE_LIBM
+double acosh(double x)
+{
+	double z = __ieee754_acosh(x);
+	if (_LIB_VERSION == _IEEE_ || isnan(x))
+		return z;
+	if (x < 1.0)
+		return __kernel_standard(x, x, 29); /* acosh(x<1) */
+	return z;
+}
+#else
+strong_alias(__ieee754_acosh, acosh)
+#endif
+libm_hidden_def(acosh)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2003, 2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -23,9 +23,10 @@
 
 
 int
-__pthread_setspecific (key, value)
-     pthread_key_t key;
-     const void *value;
+attribute_protected
+__pthread_setspecific (
+     pthread_key_t key,
+     const void *value)
 {
   struct pthread *self;
   unsigned int idx1st;
@@ -52,8 +53,8 @@ __pthread_setspecific (key, value)
     }
   else
     {
-      if (KEY_UNUSED ((seq = __pthread_keys[key].seq))
-	  || key >= PTHREAD_KEYS_MAX)
+      if (key >= PTHREAD_KEYS_MAX
+	  || KEY_UNUSED ((seq = __pthread_keys[key].seq)))
 	/* Not valid.  */
 	return EINVAL;
 

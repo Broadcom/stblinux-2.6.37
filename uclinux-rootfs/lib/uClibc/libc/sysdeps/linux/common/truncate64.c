@@ -5,7 +5,7 @@
  */
 /* truncate64 syscall.  Copes with 64 bit and 32 bit machines
  * and on 32 bit machines this sends things into the kernel as
- * two 32-bit arguments (high and low 32 bits of length) that 
+ * two 32-bit arguments (high and low 32 bits of length) that
  * are ordered based on endianess.  It turns out endian.h has
  * just the macro we need to order things, __LONG_LONG_PAIR.
  */
@@ -25,46 +25,32 @@
 #if __WORDSIZE == 64
 
 /* For a 64 bit machine, life is simple... */
-_syscall2(int, truncate64, const char *, path, __off64_t, length);
+_syscall2(int, truncate64, const char *, path, __off64_t, length)
 
 #elif __WORDSIZE == 32
 
-#ifndef INLINE_SYSCALL
-#define INLINE_SYSCALL(name, nr, args...) __syscall_truncate64 (args)
-#define __NR___syscall_truncate64 __NR_truncate64
-#if defined(__UCLIBC_TRUNCATE64_HAS_4_ARGS__)
-static inline _syscall4(int, __syscall_truncate64, const char *, path,
-	uint32_t, pad, unsigned long, high_length, unsigned long, low_length);
-#else
-static inline _syscall3(int, __syscall_truncate64, const char *, path,
-	unsigned long, high_length, unsigned long, low_length);
-#endif
-#endif
-
-
 /* The exported truncate64 function.  */
-int truncate64 (const char * path, __off64_t length)
+int truncate64(const char * path, __off64_t length)
 {
-    uint32_t low = length & 0xffffffff;
-    uint32_t high = length >> 32;
+	uint32_t low = length & 0xffffffff;
+	uint32_t high = length >> 32;
 #if defined(__UCLIBC_TRUNCATE64_HAS_4_ARGS__)
-    return INLINE_SYSCALL(truncate64, 4, path, 0,
-	    __LONG_LONG_PAIR (high, low));
+	return INLINE_SYSCALL(truncate64, 4, path, 0,
+			__LONG_LONG_PAIR(high, low));
 #else
-    return INLINE_SYSCALL(truncate64, 3, path,
-	    __LONG_LONG_PAIR (high, low));
+	return INLINE_SYSCALL(truncate64, 3, path,
+			__LONG_LONG_PAIR(high, low));
 #endif
 }
 
 #else /* __WORDSIZE */
-#error Your machine is not 64 bit or 32 bit, I am dazed and confused.
+#error Your machine is not 64 bit nor 32 bit, I am dazed and confused.
 #endif /* __WORDSIZE */
 
 #else  /* __NR_truncate64 */
 
-libc_hidden_proto(truncate)
 
-int truncate64 (const char * path, __off64_t length)
+int truncate64(const char * path, __off64_t length)
 {
 	__off_t x = (__off_t) length;
 

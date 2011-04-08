@@ -31,12 +31,14 @@ extern void __rpc_thread_destroy(void);
 
 #ifdef _STACK_GROWS_DOWN
 # define FRAME_LEFT(frame, other) ((char *) frame >= (char *) other)
-#elif _STACK_GROWS_UP
+#elif defined _STACK_GROWS_UP
 # define FRAME_LEFT(frame, other) ((char *) frame <= (char *) other)
 #else
 # error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
 #endif
 
+libpthread_hidden_proto(pthread_setcancelstate)
+libpthread_hidden_proto(pthread_setcanceltype)
 
 int pthread_setcancelstate(int state, int * oldstate)
 {
@@ -51,6 +53,7 @@ int pthread_setcancelstate(int state, int * oldstate)
     __pthread_do_exit(PTHREAD_CANCELED, CURRENT_STACK_FRAME);
   return 0;
 }
+libpthread_hidden_def(pthread_setcancelstate)
 
 int pthread_setcanceltype(int type, int * oldtype)
 {
@@ -65,6 +68,7 @@ int pthread_setcanceltype(int type, int * oldtype)
     __pthread_do_exit(PTHREAD_CANCELED, CURRENT_STACK_FRAME);
   return 0;
 }
+libpthread_hidden_def(pthread_setcanceltype)
 
 int pthread_cancel(pthread_t thread)
 {
@@ -97,7 +101,7 @@ int pthread_cancel(pthread_t thread)
   /* If the thread has registered an extrication interface, then
      invoke the interface. If it returns 1, then we succeeded in
      dequeuing the thread from whatever waiting object it was enqueued
-     with. In that case, it is our responsibility to wake it up. 
+     with. In that case, it is our responsibility to wake it up.
      And also to set the p_woken_by_cancel flag so the woken thread
      can tell that it was woken by cancellation. */
 
@@ -118,7 +122,7 @@ int pthread_cancel(pthread_t thread)
 
   if (dorestart)
     restart(th);
-  else 
+  else
     kill(pid, __pthread_sig_cancel);
 
   return 0;
@@ -165,6 +169,7 @@ void _pthread_cleanup_push_defer(struct _pthread_cleanup_buffer * buffer,
   THREAD_SETMEM(self, p_canceltype, PTHREAD_CANCEL_DEFERRED);
   THREAD_SETMEM(self, p_cleanup, buffer);
 }
+strong_alias(_pthread_cleanup_push_defer,__pthread_cleanup_push_defer)
 
 void _pthread_cleanup_pop_restore(struct _pthread_cleanup_buffer * buffer,
 				  int execute)
@@ -178,6 +183,8 @@ void _pthread_cleanup_pop_restore(struct _pthread_cleanup_buffer * buffer,
       THREAD_GETMEM(self, p_canceltype) == PTHREAD_CANCEL_ASYNCHRONOUS)
     __pthread_do_exit(PTHREAD_CANCELED, CURRENT_STACK_FRAME);
 }
+strong_alias(_pthread_cleanup_pop_restore,__pthread_cleanup_pop_restore)
+
 
 void __pthread_perform_cleanup(char *currentframe)
 {
@@ -186,10 +193,10 @@ void __pthread_perform_cleanup(char *currentframe)
 
   for (c = THREAD_GETMEM(self, p_cleanup); c != NULL; c = c->__prev)
     {
-#if _STACK_GROWS_DOWN
+#ifdef _STACK_GROWS_DOWN
       if ((char *) c <= currentframe)
 	break;
-#elif _STACK_GROWS_UP
+#elif defined _STACK_GROWS_UP
       if ((char *) c >= currentframe)
 	break;
 #else
@@ -208,7 +215,7 @@ void __pthread_perform_cleanup(char *currentframe)
 #ifndef __PIC__
 /* We need a hook to force the cancelation wrappers to be linked in when
    static libpthread is used.  */
-extern const int __pthread_provide_wrappers;
-static const int * const __pthread_require_wrappers =
+extern const char __pthread_provide_wrappers;
+static const char *const __pthread_require_wrappers =
   &__pthread_provide_wrappers;
 #endif

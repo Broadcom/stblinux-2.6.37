@@ -1,6 +1,6 @@
 /* vi: set sw=4 ts=4: */
 /*
- * Copyright (C) 2000-2005 by Erik Andersen <andersen@codepoet.org>
+ * Copyright (C) 2000-2006 by Erik Andersen <andersen@codepoet.org>
  *
  * GNU Lesser General Public License version 2.1 or later.
  */
@@ -25,17 +25,22 @@ struct dyn_elf {
   struct dyn_elf * prev;
 };
 
+struct symbol_ref {
+  const ElfW(Sym) *sym;
+  struct elf_resolve *tpnt;
+};
+
 struct elf_resolve {
-  /* These entries must be in this order to be compatible with the interface
-   * used by gdb to obtain the list of symbols. */
-  ElfW(Addr) loadaddr;		/* Base address shared object is loaded at.  */
+  /* These entries must be in this order to be compatible with the interface used
+     by gdb to obtain the list of symbols. */
+  DL_LOADADDR_TYPE loadaddr;	/* Base address shared object is loaded at.  */
   char *libname;		/* Absolute file name object was found in.  */
   ElfW(Dyn) *dynamic_addr;	/* Dynamic section of the shared object.  */
   struct elf_resolve * next;
   struct elf_resolve * prev;
   /* Nothing after this address is used by gdb. */
 
-#if USE_TLS
+#if defined(USE_TLS) && USE_TLS
   /* Thread-local storage related info.  */
 
   /* Start of the initialization image.  */
@@ -59,20 +64,45 @@ struct elf_resolve {
   unsigned int l_need_tls_init:1;
 #endif
 
+  ElfW(Addr) mapaddr;
   enum {elf_lib, elf_executable,program_interpreter, loaded_file} libtype;
   struct dyn_elf * symbol_scope;
   unsigned short usage_count;
   unsigned short int init_flag;
   unsigned long rtld_flags; /* RTLD_GLOBAL, RTLD_NOW etc. */
   Elf_Symndx nbucket;
+
+#ifdef __LDSO_GNU_HASH_SUPPORT__
+  /* Data needed to support GNU hash style */
+  Elf32_Word l_gnu_bitmask_idxbits;
+  Elf32_Word l_gnu_shift;
+  const ElfW(Addr) *l_gnu_bitmask;
+
+  union
+  {
+    const Elf32_Word *l_gnu_chain_zero;
+    const Elf_Symndx *elf_buckets;
+  };
+#else
   Elf_Symndx *elf_buckets;
+#endif
+
   struct init_fini_list *init_fini;
   struct init_fini_list *rtld_local; /* keep tack of RTLD_LOCAL libs in same group */
   /*
    * These are only used with ELF style shared libraries
    */
   Elf_Symndx nchain;
+
+#ifdef __LDSO_GNU_HASH_SUPPORT__
+  union
+  {
+    const Elf32_Word *l_gnu_buckets;
+    const Elf_Symndx *chains;
+  };
+#else
   Elf_Symndx *chains;
+#endif
   unsigned long dynamic_info[DYNAMIC_SIZE];
 
   unsigned long n_phent;
@@ -89,6 +119,13 @@ struct elf_resolve {
    * we don't have to calculate it every time, which requires a divide */
   unsigned long data_words;
 #endif
+
+#ifdef __FDPIC__
+  /* Every loaded module holds a hashtable of function descriptors of
+     functions defined in it, such that it's easy to release the
+     memory when the module is dlclose()d.  */
+  struct funcdesc_ht *funcdesc_ht;
+#endif
 };
 
 #define RELOCS_DONE	    0x000001
@@ -99,30 +136,27 @@ struct elf_resolve {
 
 extern struct dyn_elf     * _dl_symbol_tables;
 extern struct elf_resolve * _dl_loaded_modules;
-extern struct dyn_elf 	  * _dl_handles;
+extern struct dyn_elf     * _dl_handles;
 
-extern struct elf_resolve * _dl_add_elf_hash_table(const char * libname, 
-	char * loadaddr, unsigned long * dynamic_info, 
+extern struct elf_resolve * _dl_add_elf_hash_table(const char * libname,
+	DL_LOADADDR_TYPE loadaddr, unsigned long * dynamic_info,
 	unsigned long dynamic_addr, unsigned long dynamic_size);
 
-extern char * _dl_find_hash(const char * name, struct dyn_elf * rpnt1, 
-			    struct elf_resolve *mytpnt, int type_class);
-
-extern char * _dl_find_hash2(const char * name, struct dyn_elf * rpnt1, 
-			    struct elf_resolve *mytpnt, int type_class, ElfW(Sym) **sym_tls, struct elf_resolve **tpnt_tls);
+extern char *_dl_find_hash(const char *name, struct dyn_elf *rpnt,
+		struct elf_resolve *mytpnt, int type_class,
+		struct symbol_ref *symbol);
 
 extern int _dl_linux_dynamic_link(void);
 
 extern char * _dl_library_path;
 extern char * _dl_not_lazy;
 
-static inline int _dl_symbol(char * name)
+static __inline__ int _dl_symbol(char * name)
 {
-  if(name[0] != '_' || name[1] != 'd' || name[2] != 'l' || name[3] != '_')
+  if (name[0] != '_' || name[1] != 'd' || name[2] != 'l' || name[3] != '_')
     return 0;
   return 1;
 }
-
 
 #define LD_ERROR_NOFILE 1
 #define LD_ERROR_NOZERO 2
@@ -136,8 +170,4 @@ static inline int _dl_symbol(char * name)
 #define LD_BAD_HANDLE 10
 #define LD_NO_SYMBOL 11
 
-
-
 #endif /* _LD_HASH_H_ */
-
-

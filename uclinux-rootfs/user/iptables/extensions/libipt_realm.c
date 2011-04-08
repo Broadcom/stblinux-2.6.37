@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add realm matching support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -23,8 +24,8 @@ static void realm_help(void)
 }
 
 static const struct option realm_opts[] = {
-	{ "realm", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "realm", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 struct realmname { 
@@ -35,10 +36,9 @@ struct realmname {
 };
 
 /* array of realms from /etc/iproute2/rt_realms */
-static struct realmname *realms = NULL;
+static struct realmname *realms;
 /* 1 if loading failed */
-static int rdberr = 0;
-
+static int rdberr;
 
 static void load_realms(void)
 {
@@ -86,14 +86,14 @@ static void load_realms(void)
 			continue;
 
 		/* found valid data */
-		newnm = (struct realmname*)malloc(sizeof(struct realmname));
+		newnm = malloc(sizeof(struct realmname));
 		if (newnm == NULL) {
 			perror("libipt_realm: malloc failed");
 			exit(1);
 		}
 		newnm->id = id;
 		newnm->len = nxt - cur;
-		newnm->name = (char*)malloc(newnm->len + 1);
+		newnm->name = malloc(newnm->len + 1);
 		if (newnm->name == NULL) {
 			perror("libipt_realm: malloc failed");
 			exit(1);
@@ -157,8 +157,8 @@ static int realm_parse(int c, char **argv, int invert, unsigned int *flags,
 	switch (c) {
 		char *end;
 	case '1':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
-		end = optarg = argv[optind-1];
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		end = optarg = optarg;
 		realminfo->id = strtoul(optarg, &end, 0);
 		if (end != optarg && (*end == '/' || *end == '\0')) {
 			if (*end == '/')
@@ -207,7 +207,7 @@ print_realm(unsigned long id, unsigned long mask, int numeric)
 static void realm_print(const void *ip, const struct xt_entry_match *match,
                         int numeric)
 {
-	struct ipt_realm_info *ri = (struct ipt_realm_info *) match->data;
+	const struct ipt_realm_info *ri = (const void *)match->data;
 
 	if (ri->invert)
 		printf("! ");
@@ -218,7 +218,7 @@ static void realm_print(const void *ip, const struct xt_entry_match *match,
 
 static void realm_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct ipt_realm_info *ri = (struct ipt_realm_info *) match->data;
+	const struct ipt_realm_info *ri = (const void *)match->data;
 
 	if (ri->invert)
 		printf("! ");

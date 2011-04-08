@@ -79,7 +79,7 @@ static int sift_states_iter_mb (const re_match_context_t *mctx,
 				re_sift_context_t *sctx,
 				int node_idx, int str_idx, int max_str_idx)
      internal_function;
-#endif /* RE_ENABLE_I18N */
+#endif
 static reg_errcode_t sift_states_backward (const re_match_context_t *mctx,
 					   re_sift_context_t *sctx)
      internal_function;
@@ -144,7 +144,7 @@ static re_dfastate_t *transit_state_sb (reg_errcode_t *err,
 static reg_errcode_t transit_state_mb (re_match_context_t *mctx,
 				       re_dfastate_t *pstate)
      internal_function;
-#endif /* RE_ENABLE_I18N */
+#endif
 static reg_errcode_t transit_state_bkref (re_match_context_t *mctx,
 					  const re_node_set *nodes)
      internal_function;
@@ -185,12 +185,7 @@ static int build_trtable (const re_dfa_t *dfa,
 static int check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
 				    const re_string_t *input, int idx)
      internal_function;
-# ifdef _LIBC
-static unsigned int find_collation_sequence_value (const unsigned char *mbs,
-						   size_t name_len)
-     internal_function;
-# endif /* _LIBC */
-#endif /* RE_ENABLE_I18N */
+#endif
 static int group_nodes_into_DFAstates (const re_dfa_t *dfa,
 				       const re_dfastate_t *state,
 				       re_node_set *states_node,
@@ -200,7 +195,7 @@ static int check_node_accept (const re_match_context_t *mctx,
      internal_function;
 static reg_errcode_t extend_buffers (re_match_context_t *mctx)
      internal_function;
-
+
 /* Entry point for POSIX code.  */
 
 /* regexec searches for a given pattern, specified by PREG, in the
@@ -218,16 +213,12 @@ static reg_errcode_t extend_buffers (re_match_context_t *mctx)
    We return 0 if we find a match and REG_NOMATCH if not.  */
 
 int
-regexec (preg, string, nmatch, pmatch, eflags)
-    const regex_t *__restrict preg;
-    const char *__restrict string;
-    size_t nmatch;
-    regmatch_t pmatch[];
-    int eflags;
+regexec (const regex_t *__restrict preg, const char *__restrict string,
+	 size_t nmatch, regmatch_t pmatch[], int eflags)
 {
   reg_errcode_t err;
   int start, length;
-#ifndef __UCLIBC__ /* libc_lock_lock does not exist */
+#ifdef __UCLIBC_HAS_THREADS__
   re_dfa_t *dfa = (re_dfa_t *) preg->buffer;
 #endif
 
@@ -255,28 +246,7 @@ regexec (preg, string, nmatch, pmatch, eflags)
   __libc_lock_unlock (dfa->lock);
   return err != REG_NOERROR;
 }
-
-#ifdef _LIBC
-# include <shlib-compat.h>
-versioned_symbol (libc, __regexec, regexec, GLIBC_2_3_4);
-
-# if SHLIB_COMPAT (libc, GLIBC_2_0, GLIBC_2_3_4)
-__typeof__ (__regexec) __compat_regexec;
-
-int
-attribute_compat_text_section
-__compat_regexec (const regex_t *__restrict preg,
-		  const char *__restrict string, size_t nmatch,
-		  regmatch_t pmatch[], int eflags)
-{
-  return regexec (preg, string, nmatch, pmatch,
-		  eflags & (REG_NOTBOL | REG_NOTEOL));
-}
-compat_symbol (libc, __compat_regexec, regexec, GLIBC_2_0);
-# endif
-#elif defined __UCLIBC__
-strong_alias(__regexec,regexec)
-#endif
+libc_hidden_def(regexec)
 
 /* Entry points for GNU code.  */
 
@@ -308,66 +278,43 @@ strong_alias(__regexec,regexec)
    match was found and -2 indicates an internal error.  */
 
 int
-re_match (bufp, string, length, start, regs)
-    struct re_pattern_buffer *bufp;
-    const char *string;
-    int length, start;
-    struct re_registers *regs;
+re_match (struct re_pattern_buffer *bufp, const char *string, int length,
+		  int start, struct re_registers *regs)
 {
   return re_search_stub (bufp, string, length, start, 0, length, regs, 1);
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_match, re_match)
-#endif
 
 int
-re_search (bufp, string, length, start, range, regs)
-    struct re_pattern_buffer *bufp;
-    const char *string;
-    int length, start, range;
-    struct re_registers *regs;
+re_search (struct re_pattern_buffer *bufp, const char *string, int length,
+		   int start, int range, struct re_registers *regs)
 {
   return re_search_stub (bufp, string, length, start, range, length, regs, 0);
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_search, re_search)
-#endif
+libc_hidden_def(re_search)
 
 int
-re_match_2 (bufp, string1, length1, string2, length2, start, regs, stop)
-    struct re_pattern_buffer *bufp;
-    const char *string1, *string2;
-    int length1, length2, start, stop;
-    struct re_registers *regs;
+re_match_2 (struct re_pattern_buffer *bufp, const char *string1, int length1,
+		   const char *string2, int length2, int start,
+		   struct re_registers *regs, int stop)
 {
   return re_search_2_stub (bufp, string1, length1, string2, length2,
 			   start, 0, regs, stop, 1);
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_match_2, re_match_2)
-#endif
 
 int
-re_search_2 (bufp, string1, length1, string2, length2, start, range, regs, stop)
-    struct re_pattern_buffer *bufp;
-    const char *string1, *string2;
-    int length1, length2, start, range, stop;
-    struct re_registers *regs;
+re_search_2 (struct re_pattern_buffer *bufp, const char *string1, int lenght1,
+			 const char *string2, int length2, int start, int range,
+			 struct re_registers *regs,  int stop)
 {
-  return re_search_2_stub (bufp, string1, length1, string2, length2,
+  return re_search_2_stub (bufp, string1, lenght1, string2, length2,
 			   start, range, regs, stop, 0);
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_search_2, re_search_2)
-#endif
+libc_hidden_def(re_search_2)
 
-static int
-re_search_2_stub (bufp, string1, length1, string2, length2, start, range, regs,
-		  stop, ret_len)
-    struct re_pattern_buffer *bufp;
-    const char *string1, *string2;
-    int length1, length2, start, range, stop, ret_len;
-    struct re_registers *regs;
+static int internal_function
+re_search_2_stub (struct re_pattern_buffer *bufp, const char *string1,
+				  int length1, const char *string2, int length2, int start,
+				  int range, struct re_registers *regs, int stop, int ret_len)
 {
   const char *str;
   int rval;
@@ -385,12 +332,8 @@ re_search_2_stub (bufp, string1, length1, string2, length2, start, range, regs,
 
 	if (BE (s == NULL, 0))
 	  return -2;
-#if (defined _LIBC || defined __UCLIBC__) && defined __USE_GNU
-	memcpy (__mempcpy (s, string1, length1), string2, length2);
-#else
 	memcpy (s, string1, length1);
 	memcpy (s + length1, string2, length2);
-#endif
 	str = s;
 	free_str = 1;
       }
@@ -411,21 +354,18 @@ re_search_2_stub (bufp, string1, length1, string2, length2, start, range, regs,
    If RET_LEN is nonzero the length of the match is returned (re_match style);
    otherwise the position of the match is returned.  */
 
-static int
-re_search_stub (bufp, string, length, start, range, stop, regs, ret_len)
-    struct re_pattern_buffer *bufp;
-    const char *string;
-    int length, start, range, stop, ret_len;
-    struct re_registers *regs;
+static int internal_function
+re_search_stub (struct re_pattern_buffer *bufp, const char *string, int length,
+				int start, int range, int stop, struct re_registers *regs,
+				int ret_len)
 {
   reg_errcode_t result;
   regmatch_t *pmatch;
   int nregs, rval;
   int eflags = 0;
-#ifndef __UCLIBC__ /* libc_lock_lock does not exist */
+#ifdef __UCLIBC_HAS_THREADS__
   re_dfa_t *dfa = (re_dfa_t *) bufp->buffer;
 #endif
-
   /* Check for out-of-range.  */
   if (BE (start < 0 || start > length, 0))
     return -1;
@@ -502,11 +442,9 @@ re_search_stub (bufp, string, length, start, range, stop, regs, ret_len)
   return rval;
 }
 
-static unsigned
-re_copy_regs (regs, pmatch, nregs, regs_allocated)
-    struct re_registers *regs;
-    regmatch_t *pmatch;
-    int nregs, regs_allocated;
+static unsigned internal_function
+re_copy_regs (struct re_registers *regs, regmatch_t *pmatch, int nregs,
+			  int regs_allocated)
 {
   int rval = REGS_REALLOCATE;
   int i;
@@ -572,11 +510,8 @@ re_copy_regs (regs, pmatch, nregs, regs_allocated)
    freeing the old data.  */
 
 void
-re_set_registers (bufp, regs, num_regs, starts, ends)
-    struct re_pattern_buffer *bufp;
-    struct re_registers *regs;
-    unsigned num_regs;
-    regoff_t *starts, *ends;
+re_set_registers (struct re_pattern_buffer *bufp, struct re_registers *regs,
+				  unsigned num_regs, regoff_t *starts, regoff_t *ends)
 {
   if (num_regs)
     {
@@ -592,25 +527,19 @@ re_set_registers (bufp, regs, num_regs, starts, ends)
       regs->start = regs->end = (regoff_t *) 0;
     }
 }
-#if defined _LIBC || defined __UCLIBC__
-strong_alias(__re_set_registers, re_set_registers)
-#endif
-
+
 /* Entry points compatible with 4.2 BSD regex library.  We don't define
    them unless specifically requested.  */
 
-#if defined _REGEX_RE_COMP || defined _LIBC || defined __UCLIBC__
+#if defined _REGEX_RE_COMP || defined __UCLIBC__
 int
-# if defined _LIBC || defined __UCLIBC__
 weak_function
-# endif
-re_exec (s)
-     const char *s;
+re_exec (const char *s)
 {
-  return 0 == regexec (&re_comp_buf, s, 0, NULL, 0);
+  return 0 == regexec (re_comp_buf, s, 0, NULL, 0);
 }
-#endif /* _REGEX_RE_COMP */
-
+#endif
+
 /* Internal entry point.  */
 
 /* Searches for a compiled pattern PREG in the string STRING, whose
@@ -621,15 +550,10 @@ re_exec (s)
    otherwise return the error code.
    Note: We assume front end functions already check ranges.
    (START + RANGE >= 0 && START + RANGE <= LENGTH)  */
-
-static reg_errcode_t
-re_search_internal (preg, string, length, start, range, stop, nmatch, pmatch,
-		    eflags)
-    const regex_t *preg;
-    const char *string;
-    int length, start, range, stop, eflags;
-    size_t nmatch;
-    regmatch_t pmatch[];
+static reg_errcode_t internal_function
+re_search_internal (const regex_t *preg, const char *string, int length,
+					int start, int range, int stop, size_t nmatch,
+					regmatch_t pmatch[], int eflags)
 {
   reg_errcode_t err;
   const re_dfa_t *dfa = (const re_dfa_t *) preg->buffer;
@@ -637,19 +561,13 @@ re_search_internal (preg, string, length, start, range, stop, nmatch, pmatch,
   int fl_longest_match, match_first, match_kind, match_last = -1;
   int extra_nmatch;
   int sb, ch;
-#if defined _LIBC || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L)
-  re_match_context_t mctx = { .dfa = dfa };
-#else
   re_match_context_t mctx;
-#endif
   char *fastmap = (preg->fastmap != NULL && preg->fastmap_accurate
 		   && range && !preg->can_be_null) ? preg->fastmap : NULL;
   RE_TRANSLATE_TYPE t = preg->translate;
 
-#if !(defined _LIBC || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
   memset (&mctx, '\0', sizeof (re_match_context_t));
   mctx.dfa = dfa;
-#endif
 
   extra_nmatch = (nmatch > preg->re_nsub) ? nmatch - (preg->re_nsub + 1) : 0;
   nmatch -= extra_nmatch;
@@ -941,9 +859,8 @@ re_search_internal (preg, string, length, start, range, stop, nmatch, pmatch,
   return err;
 }
 
-static reg_errcode_t
-prune_impossible_nodes (mctx)
-     re_match_context_t *mctx;
+static reg_errcode_t internal_function
+prune_impossible_nodes (re_match_context_t *mctx)
 {
   const re_dfa_t *const dfa = mctx->dfa;
   int halt_node, match_last;
@@ -1027,7 +944,7 @@ prune_impossible_nodes (mctx)
    We must select appropriate initial state depending on the context,
    since initial states may have constraints like "\<", "^", etc..  */
 
-static inline re_dfastate_t *
+static __inline__ re_dfastate_t *
 __attribute ((always_inline)) internal_function
 acquire_init_state_context (reg_errcode_t *err, const re_match_context_t *mctx,
 			    int idx)
@@ -2236,7 +2153,7 @@ sift_states_iter_mb (const re_match_context_t *mctx, re_sift_context_t *sctx,
 }
 #endif /* RE_ENABLE_I18N */
 
-
+
 /* Functions for state transition.  */
 
 /* Return the next state to which the current state STATE will transit by
@@ -3435,8 +3352,7 @@ out_free:
 	 character, or we are in a single-byte character set so we can
 	 discern by looking at the character code: allocate a
 	 256-entry transition table.  */
-      trtable = state->trtable =
-	(re_dfastate_t **) calloc (sizeof (re_dfastate_t *), SBC_MAX);
+      trtable = state->trtable = calloc (sizeof (re_dfastate_t *), SBC_MAX);
       if (BE (trtable == NULL, 0))
 	goto out_free;
 
@@ -3466,8 +3382,7 @@ out_free:
 	 by looking at the character code: build two 256-entry
 	 transition tables, one starting at trtable[0] and one
 	 starting at trtable[SBC_MAX].  */
-      trtable = state->word_trtable =
-	(re_dfastate_t **) calloc (sizeof (re_dfastate_t *), 2 * SBC_MAX);
+      trtable = state->word_trtable = calloc (sizeof (re_dfastate_t *), 2 * SBC_MAX);
       if (BE (trtable == NULL, 0))
 	goto out_free;
 
@@ -3797,12 +3712,12 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
   if (node->type == COMPLEX_BRACKET)
     {
       const re_charset_t *cset = node->opr.mbcset;
-# ifdef _LIBC
+# if 0
       const unsigned char *pin
 	= ((const unsigned char *) re_string_get_buffer (input) + str_idx);
       int j;
       uint32_t nrules;
-# endif /* _LIBC */
+# endif
       int match_len = 0;
       wchar_t wc = ((cset->nranges || cset->nchar_classes || cset->nmbchars)
 		    ? re_string_wchar_at (input, str_idx) : 0);
@@ -3825,7 +3740,7 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
 	    }
 	}
 
-# ifdef _LIBC
+# if 0
       nrules = _NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES);
       if (nrules != 0)
 	{
@@ -3914,15 +3829,13 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
 	    }
 	}
       else
-# endif /* _LIBC */
+# endif
 	{
 	  /* match with range expression?  */
-#if __GNUC__ >= 2
-	  wchar_t cmp_buf[] = {L'\0', L'\0', wc, L'\0', L'\0', L'\0'};
-#else
-	  wchar_t cmp_buf[] = {L'\0', L'\0', L'\0', L'\0', L'\0', L'\0'};
+	  wchar_t cmp_buf[6];
+
+	  memset (cmp_buf, 0, sizeof(cmp_buf));
 	  cmp_buf[2] = wc;
-#endif
 	  for (i = 0; i < cset->nranges; ++i)
 	    {
 	      cmp_buf[0] = cset->range_starts[i];
@@ -3935,21 +3848,18 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
 		}
 	    }
 	}
-    check_node_accept_bytes_match:
+
+ check_node_accept_bytes_match:
       if (!cset->non_match)
 	return match_len;
-      else
-	{
-	  if (match_len > 0)
-	    return 0;
-	  else
-	    return (elem_len > char_len) ? elem_len : char_len;
-	}
+      if (match_len > 0)
+	return 0;
+      return (elem_len > char_len) ? elem_len : char_len;
     }
   return 0;
 }
 
-# ifdef _LIBC
+# if 0
 static unsigned int
 internal_function
 find_collation_sequence_value (const unsigned char *mbs, size_t mbs_len)
@@ -4007,7 +3917,7 @@ find_collation_sequence_value (const unsigned char *mbs, size_t mbs_len)
       return UINT_MAX;
     }
 }
-# endif /* _LIBC */
+# endif
 #endif /* RE_ENABLE_I18N */
 
 /* Check whether the node accepts the byte which is IDX-th
@@ -4117,7 +4027,7 @@ extend_buffers (re_match_context_t *mctx)
   return REG_NOERROR;
 }
 
-
+
 /* Functions for matching context.  */
 
 /* Initialize MCTX.  */

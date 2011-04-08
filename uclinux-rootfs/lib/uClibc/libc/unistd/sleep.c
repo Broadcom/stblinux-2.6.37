@@ -23,16 +23,55 @@
 #include <signal.h>
 #include <unistd.h>
 
-libc_hidden_proto(sleep)
 
-libc_hidden_proto(sigaction)
-libc_hidden_proto(sigprocmask)
-//libc_hidden_proto(__sigaddset)
-//libc_hidden_proto(__sigemptyset)
-//libc_hidden_proto(__sigismember)
-libc_hidden_proto(nanosleep)
+/* version perusing nanosleep */
+#if defined __UCLIBC_HAS_REALTIME__
 
-#if 0
+/* I am unable to reproduce alleged "Linux quirk".
+ * I used the following test program:
+#include <unistd.h>
+#include <time.h>
+#include <signal.h>
+static void dummy(int sig) {}
+int main() {
+    struct timespec t = { 2, 0 };
+    if (fork() == 0) {
+	sleep(1);
+	return 0;
+    }
+    signal(SIGCHLD, SIG_DFL); //
+    signal(SIGCHLD, dummy);   // Pick one
+    signal(SIGCHLD, SIG_IGN); //
+    nanosleep(&t, &t);
+    return 0;
+}
+ * Testing on 2.4.20 and on 2.6.35-rc4:
+ * With SIG_DFL, nanosleep is not interrupted by SIGCHLD. Ok.
+ * With dummy handler, nanosleep is interrupted by SIGCHLD. Ok.
+ * With SIG_IGN, nanosleep is NOT interrupted by SIGCHLD.
+ * It looks like sleep's workaround for SIG_IGN is no longer needed?
+ * The only emails I can find are from 1998 (!):
+ * ----------
+ *  Subject: Re: sleep ignore sigchld
+ *  From: Linus Torvalds <torvalds@transmeta.com>
+ *  Date: Mon, 16 Nov 1998 11:02:15 -0800 (PST)
+ *
+ *  On Mon, 16 Nov 1998, H. J. Lu wrote:
+ *  > That is a kernel bug. SIGCHLD is a special one. Usually it cannot
+ *  > be ignored. [snip...]
+ *
+ *  No can do.
+ *
+ *  "nanosleep()" is implemented in a bad way that makes it impossible to
+ *  restart it cleanly. It was done that way because glibc wanted it that way,
+ *  not because it's a good idea. [snip...]
+ * ----------
+ * I assume that in the passed twelve+ years, nanosleep got fixed,
+ * but the hack in sleep to work around broken nanosleep was never removed.
+ */
+
+# if 0
+
 /* This is a quick and dirty, but not 100% compliant with
  * the stupid SysV SIGCHLD vs. SIG_IGN behaviour.  It is
  * fine unless you are messing with SIGCHLD...  */
@@ -45,7 +84,7 @@ unsigned int sleep (unsigned int sec)
 	return res;
 }
 
-#else
+# else
 
 /* We are going to use the `nanosleep' syscall of the kernel.  But the
    kernel does not implement the sstupid SysV SIGCHLD vs. SIG_IGN
@@ -53,65 +92,102 @@ unsigned int sleep (unsigned int sec)
 unsigned int sleep (unsigned int seconds)
 {
     struct timespec ts = { .tv_sec = (long int) seconds, .tv_nsec = 0 };
-    sigset_t set, oset;
+    sigset_t set;
+    struct sigaction oact;
     unsigned int result;
+
+    /* This is not necessary but some buggy programs depend on this.  */
+    if (seconds == 0) {
+#  ifdef CANCELLATION_P
+	CANCELLATION_P (THREAD_SELF);
+#  endif
+	return 0;
+    }
+
+    /* Linux will wake up the system call, nanosleep, when SIGCHLD
+       arrives even if SIGCHLD is ignored.  We have to deal with it
+       in libc.  */
+
+    __sigemptyset (&set);
+    __sigaddset (&set, SIGCHLD);
+
+    /* Is SIGCHLD set to SIG_IGN? */
+    sigaction (SIGCHLD, NULL, &oact); /* never fails */
+    if (oact.sa_handler == SIG_IGN) {
+	/* Yes.  Block SIGCHLD, save old mask.  */
+	sigprocmask (SIG_BLOCK, &set, &set); /* never fails */
+    }
+
+    /* Run nanosleep, with SIGCHLD blocked if SIGCHLD is SIG_IGNed.  */
+    result = nanosleep (&ts, &ts);
+    if (result != 0) {
+	/* Got EINTR. Return remaining time.  */
+	result = (unsigned int) ts.tv_sec + (ts.tv_nsec >= 500000000L);
+    }
+
+    if (!__sigismember (&set, SIGCHLD)) {
+	/* We did block SIGCHLD, and old mask had no SIGCHLD bit.
+	   IOW: we need to unblock SIGCHLD now. Do it.  */
+	/* this sigprocmask call never fails, thus never updates errno,
+	   and therefore we don't need to save/restore it.  */
+	sigprocmask (SIG_SETMASK, &set, NULL); /* never fails */
+    }
+
+    return result;
+}
+
+# endif
+
+#else /* __UCLIBC_HAS_REALTIME__ */
+
+/* no nanosleep, use signals and alarm() */
+static void sleep_alarm_handler(int attribute_unused sig)
+{
+}
+unsigned int sleep (unsigned int seconds)
+{
+    struct sigaction act, oact;
+    sigset_t set, oset;
+    unsigned int result, remaining;
+    time_t before, after;
+    int old_errno = errno;
 
     /* This is not necessary but some buggy programs depend on this.  */
     if (seconds == 0)
 	return 0;
 
-    /* Linux will wake up the system call, nanosleep, when SIGCHLD
-       arrives even if SIGCHLD is ignored.  We have to deal with it
-       in libc.  We block SIGCHLD first.  */
-    if (__sigemptyset (&set) < 0
-	    || __sigaddset (&set, SIGCHLD) < 0
-	    || sigprocmask (SIG_BLOCK, &set, &oset))
-	return -1;
+    /* block SIGALRM */
+    __sigemptyset (&set);
+    __sigaddset (&set, SIGALRM);
+    sigprocmask (SIG_BLOCK, &set, &oset); /* can't fail */
 
-    /* If SIGCHLD is already blocked, we don't have to do anything.  */
-    if (!__sigismember (&oset, SIGCHLD))
-    {
-	int saved_errno;
-	struct sigaction oact;
+    act.sa_handler = sleep_alarm_handler;
+    act.sa_flags = 0;
+    act.sa_mask = oset;
+    sigaction(SIGALRM, &act, &oact); /* never fails */
 
-	if (__sigemptyset (&set) < 0 || __sigaddset (&set, SIGCHLD) < 0)
-	    return -1;
-
-	/* We get the signal handler for SIGCHLD.  */
-	if (sigaction (SIGCHLD, (struct sigaction *) NULL, &oact) < 0)
-	{
-	    saved_errno = errno;
-	    /* Restore the original signal mask.  */
-	    (void) sigprocmask (SIG_SETMASK, &oset, (sigset_t *) NULL);
-	    __set_errno (saved_errno);
-	    return -1;
-	}
-
-	if (oact.sa_handler == SIG_IGN)
-	{
-	    /* We should leave SIGCHLD blocked.  */
-	    result = nanosleep (&ts, &ts);
-
-	    saved_errno = errno;
-	    /* Restore the original signal mask.  */
-	    (void) sigprocmask (SIG_SETMASK, &oset, (sigset_t *) NULL);
-	    __set_errno (saved_errno);
-	}
-	else
-	{
-	    /* We should unblock SIGCHLD.  Restore the original signal mask.  */
-	    (void) sigprocmask (SIG_SETMASK, &oset, (sigset_t *) NULL);
-	    result = nanosleep (&ts, &ts);
-	}
+    before = time(NULL);
+    remaining = alarm(seconds);
+    if (remaining && remaining > seconds) {
+	/* restore user's alarm */
+	sigaction(SIGALRM, &oact, NULL);
+	alarm(remaining); /* restore old alarm */
+	sigsuspend(&oset);
+	after = time(NULL);
+    } else {
+	sigsuspend (&oset);
+	after = time(NULL);
+	sigaction (SIGALRM, &oact, NULL);
     }
-    else
-	result = nanosleep (&ts, &ts);
+    result = after - before;
+    alarm(remaining > result ? remaining - result : 0);
+    sigprocmask (SIG_SETMASK, &oset, NULL);
 
-    if (result != 0)
-	/* Round remaining time.  */
-	result = (unsigned int) ts.tv_sec + (ts.tv_nsec >= 500000000L);
+    __set_errno(old_errno);
 
-    return result;
+    return result > seconds ? 0 : seconds - result;
 }
-#endif
+
+#endif /* __UCLIBC_HAS_REALTIME__ */
+
 libc_hidden_def(sleep)

@@ -56,8 +56,8 @@ work (const char *fname, int mask)
 	}
       if (fcts[i].is_fd)
 	close (fd);
-      struct stat64 st;
-      if (stat64 (fname, &st) == -1)
+      struct stat st;
+      if (stat (fname, &st) == -1)
 	{
 	  printf ("cannot stat %s after %s: %m\n", fname, fcts[i].name);
 	  exit (1);
@@ -66,7 +66,7 @@ work (const char *fname, int mask)
       if ((st.st_mode & mask) != 0)
 	{
 	  printf ("mask not successful after %s: %x still set\n",
-	      	  fcts[i].name, (unsigned int) (st.st_mode & mask));
+	      fcts[i].name, (unsigned int) (st.st_mode & mask));
 	  result = 1;
 	}
     }

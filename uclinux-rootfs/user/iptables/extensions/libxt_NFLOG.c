@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -15,11 +16,11 @@ enum {
 };
 
 static const struct option NFLOG_opts[] = {
-	{ "nflog-group",     1, NULL, NFLOG_GROUP },
-	{ "nflog-prefix",    1, NULL, NFLOG_PREFIX },
-	{ "nflog-range",     1, NULL, NFLOG_RANGE },
-	{ "nflog-threshold", 1, NULL, NFLOG_THRESHOLD },
-	{ .name = NULL }
+	{.name = "nflog-group",     .has_arg = true, .val = NFLOG_GROUP},
+	{.name = "nflog-prefix",    .has_arg = true, .val = NFLOG_PREFIX},
+	{.name = "nflog-range",     .has_arg = true, .val = NFLOG_RANGE},
+	{.name = "nflog-threshold", .has_arg = true, .val = NFLOG_THRESHOLD},
+	XT_GETOPT_TABLEEND,
 };
 
 static void NFLOG_help(void)
@@ -51,7 +52,7 @@ static int NFLOG_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & NFLOG_GROUP)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --nflog-group twice");
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --nflog-group");
 
@@ -65,7 +66,7 @@ static int NFLOG_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & NFLOG_PREFIX)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --nflog-prefix twice");
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --nflog-prefix");
 
@@ -139,21 +140,7 @@ static void NFLOG_save(const void *ip, const struct xt_entry_target *target)
 }
 
 static struct xtables_target nflog_target = {
-	.family		= NFPROTO_IPV4,
-	.name		= "NFLOG",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_nflog_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_nflog_info)),
-	.help		= NFLOG_help,
-	.init		= NFLOG_init,
-	.parse		= NFLOG_parse,
-	.print		= NFLOG_print,
-	.save		= NFLOG_save,
-	.extra_opts	= NFLOG_opts,
-};
-
-static struct xtables_target nflog_target6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "NFLOG",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_nflog_info)),
@@ -169,5 +156,4 @@ static struct xtables_target nflog_target6 = {
 void _init(void)
 {
 	xtables_register_target(&nflog_target);
-	xtables_register_target(&nflog_target6);
 }

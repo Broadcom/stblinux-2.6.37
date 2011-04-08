@@ -25,10 +25,10 @@ IP6T_OPTS_OPTSNR);
 }
 
 static const struct option hbh_opts[] = {
-	{ "hbh-len", 1, NULL, '1' },
-	{ "hbh-opts", 1, NULL, '2' },
-	{ "hbh-not-strict", 1, NULL, '3' },
-	{ .name = NULL }
+	{.name = "hbh-len",        .has_arg = true, .val = '1'},
+	{.name = "hbh-opts",       .has_arg = true, .val = '2'},
+	{.name = "hbh-not-strict", .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -120,8 +120,8 @@ static int hbh_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_OPTS_LEN)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--hbh-len' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		optinfo->hdrlen = parse_opts_num(argv[optind-1], "length");
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		optinfo->hdrlen = parse_opts_num(optarg, "length");
 		if (invert)
 			optinfo->invflags |= IP6T_OPTS_INV_LEN;
 		optinfo->flags |= IP6T_OPTS_LEN;
@@ -131,11 +131,11 @@ static int hbh_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & IP6T_OPTS_OPTS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--hbh-opts' allowed");
-                xtables_check_inverse(optarg, &invert, &optind, 0);
+                xtables_check_inverse(optarg, &invert, &optind, 0, argv);
                 if (invert)
 			xtables_error(PARAMETER_PROBLEM,
 				" '!' not allowed with `--hbh-opts'");
-		optinfo->optsnr = parse_options(argv[optind-1], optinfo->opts);
+		optinfo->optsnr = parse_options(optarg, optinfo->opts);
 		optinfo->flags |= IP6T_OPTS_OPTS;
 		*flags |= IP6T_OPTS_OPTS;
 		break;

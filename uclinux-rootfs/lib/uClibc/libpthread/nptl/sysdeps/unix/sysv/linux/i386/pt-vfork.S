@@ -20,7 +20,7 @@
 #include <sysdep.h>
 #define _ERRNO_H	1
 #include <bits/errno.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 #include <tcb-offsets.h>
 
 /* Save the PID value.  */
@@ -61,7 +61,7 @@ ENTRY (__vfork)
 
 	cmpl	$-4095, %eax
 	jae	SYSCALL_ERROR_LABEL	/* Branch forward if it failed.  */
-.Lpseudo_end:
+L(pseudo_end):
 	ret
 PSEUDO_END (__vfork)
 

@@ -1,4 +1,4 @@
-/* Ripped from linux/include/asm-x86_64/stat.h 
+/* Ripped from linux/include/asm-x86_64/stat.h
  * and renamed 'struct stat' to 'struct kernel_stat' */
 
 #ifndef _ASM_X86_64_STAT_H
@@ -7,8 +7,6 @@
 #ifndef _LIBC
 #error bits/kernel_stat.h is for internal uClibc use only!
 #endif
-
-#define STAT_HAVE_NSEC 1
 
 struct kernel_stat {
 	unsigned long  st_dev;
@@ -24,28 +22,10 @@ struct kernel_stat {
 	long           st_blksize;
 	long           st_blocks;    /* Number 512-byte blocks allocated. */
 
-	unsigned long  st_atime;
-	unsigned long  st_atime_nsec;
-	unsigned long  st_mtime;
-	unsigned long  st_mtime_nsec;
-	unsigned long  st_ctime;
-	unsigned long  st_ctime_nsec;
+	struct timespec st_atim;
+	struct timespec st_mtim;
+	struct timespec st_ctim;
 	long           __unused[3];
-};
-
-/* For 32bit emulation */
-struct __old_kernel_stat {
-	unsigned short st_dev;
-	unsigned short st_ino;
-	unsigned short st_mode;
-	unsigned short st_nlink;
-	unsigned short st_uid;
-	unsigned short st_gid;
-	unsigned short st_rdev;
-	unsigned int   st_size;
-	unsigned int   st_atime;
-	unsigned int   st_mtime;
-	unsigned int   st_ctime;
 };
 
 /* x86-64 stat64 is same as stat */

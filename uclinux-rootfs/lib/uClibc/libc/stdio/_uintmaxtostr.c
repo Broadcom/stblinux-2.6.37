@@ -11,7 +11,6 @@
 #include <locale.h>
 #include <bits/uClibc_uintmaxtostr.h>
 
-libc_hidden_proto(memcpy)
 
 /* Avoid using long long / and % operations to cut down dependencies on
  * libgcc.a.  Definitely helps on i386 at least. */
@@ -22,8 +21,8 @@ libc_hidden_proto(memcpy)
 char attribute_hidden *_uintmaxtostr(register char * __restrict bufend, uintmax_t uval,
 					int base, __UIM_CASE alphacase)
 {
-    int negative;
-    unsigned int digit;
+	int negative;
+	unsigned int digit;
 #ifdef INTERNAL_DIV_MOD
 	unsigned int H, L, high, low, rh;
 #endif
@@ -50,21 +49,21 @@ char attribute_hidden *_uintmaxtostr(register char * __restrict bufend, uintmax_
 	alphacase ^= outdigit;
 	if (alphacase == __UIM_GROUP) {
 		assert(base == 10);
-		if (*(g = __UCLIBC_CURLOCALE_DATA.grouping)) {
+		if (*(g = __UCLIBC_CURLOCALE->grouping)) {
 			grouping = *g;
 		}
 	}
 #endif /* __LOCALE_C_ONLY */
 
-    *bufend = '\0';
+	*bufend = '\0';
 
 #ifndef INTERNAL_DIV_MOD
-    do {
+	do {
 #ifndef __LOCALE_C_ONLY
 		if (!grouping) {		/* Finished a group. */
-			bufend -= __UCLIBC_CURLOCALE_DATA.thousands_sep_len;
-			memcpy(bufend, __UCLIBC_CURLOCALE_DATA.thousands_sep,
-				   __UCLIBC_CURLOCALE_DATA.thousands_sep_len);
+			bufend -= __UCLIBC_CURLOCALE->thousands_sep_len;
+			memcpy(bufend, __UCLIBC_CURLOCALE->thousands_sep,
+				   __UCLIBC_CURLOCALE->thousands_sep_len);
 			if (g[1] != 0) { 	/* g[1] == 0 means repeat last grouping. */
 				/* Note: g[1] == -1 means no further grouping.  But since
 				 * we'll never wrap around, we can set grouping to -1 without
@@ -80,16 +79,16 @@ char attribute_hidden *_uintmaxtostr(register char * __restrict bufend, uintmax_
 
 #ifndef __LOCALE_C_ONLY
 		if (unlikely(outdigit)) {
-			bufend -= __UCLIBC_CURLOCALE_DATA.outdigit_length[digit];
+			bufend -= __UCLIBC_CURLOCALE->outdigit_length[digit];
 			memcpy(bufend,
-				   (&__UCLIBC_CURLOCALE_DATA.outdigit0_mb)[digit],
-				   __UCLIBC_CURLOCALE_DATA.outdigit_length[digit]);
+				   (&__UCLIBC_CURLOCALE->outdigit0_mb)[digit],
+				   __UCLIBC_CURLOCALE->outdigit_length[digit]);
 		} else
 #endif
 		{
 			*--bufend = ( (digit < 10) ? digit + '0' : digit + alphacase );
 		}
-    } while (uval);
+	} while (uval);
 
 #else  /* ************************************************** */
 
@@ -102,12 +101,12 @@ char attribute_hidden *_uintmaxtostr(register char * __restrict bufend, uintmax_
 	low = (unsigned int) uval;
 	high = (unsigned int) (uval >> (sizeof(unsigned int) * CHAR_BIT));
 
-    do {
+	do {
 #ifndef __LOCALE_C_ONLY
 		if (!grouping) {		/* Finished a group. */
-			bufend -= __UCLIBC_CURLOCALE_DATA.thousands_sep_len;
-			memcpy(bufend, __UCLIBC_CURLOCALE_DATA.thousands_sep,
-				   __UCLIBC_CURLOCALE_DATA.thousands_sep_len);
+			bufend -= __UCLIBC_CURLOCALE->thousands_sep_len;
+			memcpy(bufend, __UCLIBC_CURLOCALE->thousands_sep,
+				   __UCLIBC_CURLOCALE->thousands_sep_len);
 			if (g[1] != 0) { 	/* g[1] == 0 means repeat last grouping. */
 				/* Note: g[1] == -1 means no further grouping.  But since
 				 * we'll never wrap around, we can set grouping to -1 without
@@ -129,25 +128,25 @@ char attribute_hidden *_uintmaxtostr(register char * __restrict bufend, uintmax_
 			digit = low % base;
 			low /= base;
 		}
-		
+
 #ifndef __LOCALE_C_ONLY
 		if (unlikely(outdigit)) {
-			bufend -= __UCLIBC_CURLOCALE_DATA.outdigit_length[digit];
+			bufend -= __UCLIBC_CURLOCALE->outdigit_length[digit];
 			memcpy(bufend,
-				   (&__UCLIBC_CURLOCALE_DATA.outdigit0_mb)[digit],
-				   __UCLIBC_CURLOCALE_DATA.outdigit_length[digit]);
+				   (&__UCLIBC_CURLOCALE->outdigit0_mb)[digit],
+				   __UCLIBC_CURLOCALE->outdigit_length[digit]);
 		} else
 #endif
 		{
 			*--bufend = ( (digit < 10) ? digit + '0' : digit + alphacase );
 		}
-    } while (low | high);
+	} while (low | high);
 
 #endif /******************************************************/
 
-    if (negative) {
+	if (negative) {
 		*--bufend = '-';
-    }
+	}
 
-    return bufend;
+	return bufend;
 }

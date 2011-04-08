@@ -16,7 +16,6 @@
 
 #include "malloc.h"
 
-libc_hidden_proto(memset)
 
 /* ------------------------------ calloc ------------------------------ */
 void* calloc(size_t n_elements, size_t elem_size)
@@ -36,7 +35,7 @@ void* calloc(size_t n_elements, size_t elem_size)
 	return NULL;
     }
 
-    LOCK;
+    __MALLOC_LOCK;
     mem = malloc(size);
     if (mem != 0) {
 	p = mem2chunk(mem);
@@ -88,7 +87,7 @@ void* calloc(size_t n_elements, size_t elem_size)
 	}
 #endif
     }
-    UNLOCK;
+    __MALLOC_UNLOCK;
     return mem;
 }
 

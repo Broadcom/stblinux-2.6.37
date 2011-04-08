@@ -15,9 +15,8 @@
 #include <sys/syscall.h>
 #include <bits/uClibc_page.h>
 
-libc_hidden_proto(mmap)
 
-# if !defined __NR_mmap2 || !defined _syscall6
+# if !defined __NR_mmap2
 
 /*
  * This version is a stub that just chops off everything at the mmap 32 bit
@@ -41,8 +40,9 @@ __ptr_t mmap64(__ptr_t addr, size_t len, int prot, int flags, int fd, __off64_t 
 # else
 
 #  define __NR___syscall_mmap2	    __NR_mmap2
-static inline _syscall6(__ptr_t, __syscall_mmap2, __ptr_t, addr, size_t, len,
-                        int, prot, int, flags, int, fd, off_t, offset);
+static __inline__ _syscall6(__ptr_t, __syscall_mmap2, __ptr_t, addr,
+			size_t, len, int, prot, int, flags, int, fd,
+			off_t, offset)
 
 /* Some architectures always use 12 as page shift for mmap2() eventhough the
  * real PAGE_SHIFT != 12.  Other architectures use the same value as
@@ -59,7 +59,13 @@ __ptr_t mmap64(__ptr_t addr, size_t len, int prot, int flags, int fd, __off64_t 
 		return MAP_FAILED;
 	}
 
-	return __syscall_mmap2(addr, len, prot, flags, fd, (off_t) (offset >> MMAP2_PAGE_SHIFT));
+#  ifdef __USE_FILE_OFFSET64
+	return __syscall_mmap2(addr, len, prot, flags,
+	                       fd, ((__u_quad_t) offset >> MMAP2_PAGE_SHIFT));
+#  else
+	return __syscall_mmap2(addr, len, prot, flags,
+	                       fd, ((__u_long) offset >> MMAP2_PAGE_SHIFT));
+#  endif
 }
 
 # endif

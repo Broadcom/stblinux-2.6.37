@@ -36,7 +36,7 @@
  */
 
 /**********************************************************************/
-/*							OPTIONS									  */
+/*                      OPTIONS                                       */
 /**********************************************************************/
 
 /* Defined if we want to recognize "nan", "inf", and "infinity". (C99) */
@@ -79,7 +79,7 @@
 #define _STRTOD_ZERO_CHECK	   1
 
 /**********************************************************************/
-/* Don't change anything that follows.									   */
+/* Don't change anything that follows.                                */
 /**********************************************************************/
 
 #ifdef _STRTOD_ERRNO
@@ -107,23 +107,20 @@
 #include <locale.h>
 
 #ifdef __UCLIBC_HAS_WCHAR__
-
-#include <wchar.h>
-#include <wctype.h>
-#include <bits/uClibc_uwchar.h>
-libc_hidden_proto(iswspace)
+# include <wchar.h>
+# include <wctype.h>
+# include <bits/uClibc_uwchar.h>
 #endif
 
 #ifdef __UCLIBC_HAS_XLOCALE__
-#include <xlocale.h>
-libc_hidden_proto(iswspace_l)
-#endif /* __UCLIBC_HAS_XLOCALE__ */
+# include <xlocale.h>
+#endif
 
 /* Handle _STRTOD_HEXADECIMAL_FLOATS via uClibc config now. */
 #undef _STRTOD_HEXADECIMAL_FLOATS
 #ifdef __UCLIBC_HAS_HEXADECIMAL_FLOATS__
-#define _STRTOD_HEXADECIMAL_FLOATS 1
-#endif /* __UCLIBC_HAS_HEXADECIMAL_FLOATS__ */
+# define _STRTOD_HEXADECIMAL_FLOATS 1
+#endif
 
 /**********************************************************************/
 
@@ -175,13 +172,6 @@ extern void __fp_range_check(__fpmax_t y, __fpmax_t x) attribute_hidden;
 /**********************************************************************/
 #if defined(L___strtofpmax) || defined(L___strtofpmax_l) || defined(L___wcstofpmax) || defined(L___wcstofpmax_l)
 
-#ifdef __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(__ctype_b_loc)
-#elif __UCLIBC_HAS_CTYPE_TABLES__
-libc_hidden_proto(__ctype_b)
-libc_hidden_proto(__ctype_tolower)
-#endif
-
 #if defined(L___wcstofpmax) || defined(L___wcstofpmax_l)
 
 #define __strtofpmax    __wcstofpmax
@@ -215,7 +205,6 @@ __fpmax_t attribute_hidden __strtofpmax(const Wchar *str, Wchar **endptr, int ex
 
 #else  /* defined(__UCLIBC_HAS_XLOCALE__) && !defined(__UCLIBC_DO_XLOCALE) */
 
-libc_hidden_proto(memcmp)
 
 __fpmax_t attribute_hidden __XL_NPP(__strtofpmax)(const Wchar *str, Wchar **endptr, int exponent_power
 								 __LOCALE_PARAM )
@@ -234,7 +223,7 @@ __fpmax_t attribute_hidden __XL_NPP(__strtofpmax)(const Wchar *str, Wchar **endp
 #endif
 #ifdef __UCLIBC_HAS_LOCALE__
 #if defined(L___wcstofpmax) || defined(L___wcstofpmax_l)
-	wchar_t decpt_wc = __LOCALE_PTR->decimal_point;
+	wchar_t decpt_wc = __LOCALE_PTR->decimal_point_wc;
 #else
 	const char *decpt = __LOCALE_PTR->decimal_point;
 	int decpt_len = __LOCALE_PTR->decimal_point_len;
@@ -348,16 +337,11 @@ __fpmax_t attribute_hidden __XL_NPP(__strtofpmax)(const Wchar *str, Wchar **endp
 			static const char nan_inf_str[] = "\05nan\0\012infinity\0\05inf\0";
 			int i = 0;
 
-#ifdef __UCLIBC_HAS_LOCALE__
-			/* Avoid tolower problems for INFINITY in the tr_TR locale. (yuk)*/
-#undef _tolower
-#define _tolower(C)     ((C)|0x20)
-#endif /* __UCLIBC_HAS_LOCALE__ */
-
 			do {
 				/* Unfortunately, we have no memcasecmp(). */
 				int j = 0;
-				while (_tolower(pos[j]) == nan_inf_str[i+1+j]) {
+				/* | 0x20 is a cheap lowercasing (valid for ASCII letters and numbers only) */
+				while ((pos[j] | 0x20) == nan_inf_str[i+1+j]) {
 					++j;
 					if (!nan_inf_str[i+1+j]) {
 						number = i / 0.;

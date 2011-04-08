@@ -22,8 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-libc_hidden_proto(strlen)
-libc_hidden_proto(abort)
 
 /* Return the length of the null-terminated string STR.  Scan for
    the null terminator quickly by testing four bytes at a time.  */
@@ -149,4 +147,4 @@ size_t strlen (const char *str)
 	}
     }
 }
-libc_hidden_def(strlen)
+libc_hidden_weak(strlen)

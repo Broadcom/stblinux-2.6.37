@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37 Kernel Configuration
-# Sun Jan 23 11:29:16 2011
+# Linux/mips 2.6.37-0.1pre Kernel Configuration
+# Sat Feb 19 18:09:05 2011
 #
 CONFIG_MIPS=y
 
@@ -61,17 +61,19 @@ CONFIG_LOONGSON_UART_BASE=y
 # CONFIG_BRCM_LEGACY is not set
 # CONFIG_BCM3548B0 is not set
 # CONFIG_BCM35125A0 is not set
+# CONFIG_BCM35126A0 is not set
 # CONFIG_BCM35230C0 is not set
 # CONFIG_BCM35330A0 is not set
 # CONFIG_BCM7125C0 is not set
-# CONFIG_BCM7135A0 is not set
 # CONFIG_BCM7231A0 is not set
 # CONFIG_BCM7325B0 is not set
 # CONFIG_BCM7335B0 is not set
 # CONFIG_BCM7340B0 is not set
 CONFIG_BCM7342B0=y
 # CONFIG_BCM7344A0 is not set
+# CONFIG_BCM7344B0 is not set
 # CONFIG_BCM7346A0 is not set
+# CONFIG_BCM7346B0 is not set
 # CONFIG_BCM7358A0 is not set
 # CONFIG_BCM7405B0 is not set
 # CONFIG_BCM7405D0 is not set
@@ -79,6 +81,7 @@ CONFIG_BCM7342B0=y
 # CONFIG_BCM7420C0 is not set
 # CONFIG_BCM7422A0 is not set
 # CONFIG_BCM7425A0 is not set
+# CONFIG_BCM7425B0 is not set
 # CONFIG_BCM7468B0 is not set
 # CONFIG_BCM7550A0 is not set
 # CONFIG_BCM7550B0 is not set
@@ -88,6 +91,7 @@ CONFIG_BCM7342B0=y
 # CONFIG_BCM7631B0 is not set
 # CONFIG_BCM7635A0 is not set
 # CONFIG_BCM7640A0 is not set
+# CONFIG_BCM7640B0 is not set
 
 #
 # Memory map
@@ -164,6 +168,7 @@ CONFIG_BRCMNAND_MINOR_VERS=3
 CONFIG_BRCM_HAS_NAND=y
 CONFIG_BRCM_HAS_SPI=y
 CONFIG_BRCM_HAS_BSPI_V3=y
+CONFIG_BRCM_BSPI_MAJOR_VERS=3
 CONFIG_BRCM_HAS_WKTMR=y
 CONFIG_BRCM_CPU_DIV=y
 CONFIG_BRCM_HAS_UPPER_MEMORY=y

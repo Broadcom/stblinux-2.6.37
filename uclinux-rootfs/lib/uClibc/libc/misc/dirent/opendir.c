@@ -12,17 +12,56 @@
 #include <unistd.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
 #include <not-cancel.h>
-#endif
+#include <dirent.h>
 #include "dirstream.h"
 
-libc_hidden_proto(opendir)
-libc_hidden_proto(open)
-libc_hidden_proto(fcntl)
-libc_hidden_proto(close)
-libc_hidden_proto(stat)
-libc_hidden_proto(fstat)
+static DIR *fd_to_DIR(int fd, __blksize_t size)
+{
+	DIR *ptr;
+
+	ptr = malloc(sizeof(*ptr));
+	if (!ptr)
+		return NULL;
+
+	ptr->dd_fd = fd;
+	ptr->dd_nextloc = ptr->dd_size = ptr->dd_nextoff = 0;
+	ptr->dd_max = size;
+	if (ptr->dd_max < 512)
+		ptr->dd_max = 512;
+
+	ptr->dd_buf = calloc(1, ptr->dd_max);
+	if (!ptr->dd_buf) {
+		free(ptr);
+		return NULL;
+	}
+	__UCLIBC_MUTEX_INIT_VAR(ptr->dd_lock);
+
+	return ptr;
+}
+
+DIR *fdopendir(int fd)
+{
+	int flags;
+	struct stat st;
+
+	if (fstat(fd, &st))
+		return NULL;
+	if (!S_ISDIR(st.st_mode)) {
+		__set_errno(ENOTDIR);
+		return NULL;
+	}
+
+	flags = fcntl(fd, F_GETFL);
+	if (flags == -1)
+		return NULL;
+	if ((flags & O_ACCMODE) == O_WRONLY) {
+		__set_errno(EINVAL);
+		return NULL;
+	}
+
+	return fd_to_DIR(fd, st.st_blksize);
+}
 
 /* opendir just makes an open() call - it return NULL if it fails
  * (open sets errno), otherwise it returns a DIR * pointer.
@@ -43,57 +82,36 @@ DIR *opendir(const char *name)
 	}
 # define O_DIRECTORY 0
 #endif
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
-	if ((fd = open_not_cancel_2(name, O_RDONLY|O_NDELAY|O_DIRECTORY)) < 0)
-#else
-	if ((fd = open(name, O_RDONLY|O_NDELAY|O_DIRECTORY)) < 0)
-#endif
+	fd = open_not_cancel_2(name, O_RDONLY|O_NDELAY|O_DIRECTORY|O_CLOEXEC);
+	if (fd < 0)
 		return NULL;
-
 	/* Note: we should check to make sure that between the stat() and open()
 	 * call, 'name' didnt change on us, but that's only if O_DIRECTORY isnt
 	 * defined and since Linux has supported it for like ever, i'm not going
 	 * to worry about it right now (if ever). */
-	if (fstat(fd, &statbuf) < 0)
-		goto close_and_ret;
+
+	if (fstat(fd, &statbuf) < 0) {
+		/* this close() never fails
+		 *int saved_errno;
+		 *saved_errno = errno; */
+		close_not_cancel_no_status(fd);
+		/*__set_errno(saved_errno);*/
+		return NULL;
+	}
 
 	/* According to POSIX, directory streams should be closed when
 	 * exec. From "Anna Pluzhnikov" <besp@midway.uchicago.edu>.
 	 */
-	if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
-		int saved_errno;
-close_and_ret:
-		saved_errno = errno;
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
-		close_not_cancel_no_status(fd);
-#else
-		close(fd);
+#ifndef __ASSUME_O_CLOEXEC
+	fcntl_not_cancel(fd, F_SETFD, FD_CLOEXEC);
 #endif
-		__set_errno(saved_errno);
-		return NULL;
-	}
-	if (!(ptr = malloc(sizeof(*ptr))))
-		goto nomem_close_and_ret;
 
-	ptr->dd_fd = fd;
-	ptr->dd_nextloc = ptr->dd_size = ptr->dd_nextoff = 0;
+	ptr = fd_to_DIR(fd, statbuf.st_blksize);
 
-	ptr->dd_max = statbuf.st_blksize;
-	if (ptr->dd_max < 512)
-		ptr->dd_max = 512;
-
-	if (!(ptr->dd_buf = calloc(1, ptr->dd_max))) {
-		free(ptr);
-nomem_close_and_ret:
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+	if (!ptr) {
 		close_not_cancel_no_status(fd);
-#else
-		close(fd);
-#endif
 		__set_errno(ENOMEM);
-		return NULL;
 	}
-	__PTHREAD_MUTEX_INIT(&(ptr->dd_lock), NULL);
 	return ptr;
 }
 libc_hidden_def(opendir)

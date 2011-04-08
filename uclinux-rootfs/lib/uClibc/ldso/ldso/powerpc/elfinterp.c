@@ -30,6 +30,8 @@
  */
 
 #include "ldso.h"
+#define TLS_DTV_OFFSET 0x8000
+#define TLS_TP_OFFSET 0x7000
 
 extern int _dl_linux_resolve(void);
 
@@ -127,13 +129,6 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 	debug_sym(symtab,strtab,symtab_index);
 	debug_reloc(symtab,strtab,this_reloc);
 
-#if defined (__SUPPORT_LD_DEBUG__)
-	if (unlikely(ELF32_R_TYPE(this_reloc->r_info) != R_PPC_JMP_SLOT)) {
-		_dl_dprintf(2, "%s: Incorrect relocation type in jump relocation\n", _dl_progname);
-		_dl_exit(1);
-	}
-#endif
-
 	/* Address of dump instruction to fix up */
 	reloc_addr = (Elf32_Addr *) (tpnt->loadaddr + this_reloc->r_offset);
 
@@ -144,7 +139,7 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 
 	/* Get the address of the GOT entry */
 	finaladdr = (Elf32_Addr) _dl_find_hash(symname,
-			tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT);
+			tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT, NULL);
 	if (unlikely(!finaladdr)) {
 		_dl_dprintf(2, "%s: can't resolve symbol '%s' in lib '%s'.\n", _dl_progname, symname, tpnt->libname);
 		_dl_exit(1);
@@ -164,15 +159,15 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 			*reloc_addr = OPCODE_BA (finaladdr);
 		} else {
 			/* Warning: we don't handle double-sized PLT entries */
-			Elf32_Word *plt, *data_words, index, offset;
+			Elf32_Word *plt, *data_words, idx, offset;
 
 			plt = (Elf32_Word *)tpnt->dynamic_info[DT_PLTGOT];
 			offset = reloc_addr - plt;
-			index = (offset - PLT_INITIAL_ENTRY_WORDS)/2;
+			idx = (offset - PLT_INITIAL_ENTRY_WORDS)/2;
 			data_words = (Elf32_Word *)tpnt->data_words;
 			reloc_addr += 1;
 
-			data_words[index] = finaladdr;
+			data_words[idx] = finaladdr;
 			PPC_SYNC;
 			*reloc_addr =  OPCODE_B ((PLT_LONGBRANCH_ENTRY_WORDS - (offset+1)) * 4);
 		}
@@ -186,34 +181,44 @@ unsigned long _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 	return finaladdr;
 }
 
-static inline int
+static __inline__ int
 _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 	      ELF_RELOC *rpnt, Elf32_Sym *symtab, char *strtab)
 {
 	int reloc_type;
 	int symtab_index;
-	char *symname;
+	struct symbol_ref sym_ref;
 	Elf32_Addr *reloc_addr;
 	Elf32_Addr finaladdr;
-
+	struct elf_resolve *tls_tpnt = NULL;
 	unsigned long symbol_addr;
+	char *symname;
 #if defined (__SUPPORT_LD_DEBUG__)
 	unsigned long old_val;
 #endif
-	reloc_addr   = (Elf32_Addr *)(intptr_t) (tpnt->loadaddr + (unsigned long) rpnt->r_offset);
+
+	symbol_addr  = tpnt->loadaddr; /* For R_PPC_RELATIVE */
+	reloc_addr   = (Elf32_Addr *)(intptr_t) (symbol_addr + (unsigned long) rpnt->r_offset);
 	reloc_type   = ELF32_R_TYPE(rpnt->r_info);
-	symbol_addr  = tpnt->loadaddr; /* For R_PPC_RELATIVE */ 
 	symtab_index = ELF32_R_SYM(rpnt->r_info);
-	symname      = strtab + symtab[symtab_index].st_name;
+	sym_ref.sym  = &symtab[symtab_index];
+	sym_ref.tpnt = NULL;
+	symname      = strtab + sym_ref.sym->st_name;
 	if (symtab_index) {
 		symbol_addr = (unsigned long) _dl_find_hash(symname, scope, tpnt,
-							    elf_machine_type_class(reloc_type));
+							    elf_machine_type_class(reloc_type),  &sym_ref);
 		/* We want to allow undefined references to weak symbols - this might
 		 * have been intentional.  We should not be linking local symbols
 		 * here, so all bases should be covered.
 		 */
-		if (unlikely(!symbol_addr && ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK))
-			return -1;
+		if (unlikely(!symbol_addr
+			&& (ELF32_ST_TYPE(sym_ref.sym->st_info) != STT_TLS
+				&& ELF32_ST_BIND(sym_ref.sym->st_info) != STB_WEAK)))
+			return 1;
+		tls_tpnt = sym_ref.tpnt;
+	} else {
+		symbol_addr = sym_ref.sym->st_value;
+		tls_tpnt = tpnt;
 	}
 #if defined (__SUPPORT_LD_DEBUG__)
 	old_val = *reloc_addr;
@@ -239,15 +244,15 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 				*reloc_addr = OPCODE_BA (finaladdr);
 			} else {
 				/* Warning: we don't handle double-sized PLT entries */
-				Elf32_Word *plt, *data_words, index, offset;
+				Elf32_Word *plt, *data_words, idx, offset;
 
 				plt = (Elf32_Word *)tpnt->dynamic_info[DT_PLTGOT];
 				offset = reloc_addr - plt;
-				index = (offset - PLT_INITIAL_ENTRY_WORDS)/2;
+				idx = (offset - PLT_INITIAL_ENTRY_WORDS)/2;
 				data_words = (Elf32_Word *)tpnt->data_words;
 
-				data_words[index] = finaladdr;
-				reloc_addr[0] = OPCODE_LI(11,index*4);
+				data_words[idx] = finaladdr;
+				reloc_addr[0] = OPCODE_LI(11,idx*4);
 				reloc_addr[1] = OPCODE_B((PLT_LONGBRANCH_ENTRY_WORDS - (offset+1)) * 4);
 
 				/* instructions were modified */
@@ -262,10 +267,10 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 #if defined (__SUPPORT_LD_DEBUG__)
 		if (_dl_debug_move)
 			_dl_dprintf(_dl_debug_file,"\n%s move %x bytes from %x to %x",
-				    symname, symtab[symtab_index].st_size,
+				    symname, sym_ref.sym->st_size,
 				    symbol_addr, reloc_addr);
 #endif
-		_dl_memcpy((char *) reloc_addr, (char *) finaladdr, symtab[symtab_index].st_size);
+		_dl_memcpy((char *) reloc_addr, (char *) finaladdr, sym_ref.sym->st_size);
 		goto out_nocode; /* No code code modified */
 	case R_PPC_ADDR16_HA:
 		finaladdr += 0x8000; /* fall through. */
@@ -274,6 +279,19 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
 	case R_PPC_ADDR16_LO:
 		*(short *)reloc_addr = finaladdr;
 		break;
+#if USE_TLS
+	case R_PPC_DTPMOD32:
+		*reloc_addr = tls_tpnt->l_tls_modid;
+		break;
+	case R_PPC_DTPREL32:
+		/* During relocation all TLS symbols are defined and used.
+		   Therefore the offset is already correct.  */
+		*reloc_addr = finaladdr - TLS_DTV_OFFSET;
+		break;
+	case R_PPC_TPREL32:
+		*reloc_addr = tls_tpnt->l_tls_offset + finaladdr - TLS_TP_OFFSET;
+		break;
+#endif
 	case R_PPC_REL24:
 #if 0
 		{
@@ -311,7 +329,7 @@ _dl_do_reloc (struct elf_resolve *tpnt,struct dyn_elf *scope,
  out_nocode:
 #if defined (__SUPPORT_LD_DEBUG__)
 	if (_dl_debug_reloc && _dl_debug_detail)
-		_dl_dprintf(_dl_debug_file, "\tpatched: %x ==> %x @ %x", old_val, *reloc_addr, reloc_addr);
+		_dl_dprintf(_dl_debug_file, "\tpatched: %x ==> %x @ %x\n", old_val, *reloc_addr, reloc_addr);
 #endif
 	return 0;
 }
@@ -368,7 +386,7 @@ void _dl_parse_lazy_relocation_information(struct dyn_elf *rpnt,
 	PPC_ISYNC;
 }
 
-static inline int
+static __inline__ int
 _dl_parse(struct elf_resolve *tpnt, struct dyn_elf *scope,
 	  unsigned long rel_addr, unsigned long rel_size,
 	  int (*reloc_fnc) (struct elf_resolve *tpnt, struct dyn_elf *scope,
@@ -386,7 +404,7 @@ _dl_parse(struct elf_resolve *tpnt, struct dyn_elf *scope,
 
 	symtab = (Elf32_Sym *)(intptr_t)tpnt->dynamic_info[DT_SYMTAB];
 	strtab = (char *)tpnt->dynamic_info[DT_STRTAB];
-	
+
 	  for (i = 0; i < rel_size; i++, rpnt++) {
 	        int res;
 

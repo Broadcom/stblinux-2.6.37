@@ -19,13 +19,10 @@
    02111-1307 USA.  */
 
 #include <math.h>
-
 #include "math_private.h"
-
 
 static const double huge = 1.0e300;
 
-libm_hidden_proto(round)
 double
 round (double x)
 {

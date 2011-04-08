@@ -284,9 +284,44 @@ int __libc_allocate_rtsig (int high)
 
 static void pthread_initialize(void) __attribute__((constructor));
 
+libpthread_hidden_proto(pthread_attr_destroy)
+libpthread_hidden_proto(pthread_attr_init)
+libpthread_hidden_proto(pthread_attr_getdetachstate)
+libpthread_hidden_proto(pthread_attr_setdetachstate)
+libpthread_hidden_proto(pthread_attr_getinheritsched)
+libpthread_hidden_proto(pthread_attr_setinheritsched)
+libpthread_hidden_proto(pthread_attr_setschedparam)
+libpthread_hidden_proto(pthread_attr_getschedparam)
+libpthread_hidden_proto(pthread_attr_getschedpolicy)
+libpthread_hidden_proto(pthread_attr_setschedpolicy)
+libpthread_hidden_proto(pthread_attr_getscope)
+libpthread_hidden_proto(pthread_attr_setscope)
+
+libpthread_hidden_proto(pthread_exit)
+
+libpthread_hidden_proto(pthread_equal)
+libpthread_hidden_proto(pthread_self)
+libpthread_hidden_proto(pthread_getschedparam)
+libpthread_hidden_proto(pthread_setschedparam)
+
+libpthread_hidden_proto(pthread_setcancelstate)
+libpthread_hidden_proto(pthread_setcanceltype)
+libpthread_hidden_proto(_pthread_cleanup_push_defer)
+libpthread_hidden_proto(_pthread_cleanup_pop_restore)
+
+libpthread_hidden_proto(pthread_cond_broadcast)
+libpthread_hidden_proto(pthread_cond_destroy)
+libpthread_hidden_proto(pthread_cond_init)
+libpthread_hidden_proto(pthread_cond_signal)
+libpthread_hidden_proto(pthread_cond_wait)
+libpthread_hidden_proto(pthread_cond_timedwait)
+
+libpthread_hidden_proto(pthread_condattr_destroy)
+libpthread_hidden_proto(pthread_condattr_init)
+
 struct pthread_functions __pthread_functions =
   {
-#if !(USE_TLS && HAVE___THREAD)
+#ifndef USE___THREAD
     .ptr_pthread_internal_tsd_set = __pthread_internal_tsd_set,
     .ptr_pthread_internal_tsd_get = __pthread_internal_tsd_get,
     .ptr_pthread_internal_tsd_address = __pthread_internal_tsd_address,
@@ -336,8 +371,8 @@ struct pthread_functions __pthread_functions =
     .ptr__pthread_cleanup_push = _pthread_cleanup_push,
     .ptr__pthread_cleanup_pop = _pthread_cleanup_pop
 */
-    .ptr__pthread_cleanup_push_defer = _pthread_cleanup_push_defer,
-    .ptr__pthread_cleanup_pop_restore = _pthread_cleanup_pop_restore,
+    .ptr__pthread_cleanup_push_defer = __pthread_cleanup_push_defer,
+    .ptr__pthread_cleanup_pop_restore = __pthread_cleanup_pop_restore,
   };
 #ifdef SHARED
 # define ptr_pthread_functions &__pthread_functions
@@ -351,7 +386,7 @@ static int *__libc_multiple_threads_ptr;
     startup of the C library.  */
 void __pthread_initialize_minimal(void)
 {
-    /* If we have special thread_self processing, initialize 
+    /* If we have special thread_self processing, initialize
      * that for the main thread now.  */
 #ifdef INIT_THREAD_SELF
     INIT_THREAD_SELF(&__pthread_initial_thread, 0);
@@ -399,7 +434,7 @@ static void pthread_initialize(void)
 
  {			   /* uClibc-specific stdio initialization for threads. */
 	 FILE *fp;
-	 
+
 	 _stdio_user_locking = 0;	/* 2 if threading not initialized */
 	 for (fp = _stdio_openlist; fp != NULL; fp = fp->__nextopen) {
 		 if (fp->__user_locking != 1) {
@@ -423,7 +458,7 @@ static void pthread_initialize(void)
   }
 #else
   /* For non-MMU assume __pthread_initial_thread_tos at upper page boundary, and
-   * __pthread_initial_thread_bos at address 0. These bounds are refined as we 
+   * __pthread_initial_thread_bos at address 0. These bounds are refined as we
    * malloc other stack frames such that they don't overlap. -StS
    */
   __pthread_initial_thread_tos =
@@ -436,22 +471,19 @@ static void pthread_initialize(void)
   /* Setup signal handlers for the initial thread.
      Since signal handlers are shared between threads, these settings
      will be inherited by all other threads. */
+  memset(&sa, 0, sizeof(sa));
   sa.sa_handler = pthread_handle_sigrestart;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
   __libc_sigaction(__pthread_sig_restart, &sa, NULL);
   sa.sa_handler = pthread_handle_sigcancel;
   sigaddset(&sa.sa_mask, __pthread_sig_restart);
-  // sa.sa_flags = 0;
   __libc_sigaction(__pthread_sig_cancel, &sa, NULL);
   if (__pthread_sig_debug > 0) {
       sa.sa_handler = pthread_handle_sigdebug;
-      sigemptyset(&sa.sa_mask);
-      // sa.sa_flags = 0;
+      __sigemptyset(&sa.sa_mask);
       __libc_sigaction(__pthread_sig_debug, &sa, NULL);
   }
   /* Initially, block __pthread_sig_restart. Will be unblocked on demand. */
-  sigemptyset(&mask);
+  __sigemptyset(&mask);
   sigaddset(&mask, __pthread_sig_restart);
   sigprocmask(SIG_BLOCK, &mask, NULL);
   /* And unblock __pthread_sig_cancel if it has been blocked. */
@@ -495,7 +527,7 @@ int __pthread_initialize_manager(void)
 	 __pthread_manager_thread_bos, __pthread_manager_thread_tos);
 #if 0
   PDEBUG("initial stack: estimate bos=%p, tos=%p\n",
-  	 __pthread_initial_thread_bos, __pthread_initial_thread_tos);
+	 __pthread_initial_thread_bos, __pthread_initial_thread_tos);
 #endif
 
   /* Setup pipe to communicate with thread manager */
@@ -505,7 +537,7 @@ int __pthread_initialize_manager(void)
   }
   /* Start the thread manager */
   pid = 0;
-#ifdef USE_TLS
+#if defined(USE_TLS) && USE_TLS
   if (__linuxthreads_initial_report_events != 0)
     THREAD_SETMEM (((pthread_descr) NULL), p_report_events,
 		   __linuxthreads_initial_report_events);
@@ -578,8 +610,8 @@ int __pthread_initialize_manager(void)
   }
   if (pid == -1) {
     free(__pthread_manager_thread_bos);
-    __libc_close(manager_pipe[0]);
-    __libc_close(manager_pipe[1]);
+    close(manager_pipe[0]);
+    close(manager_pipe[1]);
     return -1;
   }
   __pthread_manager_request = manager_pipe[1]; /* writing end */
@@ -598,7 +630,7 @@ int __pthread_initialize_manager(void)
   /* Synchronize debugging of the thread manager */
   PDEBUG("send REQ_DEBUG to manager thread\n");
   request.req_kind = REQ_DEBUG;
-  TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+  TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 	      (char *) &request, sizeof(request)));
   return 0;
 }
@@ -618,10 +650,9 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
   request.req_args.create.attr = attr;
   request.req_args.create.fn = start_routine;
   request.req_args.create.arg = arg;
-  sigprocmask(SIG_SETMASK, (const sigset_t *) NULL,
-              &request.req_args.create.mask);
+  sigprocmask(SIG_SETMASK, NULL, &request.req_args.create.mask);
   PDEBUG("write REQ_CREATE to manager thread\n");
-  TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+  TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 	      (char *) &request, sizeof(request)));
   PDEBUG("before suspend(self)\n");
   suspend(self);
@@ -638,17 +669,19 @@ pthread_t pthread_self(void)
   pthread_descr self = thread_self();
   return THREAD_GETMEM(self, p_tid);
 }
+libpthread_hidden_def (pthread_self)
 
 int pthread_equal(pthread_t thread1, pthread_t thread2)
 {
   return thread1 == thread2;
 }
+libpthread_hidden_def (pthread_equal)
 
 /* Helper function for thread_self in the case of user-provided stacks */
 
 #ifndef THREAD_SELF
 
-pthread_descr __pthread_find_self()
+pthread_descr __pthread_find_self(void)
 {
   char * sp = CURRENT_STACK_FRAME;
   pthread_handle h;
@@ -677,7 +710,7 @@ static pthread_descr thread_self_stack(void)
     if (sp >= __pthread_manager_thread_bos && sp < __pthread_manager_thread_tos)
 	return manager_thread;
     h = __pthread_handles + 2;
-# ifdef USE_TLS
+# if defined(USE_TLS) && USE_TLS
     while (h->h_descr == NULL
 	    || ! (sp <= (char *) h->h_descr->p_stackaddr && sp >= h->h_bottom))
 	h++;
@@ -714,6 +747,7 @@ int pthread_setschedparam(pthread_t thread, int policy,
     __pthread_manager_adjust_prio(th->p_priority);
   return 0;
 }
+libpthread_hidden_def(pthread_setschedparam)
 
 int pthread_getschedparam(pthread_t thread, int *policy,
                           struct sched_param *param)
@@ -734,6 +768,7 @@ int pthread_getschedparam(pthread_t thread, int *policy,
   *policy = pol;
   return 0;
 }
+libpthread_hidden_def(pthread_getschedparam)
 
 /* Process-wide exit() request */
 
@@ -746,7 +781,7 @@ static void pthread_onexit_process(int retcode, void *arg attribute_unused)
 	request.req_thread = self;
 	request.req_kind = REQ_PROCESS_EXIT;
 	request.req_args.exit.code = retcode;
-	TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+	TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		    (char *) &request, sizeof(request)));
 	suspend(self);
 	/* Main thread should accumulate times for thread manager and its
@@ -781,7 +816,7 @@ static void pthread_handle_sigcancel(int sig)
 {
   pthread_descr self = thread_self();
   sigjmp_buf * jmpbuf;
-  
+
 
   if (self == &__pthread_manager_thread)
     {
@@ -810,7 +845,7 @@ static void pthread_handle_sigcancel(int sig)
     /* Main thread should accumulate times for thread manager and its
        children, so that timings for main thread account for all threads. */
     if (self == __pthread_main_thread) {
-#ifdef USE_TLS
+#if defined(USE_TLS) && USE_TLS
       waitpid(__pthread_manager_thread->p_pid, NULL, __WCLONE);
 #else
       waitpid(__pthread_manager_thread.p_pid, NULL, __WCLONE);
@@ -851,7 +886,7 @@ static void pthread_handle_sigdebug(int sig attribute_unused)
    Notice that we can't free the stack segments, as the forked thread
    may hold pointers into them. */
 
-void __pthread_reset_main_thread()
+void __pthread_reset_main_thread(void)
 {
   pthread_descr self = thread_self();
 
@@ -860,8 +895,8 @@ void __pthread_reset_main_thread()
     free(__pthread_manager_thread_bos);
     __pthread_manager_thread_bos = __pthread_manager_thread_tos = NULL;
     /* Close the two ends of the pipe */
-    __libc_close(__pthread_manager_request);
-    __libc_close(__pthread_manager_reader);
+    close(__pthread_manager_request);
+    close(__pthread_manager_reader);
     __pthread_manager_request = __pthread_manager_reader = -1;
   }
 
@@ -889,9 +924,9 @@ void __pthread_kill_other_threads_np(void)
   /* Reset the signal handlers behaviour for the signals the
      implementation uses since this would be passed to the new
      process.  */
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sa.sa_handler = SIG_DFL;
+  memset(&sa, 0, sizeof(sa));
+  if (SIG_DFL) /* if it's constant zero, it's already done */
+    sa.sa_handler = SIG_DFL;
   __libc_sigaction(__pthread_sig_restart, &sa, NULL);
   __libc_sigaction(__pthread_sig_cancel, &sa, NULL);
   if (__pthread_sig_debug > 0)
@@ -968,7 +1003,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
       THREAD_SETMEM(self, p_signal_jmp, &jmpbuf);
       THREAD_SETMEM(self, p_signal, 0);
       /* Unblock the restart signal */
-      sigemptyset(&unblock);
+      __sigemptyset(&unblock);
       sigaddset(&unblock, __pthread_sig_restart);
       sigprocmask(SIG_UNBLOCK, &unblock, &initial_mask);
 
@@ -987,7 +1022,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
 
 	/* Sleep for the required duration. If woken by a signal,
 	   resume waiting as required by Single Unix Specification.  */
-	if (reltime.tv_sec < 0 || __libc_nanosleep(&reltime, NULL) == 0)
+	if (reltime.tv_sec < 0 || nanosleep(&reltime, NULL) == 0)
 	  break;
       }
 
@@ -1053,7 +1088,7 @@ int __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstim
 	THREAD_SETMEM(self, p_signal_jmp, &jmpbuf);
 	THREAD_SETMEM(self, p_signal, 0);
 	/* Unblock the restart signal */
-	sigemptyset(&unblock);
+	__sigemptyset(&unblock);
 	sigaddset(&unblock, __pthread_sig_restart);
 	sigprocmask(SIG_UNBLOCK, &unblock, &initial_mask);
 
@@ -1072,7 +1107,7 @@ int __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstim
 
 	    /* Sleep for the required duration. If woken by a signal,
 	       resume waiting as required by Single Unix Specification.  */
-	    if (reltime.tv_sec < 0 || __libc_nanosleep(&reltime, NULL) == 0)
+	    if (reltime.tv_sec < 0 || nanosleep(&reltime, NULL) == 0)
 		break;
 	}
 
@@ -1112,7 +1147,7 @@ void __pthread_message(char * fmt, ...)
   va_start(args, fmt);
   vsnprintf(buffer + 8, sizeof(buffer) - 8, fmt, args);
   va_end(args);
-  TEMP_FAILURE_RETRY(__libc_write(2, buffer, strlen(buffer)));
+  TEMP_FAILURE_RETRY(write(2, buffer, strlen(buffer)));
 }
 
 #endif
@@ -1121,7 +1156,7 @@ void __pthread_message(char * fmt, ...)
 #ifndef __PIC__
 /* We need a hook to force the cancelation wrappers to be linked in when
    static libpthread is used.  */
-extern const int __pthread_provide_wrappers;
-static const int *const __pthread_require_wrappers =
+extern const char __pthread_provide_wrappers;
+static const char *const __pthread_require_wrappers =
   &__pthread_provide_wrappers;
 #endif

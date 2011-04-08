@@ -45,11 +45,12 @@ extern __typeof(sigaction) __libc_sigaction;
 extern int _errno;
 extern int _h_errno;
 
+# if defined __UCLIBC_HAS_IPv4__ || defined __UCLIBC_HAS_IPV6__
 /* We need the global/static resolver state here.  */
 # include <resolv.h>
 # undef _res
-
-extern struct __res_state _res;
+extern struct __res_state *__resp;
+# endif
 #endif
 
 #ifdef USE_TLS
@@ -72,7 +73,6 @@ struct _pthread_descr_struct __pthread_initial_thread = {
 #if !(USE_TLS && HAVE___THREAD)
   .p_errnop = &_errno,
   .p_h_errnop = &_h_errno,
-  .p_resp = &_res,
 #endif
   .p_userstack = 1,
   .p_resume_count = __ATOMIC_INITIALIZER,
@@ -468,13 +468,13 @@ __libc_dl_error_tsd (void)
 #endif
 
 #ifdef USE_TLS
-static inline void __attribute__((always_inline))
+static __inline__ void __attribute__((always_inline))
 init_one_static_tls (pthread_descr descr, struct link_map *map)
 {
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   dtv_t *dtv = GET_DTV (descr);
   void *dest = (char *) descr - map->l_tls_offset;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   dtv_t *dtv = GET_DTV ((pthread_descr) ((char *) descr + TLS_PRE_TCB_SIZE));
   void *dest = (char *) descr + map->l_tls_offset + TLS_PRE_TCB_SIZE;
 # else
@@ -539,15 +539,17 @@ static void pthread_initialize(void)
 #ifdef USE_TLS
   /* Update the descriptor for the initial thread. */
   THREAD_SETMEM (((pthread_descr) NULL), p_pid, __getpid());
-# ifndef HAVE___THREAD
+# if !defined HAVE___THREAD && (defined __UCLIBC_HAS_IPv4__ || defined __UCLIBC_HAS_IPV6__)
   /* Likewise for the resolver state _res.  */
-  THREAD_SETMEM (((pthread_descr) NULL), p_resp, &_res);
+  THREAD_SETMEM (((pthread_descr) NULL), p_resp, __resp);
 # endif
 #else
   /* Update the descriptor for the initial thread. */
   __pthread_initial_thread.p_pid = __getpid();
+# if defined __UCLIBC_HAS_IPv4__ || defined __UCLIBC_HAS_IPV6__
   /* Likewise for the resolver state _res.  */
-  __pthread_initial_thread.p_resp = &_res;
+  __pthread_initial_thread.p_resp = __resp;
+# endif
 #endif
 #if !__ASSUME_REALTIME_SIGNALS
   /* Initialize real-time signals. */
@@ -556,22 +558,19 @@ static void pthread_initialize(void)
   /* Setup signal handlers for the initial thread.
      Since signal handlers are shared between threads, these settings
      will be inherited by all other threads. */
+  memset(&sa, 0, sizeof(sa));
   sa.sa_handler = pthread_handle_sigrestart;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
   __libc_sigaction(__pthread_sig_restart, &sa, NULL);
   sa.sa_handler = pthread_handle_sigcancel;
   sigaddset(&sa.sa_mask, __pthread_sig_restart);
-  // sa.sa_flags = 0;
   __libc_sigaction(__pthread_sig_cancel, &sa, NULL);
   if (__pthread_sig_debug > 0) {
     sa.sa_handler = pthread_handle_sigdebug;
-    sigemptyset(&sa.sa_mask);
-    // sa.sa_flags = 0;
+    __sigemptyset(&sa.sa_mask);
     __libc_sigaction(__pthread_sig_debug, &sa, NULL);
   }
   /* Initially, block __pthread_sig_restart. Will be unblocked on demand. */
-  sigemptyset(&mask);
+  __sigemptyset(&mask);
   sigaddset(&mask, __pthread_sig_restart);
   sigprocmask(SIG_BLOCK, &mask, NULL);
   /* And unblock __pthread_sig_cancel if it has been blocked. */
@@ -611,6 +610,17 @@ static void pthread_initialize(void)
 #ifdef USE_TLS
   GL(dl_init_static_tls) = &__pthread_init_static_tls;
 #endif
+
+  /* uClibc-specific stdio initialization for threads. */
+  {
+    FILE *fp;
+    _stdio_user_locking = 0;       /* 2 if threading not initialized */
+    for (fp = _stdio_openlist; fp != NULL; fp = fp->__nextopen) {
+      if (fp->__user_locking != 1) {
+        fp->__user_locking = 0;
+      }
+    }
+  }
 }
 
 void __pthread_initialize(void)
@@ -667,9 +677,9 @@ int __pthread_initialize_manager(void)
     return -1;
   }
 
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
   mgr = (pthread_descr) tcbp;
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
   /* pthread_descr is located right below tcbhead_t which _dl_allocate_tls
      returns.  */
   mgr = (pthread_descr) ((char *) tcbp - TLS_PRE_TCB_SIZE);
@@ -738,17 +748,17 @@ int __pthread_initialize_manager(void)
 	  pid = __clone2(__pthread_manager_event,
 			 (void **) __pthread_manager_thread_bos,
 			 THREAD_MANAGER_STACK_SIZE,
-			 CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND,
+			 CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM,
 			 mgr);
 #elif _STACK_GROWS_UP
 	  pid = __clone(__pthread_manager_event,
 			(void **) __pthread_manager_thread_bos,
-			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND,
+			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM,
 			mgr);
 #else
 	  pid = __clone(__pthread_manager_event,
 			(void **) __pthread_manager_thread_tos,
-			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND,
+			CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM,
 			mgr);
 #endif
 
@@ -778,13 +788,13 @@ int __pthread_initialize_manager(void)
 #ifdef NEED_SEPARATE_REGISTER_STACK
       pid = __clone2(__pthread_manager, (void **) __pthread_manager_thread_bos,
 		     THREAD_MANAGER_STACK_SIZE,
-		     CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, mgr);
+		     CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM, mgr);
 #elif _STACK_GROWS_UP
       pid = __clone(__pthread_manager, (void **) __pthread_manager_thread_bos,
-		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, mgr);
+		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM, mgr);
 #else
       pid = __clone(__pthread_manager, (void **) __pthread_manager_thread_tos,
-		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, mgr);
+		    CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_SYSVSEM, mgr);
 #endif
     }
   if (__builtin_expect (pid, 0) == -1) {
@@ -829,8 +839,7 @@ int __pthread_create(pthread_t *thread, const pthread_attr_t *attr,
   request.req_args.create.attr = attr;
   request.req_args.create.fn = start_routine;
   request.req_args.create.arg = arg;
-  sigprocmask(SIG_SETMASK, (const sigset_t *) NULL,
-              &request.req_args.create.mask);
+  sigprocmask(SIG_SETMASK, NULL, &request.req_args.create.mask);
   TEMP_FAILURE_RETRY(write_not_cancel(__pthread_manager_request,
 				      (char *) &request, sizeof(request)));
   suspend(self);
@@ -971,6 +980,10 @@ static void pthread_onexit_process(int retcode, void *arg)
     struct pthread_request request;
     pthread_descr self = thread_self();
 
+    /* Make sure we come back here after suspend(), in case we entered
+       from a signal handler.  */
+    THREAD_SETMEM(self, p_signal_jmp, NULL);
+
     request.req_thread = self;
     request.req_kind = REQ_PROCESS_EXIT;
     request.req_args.exit.code = retcode;
@@ -991,7 +1004,7 @@ static void pthread_onexit_process(int retcode, void *arg)
            For mtrace, we'd like to print something though.  */
 	/* #ifdef USE_TLS
 	   tcbhead_t *tcbp = (tcbhead_t *) manager_thread;
-	   # if TLS_DTV_AT_TP
+	   # if defined(TLS_DTV_AT_TP)
 	   tcbp = (tcbhead_t) ((char *) tcbp + TLS_PRE_TCB_SIZE);
 	   # endif
 	   _dl_deallocate_tls (tcbp, true);
@@ -1112,7 +1125,9 @@ void __pthread_reset_main_thread(void)
   /* Now this thread modifies the global variables.  */
   THREAD_SETMEM(self, p_errnop, &_errno);
   THREAD_SETMEM(self, p_h_errnop, &_h_errno);
-  THREAD_SETMEM(self, p_resp, &_res);
+# if defined __UCLIBC_HAS_IPv4__ || defined __UCLIBC_HAS_IPV6__
+  THREAD_SETMEM(self, p_resp, __resp);
+# endif
 #endif
 
 #ifndef FLOATING_STACKS
@@ -1144,9 +1159,9 @@ void __pthread_kill_other_threads_np(void)
   /* Reset the signal handlers behaviour for the signals the
      implementation uses since this would be passed to the new
      process.  */
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sa.sa_handler = SIG_DFL;
+  memset(&sa, 0, sizeof(sa));
+  if (SIG_DFL) /* if it's constant zero, it's already done */
+    sa.sa_handler = SIG_DFL;
   __libc_sigaction(__pthread_sig_restart, &sa, NULL);
   __libc_sigaction(__pthread_sig_cancel, &sa, NULL);
   if (__pthread_sig_debug > 0)
@@ -1198,13 +1213,13 @@ void __pthread_wait_for_restart_signal(pthread_descr self)
 
 void __pthread_restart_old(pthread_descr th)
 {
-  if (atomic_increment(&th->p_resume_count) == -1)
+  if (pthread_atomic_increment(&th->p_resume_count) == -1)
     kill(th->p_pid, __pthread_sig_restart);
 }
 
 void __pthread_suspend_old(pthread_descr self)
 {
-  if (atomic_decrement(&self->p_resume_count) <= 0)
+  if (pthread_atomic_decrement(&self->p_resume_count) <= 0)
     __pthread_wait_for_restart_signal(self);
 }
 
@@ -1215,7 +1230,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
   int was_signalled = 0;
   sigjmp_buf jmpbuf;
 
-  if (atomic_decrement(&self->p_resume_count) == 0) {
+  if (pthread_atomic_decrement(&self->p_resume_count) == 0) {
     /* Set up a longjmp handler for the restart signal, unblock
        the signal and sleep. */
 
@@ -1223,7 +1238,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
       THREAD_SETMEM(self, p_signal_jmp, &jmpbuf);
       THREAD_SETMEM(self, p_signal, 0);
       /* Unblock the restart signal */
-      sigemptyset(&unblock);
+      __sigemptyset(&unblock);
       sigaddset(&unblock, __pthread_sig_restart);
       sigprocmask(SIG_UNBLOCK, &unblock, &initial_mask);
 
@@ -1242,7 +1257,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
 
 	/* Sleep for the required duration. If woken by a signal,
 	   resume waiting as required by Single Unix Specification.  */
-	if (reltime.tv_sec < 0 || __libc_nanosleep(&reltime, NULL) == 0)
+	if (reltime.tv_sec < 0 || nanosleep(&reltime, NULL) == 0)
 	  break;
       }
 
@@ -1272,9 +1287,9 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
      being delivered. */
 
   if (!was_signalled) {
-    if (atomic_increment(&self->p_resume_count) != -1) {
+    if (pthread_atomic_increment(&self->p_resume_count) != -1) {
       __pthread_wait_for_restart_signal(self);
-      atomic_decrement(&self->p_resume_count); /* should be zero now! */
+      pthread_atomic_decrement(&self->p_resume_count); /* should be zero now! */
       /* woke spontaneously and consumed restart signal */
       return 1;
     }
@@ -1310,7 +1325,7 @@ __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstime)
     THREAD_SETMEM(self, p_signal_jmp, &jmpbuf);
     THREAD_SETMEM(self, p_signal, 0);
     /* Unblock the restart signal */
-    sigemptyset(&unblock);
+    __sigemptyset(&unblock);
     sigaddset(&unblock, __pthread_sig_restart);
     sigprocmask(SIG_UNBLOCK, &unblock, &initial_mask);
 
@@ -1329,7 +1344,7 @@ __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstime)
 
       /* Sleep for the required duration. If woken by a signal,
 	 resume waiting as required by Single Unix Specification.  */
-      if (reltime.tv_sec < 0 || __libc_nanosleep(&reltime, NULL) == 0)
+      if (reltime.tv_sec < 0 || nanosleep(&reltime, NULL) == 0)
 	break;
     }
 

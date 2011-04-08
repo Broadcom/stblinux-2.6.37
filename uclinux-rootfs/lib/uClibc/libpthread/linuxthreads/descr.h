@@ -123,14 +123,12 @@ struct _pthread_descr_struct
       union dtv *dtvp;
       pthread_descr self;	/* Pointer to this structure */
       int multiple_threads;
-# ifdef NEED_DL_SYSINFO
       uintptr_t sysinfo;
-# endif
     } data;
     void *__padding[16];
   } p_header;
 # define p_multiple_threads p_header.data.multiple_threads
-#elif TLS_MULTIPLE_THREADS_IN_TCB
+#elif defined TLS_MULTIPLE_THREADS_IN_TCB && TLS_MULTIPLE_THREADS_IN_TCB
   int p_multiple_threads;
 #endif
 
@@ -244,8 +242,8 @@ extern int __pthread_nonstandard_stacks;
 
 extern pthread_descr __pthread_find_self (void) __attribute__ ((pure));
 
-static inline pthread_descr thread_self (void) __attribute__ ((pure));
-static inline pthread_descr thread_self (void)
+static __inline__ pthread_descr thread_self (void) __attribute__ ((pure));
+static __inline__ pthread_descr thread_self (void)
 {
 #ifdef THREAD_SELF
   return THREAD_SELF;

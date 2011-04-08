@@ -7,16 +7,21 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
-extern __typeof(lseek) __libc_lseek;
-libc_hidden_proto(__libc_lseek)
+#ifdef __NR_lseek
+_syscall3(__off_t, lseek, int, fildes, __off_t, offset, int, whence)
+#else
 
-#define __NR___libc_lseek __NR_lseek
-_syscall3(__off_t, __libc_lseek, int, fildes, __off_t, offset, int, whence);
-libc_hidden_def(__libc_lseek)
-
-libc_hidden_proto(lseek)
-weak_alias(__libc_lseek,lseek)
+__off_t lseek(int fildes, __off_t offset, int whence)
+{
+	return lseek64(fildes, offset, whence);
+}
+#endif
+#ifndef __LINUXTHREADS_OLD__
+libc_hidden_def(lseek)
+#else
 libc_hidden_weak(lseek)
+strong_alias(lseek,__libc_lseek)
+#endif

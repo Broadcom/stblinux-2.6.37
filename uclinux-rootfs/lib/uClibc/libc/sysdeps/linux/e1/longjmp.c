@@ -12,7 +12,7 @@
 #include <signal.h>
 
 #define __NR_e1newSP  224
-static inline _syscall1(int, e1newSP, unsigned long, SavedSP )
+static __inline__ _syscall1(int, e1newSP, unsigned long, SavedSP )
 
 unsigned long jmpbuf_ptr;
 
@@ -23,11 +23,11 @@ void longjmp(jmp_buf state, int value )
 	else
 		state->__jmpbuf->ReturnValue = value;
 
-	jmpbuf_ptr = (unsigned long)state; 
+	jmpbuf_ptr = (unsigned long)state;
 	e1newSP(state->__jmpbuf->SavedSP);
 
 #define _state_ ((struct __jmp_buf_tag*)jmpbuf_ptr)
-	asm volatile("mov L0, %0\n\t"
+	__asm__ __volatile__("mov L0, %0\n\t"
 		     "mov L1, %1\n\t"
 		     "mov L2, %2\n\t"
 		     "mov G3, %3\n\t"
@@ -43,7 +43,6 @@ void longjmp(jmp_buf state, int value )
 #undef _state_
 }
 
-libc_hidden_proto(sigprocmask)
 
 void siglongjmp(sigjmp_buf state, int value )
 {
@@ -55,12 +54,12 @@ void siglongjmp(sigjmp_buf state, int value )
 	else
 		state->__jmpbuf->ReturnValue = value;
 
-	jmpbuf_ptr = (unsigned long)state; 
+	jmpbuf_ptr = (unsigned long)state;
 	e1newSP(state->__jmpbuf->SavedSP);
-	
+
 
 #define _state_ ((struct __jmp_buf_tag*)jmpbuf_ptr)
-	asm volatile("mov L0, %0\n\t"
+	__asm__ __volatile__("mov L0, %0\n\t"
 		     "mov L1, %1\n\t"
 		     "mov L2, %2\n\t"
 		     "mov G3, %3\n\t"

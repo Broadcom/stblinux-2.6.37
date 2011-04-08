@@ -32,6 +32,7 @@ static int ohci_brcm_reset(struct usb_hcd *hcd)
 	struct ohci_hcd *ohci = hcd_to_ohci(hcd);
 
 	ohci->flags |= OHCI_QUIRK_BE_MMIO;
+	distrust_firmware = 0;
 	ohci_hcd_init(ohci);
 	return ohci_init(ohci);
 }

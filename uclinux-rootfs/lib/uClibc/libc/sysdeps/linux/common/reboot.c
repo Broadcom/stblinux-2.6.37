@@ -7,10 +7,10 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/reboot.h>
 #define __NR__reboot __NR_reboot
-static inline _syscall3(int, _reboot, int, magic, int, magic2, int, flag);
+static __inline__ _syscall3(int, _reboot, int, magic, int, magic2, int, flag)
 int reboot(int flag)
 {
 	return (_reboot((int) 0xfee1dead, 672274793, flag));

@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
-libc_hidden_proto(ftruncate)
 
-_syscall2(int, ftruncate, int, fd, __off_t, length);
+_syscall2(int, ftruncate, int, fd, __off_t, length)
 libc_hidden_def(ftruncate)

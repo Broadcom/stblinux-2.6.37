@@ -7,29 +7,27 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <grp.h>
 
-libc_hidden_proto(getgroups)
 
 #if defined(__NR_getgroups32)
 # undef __NR_getgroups
 # define __NR_getgroups __NR_getgroups32
-_syscall2(int, getgroups, int, size, gid_t *, list);
+_syscall2(int, getgroups, int, size, gid_t *, list)
 
 #elif __WORDSIZE == 64
-_syscall2(int, getgroups, int, size, gid_t *, list);
+_syscall2(int, getgroups, int, size, gid_t *, list)
 
 #else
 
-libc_hidden_proto(sysconf)
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 #define __NR___syscall_getgroups __NR_getgroups
-static inline _syscall2(int, __syscall_getgroups,
-		int, size, __kernel_gid_t *, list);
+static __inline__ _syscall2(int, __syscall_getgroups,
+		int, size, __kernel_gid_t *, list)
 
 int getgroups(int size, gid_t groups[])
 {
@@ -53,8 +51,7 @@ ret_error:
 			}
 		}
 
-		if (kernel_groups)
-			free(kernel_groups);
+		free(kernel_groups);
 		return ngids;
 	}
 }

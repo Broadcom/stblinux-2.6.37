@@ -20,7 +20,6 @@
 #include <setjmp.h>
 #include <signal.h>
 
-libc_hidden_proto(sigprocmask)
 
 extern void __longjmp (__jmp_buf __env, int __val) attribute_noreturn;
 libc_hidden_proto(__longjmp)
@@ -38,8 +37,7 @@ void __libc_longjmp (sigjmp_buf env, int val)
 
   if (env[0].__mask_was_saved)
     /* Restore the saved signal mask.  */
-    (void) sigprocmask (SIG_SETMASK, &env[0].__saved_mask,
-			  (sigset_t *) NULL);
+    (void) sigprocmask (SIG_SETMASK, &env[0].__saved_mask, NULL);
 
   /* Call the machine-dependent function to restore machine state.  */
   __longjmp (env[0].__jmpbuf, val ?: 1);

@@ -34,6 +34,8 @@ USA.  */
 
 #define DL_NO_COPY_RELOCS
 
+#define HAVE_DL_INLINES_H
+
 /*
  * Initialization sequence for a GOT.  Copy the resolver function
  * descriptor and the pointer to the elf_resolve/link_map data
@@ -54,6 +56,9 @@ USA.  */
 /* Used for error messages */
 #define ELF_TARGET "BFIN"
 
+/* Need bootstrap relocations */
+#define ARCH_NEEDS_BOOTSTRAP_RELOCS
+
 struct elf_resolve;
 
 struct funcdesc_value
@@ -65,12 +70,6 @@ struct funcdesc_value
 
 extern int _dl_linux_resolve(void) __attribute__((__visibility__("hidden")));
 
-/* 4KiB page alignment.  Should perhaps be made dynamic using
-   getpagesize(), based on AT_PAGESZ from auxvt?  */
-#define PAGE_ALIGN 0xfffff000
-#define ADDR_ALIGN 0xfff
-#define OFFS_ALIGN 0x7ffff000
-
 struct funcdesc_ht;
 
 #undef SEND_EARLY_STDERR
@@ -78,7 +77,7 @@ struct funcdesc_ht;
     do {								\
 	static const char __attribute__((section(".text"))) __s[] = (S); \
       const char *__p, *__scratch;					\
-      asm ("call 1f;\n1:\n\t"						\
+      __asm__ ("call 1f;\n1:\n\t"						\
 	   "%1 = RETS;\n\t"						\
 	   "%0 = [%3 + 1b@GOT17M4];\n\t"				\
 	   "%1 = %1 - %0;\n\t"						\
@@ -87,19 +86,19 @@ struct funcdesc_ht;
 	   : "d" (__s), "a" (dl_boot_got_pointer) : "RETS");				\
       SEND_STDERR (__p);						\
       {	int __t;							\
-	  for (__t = 0; __t < 0x1000000; __t++) asm volatile ("");	} \
+	  for (__t = 0; __t < 0x1000000; __t++) __asm__ __volatile__ ("");	} \
   } while (0)
 
 #define DL_LOADADDR_TYPE struct elf32_fdpic_loadaddr
 
 #define DL_RELOC_ADDR(LOADADDR, ADDR) \
-  (__reloc_pointer ((void*)(ADDR), (LOADADDR).map))
+    ((ElfW(Addr))__reloc_pointer ((void*)(ADDR), (LOADADDR).map))
 
 #define DL_ADDR_TO_FUNC_PTR(ADDR, LOADADDR) \
   ((void(*)(void)) _dl_funcdesc_for ((void*)(ADDR), (LOADADDR).got_value))
 
 #define _dl_stabilize_funcdesc(val) \
-  ({ asm ("" : "+m" (*(val))); (val); })
+  ({ __asm__ ("" : "+m" (*(val))); (val); })
 
 #define DL_CALL_FUNC_AT_ADDR(ADDR, LOADADDR, SIGNATURE, ...) \
   ({ struct funcdesc_value fd = { (void*)(ADDR), (LOADADDR).got_value }; \
@@ -136,6 +135,17 @@ struct funcdesc_ht;
 #define DL_ADDR_IN_LOADADDR(ADDR, TPNT, TFROM) \
   (! (TFROM) && __dl_addr_in_loadaddr ((void*)(ADDR), (TPNT)->loadaddr))
 
+/*
+ * Compute the GOT address.  On several platforms, we use assembly
+ * here.  on FDPIC, there's no way to compute the GOT address,
+ * since the offset between text and data is not fixed, so we arrange
+ * for the ldso assembly entry point to pass this value as an argument
+ * to _dl_start.  */
+#define DL_BOOT_COMPUTE_GOT(got) ((got) = dl_boot_got_pointer)
+
+#define DL_BOOT_COMPUTE_DYN(dpnt, got, load_addr) \
+  ((dpnt) = dl_boot_ldso_dyn_pointer)
+
 /* We only support loading FDPIC independently-relocatable shared
    libraries.  It probably wouldn't be too hard to support loading
    shared libraries that require relocation by the same amount, but we
@@ -158,7 +168,7 @@ do \
     } \
 \
 } \
-while (0)  
+while (0)
 
 /* We want want to apply all relocations in the interpreter during
    bootstrap.  Because of this, we have to skip the interpreter
@@ -176,7 +186,7 @@ while (0)
 #define DL_FIND_HASH_VALUE(TPNT, TYPE_CLASS, SYM) \
   (((TYPE_CLASS) & ELF_RTYPE_CLASS_DLSYM) \
    && ELF32_ST_TYPE((SYM)->st_info) == STT_FUNC \
-   ? _dl_funcdesc_for (DL_RELOC_ADDR ((TPNT)->loadaddr, (SYM)->st_value),    \
+   ? _dl_funcdesc_for ((void *)DL_RELOC_ADDR ((TPNT)->loadaddr, (SYM)->st_value), \
  		       (TPNT)->loadaddr.got_value)			     \
    : DL_RELOC_ADDR ((TPNT)->loadaddr, (SYM)->st_value))
 
@@ -200,7 +210,15 @@ while (0)
 #endif
 
 #include <elf.h>
-static inline void
+
+static __always_inline Elf32_Addr
+elf_machine_load_address (void)
+{
+	/* this is never an issue on Blackfin systems, so screw it */
+	return 0;
+}
+
+static __always_inline void
 elf_machine_relative (DL_LOADADDR_TYPE load_off, const Elf32_Addr rel_addr,
 		      Elf32_Word relative_count)
 {

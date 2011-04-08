@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add packet length matching support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -17,8 +18,8 @@ static void length_help(void)
 }
   
 static const struct option length_opts[] = {
-	{ "length", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "length", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int16_t
@@ -70,8 +71,8 @@ length_parse(int c, char **argv, int invert, unsigned int *flags,
 				xtables_error(PARAMETER_PROBLEM,
 				           "length: `--length' may only be "
 				           "specified once");
-			xtables_check_inverse(optarg, &invert, &optind, 0);
-			parse_lengths(argv[optind-1], info);
+			xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+			parse_lengths(optarg, info);
 			if (invert)
 				info->invert = 1;
 			*flags = 1;
@@ -114,7 +115,7 @@ static void length_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match length_match = {
-	.family		= AF_UNSPEC,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "length",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_length_info)),

@@ -7,10 +7,25 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <sys/vfs.h>
 
-libc_hidden_proto(fstatfs)
+#ifndef __USE_FILE_OFFSET64
+extern int fstatfs (int __fildes, struct statfs *__buf)
+     __THROW __nonnull ((2));
+#else
+# ifdef __REDIRECT_NTH
+extern int __REDIRECT_NTH (fstatfs, (int __fildes, struct statfs *__buf),
+	fstatfs64) __nonnull ((2));
+# else
+#  define fstatfs fstatfs64
+# endif
+#endif
 
-_syscall2(int, fstatfs, int, fd, struct statfs *, buf);
-libc_hidden_def(fstatfs)
+extern __typeof(fstatfs) __libc_fstatfs attribute_hidden;
+#define __NR___libc_fstatfs __NR_fstatfs
+_syscall2(int, __libc_fstatfs, int, fd, struct statfs *, buf)
+
+#if defined __UCLIBC_LINUX_SPECIFIC__
+weak_alias(__libc_fstatfs,fstatfs)
+#endif

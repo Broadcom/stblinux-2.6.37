@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2003, 2004, 2007, 2008 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2003.
 
@@ -23,13 +23,13 @@
 #include <time.h>
 #include <sysdep.h>
 #include "pthreadP.h"
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 
 
 int
-pthread_condattr_setclock (attr, clock_id)
-     pthread_condattr_t *attr;
-     clockid_t clock_id;
+pthread_condattr_setclock (
+     pthread_condattr_t *attr,
+     clockid_t clock_id)
 {
   /* Only a few clocks are allowed.  CLOCK_REALTIME is always allowed.
      CLOCK_MONOTONIC only if the kernel has the necessary support.  */
@@ -62,11 +62,12 @@ pthread_condattr_setclock (attr, clock_id)
     return EINVAL;
 
   /* Make sure the value fits in the bits we reserved.  */
-  assert (clock_id < (1 << COND_CLOCK_BITS));
+  assert (clock_id < (1 << COND_NWAITERS_SHIFT));
 
   int *valuep = &((struct pthread_condattr *) attr)->value;
 
-  *valuep = (*valuep & ~(1 << (COND_CLOCK_BITS + 1)) & ~1) | (clock_id << 1);
+  *valuep = ((*valuep & ~(((1 << COND_NWAITERS_SHIFT) - 1) << 1))
+	     | (clock_id << 1));
 
   return 0;
 }

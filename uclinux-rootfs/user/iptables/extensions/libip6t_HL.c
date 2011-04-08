@@ -6,6 +6,7 @@
  */
 
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,7 +40,7 @@ static int HL_parse(int c, char **argv, int invert, unsigned int *flags,
 		xtables_error(PARAMETER_PROBLEM,
 				"HL: You must specify a value");
 
-	if (xtables_check_inverse(optarg, &invert, NULL, 0))
+	if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 		xtables_error(PARAMETER_PROBLEM,
 				"HL: unexpected `!'");
 	
@@ -131,10 +132,10 @@ static void HL_print(const void *ip, const struct xt_entry_target *target,
 }
 
 static const struct option HL_opts[] = {
-	{ "hl-set", 1, NULL, '1' },
-	{ "hl-dec", 1, NULL, '2' },
-	{ "hl-inc", 1, NULL, '3' },
-	{ .name = NULL }
+	{.name = "hl-set", .has_arg = true, .val = '1'},
+	{.name = "hl-dec", .has_arg = true, .val = '2'},
+	{.name = "hl-inc", .has_arg = true, .val = '3'},
+	XT_GETOPT_TABLEEND,
 };
 
 static struct xtables_target hl_tg6_reg = {

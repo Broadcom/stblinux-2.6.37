@@ -6,6 +6,7 @@
  *     2004-05-12: Brad Fisher <brad@info-link.net>
  *         Port to patch-o-matic-ng
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,8 +23,8 @@ static void comment_help(void)
 }
 
 static const struct option comment_opts[] = {
-	{ "comment", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "comment", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -46,12 +47,12 @@ comment_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	switch (c) {
 	case '1':
-		xtables_check_inverse(argv[optind-1], &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		if (invert) {
 			xtables_error(PARAMETER_PROBLEM,
 					"Sorry, you can't have an inverted comment");
 		}
-		parse_comment(argv[optind-1], commentinfo);
+		parse_comment(optarg, commentinfo);
 		*flags = 1;
 		break;
 
@@ -71,7 +72,7 @@ static void comment_check(unsigned int flags)
 static void
 comment_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_comment_info *commentinfo = (struct xt_comment_info *)match->data;
+	struct xt_comment_info *commentinfo = (void *)match->data;
 
 	commentinfo->comment[XT_MAX_COMMENT_LEN-1] = '\0';
 	printf("/* %s */ ", commentinfo->comment);
@@ -81,7 +82,7 @@ comment_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void
 comment_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_comment_info *commentinfo = (struct xt_comment_info *)match->data;
+	struct xt_comment_info *commentinfo = (void *)match->data;
 
 	commentinfo->comment[XT_MAX_COMMENT_LEN-1] = '\0';
 	printf("--comment ");
@@ -89,21 +90,7 @@ comment_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match comment_match = {
-	.family		= NFPROTO_IPV4,
-	.name		= "comment",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_comment_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_comment_info)),
-	.help		= comment_help,
-	.parse		= comment_parse,
-	.final_check	= comment_check,
-	.print 		= comment_print,
-	.save 		= comment_save,
-	.extra_opts	= comment_opts,
-};
-
-static struct xtables_match comment_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "comment",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_comment_info)),
@@ -119,5 +106,4 @@ static struct xtables_match comment_match6 = {
 void _init(void)
 {
 	xtables_register_match(&comment_match);
-	xtables_register_match(&comment_match6);
 }

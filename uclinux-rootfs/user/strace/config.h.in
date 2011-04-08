@@ -6,6 +6,18 @@
 /* Define for the ARM architecture. */
 #undef ARM
 
+/* Define for the AVR32 architecture. */
+#undef AVR32
+
+/* Define for the Blackfin architecture. */
+#undef BFIN
+
+/* Define for the CRISv10 architecture. */
+#undef CRISV10
+
+/* Define for the CRISv32 architecture. */
+#undef CRISV32
+
 /* Define for the FreeBSD operating system. */
 #undef FREEBSD
 
@@ -13,8 +25,8 @@
    this is either `int' or `gid_t'. */
 #undef GETGROUPS_T
 
-/* Define to 1 if you have the <asm/reg.h> header file. */
-#undef HAVE_ASM_REG_H
+/* Define to 1 if you have the <asm/cachectl.h> header file. */
+#undef HAVE_ASM_CACHECTL_H
 
 /* Define to 1 if you have the <asm/sigcontext.h> header file. */
 #undef HAVE_ASM_SIGCONTEXT_H
@@ -38,6 +50,9 @@
    */
 #undef HAVE_DIRENT_H
 
+/* Define to 1 if you have the `fork' function. */
+#undef HAVE_FORK
+
 /* Define to 1 if you have the `getdents' function. */
 #undef HAVE_GETDENTS
 
@@ -58,6 +73,9 @@
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
+
+/* Define to 1 if you have the <linux/capability.h> header file. */
+#undef HAVE_LINUX_CAPABILITY_H
 
 /* Define to 1 if you have the <linux/icmp.h> header file. */
 #undef HAVE_LINUX_ICMP_H
@@ -143,6 +161,9 @@
 /* Define if stat64 is available in asm/stat.h. */
 #undef HAVE_STAT64
 
+/* Define if statfs64 is available in sys/vfs.h. */
+#undef HAVE_STATFS64
+
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
 
@@ -167,13 +188,13 @@
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
 
-/* Define to 1 if `dqb_curblocks' is member of `struct dqblk'. */
+/* Define to 1 if `dqb_curblocks' is a member of `struct dqblk'. */
 #undef HAVE_STRUCT_DQBLK_DQB_CURBLOCKS
 
 /* Define to 1 if the system has the type `struct ia64_fpreg'. */
 #undef HAVE_STRUCT_IA64_FPREG
 
-/* Define to 1 if `msg_control' is member of `struct msghdr'. */
+/* Define to 1 if `msg_control' is a member of `struct msghdr'. */
 #undef HAVE_STRUCT_MSGHDR_MSG_CONTROL
 
 /* Define to 1 if the system has the type `struct opthdr'. */
@@ -182,43 +203,46 @@
 /* Define to 1 if the system has the type `struct pt_all_user_regs'. */
 #undef HAVE_STRUCT_PT_ALL_USER_REGS
 
-/* Define to 1 if `sc_hi2' is member of `struct sigcontext'. */
+/* Define to 1 if the system has the type `struct sigcontext'. */
+#undef HAVE_STRUCT_SIGCONTEXT
+
+/* Define to 1 if `sc_hi2' is a member of `struct sigcontext'. */
 #undef HAVE_STRUCT_SIGCONTEXT_SC_HI2
 
 /* Define to 1 if the system has the type `struct sigcontext_struct'. */
 #undef HAVE_STRUCT_SIGCONTEXT_STRUCT
 
-/* Define to 1 if `sin6_scope_id' is member of `struct sockaddr_in6'. */
+/* Define to 1 if `sin6_scope_id' is a member of `struct sockaddr_in6'. */
 #undef HAVE_STRUCT_SOCKADDR_IN6_SIN6_SCOPE_ID
 
-/* Define to 1 if `st_aclcnt' is member of `struct stat'. */
+/* Define to 1 if `st_aclcnt' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_ACLCNT
 
-/* Define to 1 if `st_blksize' is member of `struct stat'. */
+/* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `st_blocks' is member of `struct stat'. */
+/* Define to 1 if `st_blocks' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
-/* Define to 1 if `st_flags' is member of `struct stat'. */
+/* Define to 1 if `st_flags' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_FLAGS
 
-/* Define to 1 if `st_fstype' is member of `struct stat'. */
+/* Define to 1 if `st_fstype' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_FSTYPE
 
-/* Define to 1 if `st_gen' is member of `struct stat'. */
+/* Define to 1 if `st_gen' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_GEN
 
-/* Define to 1 if `st_level' is member of `struct stat'. */
+/* Define to 1 if `st_level' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_LEVEL
 
-/* Define to 1 if `st_rdev' is member of `struct stat'. */
+/* Define to 1 if `st_rdev' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
 
-/* Define to 1 if `ACCEPTOR_id' is member of `struct T_conn_res'. */
+/* Define to 1 if `ACCEPTOR_id' is a member of `struct T_conn_res'. */
 #undef HAVE_STRUCT_T_CONN_RES_ACCEPTOR_ID
 
-/* Define to 1 if `QUEUE_ptr' is member of `struct T_conn_res'. */
+/* Define to 1 if `QUEUE_ptr' is a member of `struct T_conn_res'. */
 #undef HAVE_STRUCT_T_CONN_RES_QUEUE_PTR
 
 /* Define to 1 if the system has the type `struct t_opthdr'. */
@@ -354,6 +378,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -400,8 +427,33 @@
    Solaris 2.x or Irix 5.x. */
 #undef SVR4
 
+/* Define for the Tile architecture */
+#undef TILE
+
 /* Define for UnixWare systems. */
 #undef UNIXWARE
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
 
 /* Version number of package */
 #undef VERSION
@@ -409,10 +461,15 @@
 /* Define for the AMD x86-64 architecture. */
 #undef X86_64
 
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-# undef _GNU_SOURCE
-#endif
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

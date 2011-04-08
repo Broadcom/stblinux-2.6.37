@@ -59,28 +59,6 @@ static char sccsid[] = "@(#)pmap_rmt.c 1.21 87/08/27 Copyr 1984 Sun Micro";
 #include <arpa/inet.h>
 #define MAX_BROADCAST_SIZE 1400
 
-libc_hidden_proto(memset)
-libc_hidden_proto(ioctl)
-libc_hidden_proto(perror)
-libc_hidden_proto(socket)
-libc_hidden_proto(close)
-libc_hidden_proto(authunix_create_default)
-libc_hidden_proto(xdrmem_create)
-libc_hidden_proto(xdr_callmsg)
-libc_hidden_proto(xdr_replymsg)
-libc_hidden_proto(xdr_reference)
-libc_hidden_proto(xdr_u_long)
-libc_hidden_proto(xdr_void)
-libc_hidden_proto(xdr_rmtcallres)
-libc_hidden_proto(xdr_rmtcall_args)
-libc_hidden_proto(inet_makeaddr)
-libc_hidden_proto(inet_netof)
-libc_hidden_proto(clntudp_create)
-libc_hidden_proto(setsockopt)
-libc_hidden_proto(recvfrom)
-libc_hidden_proto(sendto)
-libc_hidden_proto(poll)
-libc_hidden_proto(fprintf)
 
 
 extern u_long _create_xid (void) attribute_hidden;
@@ -95,13 +73,9 @@ static const struct timeval timeout = {3, 0};
  * programs to do a lookup and call in one step.
  */
 enum clnt_stat
-pmap_rmtcall (addr, prog, vers, proc, xdrargs, argsp, xdrres, resp, tout, port_ptr)
-     struct sockaddr_in *addr;
-     u_long prog, vers, proc;
-     xdrproc_t xdrargs, xdrres;
-     caddr_t argsp, resp;
-     struct timeval tout;
-     u_long *port_ptr;
+pmap_rmtcall (struct sockaddr_in *addr, u_long prog, u_long vers, u_long proc,
+			  xdrproc_t xdrargs, caddr_t argsp, xdrproc_t xdrres, caddr_t resp,
+			  struct timeval tout, u_long *port_ptr)
 {
   int _socket = -1;
   CLIENT *client;
@@ -173,9 +147,7 @@ libc_hidden_def(xdr_rmtcall_args)
  * written for XDR_DECODE direction only
  */
 bool_t
-xdr_rmtcallres (xdrs, crp)
-     XDR *xdrs;
-     struct rmtcallres *crp;
+xdr_rmtcallres (XDR *xdrs, struct rmtcallres *crp)
 {
   caddr_t port_ptr;
 
@@ -253,15 +225,15 @@ getbroadcastnets (struct in_addr *addrs, int sock, char *buf)
 
 
 enum clnt_stat
-clnt_broadcast (prog, vers, proc, xargs, argsp, xresults, resultsp, eachresult)
-     u_long prog;		/* program number */
-     u_long vers;		/* version number */
-     u_long proc;		/* procedure number */
-     xdrproc_t xargs;		/* xdr routine for args */
-     caddr_t argsp;		/* pointer to args */
-     xdrproc_t xresults;	/* xdr routine for results */
-     caddr_t resultsp;		/* pointer to results */
-     resultproc_t eachresult;	/* call with each result obtained */
+clnt_broadcast (
+     u_long prog,		/* program number */
+     u_long vers,		/* version number */
+     u_long proc,		/* procedure number */
+     xdrproc_t xargs,		/* xdr routine for args */
+     caddr_t argsp,		/* pointer to args */
+     xdrproc_t xresults,	/* xdr routine for results */
+     caddr_t resultsp,		/* pointer to results */
+     resultproc_t eachresult	/* call with each result obtained */)
 {
   enum clnt_stat stat = RPC_FAILED;
   AUTH *unix_auth = authunix_create_default ();

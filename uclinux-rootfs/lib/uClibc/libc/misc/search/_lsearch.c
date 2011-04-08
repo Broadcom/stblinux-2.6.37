@@ -1,7 +1,7 @@
 /*
  * This file lifted in toto from 'Dlibs' on the atari ST  (RdeBath)
  *
- * 
+ *
  *    Dale Schumacher                         399 Beacon Ave.
  *    (alias: Dalnefre')                      St. Paul, MN  55104
  *    dal@syntel.UUCP                         United States of America
@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <search.h>
 
-libc_hidden_proto(lfind)
 
 #ifdef L_lfind
 
@@ -22,7 +21,7 @@ void *lfind(const void *key, const void *base, size_t *nmemb,
 	register int n = *nmemb;
 
 	while (n--) {
-		if ((*compar) (base, key) == 0)
+		if ((*compar) (key, base) == 0)
 			return ((void*)base);
 		base += size;
 	}
@@ -34,9 +33,8 @@ libc_hidden_def(lfind)
 
 #ifdef L_lsearch
 
-libc_hidden_proto(memcpy)
 
-void *lsearch(const void *key, void *base, size_t *nmemb, 
+void *lsearch(const void *key, void *base, size_t *nmemb,
 	size_t size, int (*compar)(const void *, const void *))
 {
 	register char *p;

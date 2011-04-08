@@ -7,14 +7,13 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #ifdef __USE_XOPEN_EXTENDED
-libc_hidden_proto(getsid)
 
 #define __NR___syscall_getsid __NR_getsid
-static inline _syscall1(__kernel_pid_t, __syscall_getsid, __kernel_pid_t, pid);
+static __inline__ _syscall1(__kernel_pid_t, __syscall_getsid, __kernel_pid_t, pid)
 
 pid_t getsid(pid_t pid)
 {

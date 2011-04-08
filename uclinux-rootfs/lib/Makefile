@@ -104,19 +104,26 @@ romfs:
 ifeq ($(INITRD_SUBDIR),) 
 ifeq ($(findstring y,$(CONFIG_LIB_LIBSTDCXX_FORCE)$(CONFIG_LIB_LIBSTDCXX)),y)
 	-$(RM) -f $(ROMFSDIR)/lib/libstdc++.*
-	cp -af $(GCCLIB)/libstdc++.so* $(ROMFSDIR)/lib/
+	cp -af $(GCCLIB)/libstdc++.so $(GCCLIB)/libstdc++.so*[0-9] \
+		$(ROMFSDIR)/lib/
 	$(STRIP) $(ROMFSDIR)/lib/libstdc++.so
-endif
-ifeq ($(findstring y,$(CONFIG_LIB_LIBSUPCXX_FORCE)$(CONFIG_LIB_LIBSUPCXX)),y)
-	-$(RM) -f $(ROMFSDIR)/lib/libsupc++.*
-	cp -af $(GCCLIB)/libsupc++.so* $(ROMFSDIR)/lib/
-	$(STRIP) $(ROMFSDIR)/lib/libsupc++.so
 endif
 ifeq ($(findstring y,$(CONFIG_LIB_LIBGCC_FORCE)$(CONFIG_LIB_LIBGCC)),y)
 	# THT: Copy libgcc_s.so to romfs dir (see: PR45130, PR44678)
 	-$(RM) -f $(ROMFSDIR)/lib/libgcc_s.so*
-	cp -af $(GCCLIB)/libgcc_s.* $(ROMFSDIR)/lib/
+	cp -af $(GCCLIB)/libgcc_s.so $(GCCLIB)/libgcc_s.so*[0-9] \
+		$(ROMFSDIR)/lib/
 	$(STRIP) $(ROMFSDIR)/lib/libgcc_s.so
+endif
+ifeq ($(findstring y,$(CONFIG_LIB_LIBUTIL_FORCE)$(CONFIG_LIB_LIBUTIL)),y)
+	-$(RM) -f $(ROMFSDIR)/lib/libutil.so*
+	cp -af $(GCCSYSROOT)/lib/libutil* $(ROMFSDIR)/lib/
+	$(STRIP) $(ROMFSDIR)/lib/libutil.so.0
+endif
+ifeq ($(findstring y,$(CONFIG_LIB_LIBCRYPT_FORCE)$(CONFIG_LIB_LIBCRYPT)),y)
+	-$(RM) -f $(ROMFSDIR)/lib/libcrypt.so*
+	cp -af $(GCCSYSROOT)/lib/libcrypt* $(ROMFSDIR)/lib/
+	$(STRIP) $(ROMFSDIR)/lib/libcrypt.so.0
 endif
 endif
 

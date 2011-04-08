@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add ICMP support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -83,7 +84,7 @@ print_icmptypes(void)
 	unsigned int i;
 	printf("Valid ICMP Types:");
 
-	for (i = 0; i < sizeof(icmp_codes)/sizeof(struct icmp_names); i++) {
+	for (i = 0; i < ARRAY_SIZE(icmp_codes); ++i) {
 		if (i && icmp_codes[i].type == icmp_codes[i-1].type) {
 			if (icmp_codes[i].code_min == icmp_codes[i-1].code_min
 			    && (icmp_codes[i].code_max
@@ -108,14 +109,14 @@ static void icmp_help(void)
 }
 
 static const struct option icmp_opts[] = {
-	{ "icmp-type", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "icmp-type", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void 
 parse_icmp(const char *icmptype, u_int8_t *type, u_int8_t code[])
 {
-	unsigned int limit = sizeof(icmp_codes)/sizeof(struct icmp_names);
+	static const unsigned int limit = ARRAY_SIZE(icmp_codes);
 	unsigned int match = limit;
 	unsigned int i;
 
@@ -183,8 +184,8 @@ static int icmp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags == 1)
 			xtables_error(PARAMETER_PROBLEM,
 				   "icmp match: only use --icmp-type once!");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_icmp(argv[optind-1], &icmpinfo->type, 
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_icmp(optarg, &icmpinfo->type, 
 			   icmpinfo->code);
 		if (invert)
 			icmpinfo->invflags |= IPT_ICMP_INV;
@@ -206,16 +207,13 @@ static void print_icmptype(u_int8_t type,
 	if (!numeric) {
 		unsigned int i;
 
-		for (i = 0;
-		     i < sizeof(icmp_codes)/sizeof(struct icmp_names);
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(icmp_codes); ++i)
 			if (icmp_codes[i].type == type
 			    && icmp_codes[i].code_min == code_min
 			    && icmp_codes[i].code_max == code_max)
 				break;
-		}
 
-		if (i != sizeof(icmp_codes)/sizeof(struct icmp_names)) {
+		if (i != ARRAY_SIZE(icmp_codes)) {
 			printf("%s%s ",
 			       invert ? "!" : "",
 			       icmp_codes[i].name);

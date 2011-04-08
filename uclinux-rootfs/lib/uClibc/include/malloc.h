@@ -146,6 +146,7 @@ struct mallinfo {
 
 /* Returns a copy of the updated current mallinfo. */
 extern struct mallinfo mallinfo __MALLOC_P ((void));
+libc_hidden_proto(mallinfo)
 
 /* Release all but __pad bytes of freed top-most memory back to the
    system. Return 1 if successful, else 0. */
@@ -183,6 +184,15 @@ extern int mallopt __MALLOC_P ((int __param, int __val));
 
 #endif /* __MALLOC_STANDARD__ */
 
+/* uClibc may use malloc internally in situations where user can not be
+ * notified about out-of-memory condition. In this situation uClibc will
+ * call __uc_malloc_failed if it is non-NULL, and retry allocation
+ * if it returns. If __uc_malloc_failed is NULL, uclibc will _exit(1).
+ * NB: do not use stdio in __uc_malloc_failed handler! */
+extern void *__uc_malloc(size_t size);
+libc_hidden_proto(__uc_malloc)
+extern void (*__uc_malloc_failed)(size_t size);
+libc_hidden_proto(__uc_malloc_failed)
 
 #ifdef __cplusplus
 } /* end of extern "C" */

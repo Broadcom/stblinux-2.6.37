@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2003, 2004, 2006, 2007 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,20 +17,18 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
-#include <shlib-compat.h>
+#include <lowlevellock.h>
 #include <lowlevelcond.h>
+#include <tcb-offsets.h>
+#include <bits/kernel-features.h>
 #include "lowlevel-atomic.h"
-
-#define SYS_futex		240
-#define FUTEX_WAIT		0
-#define FUTEX_WAKE		1
-
 
 	.text
 
 /* int pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex)  */
 	.globl	__pthread_cond_wait
 	.type	__pthread_cond_wait, @function
+	.protected	__pthread_cond_wait
 	.align	5
 __pthread_cond_wait:
 .LSTARTCODE:
@@ -50,7 +48,7 @@ __pthread_cond_wait:
 .Lalloc:
 	mov	r4, r8
 	mov	r5, r9
-#ifdef PIC
+#ifdef __PIC__
 	mova	.Lgot0, r0
 	mov.l	.Lgot0, r12
 	add	r0, r12
@@ -67,13 +65,13 @@ __pthread_cond_wait:
 	bt	2f
 	bra	1f
 	 nop
-#ifdef PIC
+#ifdef __PIC__
 	.align	2
 .Lgot0:
 	.long	_GLOBAL_OFFSET_TABLE_
 #endif
 
-2:	
+2:
 	/* Store the reference to the mutex.  If there is already a
 	   different value in there this is a bad user bug.  */
 	mov.l	@(dep_mutex,r8),r0
@@ -81,7 +79,7 @@ __pthread_cond_wait:
 	bt	15f
 	mov.l	r9, @(dep_mutex,r8)
 
-15:	
+15:
 	/* Unlock the mutex.  */
 	mov.l	.Lmunlock0, r1
 	mov	#0, r5
@@ -107,7 +105,7 @@ __pthread_cond_wait:
 	mov.l	@(cond_futex,r8),r0
 	add	r2, r0
 	mov.l	r0,@(cond_futex,r8)
-	mov	#(1 << clock_bits), r2
+	mov	#(1 << nwaiters_shift), r2
 	mov.l	@(cond_nwaiters,r8), r0
 	add	r2, r0
 	mov.l	r0, @(cond_nwaiters,r8)
@@ -139,7 +137,22 @@ __pthread_cond_wait:
 	mov.l	r0, @r15
 
 	mov	#0, r7
-	mov	#FUTEX_WAIT, r5
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bt/s	99f
+	 mov	#FUTEX_WAIT, r5
+#ifdef __ASSUME_PRIVATE_FUTEX
+	mov	#(FUTEX_WAIT|FUTEX_PRIVATE_FLAG), r5
+	extu.b	r5, r5
+#else
+	stc	gbr, r1
+	mov.w	.Lpfoff0, r2
+	add	r2, r1
+	mov.l	@r1, r5
+	mov	#FUTEX_WAIT, r0
+	or	r0, r5
+#endif
+99:
 	mov.l	@(8,r15), r6
 	mov	r8, r4
 	add	#cond_futex, r4
@@ -151,7 +164,7 @@ __pthread_cond_wait:
 	mov.l	.Ldisable0, r1
 	bsrf	r1
 	 mov.l	@r15, r4
-.Ldisable0b:	
+.Ldisable0b:
 .LcleanupEND:
 
 	/* Lock.  */
@@ -197,7 +210,7 @@ __pthread_cond_wait:
 	mov.l	r1,@(woken_seq+4,r8)
 
 16:
-	mov	#(1 << clock_bits), r2
+	mov	#(1 << nwaiters_shift), r2
 	mov.l	@(cond_nwaiters,r8),r0
 	sub	r2, r0
 	mov.l	r0,@(cond_nwaiters,r8)
@@ -209,7 +222,7 @@ __pthread_cond_wait:
 	not	r0, r0
 	cmp/eq	#0, r0
 	bf/s	17f
-	 mov	#((1 << clock_bits) - 1), r1
+	 mov	#((1 << nwaiters_shift) - 1), r1
 	not	r1, r1
 	mov.l	@(cond_nwaiters,r8),r0
 	tst	r1, r0
@@ -217,7 +230,22 @@ __pthread_cond_wait:
 
 	mov	r8, r4
 	add	#cond_nwaiters, r4
-	mov	#FUTEX_WAKE, r5
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bt/s	99f
+	 mov	#FUTEX_WAKE, r5
+#ifdef __ASSUME_PRIVATE_FUTEX
+	mov	#(FUTEX_WAKE|FUTEX_PRIVATE_FLAG), r5
+	extu.b	r5, r5
+#else
+	stc	gbr, r1
+	mov.w	.Lpfoff0, r2
+	add	r2, r1
+	mov.l	@r1, r5
+	mov	#FUTEX_WAKE, r0
+	or	r0, r5
+#endif
+99:
 	mov	#1, r6
 	mov	#0, r7
 	mov	#SYS_futex, r3
@@ -251,6 +279,10 @@ __pthread_cond_wait:
 	rts
 	 mov.l	@r15+, r8
 
+#ifndef __ASSUME_PRIVATE_FUTEX
+.Lpfoff0:
+	.word	PRIVATE_FUTEX - TLS_PRE_TCB_SIZE
+#endif
 	.align	2
 .Lmunlock0:
 	.long	__pthread_mutex_unlock_usercnt-.Lmunlock0b
@@ -267,10 +299,17 @@ __pthread_cond_wait:
 #if cond_lock != 0
 	add	#cond_lock, r5
 #endif
-	mov.l	.Lmwait0, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r6
+	mov	#LLL_SHARED, r6
+99:
+	extu.b	r6, r6
+	mov.l	.Lwait0, r1
 	bsrf	r1
 	 mov	r2, r4
-.Lmwait0b:
+.Lwait0b:
 	bra	2b
 	 nop
 3:
@@ -279,10 +318,16 @@ __pthread_cond_wait:
 #if cond_lock != 0
 	add	#cond_lock, r4
 #endif
-	mov.l	.Lmwake0, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r5
+	mov	#LLL_SHARED, r5
+99:
+	mov.l	.Lwake0, r1
 	bsrf	r1
-	 nop
-.Lmwake0b:
+	 extu.b	r5, r5
+.Lwake0b:
 	bra	4b
 	 nop
 
@@ -292,10 +337,17 @@ __pthread_cond_wait:
 #if cond_lock != 0
 	add	#cond_lock, r5
 #endif
-	mov.l	.Lmwait1, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r6
+	mov	#LLL_SHARED, r6
+99:
+	extu.b	r6, r6
+	mov.l	.Lwait1, r1
 	bsrf	r1
 	 mov	r2, r4
-.Lmwait1b:
+.Lwait1b:
 	bra	6b
 	 nop
 
@@ -305,10 +357,16 @@ __pthread_cond_wait:
 #if cond_lock != 0
 	add	#cond_lock, r4
 #endif
-	mov.l	.Lmwake1, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r5
+	mov	#LLL_SHARED, r5
+99:
+	mov.l	.Lwake1, r1
 	bsrf	r1
-	 nop
-.Lmwake1b:
+	 extu.b	r5, r5
+.Lwake1b:
 	bra	11b
 	 nop
 
@@ -327,29 +385,34 @@ __pthread_cond_wait:
 #if cond_lock != 0
 	add	#cond_lock, r4
 #endif
-	mov.l	.Lmwake2, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r5
+	mov	#LLL_SHARED, r5
+99:
+	mov.l	.Lwake2, r1
 	bsrf	r1
-	 nop
-.Lmwake2b:
+	 extu.b	r5, r5
+.Lwake2b:
 
 13:
 	bra	14b
 	 mov.l	@(12,r15), r0
 
 	.align	2
-.Lmwait0:
-	.long	__lll_mutex_lock_wait-.Lmwait0b
-.Lmwake0:
-	.long	__lll_mutex_unlock_wake-.Lmwake0b
-.Lmwait1:
-	.long	__lll_mutex_lock_wait-.Lmwait1b
-.Lmwake1:
-	.long	__lll_mutex_unlock_wake-.Lmwake1b
-.Lmwake2:
-	.long	__lll_mutex_unlock_wake-.Lmwake2b
+.Lwait0:
+	.long	__lll_lock_wait-.Lwait0b
+.Lwake0:
+	.long	__lll_unlock_wake-.Lwake0b
+.Lwait1:
+	.long	__lll_lock_wait-.Lwait1b
+.Lwake1:
+	.long	__lll_unlock_wake-.Lwake1b
+.Lwake2:
+	.long	__lll_unlock_wake-.Lwake2b
 	.size	__pthread_cond_wait, .-__pthread_cond_wait
-versioned_symbol (libpthread, __pthread_cond_wait, pthread_cond_wait,
-		  GLIBC_2_3_2)
+weak_alias (__pthread_cond_wait, pthread_cond_wait)
 
 
 	.type	__condvar_w_cleanup, @function
@@ -371,10 +434,17 @@ __condvar_w_cleanup:
 #if cond_lock != 0
 	add	#cond_lock, r5
 #endif
-	mov.l	.Lmwait3, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r6
+	mov	#LLL_SHARED, r6
+99:
+	extu.b	r6, r6
+	mov.l	.Lwait3, r1
 	bsrf	r1
 	 mov	r2, r4
-.Lmwait3b:
+.Lwait3b:
 
 1:
 	mov.l	@(broadcast_seq,r8), r0
@@ -385,6 +455,21 @@ __condvar_w_cleanup:
 	mov	#1, r2
 	mov	#0, r3
 
+	/* We increment the wakeup_seq counter only if it is lower than
+	   total_seq.  If this is not the case the thread was woken and
+	   then canceled.  In this case we ignore the signal.  */
+	mov.l	@(total_seq+4,r8), r0
+	mov.l	@(wakeup_seq+4,r8), r1
+	cmp/hi	r1, r0
+	bt/s	6f
+	 cmp/hi	r0, r1
+	bt	7f
+	mov.l	@(total_seq,r8), r0
+	mov.l	@(wakeup_seq,r8), r1
+	cmp/hs	r0, r1
+	bt	7f
+
+6:
 	clrt
 	mov.l	@(wakeup_seq,r8),r0
 	mov.l	@(wakeup_seq+4,r8),r1
@@ -396,6 +481,7 @@ __condvar_w_cleanup:
 	add	r2, r0
 	mov.l	r0,@(cond_futex,r8)
 
+7:
 	clrt
 	mov.l	@(woken_seq,r8),r0
 	mov.l	@(woken_seq+4,r8),r1
@@ -405,7 +491,7 @@ __condvar_w_cleanup:
 	mov.l	r1,@(woken_seq+4,r8)
 
 3:
-	mov	#(1 << clock_bits), r2
+	mov	#(1 << nwaiters_shift), r2
 	mov.l	@(cond_nwaiters,r8),r0
 	sub	r2, r0
 	mov.l	r0,@(cond_nwaiters,r8)
@@ -418,7 +504,7 @@ __condvar_w_cleanup:
 	not	r0, r0
 	cmp/eq	#0, r0
 	bf/s	4f
-	 mov	#((1 << clock_bits) - 1), r1
+	 mov	#((1 << nwaiters_shift) - 1), r1
 	not	r1, r1
 	mov.l	@(cond_nwaiters,r8),r0
 	tst	r1, r0
@@ -426,7 +512,22 @@ __condvar_w_cleanup:
 
 	mov	r8, r4
 	add	#cond_nwaiters, r4
-	mov	#FUTEX_WAKE, r5
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bt/s	99f
+	 mov	#FUTEX_WAKE, r5
+#ifdef __ASSUME_PRIVATE_FUTEX
+	mov	#(FUTEX_WAKE|FUTEX_PRIVATE_FLAG), r5
+	extu.b	r5, r5
+#else
+	stc	gbr, r1
+	mov.w	.Lpfoff1, r2
+	add	r2, r1
+	mov.l	@r1, r5
+	mov	#FUTEX_WAKE, r0
+	or	r0, r5
+#endif
+99:
 	mov	#1, r6
 	mov	#0, r7
 	mov	#SYS_futex, r3
@@ -448,10 +549,16 @@ __condvar_w_cleanup:
 #if cond_lock != 0
 	add	#cond_lock, r4
 #endif
-	mov.l	.Lmwake3, r1
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bf/s	99f
+	 mov	#LLL_PRIVATE, r5
+	mov	#LLL_SHARED, r5
+99:
+	mov.l	.Lwake3, r1
 	bsrf	r1
-	 nop
-.Lmwake3b:
+	 extu.b	r5, r5
+.Lwake3b:
 
 2:
 	/* Wake up all waiters to make sure no signal gets lost.  */
@@ -459,7 +566,22 @@ __condvar_w_cleanup:
 	bf/s	5f
 	 mov	r8, r4
 	add	#cond_futex, r4
-	mov	#FUTEX_WAKE, r5
+	mov.l	@(dep_mutex,r8), r0
+	cmp/eq	#-1, r0
+	bt/s	99f
+	 mov	#FUTEX_WAKE, r5
+#ifdef __ASSUME_PRIVATE_FUTEX
+	mov	#(FUTEX_WAKE|FUTEX_PRIVATE_FLAG), r5
+	extu.b	r5, r5
+#else
+	stc	gbr, r1
+	mov.w	.Lpfoff1, r2
+	add	r2, r1
+	mov.l	@r1, r5
+	mov	#FUTEX_WAKE, r0
+	or	r0, r5
+#endif
+99:
 	mov	#-1, r6
 	shlr	r6		/* r6 = 0x7fffffff */
 	mov	#0, r7
@@ -476,22 +598,26 @@ __condvar_w_cleanup:
 
 .LcallUR:
 	mov.l	.Lresume, r1
-#ifdef PIC
+#ifdef __PIC__
 	add	r12, r1
 #endif
 	jsr	@r1
 	 mov	r11, r4
 	sleep
 
+#ifndef __ASSUME_PRIVATE_FUTEX
+.Lpfoff1:
+	.word	PRIVATE_FUTEX - TLS_PRE_TCB_SIZE
+#endif
 	.align	2
-.Lmwait3:
-	.long   __lll_mutex_lock_wait-.Lmwait3b
-.Lmwake3:
-        .long   __lll_mutex_unlock_wake-.Lmwake3b
+.Lwait3:
+	.long   __lll_lock_wait-.Lwait3b
+.Lwake3:
+        .long   __lll_unlock_wake-.Lwake3b
 .Lmlocki3:
 	.long   __pthread_mutex_cond_lock-.Lmlocki3b
 .Lresume:
-#ifdef PIC
+#ifdef __PIC__
 	.long	_Unwind_Resume@GOTOFF
 #else
 	.long	_Unwind_Resume

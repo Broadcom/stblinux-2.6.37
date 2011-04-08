@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Dec  6 15:52:34 2010
- *                 MD5 Checksum         f0e969535926b03886e5276f1b3538ba
+ * Date:           Generated on         Mon Feb 14 16:07:23 2011
+ *                 MD5 Checksum         cc8dedd74d2a3dc68f0588cee2b5182d
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,9 +34,9 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7640/rdb/a0/bchp_common.h $
  * 
- * Hydra_Software_Devel/3   12/8/10 6:02p etrudeau
- * SWBLURAY-23514: update now that Central RDB is rsync-ed to Andover and
- * xpt_public directory is used now
+ * Hydra_Software_Devel/5   2/15/11 9:02p etrudeau
+ * SWBLURAY-24578: update HDMI Rate Monitor header file with version
+ * create without no_dup_field
  *
  ***************************************************************************/
 
@@ -536,6 +536,10 @@
 #define BCHP_USB_EHCI_REG_END                              0x004803a4
 #define BCHP_USB_OHCI_REG_START                            0x00480400
 #define BCHP_USB_OHCI_REG_END                              0x00480458
+#define BCHP_USB_EHCI1_REG_START                           0x00480500
+#define BCHP_USB_EHCI1_REG_END                             0x004805a4
+#define BCHP_USB_OHCI1_REG_START                           0x00480600
+#define BCHP_USB_OHCI1_REG_END                             0x00480658
 #define BCHP_AUD_DSP_RGR_REG_START                         0x00600000
 #define BCHP_AUD_DSP_RGR_REG_END                           0x00600010
 #define BCHP_AUD_DSP_MISC_REG_START                        0x00600100

@@ -1,15 +1,16 @@
 dnl Process this file with autoconf to create configure.  Use autoreconf.
 AC_PREREQ(2.57)
-AC_INIT([strace],[4.5.18])
+AC_INIT([strace],[4.5.20])
 AC_CONFIG_SRCDIR([strace.c])
+AC_CONFIG_AUX_DIR([.])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([foreign check-news dist-bzip2])
+AM_INIT_AUTOMAKE([foreign check-news dist-bzip2 no-dist-gzip])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for supported operating system])
 case "$host_os" in
-linux*)
+*linux*)
 	opsys=linux
 	AC_DEFINE([LINUX], 1, [Define for the Linux operating system.])
 	;;
@@ -43,6 +44,10 @@ AC_MSG_RESULT($opsys)
 
 AC_MSG_CHECKING([for supported architecture])
 case "$host_cpu" in
+bfin)
+	arch=bfin
+	AC_DEFINE([BFIN], 1, [Define for the Blackfin architecture.])
+	;;
 i[[3456]]86|pentium)
 	arch=i386
 	AC_DEFINE([I386], 1, [Define for the i386 architecture.])
@@ -79,6 +84,10 @@ arm*)
 	arch=arm
 	AC_DEFINE([ARM], 1, [Define for the ARM architecture.])
 	;;
+avr32*)
+	arch=avr32
+	AC_DEFINE([AVR32], 1, [Define for the AVR32 architecture.])
+	;;
 s390)
 	arch=s390
 	AC_DEFINE([S390], 1, [Define for the S390 architecture.])
@@ -102,6 +111,18 @@ sh*)
 x86?64*)
 	arch=x86_64
 	AC_DEFINE([X86_64], 1, [Define for the AMD x86-64 architecture.])
+	;;
+cris|crisv10)
+	arch=crisv10
+	AC_DEFINE([CRISV10], 1, [Define for the CRISv10 architecture.])
+	;;
+crisv32)
+	arch=crisv32
+	AC_DEFINE([CRISV32], 1, [Define for the CRISv32 architecture.])
+	;;
+tile*)
+	arch=tile
+	AC_DEFINE([TILE], 1, [Define for the Tile architecture])
 	;;
 *)
 	AC_MSG_RESULT([NO!])
@@ -170,6 +191,7 @@ AC_CHECK_MEMBERS([struct stat.st_blksize,
 		  struct stat.st_level,
 		  struct stat.st_rdev])
 AC_STAT64
+AC_STATFS64
 
 AC_TYPE_SIGNAL
 AC_TYPE_UID_T
@@ -192,13 +214,60 @@ if test x$opsys != xlinux; then
 AC_CHECK_LIB(nsl, main)
 fi
 
-AC_CHECK_FUNCS(sigaction strerror strsignal pread sys_siglist _sys_siglist getdents mctl prctl sendmsg inet_ntop if_indextoname)
-AC_CHECK_HEADERS([sys/reg.h sys/filio.h sys/acl.h sys/asynch.h sys/door.h stropts.h sys/conf.h sys/stream.h sys/tihdr.h sys/tiuser.h sys/sysconfig.h ioctls.h sys/ioctl.h sys/ptrace.h termio.h linux/ptrace.h asm/reg.h sys/uio.h sys/aio.h poll.h sys/poll.h sys/vfs.h asm/sysmips.h linux/utsname.h sys/nscsys.h mqueue.h sys/epoll.h libaio.h inttypes.h], [], [])
+AC_CHECK_FUNCS([ \
+	fork \
+	getdents \
+	if_indextoname \
+	inet_ntop \
+	mctl \
+	prctl \
+	pread \
+	sendmsg \
+	sigaction \
+	strerror \
+	strsignal \
+	sys_siglist \
+	_sys_siglist \
+])
+AC_CHECK_HEADERS([ \
+	inttypes.h \
+	ioctls.h \
+	libaio.h \
+	mqueue.h \
+	poll.h \
+	stropts.h \
+	termio.h \
+	sys/acl.h \
+	sys/aio.h \
+	sys/asynch.h \
+	sys/conf.h \
+	sys/door.h \
+	sys/epoll.h \
+	sys/filio.h \
+	sys/ioctl.h \
+	sys/nscsys.h \
+	sys/poll.h \
+	sys/ptrace.h \
+	sys/reg.h \
+	sys/stream.h \
+	sys/sysconfig.h \
+	sys/tihdr.h \
+	sys/tiuser.h \
+	sys/uio.h \
+	sys/vfs.h \
+	asm/cachectl.h \
+	asm/sysmips.h \
+	linux/capability.h \
+	linux/ptrace.h \
+	linux/utsname.h \
+], [], [])
 AC_CHECK_HEADERS([linux/icmp.h linux/in6.h linux/netlink.h linux/if_packet.h],
                  [], [], [#include <stddef.h>
-#include <linux/socket.h>])
+#include <sys/socket.h>
+#include <asm/types.h>])
 AC_CHECK_HEADERS([asm/sigcontext.h], [], [], [#include <signal.h>])
-AC_CHECK_TYPES([struct sigcontext_struct],,, [#include <signal.h>])
+AC_CHECK_TYPES([struct sigcontext_struct,
+		struct sigcontext],,, [#include <signal.h>])
 AC_CHECK_HEADERS([netinet/tcp.h netinet/udp.h],,, [#include <netinet/in.h>])
 
 AC_MP_PROCFS

@@ -10,10 +10,6 @@
 #include <assert.h>
 #include "rpc_private.h"
 
-libc_hidden_proto(__rpc_thread_svc_fdset)
-libc_hidden_proto(__rpc_thread_createerr)
-libc_hidden_proto(__rpc_thread_svc_pollfd)
-libc_hidden_proto(__rpc_thread_svc_max_pollfd)
 
 #ifdef __UCLIBC_HAS_THREADS__
 
@@ -35,7 +31,7 @@ __rpc_thread_destroy (void)
 	if (tvp != NULL && tvp != &__libc_tsd_RPC_VARS_mem) {
 		__rpc_thread_svc_cleanup ();
 		__rpc_thread_clnt_cleanup ();
-		//__rpc_thread_key_cleanup ();
+		/*__rpc_thread_key_cleanup (); */
 		free (tvp->authnone_private_s);
 		free (tvp->clnt_perr_buf_s);
 		free (tvp->clntraw_private_s);
@@ -72,7 +68,7 @@ __rpc_thread_variables (void)
 			if (tvp != NULL)
 				__libc_tsd_set (RPC_VARS, tvp);
 			else
-				tvp = __libc_tsd_RPC_VARS;
+				tvp = __libc_tsd_get (RPC_VARS);
 		}
 	}
 	return tvp;

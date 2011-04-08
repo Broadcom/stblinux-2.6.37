@@ -11,12 +11,10 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 
-libc_hidden_proto(seteuid)
-
-#if (defined __NR_setresuid || defined __NR_setresuid32) && defined __USE_GNU
-libc_hidden_proto(setresuid)
+#if !defined __UCLIBC_LINUX_SPECIFIC__
+#undef __NR_setresuid
+#undef __NR_setresuid32
 #endif
-libc_hidden_proto(setreuid)
 
 int seteuid(uid_t uid)
 {

@@ -1,9 +1,11 @@
 # Makefile for uClibc
 #
-# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
 #
 # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
 #
+
+subdirs += libc/misc/search
 
 CSRC := hsearch.c
 
@@ -26,10 +28,8 @@ MISC_SEARCH_SRC := $(patsubst %.c,$(MISC_SEARCH_DIR)/%.c,$(CSRC))
 MISC_SEARCH_OBJ := $(patsubst %.c,$(MISC_SEARCH_OUT)/%.o,$(CSRC))
 
 libc-y += $(MISC_SEARCH_OBJ)
-libc-a-y += $(MISC_SEARCH_OBJ)
-libc-so-y += $(MISC_SEARCH_OBJ:.o=.os)
 
-objclean-y += misc_search_objclean
+objclean-y += CLEAN_libc/misc/search
 
-misc_search_objclean:
-	$(RM) $(MISC_SEARCH_OUT)/*.{o,os}
+CLEAN_libc/misc/search:
+	$(do_rm) $(addprefix $(MISC_SEARCH_OUT)/*., o os)

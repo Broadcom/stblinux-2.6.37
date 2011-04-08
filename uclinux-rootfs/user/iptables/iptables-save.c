@@ -52,6 +52,7 @@ static int for_each_table(int (*func)(const char *tablename))
 		ret &= func(tablename);
 	}
 
+	fclose(procfile);
 	return ret;
 }
 
@@ -147,7 +148,7 @@ main(int argc, char *argv[])
 				iptables_globals.program_version);
 		exit(1);
 	}
-#ifdef NO_SHARED_LIBS
+#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 #endif
 

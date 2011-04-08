@@ -1,2 +1,3 @@
+#include <tcb-offsets.h>
 #define RESET_PID
-#include <sysdeps/unix/sysv/linux/x86_64/clone.S>
+#include <libc/sysdeps/linux/x86_64/clone.S>

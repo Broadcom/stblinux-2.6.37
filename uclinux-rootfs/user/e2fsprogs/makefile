@@ -5,6 +5,7 @@ BOGUS_TARGETS		:= FORCE makefile $(ROOTDIR)/config.arch
 CC			:= $(MACHINE)-linux-gcc
 STRIP			:= $(MACHINE)-linux-strip
 CFLAGS			:= -Os
+SHELL			:= bash
 
 export CC CFLAGS
 

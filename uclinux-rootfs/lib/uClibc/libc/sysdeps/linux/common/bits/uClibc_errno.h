@@ -9,17 +9,17 @@
 #ifdef IS_IN_rtld
 # undef errno
 # define errno _dl_errno
-extern int _dl_errno; // attribute_hidden;
+extern int _dl_errno; /* attribute_hidden; */
 #elif defined __UCLIBC_HAS_THREADS__
 # include <tls.h>
-# if USE___THREAD
+# if defined USE___THREAD && USE___THREAD
 #  undef errno
 #  ifndef NOT_IN_libc
 #   define errno __libc_errno
 #  else
 #   define errno errno
 #  endif
-extern __thread int errno __attribute_tls_model_ie;
+extern __thread int errno attribute_tls_model_ie;
 # endif /* USE___THREAD */
 #endif /* IS_IN_rtld */
 
@@ -33,16 +33,11 @@ extern int *__errno_location (void) __THROW __attribute__ ((__const__))
 ;
 # if defined __UCLIBC_HAS_THREADS__
 #  include <tls.h>
-#  if USE___THREAD
+#  if defined USE___THREAD && USE___THREAD
 libc_hidden_proto(__errno_location)
 #  endif
 # endif
 
-/* We now need a declaration of the `errno' variable.  */
-# ifndef __UCLIBC_HAS_THREADS__
-/*extern int errno;*/
-libc_hidden_proto(errno)
-# endif
 #endif /* !__ASSEMBLER__ */
 
 #endif

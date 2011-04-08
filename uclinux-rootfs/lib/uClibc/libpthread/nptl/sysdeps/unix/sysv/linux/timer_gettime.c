@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sysdep.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 #include "kernel-posix-timers.h"
 
 
@@ -39,9 +39,9 @@ static int compat_timer_gettime (timer_t timerid, struct itimerspec *value);
 
 
 int
-timer_gettime (timerid, value)
-     timer_t timerid;
-     struct itimerspec *value;
+timer_gettime (
+     timer_t timerid,
+     struct itimerspec *value)
 {
 # undef timer_gettime
 # ifndef __ASSUME_POSIX_TIMERS

@@ -54,12 +54,7 @@ static unsigned int __init serial_in(struct uart_port *port, int offset)
 	case UPIO_MEM:
 		return readb(port->membase + offset);
 	case UPIO_MEM32:
-#ifdef CONFIG_BRCMSTB
-		/* no byteswap on BE */
-		return __raw_readl(port->membase + (offset << 2));
-#else
 		return readl(port->membase + (offset << 2));
-#endif
 	case UPIO_PORT:
 		return inb(port->iobase + offset);
 	default:
@@ -74,11 +69,7 @@ static void __init serial_out(struct uart_port *port, int offset, int value)
 		writeb(value, port->membase + offset);
 		break;
 	case UPIO_MEM32:
-#ifdef CONFIG_BRCMSTB
-		__raw_writel(value, port->membase + (offset << 2));
-#else
 		writel(value, port->membase + (offset << 2));
-#endif
 		break;
 	case UPIO_PORT:
 		outb(value, port->iobase + offset);
@@ -151,11 +142,9 @@ static void __init init_port(struct early_serial8250_device *device)
 
 	divisor = port->uartclk / (16 * device->baud);
 	c = serial_in(port, UART_LCR);
-#if !defined(CONFIG_BRCM_IKOS) && !defined(CONFIG_BRCM_HAS_PCU_UARTS)
 	serial_out(port, UART_LCR, c | UART_LCR_DLAB);
 	serial_out(port, UART_DLL, divisor & 0xff);
 	serial_out(port, UART_DLM, (divisor >> 8) & 0xff);
-#endif
 	serial_out(port, UART_LCR, c & ~UART_LCR_DLAB);
 }
 

@@ -23,9 +23,10 @@
 
 
 int
-__pthread_attr_setscope (attr, scope)
-     pthread_attr_t *attr;
-     int scope;
+attribute_protected
+__pthread_attr_setscope (
+     pthread_attr_t *attr,
+     int scope)
 {
   struct pthread_attr *iattr;
 

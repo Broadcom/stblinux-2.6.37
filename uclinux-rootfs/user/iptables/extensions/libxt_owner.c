@@ -16,8 +16,38 @@
 
 #include <xtables.h>
 #include <linux/netfilter/xt_owner.h>
-#include <linux/netfilter_ipv4/ipt_owner.h>
-#include <linux/netfilter_ipv6/ip6t_owner.h>
+
+/* match and invert flags */
+enum {
+	IPT_OWNER_UID   = 0x01,
+	IPT_OWNER_GID   = 0x02,
+	IPT_OWNER_PID   = 0x04,
+	IPT_OWNER_SID   = 0x08,
+	IPT_OWNER_COMM  = 0x10,
+	IP6T_OWNER_UID  = IPT_OWNER_UID,
+	IP6T_OWNER_GID  = IPT_OWNER_GID,
+	IP6T_OWNER_PID  = IPT_OWNER_PID,
+	IP6T_OWNER_SID  = IPT_OWNER_SID,
+	IP6T_OWNER_COMM = IPT_OWNER_COMM,
+};
+
+struct ipt_owner_info {
+	uid_t uid;
+	gid_t gid;
+	pid_t pid;
+	pid_t sid;
+	char comm[16];
+	u_int8_t match, invert;	/* flags */
+};
+
+struct ip6t_owner_info {
+	uid_t uid;
+	gid_t gid;
+	pid_t pid;
+	pid_t sid;
+	char comm[16];
+	u_int8_t match, invert;	/* flags */
+};
 
 /*
  *	Note: "UINT32_MAX - 1" is used in the code because -1 is a reserved
@@ -83,7 +113,7 @@ static const struct option owner_mt_opts_v0[] = {
 #ifdef IPT_OWNER_COMM
 	{.name = "cmd-owner", .has_arg = true, .val = 'c'},
 #endif
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option owner_mt6_opts_v0[] = {
@@ -91,14 +121,14 @@ static const struct option owner_mt6_opts_v0[] = {
 	{.name = "gid-owner", .has_arg = true, .val = 'g'},
 	{.name = "pid-owner", .has_arg = true, .val = 'p'},
 	{.name = "sid-owner", .has_arg = true, .val = 's'},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option owner_mt_opts[] = {
 	{.name = "uid-owner",     .has_arg = true,  .val = 'u'},
 	{.name = "gid-owner",     .has_arg = true,  .val = 'g'},
 	{.name = "socket-exists", .has_arg = false, .val = 'k'},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static int
@@ -533,70 +563,52 @@ static void owner_mt_save(const void *ip, const struct xt_entry_match *match)
 	owner_mt_print_item(info, "--gid-owner",      XT_OWNER_GID,    false);
 }
 
-static struct xtables_match owner_mt_reg_v0 = {
-	.version       = XTABLES_VERSION,
-	.name          = "owner",
-	.revision      = 0,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct ipt_owner_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct ipt_owner_info)),
-	.help          = owner_mt_help_v0,
-	.parse         = owner_mt_parse_v0,
-	.final_check   = owner_mt_check,
-	.print         = owner_mt_print_v0,
-	.save          = owner_mt_save_v0,
-	.extra_opts    = owner_mt_opts_v0,
-};
-
-static struct xtables_match owner_mt6_reg_v0 = {
-	.version       = XTABLES_VERSION,
-	.name          = "owner",
-	.revision      = 0,
-	.family        = NFPROTO_IPV6,
-	.size          = XT_ALIGN(sizeof(struct ip6t_owner_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct ip6t_owner_info)),
-	.help          = owner_mt6_help_v0,
-	.parse         = owner_mt6_parse_v0,
-	.final_check   = owner_mt_check,
-	.print         = owner_mt6_print_v0,
-	.save          = owner_mt6_save_v0,
-	.extra_opts    = owner_mt6_opts_v0,
-};
-
-static struct xtables_match owner_mt_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "owner",
-	.revision      = 1,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct xt_owner_match_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_owner_match_info)),
-	.help          = owner_mt_help,
-	.parse         = owner_mt_parse,
-	.final_check   = owner_mt_check,
-	.print         = owner_mt_print,
-	.save          = owner_mt_save,
-	.extra_opts    = owner_mt_opts,
-};
-
-static struct xtables_match owner_mt6_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "owner",
-	.revision      = 1,
-	.family        = NFPROTO_IPV6,
-	.size          = XT_ALIGN(sizeof(struct xt_owner_match_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_owner_match_info)),
-	.help          = owner_mt_help,
-	.parse         = owner_mt_parse,
-	.final_check   = owner_mt_check,
-	.print         = owner_mt_print,
-	.save          = owner_mt_save,
-	.extra_opts    = owner_mt_opts,
+static struct xtables_match owner_mt_reg[] = {
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "owner",
+		.revision      = 0,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct ipt_owner_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct ipt_owner_info)),
+		.help          = owner_mt_help_v0,
+		.parse         = owner_mt_parse_v0,
+		.final_check   = owner_mt_check,
+		.print         = owner_mt_print_v0,
+		.save          = owner_mt_save_v0,
+		.extra_opts    = owner_mt_opts_v0,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "owner",
+		.revision      = 0,
+		.family        = NFPROTO_IPV6,
+		.size          = XT_ALIGN(sizeof(struct ip6t_owner_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct ip6t_owner_info)),
+		.help          = owner_mt6_help_v0,
+		.parse         = owner_mt6_parse_v0,
+		.final_check   = owner_mt_check,
+		.print         = owner_mt6_print_v0,
+		.save          = owner_mt6_save_v0,
+		.extra_opts    = owner_mt6_opts_v0,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "owner",
+		.revision      = 1,
+		.family        = NFPROTO_UNSPEC,
+		.size          = XT_ALIGN(sizeof(struct xt_owner_match_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_owner_match_info)),
+		.help          = owner_mt_help,
+		.parse         = owner_mt_parse,
+		.final_check   = owner_mt_check,
+		.print         = owner_mt_print,
+		.save          = owner_mt_save,
+		.extra_opts    = owner_mt_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&owner_mt_reg_v0);
-	xtables_register_match(&owner_mt6_reg_v0);
-	xtables_register_match(&owner_mt_reg);
-	xtables_register_match(&owner_mt6_reg);
+	xtables_register_matches(owner_mt_reg, ARRAY_SIZE(owner_mt_reg));
 }

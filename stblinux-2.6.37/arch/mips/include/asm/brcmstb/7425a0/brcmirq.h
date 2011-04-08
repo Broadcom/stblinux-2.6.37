@@ -43,6 +43,7 @@
 #define BRCM_IRQ_SATA		42
 #define BRCM_IRQ_SDIO0		44
 #define BRCM_IRQ_SDIO1		45
+#define BRCM_IRQ_STANDBY	50
 #define BRCM_IRQ_UARTA		62
 #define BRCM_IRQ_UARTB		63
 #define BRCM_IRQ_UARTC		64

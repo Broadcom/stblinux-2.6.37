@@ -31,6 +31,7 @@
 /* board features */
 int brcm_docsis_platform;
 int brcm_enet_no_mdio;
+int brcm_enet0_force_ext_mii;
 char brcm_cfe_boardname[CFE_STRING_SIZE];
 
 /* MTD partition layout */
@@ -126,7 +127,7 @@ char irq_tab_brcmstb_docsis[NUM_SLOTS][4] __devinitdata = {
 		 BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_##reg##_##field##_SHIFT)); \
 	} while (0)
 
-void __init board_pinmux_setup(void)
+void board_pinmux_setup(void)
 {
 #if !defined(CONFIG_BRCM_IKOS)
 #if   defined(CONFIG_BCM35230)
@@ -369,10 +370,37 @@ void __init board_pinmux_setup(void)
 	AON_PINMUX(2, aon_sgpio_01, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCC_REG_START);
 
+#if defined(CONFIG_BCMGENET_0_GPHY)
+	/* select MAC0 for RGMII */
+	BDEV_WR_F(SUN_TOP_CTRL_GENERAL_CTRL_0, mii_genet_mac_select, 0);
+
+	PINMUX(9, gpio_31, 1);		/* RGMII RX */
+	PINMUX(9, gpio_28, 1);
+	PINMUX(9, gpio_27, 1);
+	PINMUX(9, gpio_26, 1);
+	PINMUX(8, gpio_25, 1);
+	PINMUX(8, gpio_24, 1);
+	PINMUX(8, gpio_23, 1);
+
+	PINMUX(9, gpio_34, 1);		/* RGMII TX */
+	PINMUX(9, gpio_35, 1);
+	PINMUX(10, gpio_36, 1);
+
+	PINMUX(10, gpio_40, 1);
+	PINMUX(10, gpio_39, 1);
+	PINMUX(10, gpio_38, 1);
+	PINMUX(10, gpio_37, 1);
+
+	PINMUX(10, gpio_32, 1);		/* ENET MDIO */
+	PINMUX(10, gpio_33, 1);
+	PINMUX(9, gpio_29, 1);
+	PINMUX(9, gpio_30, 1);
+#endif
+
 #elif defined(CONFIG_BCM7346)
 
 	PINMUX(15, gpio_068, 2);	/* MoCA link */
-	PINMUX(16, gpio_069, 2);	/* MoCA activity */
+	PINMUX(16, gpio_069, 1);	/* MoCA activity */
 
 	PINMUX(9, gpio_017, 1);		/* UARTB TX */
 	PINMUX(9, gpio_018, 1);		/* UARTB RX */

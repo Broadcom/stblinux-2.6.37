@@ -23,9 +23,10 @@
 
 
 int
-__pthread_setcancelstate (state, oldstate)
-     int state;
-     int *oldstate;
+attribute_protected
+__pthread_setcancelstate (
+     int state,
+     int *oldstate)
 {
   volatile struct pthread *self;
 

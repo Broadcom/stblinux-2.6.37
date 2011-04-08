@@ -92,7 +92,7 @@ extern int optopt;
    The field `has_arg' is:
    no_argument		(or 0) if the option does not take an argument,
    required_argument	(or 1) if the option requires an argument,
-   optional_argument 	(or 2) if the option takes an optional argument.
+   optional_argument	(or 2) if the option takes an optional argument.
 
    If the field `flag' is not NULL, it points to a variable that is set
    to the value given in the field `val' when the option is found, but
@@ -153,8 +153,10 @@ struct option
    errors, only prototype getopt for the GNU C library.  */
 extern int getopt (int ___argc, char *const *___argv, const char *__shortopts)
        __THROW;
+libc_hidden_proto(getopt)
 #else /* not __GNU_LIBRARY__ */
 extern int getopt ();
+libc_hidden_proto(getopt)
 #endif /* __GNU_LIBRARY__ */
 
 #if defined __UCLIBC_HAS_GNU_GETOPT__ || defined __UCLIBC_HAS_GETOPT_LONG__

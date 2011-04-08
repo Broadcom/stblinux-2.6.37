@@ -57,30 +57,8 @@ static char sccsid[] = "@(#)svc_udp.c 1.24 87/08/11 Copyr 1984 Sun Micro";
 # include <wchar.h>
 # include <libio/iolibio.h>
 # define fputs(s, f) _IO_fputs (s, f)
-libc_hidden_proto(fwprintf)
 #endif
 
-libc_hidden_proto(memcmp)
-libc_hidden_proto(memcpy)
-libc_hidden_proto(memset)
-libc_hidden_proto(perror)
-libc_hidden_proto(socket)
-libc_hidden_proto(close)
-libc_hidden_proto(xprt_register)
-libc_hidden_proto(xprt_unregister)
-libc_hidden_proto(xdrmem_create)
-libc_hidden_proto(xdr_callmsg)
-libc_hidden_proto(xdr_replymsg)
-libc_hidden_proto(getsockname)
-libc_hidden_proto(setsockopt)
-libc_hidden_proto(bind)
-libc_hidden_proto(bindresvport)
-libc_hidden_proto(recvfrom)
-libc_hidden_proto(sendto)
-libc_hidden_proto(recvmsg)
-libc_hidden_proto(sendmsg)
-libc_hidden_proto(fputs)
-libc_hidden_proto(fprintf)
 
 #define rpc_buffer(xprt) ((xprt)->xp_p1)
 #ifndef MAX
@@ -134,7 +112,6 @@ struct svcudp_data
  * see (svc.h, xprt_register).
  * The routines returns NULL if a problem occurred.
  */
-libc_hidden_proto(svcudp_bufcreate)
 SVCXPRT *
 svcudp_bufcreate (int sock, u_int sendsz, u_int recvsz)
 {
@@ -226,7 +203,6 @@ svcudp_bufcreate (int sock, u_int sendsz, u_int recvsz)
 }
 libc_hidden_def(svcudp_bufcreate)
 
-libc_hidden_proto(svcudp_create)
 SVCXPRT *
 svcudp_create (int sock)
 {
@@ -236,17 +212,14 @@ svcudp_create (int sock)
 libc_hidden_def(svcudp_create)
 
 static enum xprt_stat
-svcudp_stat (xprt)
-     SVCXPRT *xprt attribute_unused;
+svcudp_stat (SVCXPRT *xprt attribute_unused)
 {
 
   return XPRT_IDLE;
 }
 
 static bool_t
-svcudp_recv (xprt, msg)
-     SVCXPRT *xprt;
-     struct rpc_msg *msg;
+svcudp_recv (SVCXPRT *xprt, struct rpc_msg *msg)
 {
   struct svcudp_data *su = su_data (xprt);
   XDR *xdrs = &(su->su_xdrs);
@@ -322,9 +295,7 @@ again:
 }
 
 static bool_t
-svcudp_reply (xprt, msg)
-     SVCXPRT *xprt;
-     struct rpc_msg *msg;
+svcudp_reply (SVCXPRT *xprt, struct rpc_msg *msg)
 {
   struct svcudp_data *su = su_data (xprt);
   XDR *xdrs = &(su->su_xdrs);
@@ -368,20 +339,14 @@ svcudp_reply (xprt, msg)
 }
 
 static bool_t
-svcudp_getargs (xprt, xdr_args, args_ptr)
-     SVCXPRT *xprt;
-     xdrproc_t xdr_args;
-     caddr_t args_ptr;
+svcudp_getargs (SVCXPRT *xprt, xdrproc_t xdr_args, caddr_t args_ptr)
 {
 
   return (*xdr_args) (&(su_data (xprt)->su_xdrs), args_ptr);
 }
 
 static bool_t
-svcudp_freeargs (xprt, xdr_args, args_ptr)
-     SVCXPRT *xprt;
-     xdrproc_t xdr_args;
-     caddr_t args_ptr;
+svcudp_freeargs (SVCXPRT *xprt, xdrproc_t xdr_args, caddr_t args_ptr)
 {
   XDR *xdrs = &(su_data (xprt)->su_xdrs);
 
@@ -390,8 +355,7 @@ svcudp_freeargs (xprt, xdr_args, args_ptr)
 }
 
 static void
-svcudp_destroy (xprt)
-     SVCXPRT *xprt;
+svcudp_destroy (SVCXPRT *xprt)
 {
   struct svcudp_data *su = su_data (xprt);
 
@@ -597,11 +561,7 @@ cache_set (SVCXPRT *xprt, u_long replylen)
  * return 1 if found, 0 if not found
  */
 static int
-cache_get (xprt, msg, replyp, replylenp)
-     SVCXPRT *xprt;
-     struct rpc_msg *msg;
-     char **replyp;
-     u_long *replylenp;
+cache_get (SVCXPRT *xprt, struct rpc_msg *msg, char **replyp, u_long *replylenp)
 {
   u_int loc;
   cache_ptr ent;

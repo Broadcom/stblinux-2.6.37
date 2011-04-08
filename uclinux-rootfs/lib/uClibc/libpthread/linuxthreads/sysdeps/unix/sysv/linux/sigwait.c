@@ -23,15 +23,14 @@
 
 #include <sysdep-cancel.h>
 #include <sys/syscall.h>
-#include <bp-checks.h>
 #include <bits/libc-lock.h>
 
-extern int __syscall_rt_sigtimedwait (const sigset_t *__unbounded, siginfo_t *__unbounded,
-				      const struct timespec *__unbounded, size_t);
+extern int __syscall_rt_sigtimedwait (const sigset_t *, siginfo_t *,
+				      const struct timespec *, size_t);
 
 
 /* Return any pending signal or wait for one for the given time.  */
-static inline int
+static __inline__ int
 do_sigwait (const sigset_t *set, int *sig)
 {
   int ret;
@@ -40,7 +39,7 @@ do_sigwait (const sigset_t *set, int *sig)
      real size of the user-level sigset_t.  */
 #ifdef INTERNAL_SYSCALL
   INTERNAL_SYSCALL_DECL (err);
-  ret = INTERNAL_SYSCALL (rt_sigtimedwait, err, 4, CHECK_SIGSET (set),
+  ret = INTERNAL_SYSCALL (rt_sigtimedwait, err, 4, set,
 			  NULL, NULL, _NSIG / 8);
   if (! INTERNAL_SYSCALL_ERROR_P (ret, err))
     {
@@ -50,7 +49,7 @@ do_sigwait (const sigset_t *set, int *sig)
   else
     ret = INTERNAL_SYSCALL_ERRNO (ret, err);
 #else
-  ret = INLINE_SYSCALL (rt_sigtimedwait, 4, CHECK_SIGSET (set),
+  ret = INLINE_SYSCALL (rt_sigtimedwait, 4, set,
 			NULL, NULL, _NSIG / 8);
   if (ret != -1)
     {
@@ -69,9 +68,7 @@ weak_extern (__pthread_sigwait)
 #endif
 
 int
-__sigwait (set, sig)
-     const sigset_t *set;
-     int *sig;
+sigwait (const sigset_t *set, int *sig)
 {
 #ifndef NOT_IN_libc
   return __libc_maybe_call2 (pthread_sigwait, (set, sig),
@@ -80,9 +77,7 @@ __sigwait (set, sig)
   return do_sigwait (set, sig);
 #endif
 }
-libc_hidden_def (__sigwait)
-weak_alias (__sigwait, sigwait)
-strong_alias (__sigwait, __libc_sigwait)
+strong_alias(sigwait, __libc_sigwait)
 
 /* Cancellation is handled in __pthread_sigwait.  */
 LIBC_CANCEL_HANDLED ();

@@ -34,11 +34,9 @@
 #include <bits/uClibc_locale.h>
 #endif /* __UCLIBC_HAS_XLOCALE__ */
 
-/* Use a funky version in a probably vein attempt at preventing gdb 
+/* Use a funky version in a probably vein attempt at preventing gdb
  * from dlopen()'ing glibc's libthread_db library... */
-#define STRINGIFY(s) STRINGIFY2 (s)
-#define STRINGIFY2(s) #s
-#define VERSION STRINGIFY(__UCLIBC_MAJOR__) "." STRINGIFY(__UCLIBC_MINOR__) "." STRINGIFY(__UCLIBC_SUBLEVEL__)
+#define VERSION __stringify(__UCLIBC_MAJOR__) "." __stringify(__UCLIBC_MINOR__) "." __stringify(__UCLIBC_SUBLEVEL__)
 
 #ifndef THREAD_GETMEM
 # define THREAD_GETMEM(descr, member) descr->member
@@ -305,14 +303,14 @@ extern volatile pthread_descr __pthread_last_event;
 
 /* Return the handle corresponding to a thread id */
 
-static inline pthread_handle thread_handle(pthread_t id)
+static __inline__ pthread_handle thread_handle(pthread_t id)
 {
   return &__pthread_handles[id % PTHREAD_THREADS_MAX];
 }
 
 /* Validate a thread handle. Must have acquired h->h_spinlock before. */
 
-static inline int invalid_handle(pthread_handle h, pthread_t id)
+static __inline__ int invalid_handle(pthread_handle h, pthread_t id)
 {
   return h->h_descr == NULL || h->h_descr->p_tid != id;
 }
@@ -381,8 +379,8 @@ extern size_t __pagesize;
 
 extern pthread_descr __pthread_find_self (void) __attribute__ ((const));
 
-static inline pthread_descr thread_self (void) __attribute__ ((const));
-static inline pthread_descr thread_self (void)
+static __inline__ pthread_descr thread_self (void) __attribute__ ((const));
+static __inline__ pthread_descr thread_self (void)
 {
 #ifdef THREAD_SELF
   return THREAD_SELF;
@@ -453,7 +451,8 @@ void __pthread_do_exit (void *retval, char *currentframe)
 void __pthread_destroy_specifics(void);
 void __pthread_perform_cleanup(char *currentframe);
 int __pthread_initialize_manager(void);
-void __pthread_message(char * fmt, ...);
+void __pthread_message(char * fmt, ...)
+     __attribute__ ((__format__ (printf, 1, 2)));
 int __pthread_manager(void *reqfd);
 int __pthread_manager_event(void *reqfd);
 void __pthread_manager_sighandler(int sig);
@@ -498,14 +497,6 @@ extern void __pthread_wait_for_restart_signal(pthread_descr self);
 
 extern void (*__pthread_restart)(pthread_descr);
 extern void (*__pthread_suspend)(pthread_descr);
-
-/* Prototypes for the function without cancelation support when the
-   normal version has it.  */
-extern __typeof(close) __libc_close;
-extern __typeof(nanosleep) __libc_nanosleep;
-extern __typeof(read) __libc_read;
-extern __typeof(waitpid) __libc_waitpid;
-extern __typeof(write) __libc_write;
 
 extern __typeof(pthread_mutex_init) __pthread_mutex_init attribute_hidden;
 extern __typeof(pthread_mutex_destroy) __pthread_mutex_destroy attribute_hidden;

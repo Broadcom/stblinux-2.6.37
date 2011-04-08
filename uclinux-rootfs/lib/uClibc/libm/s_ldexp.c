@@ -1,4 +1,3 @@
-/* @(#)s_ldexp.c 5.1 93/09/24 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -10,28 +9,31 @@
  * ====================================================
  */
 
-#if defined(LIBM_SCCS) && !defined(lint)
-static char rcsid[] = "$NetBSD: s_ldexp.c,v 1.6 1995/05/10 20:47:40 jtc Exp $";
-#endif
-
 #include "math.h"
 #include "math_private.h"
 #include <errno.h>
 
-libm_hidden_proto(scalbn)
-libm_hidden_proto(finite)
+/* TODO: POSIX says:
+ *
+ * "If the integer expression (math_errhandling & MATH_ERRNO) is non-zero,
+ * then errno shall be set to [ERANGE]. If the integer expression
+ * (math_errhandling & MATH_ERREXCEPT) is non-zero, then the underflow
+ * floating-point exception shall be raised."
+ *
+ * *And it says the same about scalbn*! Thus these two functions
+ * are the same and can be just aliased.
+ *
+ * Currently, ldexp tries to be vaguely POSIX compliant while scalbn
+ * does not (it does not set ERRNO).
+ */
 
-libm_hidden_proto(ldexp)
-#ifdef __STDC__
-	double ldexp(double value, int exp)
-#else
-	double ldexp(value, exp)
-	double value; int exp;
-#endif
+double ldexp(double value, int _exp)
 {
-	if(!finite(value)||value==0.0) return value;
-	value = scalbn(value,exp);
-	if(!finite(value)||value==0.0) errno = ERANGE;
+	if (!isfinite(value) || value == 0.0)
+		return value;
+	value = scalbn(value, _exp);
+	if (!isfinite(value) || value == 0.0)
+		errno = ERANGE;
 	return value;
 }
 libm_hidden_def(ldexp)

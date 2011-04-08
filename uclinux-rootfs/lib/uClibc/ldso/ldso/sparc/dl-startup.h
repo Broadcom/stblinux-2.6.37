@@ -1,14 +1,15 @@
-/* Any assmbly language/system dependent hacks needed to setup boot1.c so it
+/* Any assembly language/system dependent hacks needed to setup boot1.c so it
  * will work as expected and cope with whatever platform specific wierdness is
  * needed for this architecture.  See arm/boot1_arch.h for an example of what
  * can be done.
  */
 
-asm ("\
+__asm__ ("\
 	.text\n\
 	.global _start\n\
 	.type   _start,%function\n\
 	.align 32\n\
+	.register %g2, #scratch\n\
 _start:\n\
 	/* Allocate space for functions to drop their arguments. */\n\
 	sub	%sp, 6*4, %sp\n\
@@ -46,7 +47,7 @@ _dl_start_user:\n\
 
 /*
  * Get a pointer to the argv array.  On many platforms this can be just
- * the address if the first argument, on other platforms we need to
+ * the address of the first argument, on other platforms we need to
  * do something a little more subtle here.  We assume that argc is stored
  * at the word just below the argvp that we return here.
  */

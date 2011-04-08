@@ -1,4 +1,5 @@
 /* Shared library add-on to ip6tables to add LOG support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -25,17 +26,19 @@ static void LOG_help(void)
 " --log-tcp-sequence		Log TCP sequence numbers.\n"
 " --log-tcp-options		Log TCP options.\n"
 " --log-ip-options		Log IP options.\n"
-" --log-uid			Log UID owning the local socket.\n");
+" --log-uid			Log UID owning the local socket.\n"
+" --log-macdecode		Decode MAC addresses and protocol.\n");
 }
 
 static const struct option LOG_opts[] = {
-	{ .name = "log-level",        .has_arg = 1, .val = '!' },
-	{ .name = "log-prefix",       .has_arg = 1, .val = '#' },
-	{ .name = "log-tcp-sequence", .has_arg = 0, .val = '1' },
-	{ .name = "log-tcp-options",  .has_arg = 0, .val = '2' },
-	{ .name = "log-ip-options",   .has_arg = 0, .val = '3' },
-	{ .name = "log-uid",          .has_arg = 0, .val = '4' },
-	{ .name = NULL }
+	{.name = "log-level",        .has_arg = true,  .val = '!'},
+	{.name = "log-prefix",       .has_arg = true,  .val = '#'},
+	{.name = "log-tcp-sequence", .has_arg = false, .val = '1'},
+	{.name = "log-tcp-options",  .has_arg = false, .val = '2'},
+	{.name = "log-ip-options",   .has_arg = false, .val = '3'},
+	{.name = "log-uid",          .has_arg = false, .val = '4'},
+	{.name = "log-macdecode",    .has_arg = false, .val = '5'},
+	XT_GETOPT_TABLEEND,
 };
 
 static void LOG_init(struct xt_entry_target *t)
@@ -72,9 +75,7 @@ parse_level(const char *level)
 	if (!xtables_strtoui(level, NULL, &lev, 0, 7)) {
 		unsigned int i = 0;
 
-		for (i = 0;
-		     i < sizeof(ip6t_log_names) / sizeof(struct ip6t_log_names);
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(ip6t_log_names); ++i)
 			if (strncasecmp(level, ip6t_log_names[i].name,
 					strlen(level)) == 0) {
 				if (set++)
@@ -83,7 +84,6 @@ parse_level(const char *level)
 						   level);
 				lev = ip6t_log_names[i].level;
 			}
-		}
 
 		if (!set)
 			xtables_error(PARAMETER_PROBLEM,
@@ -99,6 +99,7 @@ parse_level(const char *level)
 #define IP6T_LOG_OPT_TCPOPT 0x08
 #define IP6T_LOG_OPT_IPOPT 0x10
 #define IP6T_LOG_OPT_UID 0x20
+#define IP6T_LOG_OPT_MACDECODE 0x40
 
 static int LOG_parse(int c, char **argv, int invert, unsigned int *flags,
                      const void *entry, struct xt_entry_target **target)
@@ -111,7 +112,7 @@ static int LOG_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --log-level twice");
 
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --log-level");
 
@@ -124,7 +125,7 @@ static int LOG_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,
 				   "Can't specify --log-prefix twice");
 
-		if (xtables_check_inverse(optarg, &invert, NULL, 0))
+		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 			xtables_error(PARAMETER_PROBLEM,
 				   "Unexpected `!' after --log-prefix");
 
@@ -182,6 +183,15 @@ static int LOG_parse(int c, char **argv, int invert, unsigned int *flags,
 		*flags |= IP6T_LOG_OPT_UID;
 		break;
 
+	case '5':
+		if (*flags & IP6T_LOG_OPT_MACDECODE)
+			xtables_error(PARAMETER_PROBLEM,
+				      "Can't specify --log-macdecode twice");
+
+		loginfo->logflags |= IP6T_LOG_MACDECODE;
+		*flags |= IP6T_LOG_OPT_MACDECODE;
+		break;
+
 	default:
 		return 0;
 	}
@@ -201,15 +211,12 @@ static void LOG_print(const void *ip, const struct xt_entry_target *target,
 		printf("flags %u level %u ",
 		       loginfo->logflags, loginfo->level);
 	else {
-		for (i = 0;
-		     i < sizeof(ip6t_log_names) / sizeof(struct ip6t_log_names);
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(ip6t_log_names); ++i)
 			if (loginfo->level == ip6t_log_names[i].level) {
 				printf("level %s ", ip6t_log_names[i].name);
 				break;
 			}
-		}
-		if (i == sizeof(ip6t_log_names) / sizeof(struct ip6t_log_names))
+		if (i == ARRAY_SIZE(ip6t_log_names))
 			printf("UNKNOWN level %u ", loginfo->level);
 		if (loginfo->logflags & IP6T_LOG_TCPSEQ)
 			printf("tcp-sequence ");
@@ -219,6 +226,8 @@ static void LOG_print(const void *ip, const struct xt_entry_target *target,
 			printf("ip-options ");
 		if (loginfo->logflags & IP6T_LOG_UID)
 			printf("uid ");
+		if (loginfo->logflags & IP6T_LOG_MACDECODE)
+			printf("macdecode ");
 		if (loginfo->logflags & ~(IP6T_LOG_MASK))
 			printf("unknown-flags ");
 	}
@@ -246,6 +255,8 @@ static void LOG_save(const void *ip, const struct xt_entry_target *target)
 		printf("--log-ip-options ");
 	if (loginfo->logflags & IP6T_LOG_UID)
 		printf("--log-uid ");
+	if (loginfo->logflags & IP6T_LOG_MACDECODE)
+		printf("--log-macdecode ");
 }
 
 static struct xtables_target log_tg6_reg = {

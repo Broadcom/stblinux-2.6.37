@@ -41,7 +41,6 @@ extern int _dl_linux_resolve(void);
 unsigned long
 _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 {
-	int reloc_type;
 	int symtab_index;
 	char *strtab;
 	char *symname;
@@ -55,18 +54,11 @@ _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 	rel_addr = (char *)tpnt->dynamic_info[DT_JMPREL];
 
 	this_reloc = (ELF_RELOC *)(intptr_t)(rel_addr + reloc_entry);
-	reloc_type = ELF32_R_TYPE(this_reloc->r_info);
 	symtab_index = ELF32_R_SYM(this_reloc->r_info);
 
 	symtab = (Elf32_Sym *)(intptr_t)tpnt->dynamic_info[DT_SYMTAB];
 	strtab = (char *)tpnt->dynamic_info[DT_STRTAB];
 	symname = strtab + symtab[symtab_index].st_name;
-
-	if (unlikely(reloc_type != R_CRIS_JUMP_SLOT)) {
-		_dl_dprintf(2, "%s: Incorrect relocation type in jump relocations\n",
-			    _dl_progname);
-		_dl_exit(1);
-	}
 
 	/* Address of the jump instruction to fix up. */
 	instr_addr = ((unsigned long)this_reloc->r_offset +
@@ -74,7 +66,7 @@ _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 	got_addr = (char **)instr_addr;
 
 	/* Get the address of the GOT entry. */
-	new_addr = _dl_find_hash(symname, tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT);
+	new_addr = _dl_find_hash(symname, tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT, NULL);
 	if (unlikely(!new_addr)) {
 		_dl_dprintf(2, "%s: Can't resolve symbol '%s'\n", _dl_progname, symname);
 		_dl_exit(1);
@@ -85,7 +77,7 @@ _dl_linux_resolver(struct elf_resolve *tpnt, int reloc_entry)
 		_dl_dprintf(_dl_debug_file, "\nresolve function: %s", symname);
 		if (_dl_debug_detail)
 			_dl_dprintf(_dl_debug_file,
-				    "\n\tpatched: %x ==> %x @ %x",
+				    "\n\tpatched: %x ==> %x @ %x\n",
 				    *got_addr, new_addr, got_addr);
 	}
 	if (!_dl_debug_nofixups) {
@@ -169,11 +161,14 @@ _dl_do_reloc(struct elf_resolve *tpnt, struct dyn_elf *scope,
 #if defined (__SUPPORT_LD_DEBUG__)
 	unsigned long old_val;
 #endif
+	struct symbol_ref sym_ref;
 
 	reloc_addr = (unsigned long *)(intptr_t)(tpnt->loadaddr + (unsigned long)rpnt->r_offset);
 	reloc_type = ELF32_R_TYPE(rpnt->r_info);
 	symtab_index = ELF32_R_SYM(rpnt->r_info);
 	symbol_addr = 0;
+	sym_ref.sym = &symtab[symtab_index];
+	sym_ref.tpnt = NULL;
 	symname = strtab + symtab[symtab_index].st_name;
 
 	if (symtab_index) {
@@ -182,7 +177,7 @@ _dl_do_reloc(struct elf_resolve *tpnt, struct dyn_elf *scope,
 			symbol_addr = (unsigned long)tpnt->loadaddr;
 		} else {
 		  symbol_addr = (unsigned long)_dl_find_hash(symname, scope, tpnt,
-								   elf_machine_type_class(reloc_type));
+								   elf_machine_type_class(reloc_type), &sym_ref);
 		}
 
 		if (unlikely(!symbol_addr && ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK)) {
@@ -227,7 +222,7 @@ _dl_do_reloc(struct elf_resolve *tpnt, struct dyn_elf *scope,
 
 #if defined (__SUPPORT_LD_DEBUG__)
 	if (_dl_debug_reloc && _dl_debug_detail)
-		_dl_dprintf(_dl_debug_file, "\n\tpatched: %x ==> %x @ %x",
+		_dl_dprintf(_dl_debug_file, "\n\tpatched: %x ==> %x @ %x\n",
 			    old_val, *reloc_addr, reloc_addr);
 #endif
 
@@ -268,7 +263,7 @@ _dl_do_lazy_reloc(struct elf_resolve *tpnt, struct dyn_elf *scope,
 
 #if defined (__SUPPORT_LD_DEBUG__)
 	if (_dl_debug_reloc && _dl_debug_detail)
-		_dl_dprintf(_dl_debug_file, "\n\tpatched: %x ==> %x @ %x",
+		_dl_dprintf(_dl_debug_file, "\n\tpatched: %x ==> %x @ %x\n",
 			    old_val, *reloc_addr, reloc_addr);
 #endif
 

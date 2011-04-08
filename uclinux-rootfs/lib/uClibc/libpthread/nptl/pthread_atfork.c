@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Free Software Foundation, Inc.
+/* Copyright (C) 2002, 2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
 
@@ -39,17 +39,18 @@
 
 /* This is defined by newer gcc version unique for each module.  */
 extern void *__dso_handle __attribute__ ((__weak__));
+					  //,__visibility__ ("hidden")));
 
 
 /* Hide the symbol so that no definition but the one locally in the
    executable or DSO is used.  */
 int
-__pthread_atfork (prepare, parent, child)
-     void (*prepare) (void);
-     void (*parent) (void);
-     void (*child) (void);
+__pthread_atfork (
+     void (*prepare) (void),
+     void (*parent) (void),
+     void (*child) (void))
 {
   return __register_atfork (prepare, parent, child,
 			    &__dso_handle == NULL ? NULL : __dso_handle);
 }
-strong_alias(__pthread_atfork, pthread_atfork)
+strong_alias (__pthread_atfork, pthread_atfork)

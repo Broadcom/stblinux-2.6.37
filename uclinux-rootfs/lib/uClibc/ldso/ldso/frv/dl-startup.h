@@ -25,7 +25,7 @@
    __self_reloc returns the relocated pointer to us, so that we can
    use this value to initialize the PIC register.  */
 
-asm("" \
+__asm__("" \
 "	.text\n"			\
 "	.global	_dl_boot\n"		\
 "	.type	_dl_boot,@function\n"	\
@@ -76,7 +76,7 @@ struct elf32_fdpic_loadmap;
 
 /*
  * Get a pointer to the argv array.  On many platforms this can be just
- * the address if the first argument, on other platforms we need to
+ * the address of the first argument, on other platforms we need to
  * do something a little more subtle here.
  */
 #define GET_ARGV(ARGVP, ARGS) ARGVP = ((unsigned long*) ARGS)

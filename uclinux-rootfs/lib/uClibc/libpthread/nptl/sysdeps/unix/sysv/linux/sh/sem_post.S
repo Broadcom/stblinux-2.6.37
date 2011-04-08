@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+/* Copyright (C) 2003, 2004, 2007, 2008 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,15 +17,11 @@
    02111-1307 USA.  */
 
 #include <sysdep.h>
-#include <shlib-compat.h>
 #include <pthread-errnos.h>
+#include <structsem.h>
+#include <lowlevellock.h>
 #include "lowlevel-atomic.h"
 
-
-#define SYS_gettimeofday	__NR_gettimeofday
-#define SYS_futex		240
-#define FUTEX_WAIT		0
-#define FUTEX_WAKE		1
 
 	.text
 
@@ -33,12 +29,23 @@
 	.type	__new_sem_post,@function
 	.align	5
 __new_sem_post:
-	mov	#1, r3
-	XADD (r3, @r4, r2)
-
+	mov.l	@(VALUE,r4), r2
+0:
+	mov.l	.Lmax, r1
+	cmp/eq	r1, r2
+	bt/s	3f
+	 mov	r2, r3
+	mov	r3, r5
+	add	#1, r5
+	CMPXCHG (r3, @(VALUE,r4), r5, r2)
+	bf	0b
+	mov.l	@(NWAITERS,r4), r2
+	tst	r2, r2
+	bt	2f
 	mov	#FUTEX_WAKE, r5
-	mov	r2, r6
-	add	#1, r6
+	mov.l	@(PRIVATE,r4), r1
+	or	r1, r5
+	mov	#1, r6
 	mov	#0, r7
 	mov	#SYS_futex, r3
 	extu.b	r3, r3
@@ -47,11 +54,20 @@ __new_sem_post:
 
 	cmp/pz	r0
 	bf	1f
+2:
 	rts
 	 mov	#0, r0
 
 1:
-	mov	#EINVAL, r2
+	bra	4f
+	 mov	#EINVAL, r2
+
+3:
+	mov	#EOVERFLOW, r2
+4:
+	mov.l	r12, @-r15
+	mov.l	r8, @-r15
+	sts.l	pr, @-r15
 	mova	.Lgot3, r0
 	mov.l	.Lgot3, r12
 	add	r0, r12
@@ -60,28 +76,35 @@ __new_sem_post:
 	mov.l	.Lerrno3, r0
 	stc	gbr, r1
 	mov.l	@(r0, r12), r0
-	add	r1, r0
+	bra	.Lexit
+	 add	r1, r0
+	.align	2
+.Lerrno3:
+	.long	errno@GOTTPOFF
+.Lexit:
+	mov.l	r2, @r0
 #else
+	mov	r2, r8
 	mov.l	.Lerrloc3, r1
 	bsrf	r1
 	 nop
 .Lerrloc3b:
+	mov	r8, @r0
 #endif
-	mov.l	r2, @r0
 	lds.l	@r15+, pr
+	mov.l	@r15+, r8
 	mov.l	@r15+, r12
 	rts
 	 mov	#-1, r0
 
 	.align	2
+.Lmax:
+	.long	SEM_VALUE_MAX
 .Lgot3:
 	.long	_GLOBAL_OFFSET_TABLE_
-#if USE___THREAD
-.Lerrno3:
-	.long	errno@GOTTPOFF
-#else
+#if !USE___THREAD
 .Lerrloc3:
 	.long	__errno_location@PLT-(.Lerrloc3b-.)
 #endif
 	.size	__new_sem_post,.-__new_sem_post
-	versioned_symbol(libpthread, __new_sem_post, sem_post, GLIBC_2_1)
+	weak_alias(__new_sem_post, sem_post)

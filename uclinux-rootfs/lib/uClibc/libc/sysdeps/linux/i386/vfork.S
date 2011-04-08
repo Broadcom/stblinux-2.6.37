@@ -15,13 +15,22 @@
 .global __vfork
 .hidden __vfork
 .type   __vfork,%function
-.align 1<<4
 
 __vfork:
 	popl %ecx
+
+#ifdef SAVE_PID
+	SAVE_PID
+#endif
+
 	movl $__NR_vfork,%eax
 	int $0x80
 	pushl %ecx
+
+#ifdef RESTORE_PID
+	RESTORE_PID
+#endif
+
 	cmpl $-4095,%eax
 	jae __syscall_error
 	ret

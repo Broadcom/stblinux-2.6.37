@@ -24,8 +24,9 @@
 #include "pthreadP.h"
 
 int
-__pthread_attr_destroy (attr)
-     pthread_attr_t *attr;
+attribute_protected
+__pthread_attr_destroy (
+     pthread_attr_t *attr)
 {
   struct pthread_attr *iattr;
 

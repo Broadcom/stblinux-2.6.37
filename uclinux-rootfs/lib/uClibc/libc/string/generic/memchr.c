@@ -25,14 +25,12 @@
 #include <stdlib.h>
 #include <limits.h>
 
-libc_hidden_proto(memchr)
-libc_hidden_proto(abort)
-
 #include "memcopy.h"
 
 #define LONG_MAX_32_BITS 2147483647
 
 /* Search no more than N bytes of S for C.  */
+#undef memchr
 void *memchr (const void * s, int c_in, size_t n)
 {
   const unsigned char *char_ptr;
@@ -174,4 +172,4 @@ void *memchr (const void * s, int c_in, size_t n)
 
   return 0;
 }
-libc_hidden_def(memchr)
+libc_hidden_weak(memchr)

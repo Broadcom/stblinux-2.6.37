@@ -37,39 +37,40 @@
 #ifndef __PIC__
 /* We need a hook to force this file to be linked in when static
    libpthread is used.  */
-const int __pthread_provide_wrappers = 0;
+const char __pthread_provide_wrappers = 0;
 #endif
 
-
-#define CANCELABLE_SYSCALL(res_type, name, param_list, params) \
-res_type __libc_##name param_list;					      \
-res_type								      \
-__attribute__ ((weak))							      \
-name param_list								      \
-{									      \
-  res_type result;							      \
-  int oldtype;								      \
-  pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);	      \
-  result = __libc_##name params;					      \
-  pthread_setcanceltype (oldtype, NULL);				      \
-  return result;							      \
+/* Using private interface to libc (__libc_foo) to implement
+ * cancellable versions of some libc functions */
+#define CANCELABLE_SYSCALL(res_type, name, param_list, params)			\
+res_type __libc_##name param_list;						\
+res_type									\
+__attribute__ ((weak))								\
+name param_list									\
+{										\
+  res_type result;								\
+  int oldtype;									\
+  pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);		\
+  result = __libc_##name params;						\
+  pthread_setcanceltype (oldtype, NULL);					\
+  return result;								\
 }
 
-#define CANCELABLE_SYSCALL_VA(res_type, name, param_list, params, last_arg) \
-res_type __libc_##name param_list;					      \
-res_type								      \
-__attribute__ ((weak))							      \
-name param_list								      \
-{									      \
-  res_type result;							      \
-  int oldtype;								      \
-  va_list ap;								      \
-  pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);	      \
-  va_start (ap, last_arg);						      \
-  result = __libc_##name params;					      \
-  va_end (ap);								      \
-  pthread_setcanceltype (oldtype, NULL);				      \
-  return result;							      \
+#define CANCELABLE_SYSCALL_VA(res_type, name, param_list, params, last_arg)	\
+res_type __libc_##name param_list;						\
+res_type									\
+__attribute__ ((weak))								\
+name param_list									\
+{										\
+  res_type result;								\
+  int oldtype;									\
+  va_list ap;									\
+  pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);		\
+  va_start (ap, last_arg);							\
+  result = __libc_##name params;						\
+  va_end (ap);									\
+  pthread_setcanceltype (oldtype, NULL);					\
+  return result;								\
 }
 
 
@@ -96,9 +97,10 @@ CANCELABLE_SYSCALL (off64_t, lseek64, (int fd, off64_t offset, int whence),
 		    (fd, offset, whence))
 #endif
 
-#ifdef __NR_msync
+#if defined(__NR_msync) && defined(__ARCH_USE_MMU__)
+
 /* msync(2).  */
-CANCELABLE_SYSCALL (int, msync, (__ptr_t addr, size_t length, int flags),
+CANCELABLE_SYSCALL (int, msync, (void *addr, size_t length, int flags),
 		    (addr, length, flags))
 #endif
 
@@ -182,7 +184,7 @@ libpthread_hidden_def(waitpid)
 CANCELABLE_SYSCALL (ssize_t, write, (int fd, const void *buf, size_t n),
 		    (fd, buf, n))
 
-
+#if defined __UCLIBC_HAS_SOCKET__
 /* The following system calls are thread cancellation points specified
    in XNS.  */
 
@@ -224,3 +226,4 @@ CANCELABLE_SYSCALL (ssize_t, sendto, (int fd, const __ptr_t buf, size_t n,
 				      int flags, __CONST_SOCKADDR_ARG addr,
 				      socklen_t addr_len),
 		    (fd, buf, n, flags, addr, addr_len))
+#endif /* __UCLIBC_HAS_SOCKET__ */

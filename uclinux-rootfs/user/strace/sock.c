@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: sock.c,v 1.14 2007/03/21 14:18:19 ldv Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -46,8 +46,6 @@
 #endif
 #endif
 #include <net/if.h>
-
-extern const struct xlat addrfams[];
 
 static const struct xlat iffflags[] = {
 	{ IFF_UP,		"IFF_UP"		},
@@ -134,26 +132,38 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 		return 1;
 #ifdef LINUX
 	case SIOCGIFNAME:
+	case SIOCSIFNAME:
 	case SIOCGIFINDEX:
 	case SIOCGIFADDR:
+	case SIOCSIFADDR:
 	case SIOCGIFDSTADDR:
+	case SIOCSIFDSTADDR:
 	case SIOCGIFBRDADDR:
+	case SIOCSIFBRDADDR:
 	case SIOCGIFNETMASK:
+	case SIOCSIFNETMASK:
 	case SIOCGIFFLAGS:
+	case SIOCSIFFLAGS:
 	case SIOCGIFMETRIC:
+	case SIOCSIFMETRIC:
 	case SIOCGIFMTU:
+	case SIOCSIFMTU:
 	case SIOCGIFSLAVE:
+	case SIOCSIFSLAVE:
 	case SIOCGIFHWADDR:
+	case SIOCSIFHWADDR:
 	case SIOCGIFTXQLEN:
+	case SIOCSIFTXQLEN:
 	case SIOCGIFMAP:
+	case SIOCSIFMAP:
 		if (umove(tcp, tcp->u_arg[2], &ifr) < 0)
 			tprintf(", %#lx", tcp->u_arg[2]);
 		else if (syserror(tcp)) {
-			if (code == SIOCGIFNAME)
+			if (code == SIOCGIFNAME || code == SIOCSIFNAME)
 				tprintf(", {ifr_index=%d, ifr_name=???}", ifr.ifr_ifindex);
 			else
 				tprintf(", {ifr_name=\"%s\", ???}", ifr.ifr_name);
-		} else if (code == SIOCGIFNAME)
+		} else if (code == SIOCGIFNAME || code == SIOCSIFNAME)
 			tprintf(", {ifr_index=%d, ifr_name=\"%s\"}",
 				ifr.ifr_ifindex, ifr.ifr_name);
 		else {
@@ -163,20 +173,24 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 				tprintf("ifr_index=%d", ifr.ifr_ifindex);
 				break;
 			case SIOCGIFADDR:
+			case SIOCSIFADDR:
 				str = "ifr_addr";
 			case SIOCGIFDSTADDR:
-				if (str == NULL)
+			case SIOCSIFDSTADDR:
+				if (!str)
 					str = "ifr_dstaddr";
 			case SIOCGIFBRDADDR:
-				if (str == NULL)
+			case SIOCSIFBRDADDR:
+				if (!str)
 					str = "ifr_broadaddr";
 			case SIOCGIFNETMASK:
-				if (str == NULL)
+			case SIOCSIFNETMASK:
+				if (!str)
 					str = "ifr_netmask";
 				tprintf("%s={", str);
 				printxval(addrfams,
 					  ifr.ifr_addr.sa_family,
-                    			  "AF_???");
+					  "AF_???");
 				tprintf(", ");
 				print_addr(tcp, ((long) tcp->u_arg[2]
 						 + offsetof (struct ifreq,
@@ -185,6 +199,7 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 				tprintf("}");
 				break;
 			case SIOCGIFHWADDR:
+			case SIOCSIFHWADDR:
 				/* XXX Are there other hardware addresses
 				   than 6-byte MACs?  */
 				bytes = (unsigned char *) &ifr.ifr_hwaddr.sa_data;
@@ -193,22 +208,28 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 					bytes[3], bytes[4], bytes[5]);
 				break;
 			case SIOCGIFFLAGS:
+			case SIOCSIFFLAGS:
 				tprintf("ifr_flags=");
 				printflags(iffflags, ifr.ifr_flags, "IFF_???");
 				break;
 			case SIOCGIFMETRIC:
+			case SIOCSIFMETRIC:
 				tprintf("ifr_metric=%d", ifr.ifr_metric);
 				break;
 			case SIOCGIFMTU:
+			case SIOCSIFMTU:
 				tprintf("ifr_mtu=%d", ifr.ifr_mtu);
 				break;
 			case SIOCGIFSLAVE:
+			case SIOCSIFSLAVE:
 				tprintf("ifr_slave=\"%s\"", ifr.ifr_slave);
 				break;
 			case SIOCGIFTXQLEN:
+			case SIOCSIFTXQLEN:
 				tprintf("ifr_qlen=%d", ifr.ifr_qlen);
 				break;
 			case SIOCGIFMAP:
+			case SIOCSIFMAP:
 				tprintf("ifr_map={mem_start=%#lx, "
 					"mem_end=%#lx, base_addr=%#x, "
 					"irq=%u, dma=%u, port=%u}",
@@ -229,7 +250,7 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 			return 1;
 		}
 		tprintf("%d, ", ifc.ifc_len);
-                if (syserror(tcp)) {
+		if (syserror(tcp)) {
 			tprintf("%lx", (unsigned long) ifc.ifc_buf);
 		} else if (ifc.ifc_buf == NULL) {
 			tprintf("NULL");
@@ -237,8 +258,12 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 			int i;
 			unsigned nifra = ifc.ifc_len / sizeof(struct ifreq);
 			struct ifreq ifra[nifra];
-			umoven(tcp, (unsigned long) ifc.ifc_buf, sizeof(ifra),
-			       (char *) ifra);
+
+			if (umoven(tcp, (unsigned long) ifc.ifc_buf,
+				sizeof(ifra), (char *) ifra) < 0) {
+				tprintf("%lx}", (unsigned long) ifc.ifc_buf);
+				return 1;
+			}
 			tprintf("{");
 			for (i = 0; i < nifra; ++i ) {
 				if (i > 0)

@@ -1,5 +1,5 @@
 /* Machine-specific pthread type layouts.  MIPS version.
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -20,7 +20,10 @@
 #ifndef _BITS_PTHREADTYPES_H
 #define _BITS_PTHREADTYPES_H	1
 
-#if defined(_ABI64) && (_MIPS_SIM == _ABI64)
+#include <endian.h>
+#include <sgidefs.h>
+
+#if _MIPS_SIM == _ABI64
 # define __SIZEOF_PTHREAD_ATTR_T 56
 # define __SIZEOF_PTHREAD_MUTEX_T 40
 # define __SIZEOF_PTHREAD_MUTEXATTR_T 4
@@ -55,25 +58,47 @@ typedef union
 } pthread_attr_t;
 
 
+#if _MIPS_SIM == _ABI64
+typedef struct __pthread_internal_list
+{
+  struct __pthread_internal_list *__prev;
+  struct __pthread_internal_list *__next;
+} __pthread_list_t;
+#else
+typedef struct __pthread_internal_slist
+{
+  struct __pthread_internal_slist *__next;
+} __pthread_slist_t;
+#endif
+
+
 /* Data structures for mutex handling.  The structure of the attribute
    type is deliberately not exposed.  */
 typedef union
 {
-  struct
+  struct __pthread_mutex_s
   {
     int __lock;
     unsigned int __count;
     int __owner;
-#if defined(_ABI64) && (_MIPS_SIM == _ABI64)
+#if _MIPS_SIM == _ABI64
     unsigned int __nusers;
 #endif
     /* KIND must stay at this position in the structure to maintain
        binary compatibility.  */
     int __kind;
-#if ! defined(_ABI64) || (_MIPS_SIM != _ABI64)
-    unsigned int __nusers;
-#endif
+#if _MIPS_SIM == _ABI64
     int __spins;
+    __pthread_list_t __list;
+# define __PTHREAD_MUTEX_HAVE_PREV	1
+#else
+    unsigned int __nusers;
+    __extension__ union
+    {
+      int __spins;
+      __pthread_slist_t __list;
+    };
+#endif
   } __data;
   char __size[__SIZEOF_PTHREAD_MUTEX_T];
   long int __align;
@@ -125,7 +150,7 @@ typedef int pthread_once_t;
    structure of the attribute type is deliberately not exposed.  */
 typedef union
 {
-# if defined(_ABI64) && (_MIPS_SIM == _ABI64)
+# if _MIPS_SIM == _ABI64
   struct
   {
     int __lock;
@@ -135,9 +160,9 @@ typedef union
     unsigned int __nr_readers_queued;
     unsigned int __nr_writers_queued;
     int __writer;
-    int __pad1;
+    int __shared;
+    unsigned long int __pad1;
     unsigned long int __pad2;
-    unsigned long int __pad3;
     /* FLAGS must stay at this position in the structure to maintain
        binary compatibility.  */
     unsigned int __flags;
@@ -151,9 +176,21 @@ typedef union
     unsigned int __writer_wakeup;
     unsigned int __nr_readers_queued;
     unsigned int __nr_writers_queued;
+#if __BYTE_ORDER == __BIG_ENDIAN
+    unsigned char __pad1;
+    unsigned char __pad2;
+    unsigned char __shared;
     /* FLAGS must stay at this position in the structure to maintain
        binary compatibility.  */
-    unsigned int __flags;
+    unsigned char __flags;
+#else
+    /* FLAGS must stay at this position in the structure to maintain
+       binary compatibility.  */
+    unsigned char __flags;
+    unsigned char __shared;
+    unsigned char __pad1;
+    unsigned char __pad2;
+#endif
     int __writer;
   } __data;
 # endif

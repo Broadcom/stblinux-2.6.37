@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add AH support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -17,8 +18,8 @@ static void ah_help(void)
 }
 
 static const struct option ah_opts[] = {
-	{ "ahspi", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "ahspi", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -82,8 +83,8 @@ static int ah_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & AH_SPI)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--ahspi' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_ah_spis(argv[optind-1], ahinfo->spis);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_ah_spis(optarg, ahinfo->spis);
 		if (invert)
 			ahinfo->invflags |= IPT_AH_INV_SPI;
 		*flags |= AH_SPI;

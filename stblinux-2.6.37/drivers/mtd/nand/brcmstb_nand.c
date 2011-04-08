@@ -92,6 +92,36 @@
 #define EDU_VA_OK(x)		0
 #endif
 
+#define REG_ACC_CONTROL(cs) \
+	((cs) == 0 ? BCHP_NAND_ACC_CONTROL : \
+	 (BCHP_NAND_ACC_CONTROL_CS1 + (((cs) - 1) << 4)))
+
+#define REG_CONFIG(cs) \
+	((cs) == 0 ? BCHP_NAND_CONFIG : \
+	 (BCHP_NAND_CONFIG_CS1 + (((cs) - 1) << 4)))
+
+#define WR_CONFIG(cs, field, val) do { \
+	u32 reg = REG_CONFIG(cs), contents = BDEV_RD(reg); \
+	contents &= ~(BCHP_NAND_CONFIG_##field##_MASK); \
+	contents |= (val) << BCHP_NAND_CONFIG_##field##_SHIFT; \
+	BDEV_WR(reg, contents); \
+	} while (0)
+
+#define RD_CONFIG(cs, field) \
+	((BDEV_RD(REG_CONFIG(cs)) & BCHP_NAND_CONFIG_##field##_MASK) \
+	 >> BCHP_NAND_CONFIG_##field##_SHIFT)
+
+#define WR_ACC_CONTROL(cs, field, val) do { \
+	u32 reg = REG_ACC_CONTROL(cs), contents = BDEV_RD(reg); \
+	contents &= ~(BCHP_NAND_ACC_CONTROL_##field##_MASK); \
+	contents |= (val) << BCHP_NAND_ACC_CONTROL_##field##_SHIFT; \
+	BDEV_WR(reg, contents); \
+	} while (0)
+
+#define RD_ACC_CONTROL(cs, field) \
+	((BDEV_RD(REG_ACC_CONTROL(cs)) & BCHP_NAND_ACC_CONTROL_##field##_MASK) \
+		>> BCHP_NAND_ACC_CONTROL_##field##_SHIFT)
+
 /* Helper functions for reading and writing OOB registers */
 static inline unsigned char oob_reg_read(int offs)
 {
@@ -138,18 +168,6 @@ struct brcmstb_nand_controller {
 
 static struct brcmstb_nand_controller ctrl;
 
-struct brcmstb_nand_host {
-	u32			buf[FC_WORDS];
-	struct nand_chip	chip;
-	struct mtd_info		mtd;
-	struct platform_device	*pdev;
-	int			cs;
-
-	unsigned int		last_cmd;
-	unsigned int		last_byte;
-	u64			last_addr;
-};
-
 struct brcmstb_nand_cfg {
 	u64			device_size;
 	unsigned int		block_size;
@@ -160,6 +178,19 @@ struct brcmstb_nand_cfg {
 	unsigned int		blk_adr_bytes;
 	unsigned int		ful_adr_bytes;
 	unsigned int		sector_size_1k;
+};
+
+struct brcmstb_nand_host {
+	u32			buf[FC_WORDS];
+	struct nand_chip	chip;
+	struct mtd_info		mtd;
+	struct platform_device	*pdev;
+	int			cs;
+
+	unsigned int		last_cmd;
+	unsigned int		last_byte;
+	u64			last_addr;
+	struct brcmstb_nand_cfg	hwcfg;
 };
 
 static struct nand_ecclayout brcmstb_nand_oob_layout = {
@@ -542,6 +573,18 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 			int tbytes = mtd->oobsize / trans;
 			int rbytes = min(tbytes, MAX_CONTROLLER_OOB);
 
+			/* Adjust OOB read values for 1K sector size */
+			if (host->hwcfg.sector_size_1k) {
+				tbytes <<= 1;
+				if (i & 0x01)
+					tbytes = max(0, tbytes -
+							MAX_CONTROLLER_OOB);
+				else
+					tbytes = min(tbytes,
+							MAX_CONTROLLER_OOB);
+				rbytes = min(tbytes, MAX_CONTROLLER_OOB);
+			}
+
 			for (j = 0; j < rbytes; j++)
 				oob[j] = oob_reg_read(j);
 			oob += tbytes;
@@ -690,9 +733,25 @@ static int brcmstb_nand_write(struct mtd_info *mtd,
 		if (buf)
 			for (j = 0; j < FC_WORDS; j++, buf++)
 				BDEV_WR(FC(j), cpu_to_le32(*buf));
+		else if (oob)
+			for (j = 0; j < FC_WORDS; j++)
+				BDEV_WR(FC(j), 0xffffffff);
+
 		if (unlikely(oob)) {
 			int tbytes = mtd->oobsize / trans;
 			int rwords = min(tbytes, MAX_CONTROLLER_OOB) >> 2;
+
+			/* Adjust OOB read values for 1K sector size */
+			if (host->hwcfg.sector_size_1k) {
+				tbytes <<= 1;
+				if (i & 0x01)
+					tbytes = max(0, tbytes -
+							MAX_CONTROLLER_OOB);
+				else
+					tbytes = min(tbytes,
+							MAX_CONTROLLER_OOB);
+				rwords = tbytes >> 2;
+			}
 
 			for (j = 0; j < rwords; j++)
 				oob_reg_write(j << 2,
@@ -703,8 +762,8 @@ static int brcmstb_nand_write(struct mtd_info *mtd,
 			oob += tbytes;
 		}
 
-		brcmstb_nand_send_cmd(
-			buf ? CMD_PROGRAM_PAGE : CMD_PROGRAM_SPARE_AREA);
+		/* we cannot use SPARE_AREA_PROGRAM when PARTIAL_PAGE_EN=0 */
+		brcmstb_nand_send_cmd(CMD_PROGRAM_PAGE);
 		status = brcmstb_nand_waitfunc(mtd, chip);
 
 		if (status & NAND_STATUS_FAIL) {
@@ -743,36 +802,6 @@ static int brcmstb_nand_write_oob(struct mtd_info *mtd,
 /***********************************************************************
  * Per-CS setup (1 NAND device)
  ***********************************************************************/
-
-#define REG_ACC_CONTROL(cs) \
-	((cs) == 0 ? BCHP_NAND_ACC_CONTROL : \
-	 (BCHP_NAND_ACC_CONTROL_CS1 + (((cs) - 1) << 4)))
-
-#define REG_CONFIG(cs) \
-	((cs) == 0 ? BCHP_NAND_CONFIG : \
-	 (BCHP_NAND_CONFIG_CS1 + (((cs) - 1) << 4)))
-
-#define WR_CONFIG(cs, field, val) do { \
-	u32 reg = REG_CONFIG(cs), contents = BDEV_RD(reg); \
-	contents &= ~(BCHP_NAND_CONFIG_##field##_MASK); \
-	contents |= (val) << BCHP_NAND_CONFIG_##field##_SHIFT; \
-	BDEV_WR(reg, contents); \
-	} while (0)
-
-#define RD_CONFIG(cs, field) \
-	((BDEV_RD(REG_CONFIG(cs)) & BCHP_NAND_CONFIG_##field##_MASK) \
-	 >> BCHP_NAND_CONFIG_##field##_SHIFT)
-
-#define WR_ACC_CONTROL(cs, field, val) do { \
-	u32 reg = REG_ACC_CONTROL(cs), contents = BDEV_RD(reg); \
-	contents &= ~(BCHP_NAND_ACC_CONTROL_##field##_MASK); \
-	contents |= (val) << BCHP_NAND_ACC_CONTROL_##field##_SHIFT; \
-	BDEV_WR(reg, contents); \
-	} while (0)
-
-#define RD_ACC_CONTROL(cs, field) \
-	((BDEV_RD(REG_ACC_CONTROL(cs)) & BCHP_NAND_ACC_CONTROL_##field##_MASK) \
-		>> BCHP_NAND_ACC_CONTROL_##field##_SHIFT)
 
 #if CONTROLLER_VER >= 40
 static const unsigned int block_sizes[] = { 16, 128, 8, 512, 256, 1024, 2048 };
@@ -870,6 +899,7 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 	unsigned int ecclevel;
 
 	brcmstb_nand_get_cfg(host, &orig_cfg);
+	host->hwcfg = orig_cfg;
 
 	memset(&new_cfg, 0, sizeof(new_cfg));
 	new_cfg.device_size = mtd->size;
@@ -890,6 +920,10 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 		else
 			new_cfg.blk_adr_bytes = 2;
 	new_cfg.ful_adr_bytes = new_cfg.blk_adr_bytes + new_cfg.col_adr_bytes;
+
+	/* use bootloader spare_area_size if it's "close enough" */
+	if (abs(new_cfg.spare_area_size - orig_cfg.spare_area_size) < 2)
+		new_cfg.spare_area_size = orig_cfg.spare_area_size;
 
 	if (orig_cfg.device_size != new_cfg.device_size ||
 			orig_cfg.block_size != new_cfg.block_size ||
@@ -922,6 +956,7 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 #endif
 
 		brcmstb_nand_set_cfg(host, &new_cfg);
+		host->hwcfg = new_cfg;
 
 		WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
 		WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);

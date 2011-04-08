@@ -1,5 +1,5 @@
 /* Copyright (C) 1991,92,93,95,96,97,98,99,2001,02
-   	Free Software Foundation, Inc.
+	Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -27,7 +27,77 @@
 #include <features.h>
 #include <bits/types.h>
 
-#ifdef __UCLIBC_HAS_CTYPE_TABLES__
+__BEGIN_DECLS
+__BEGIN_NAMESPACE_STD
+
+/* The following names are all functions:
+     int isCHARACTERISTIC(int c);
+   which return nonzero iff C has CHARACTERISTIC.
+   For the meaning of the characteristic names, see the `enum' above.  */
+extern int isalnum(int __c) __THROW;
+libc_hidden_proto(isalnum)
+extern int isalpha(int __c) __THROW;
+libc_hidden_proto(isalpha)
+extern int iscntrl(int __c) __THROW;
+libc_hidden_proto(iscntrl)
+extern int isdigit(int __c) __THROW;
+libc_hidden_proto(isdigit)
+extern int islower(int __c) __THROW;
+libc_hidden_proto(islower)
+extern int isgraph(int __c) __THROW;
+libc_hidden_proto(isgraph)
+extern int isprint(int __c) __THROW;
+libc_hidden_proto(isprint)
+extern int ispunct(int __c) __THROW;
+libc_hidden_proto(ispunct)
+extern int isspace(int __c) __THROW;
+libc_hidden_proto(isspace)
+extern int isupper(int __c) __THROW;
+libc_hidden_proto(isupper)
+extern int isxdigit(int __c) __THROW;
+libc_hidden_proto(isxdigit)
+
+
+/* Return the lowercase version of C.  */
+extern int tolower(int __c) __THROW;
+libc_hidden_proto(tolower)
+
+/* Return the uppercase version of C.  */
+extern int toupper(int __c) __THROW;
+libc_hidden_proto(toupper)
+
+#if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) && \
+	defined __UCLIBC_SUSV4_LEGACY__
+/* Return nonzero iff C is in the ASCII set
+   (i.e., is no more than 7 bits wide).  */
+extern int isascii(int __c) __THROW;
+libc_hidden_proto(isascii)
+/* Return the part of C that is in the ASCII set
+   (i.e., the low-order 7 bits of C).  */
+extern int toascii(int __c) __THROW;
+#endif
+
+__END_NAMESPACE_STD
+
+
+/* ISO C99 introduced one new function.  */
+#ifdef	__USE_ISOC99
+__BEGIN_NAMESPACE_C99
+
+extern int isblank(int __c) __THROW;
+libc_hidden_proto(isblank)
+
+__END_NAMESPACE_C99
+#endif
+__END_DECLS
+
+#ifndef __UCLIBC_HAS_CTYPE_TABLES__
+
+/* "Stub locale": we are permanently in C/POSIX locale.
+ * Using simple(r) ctype.h machinery in this header instead: */
+#include <bits/uClibc_ctype.h>
+
+#else
 
 __BEGIN_DECLS
 
@@ -36,6 +106,7 @@ __BEGIN_DECLS
    If there get to be more than 16 distinct characteristics,
    __ctype_mask_t will need to be adjusted. */
 
+/* libstdc++ from gcc toolchain needs this macro. */
 # define _ISbit(bit)	(1 << (bit))
 
 enum
@@ -57,15 +128,14 @@ enum
 #error _ISbit already defined!
 #endif /* ! _ISbit  */
 
+/* __ctype_XXX_t types and __UCLIBC_CTYPE_x_TBL_OFFSET constants */
 #include <bits/uClibc_touplow.h>
 
 #ifdef __UCLIBC_HAS_CTYPE_SIGNED__
 # define __UCLIBC_CTYPE_IN_TO_DOMAIN(c) (((unsigned int)((c) + 128)) < 384)
-
-#else  /* __UCLIBC_HAS_CTYPE_SIGNED__ */
+#else
 # define __UCLIBC_CTYPE_IN_TO_DOMAIN(c) (((unsigned int)(c)) < 256)
-
-#endif /* __UCLIBC_HAS_CTYPE_SIGNED__ */
+#endif
 
 /* In the thread-specific locale model (see `uselocale' in <locale.h>)
    we cannot use global variables for these as was done in the past.
@@ -101,18 +171,20 @@ enum
 
 /* Pointers to the default C-locale data. */
 extern const __ctype_mask_t *__C_ctype_b;
+libc_hidden_proto(__C_ctype_b)
 extern const __ctype_touplow_t *__C_ctype_toupper;
+libc_hidden_proto(__C_ctype_toupper)
 extern const __ctype_touplow_t *__C_ctype_tolower;
+libc_hidden_proto(__C_ctype_tolower)
 
 #ifdef __UCLIBC_HAS_XLOCALE__
 
-extern __const __ctype_mask_t **__ctype_b_loc (void)
-     __attribute__ ((__const));
-extern __const __ctype_touplow_t **__ctype_tolower_loc (void)
-     __attribute__ ((__const));
-extern __const __ctype_touplow_t **__ctype_toupper_loc (void)
-     __attribute__ ((__const));
-
+const __ctype_mask_t **__ctype_b_loc(void) __attribute__ ((const));
+libc_hidden_proto(__ctype_b_loc)
+const __ctype_touplow_t **__ctype_tolower_loc(void) __attribute__ ((const));
+libc_hidden_proto(__ctype_tolower_loc)
+const __ctype_touplow_t **__ctype_toupper_loc(void) __attribute__ ((const));
+libc_hidden_proto(__ctype_toupper_loc)
 #define __UCLIBC_CTYPE_B	(*__ctype_b_loc())
 #define __UCLIBC_CTYPE_TOLOWER	(*__ctype_tolower_loc())
 #define __UCLIBC_CTYPE_TOUPPER	(*__ctype_toupper_loc())
@@ -121,107 +193,60 @@ extern __const __ctype_touplow_t **__ctype_toupper_loc (void)
 
 /* Pointers to the current global locale data in use. */
 extern const __ctype_mask_t *__ctype_b;
+libc_hidden_proto(__ctype_b)
 extern const __ctype_touplow_t *__ctype_toupper;
+libc_hidden_proto(__ctype_toupper)
 extern const __ctype_touplow_t *__ctype_tolower;
-
+libc_hidden_proto(__ctype_tolower)
 #define __UCLIBC_CTYPE_B	(__ctype_b)
 #define __UCLIBC_CTYPE_TOLOWER	(__ctype_tolower)
 #define __UCLIBC_CTYPE_TOUPPER	(__ctype_toupper)
 
 #endif /* __UCLIBC_HAS_XLOCALE__ */
 
-#define __isctype(c, type) \
-  ((__UCLIBC_CTYPE_B)[(int) (c)] & (__ctype_mask_t) type)
-
+#ifdef __UCLIBC_SUSV4_LEGACY__
 #define	__isascii(c)	(((c) & ~0x7f) == 0)	/* If C is a 7 bit value.  */
 #define	__toascii(c)	((c) & 0x7f)		/* Mask off high bits.  */
+#endif
 
-#if defined _LIBC && (defined IS_IN_libc || defined NOT_IN_libc)
-/* isdigit() is really locale-invariant, so provide some small fast macros.
- * These are uClibc-specific. */
+#ifdef _LIBC
+/* These are uClibc-specific. */
 #define __isdigit_char(C)    (((unsigned char)((C) - '0')) <= 9)
 #define __isdigit_int(C)     (((unsigned int)((C) - '0')) <= 9)
 #endif
 
-#define	__exctype(name)	extern int name (int) __THROW
-
-__BEGIN_NAMESPACE_STD
-
-/* The following names are all functions:
-     int isCHARACTERISTIC(int c);
-   which return nonzero iff C has CHARACTERISTIC.
-   For the meaning of the characteristic names, see the `enum' above.  */
-__exctype (isalnum);
-__exctype (isalpha);
-__exctype (iscntrl);
-__exctype (isdigit);
-__exctype (islower);
-__exctype (isgraph);
-__exctype (isprint);
-__exctype (ispunct);
-__exctype (isspace);
-__exctype (isupper);
-__exctype (isxdigit);
-
-
-/* Return the lowercase version of C.  */
-extern int tolower (int __c) __THROW;
-
-/* Return the uppercase version of C.  */
-extern int toupper (int __c) __THROW;
-
-__END_NAMESPACE_STD
-
-
-/* ISO C99 introduced one new function.  */
-#ifdef	__USE_ISOC99
-__BEGIN_NAMESPACE_C99
-
-__exctype (isblank);
-
-__END_NAMESPACE_C99
-#endif
-
 #ifdef __USE_GNU
 /* Test C for a set of character classes according to MASK.  */
-extern int isctype (int __c, int __mask) __THROW;
+extern int isctype(int __c, int __mask) __THROW;
 #endif
 
-#if defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN
-
-/* Return nonzero iff C is in the ASCII set
-   (i.e., is no more than 7 bits wide).  */
-extern int isascii (int __c) __THROW;
-
-/* Return the part of C that is in the ASCII set
-   (i.e., the low-order 7 bits of C).  */
-extern int toascii (int __c) __THROW;
-
+#if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) \
+	&& defined __UCLIBC_SUSV4_LEGACY__
 /* These are the same as `toupper' and `tolower' except that they do not
    check the argument for being in the range of a `char'.  */
-__exctype (_toupper);
-__exctype (_tolower);
+extern int _toupper(int __c) __THROW;
+extern int _tolower(int __c) __THROW;
 #endif /* Use SVID or use misc.  */
 
 /* This code is needed for the optimized mapping functions.  */
-#define __tobody(c, f, a, args) \
-  (__extension__							      \
-   ({ int __res;							      \
-      if (sizeof (c) > 1)						      \
-	{								      \
-	  if (__builtin_constant_p (c))					      \
-	    {								      \
-	      int __c = (c);						      \
-	      __res = __UCLIBC_CTYPE_IN_TO_DOMAIN(__c) ? (a)[__c] : __c;      \
-	    }								      \
-	  else								      \
-	    __res = f args;						      \
-	}								      \
-      else								      \
-	__res = (a)[(int) (c)];						      \
-      __res; }))
+#define __tobody(c, f, table, args) \
+(__extension__ ({ \
+	int __res; \
+	if (sizeof(c) > 1) { \
+		if (__builtin_constant_p(c)) { \
+			int __c = (c); \
+			__res = __UCLIBC_CTYPE_IN_TO_DOMAIN(__c) ? (table)[__c] : __c; \
+		} else \
+			__res = f args; \
+	} else \
+		__res = (table)[(int) (c)]; \
+	__res; \
+}))
 
-#if !defined __NO_CTYPE && !defined __cplusplus
+#define __isctype(c, type) ((__UCLIBC_CTYPE_B)[(int)(c)] & (__ctype_mask_t)type)
+/* Do not combine in one #if - unifdef tool is not that clever */
+#ifndef __NO_CTYPE
+#ifndef __cplusplus
 # define isalnum(c)	__isctype((c), _ISalnum)
 # define isalpha(c)	__isctype((c), _ISalpha)
 # define iscntrl(c)	__isctype((c), _IScntrl)
@@ -233,19 +258,17 @@ __exctype (_tolower);
 # define isspace(c)	__isctype((c), _ISspace)
 # define isupper(c)	__isctype((c), _ISupper)
 # define isxdigit(c)	__isctype((c), _ISxdigit)
-
 # ifdef __USE_ISOC99
 #  define isblank(c)	__isctype((c), _ISblank)
 # endif
 
 # ifdef __USE_EXTERN_INLINES
-extern __inline int
+__extern_inline int
 __NTH (tolower (int __c))
 {
   return __UCLIBC_CTYPE_IN_TO_DOMAIN(__c) ? (__UCLIBC_CTYPE_TOLOWER)[__c] : __c;
 }
-
-extern __inline int
+__extern_inline int
 __NTH (toupper (int __c))
 {
   return __UCLIBC_CTYPE_IN_TO_DOMAIN(__c) ? (__UCLIBC_CTYPE_TOUPPER)[__c] : __c;
@@ -253,22 +276,23 @@ __NTH (toupper (int __c))
 # endif
 
 # if __GNUC__ >= 2 && defined __OPTIMIZE__ && !defined __cplusplus
-#  define tolower(c)	__tobody (c, tolower, __UCLIBC_CTYPE_TOLOWER, (c))
-#  define toupper(c)	__tobody (c, toupper, __UCLIBC_CTYPE_TOUPPER, (c))
+#  define tolower(c)	__tobody(c, tolower, __UCLIBC_CTYPE_TOLOWER, (c))
+#  define toupper(c)	__tobody(c, toupper, __UCLIBC_CTYPE_TOUPPER, (c))
 # endif /* Optimizing gcc */
 
-# if defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN
+# if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) \
+	&& defined __UCLIBC_SUSV4_LEGACY__
 #  define isascii(c)	__isascii (c)
 #  define toascii(c)	__toascii (c)
-
 #  define _tolower(c)	((int) (__UCLIBC_CTYPE_TOLOWER)[(int) (c)])
 #  define _toupper(c)	((int) (__UCLIBC_CTYPE_TOUPPER)[(int) (c)])
 # endif
 
-#endif /* Not __NO_CTYPE.  */
+#endif /* not __cplusplus */
+#endif /* not __NO_CTYPE */
 
 
-#if defined(__USE_GNU) && defined(__UCLIBC_HAS_XLOCALE__)
+#if defined __USE_GNU && defined __UCLIBC_HAS_XLOCALE__
 /* The concept of one static locale per category is not very well
    thought out.  Many applications will need to process its data using
    information from several different locales.  Another application is
@@ -286,49 +310,61 @@ __NTH (toupper (int __c))
 
 /* These definitions are similar to the ones above but all functions
    take as an argument a handle for the locale which shall be used.  */
-#  define __isctype_l(c, type, locale) \
-  ((locale)->__ctype_b[(int) (c)] & (__ctype_mask_t) type)
+extern int isalnum_l(int, __locale_t) __THROW;
+libc_hidden_proto(isalnum_l)
+extern int isalpha_l(int, __locale_t) __THROW;
+libc_hidden_proto(isalpha_l)
+extern int iscntrl_l(int, __locale_t) __THROW;
+libc_hidden_proto(iscntrl_l)
+extern int isdigit_l(int, __locale_t) __THROW;
+libc_hidden_proto(isdigit_l)
+extern int islower_l(int, __locale_t) __THROW;
+libc_hidden_proto(islower_l)
+extern int isgraph_l(int, __locale_t) __THROW;
+libc_hidden_proto(isgraph_l)
+extern int isprint_l(int, __locale_t) __THROW;
+libc_hidden_proto(isprint_l)
+extern int ispunct_l(int, __locale_t) __THROW;
+libc_hidden_proto(ispunct_l)
+extern int isspace_l(int, __locale_t) __THROW;
+libc_hidden_proto(isspace_l)
+extern int isupper_l(int, __locale_t) __THROW;
+libc_hidden_proto(isupper_l)
+extern int isxdigit_l(int, __locale_t) __THROW;
+libc_hidden_proto(isxdigit_l)
+extern int isblank_l(int, __locale_t) __THROW;
+libc_hidden_proto(isblank_l)
 
-# define __exctype_l(name) 						      \
-  extern int name (int, __locale_t) __THROW
+# if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) \
+	&& defined __UCLIBC_SUSV4_LEGACY__
+/* Return nonzero iff C is in the ASCII set
+   (i.e., is no more than 7 bits wide).  */
+extern int isascii_l (int __c) __THROW;
+libc_hidden_proto(isascii_l)
 
-/* The following names are all functions:
-     int isCHARACTERISTIC(int c, locale_t *locale);
-   which return nonzero iff C has CHARACTERISTIC.
-   For the meaning of the characteristic names, see the `enum' above.  */
-__exctype_l (isalnum_l);
-__exctype_l (isalpha_l);
-__exctype_l (iscntrl_l);
-__exctype_l (isdigit_l);
-__exctype_l (islower_l);
-__exctype_l (isgraph_l);
-__exctype_l (isprint_l);
-__exctype_l (ispunct_l);
-__exctype_l (isspace_l);
-__exctype_l (isupper_l);
-__exctype_l (isxdigit_l);
-
-__exctype_l (isblank_l);
-
+# endif
 
 /* Return the lowercase version of C in locale L.  */
-extern int __tolower_l (int __c, __locale_t __l) __THROW;
+/* "ordinary" ctype.h has no __tolower, why we try to have it?
+ * remove after 0.9.31
+ *extern int __tolower_l (int __c, __locale_t __l) __THROW; */
 extern int tolower_l (int __c, __locale_t __l) __THROW;
+libc_hidden_proto(tolower_l)
 
 /* Return the uppercase version of C.  */
-extern int __toupper_l (int __c, __locale_t __l) __THROW;
+/*extern int __toupper_l (int __c, __locale_t __l) __THROW; */
 extern int toupper_l (int __c, __locale_t __l) __THROW;
+libc_hidden_proto(toupper_l)
 
 # if __GNUC__ >= 2 && defined __OPTIMIZE__ && !defined __cplusplus
-#  define __tolower_l(c, locale) \
-  __tobody (c, __tolower_l, (locale)->__ctype_tolower, (c, locale))
-#  define __toupper_l(c, locale) \
-  __tobody (c, __toupper_l, (locale)->__ctype_toupper, (c, locale))
-#  define tolower_l(c, locale)	__tolower_l ((c), (locale))
-#  define toupper_l(c, locale)	__toupper_l ((c), (locale))
+#  define tolower_l(c, locale) __tobody(c, tolower_l, (locale)->__ctype_tolower, (c, locale))
+#  define toupper_l(c, locale) __tobody(c, toupper_l, (locale)->__ctype_toupper, (c, locale))
+/*#  define __tolower_l(c, locale) tolower_l((c), (locale)) */
+/*#  define __toupper_l(c, locale) toupper_l((c), (locale)) */
 # endif	/* Optimizing gcc */
 
 
+# define __isctype_l(c, type, locale) ((locale)->__ctype_b[(int) (c)] & (__ctype_mask_t) type)
 # ifndef __NO_CTYPE
 #  define __isalnum_l(c,l)	__isctype_l((c), _ISalnum, (l))
 #  define __isalpha_l(c,l)	__isctype_l((c), _ISalpha, (l))
@@ -341,10 +377,10 @@ extern int toupper_l (int __c, __locale_t __l) __THROW;
 #  define __isspace_l(c,l)	__isctype_l((c), _ISspace, (l))
 #  define __isupper_l(c,l)	__isctype_l((c), _ISupper, (l))
 #  define __isxdigit_l(c,l)	__isctype_l((c), _ISxdigit, (l))
-
 #  define __isblank_l(c,l)	__isctype_l((c), _ISblank, (l))
 
-#  if defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN
+#  if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) \
+	&& defined __UCLIBC_SUSV4_LEGACY__
 #   define __isascii_l(c,l)	((l), __isascii (c))
 #   define __toascii_l(c,l)	((l), __toascii (c))
 #  endif
@@ -360,10 +396,10 @@ extern int toupper_l (int __c, __locale_t __l) __THROW;
 #  define isspace_l(c,l)	__isspace_l ((c), (l))
 #  define isupper_l(c,l)	__isupper_l ((c), (l))
 #  define isxdigit_l(c,l)	__isxdigit_l ((c), (l))
-
 #  define isblank_l(c,l)	__isblank_l ((c), (l))
 
-#  if defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN
+#  if (defined __USE_SVID || defined __USE_MISC || defined __USE_XOPEN) \
+	&& defined __UCLIBC_SUSV4_LEGACY__
 #   define isascii_l(c,l)	__isascii_l ((c), (l))
 #   define toascii_l(c,l)	__toascii_l ((c), (l))
 #  endif
@@ -374,10 +410,12 @@ extern int toupper_l (int __c, __locale_t __l) __THROW;
 
 __END_DECLS
 
-#else  /* __UCLIBC_HAS_CTYPE_TABLES__ */
+#endif /* __UCLIBC_HAS_CTYPE_TABLES__ */
 
-#include <bits/uClibc_ctype.h>
-
+/* We define {__,}isascii for internal use only */
+#if defined _LIBC && !defined __UCLIBC_SUSV4_LEGACY__
+# define __isascii(c) (((c) & ~0x7f) == 0)
+# define isascii(c) __isascii (c)
 #endif
 
 #endif /* ctype.h  */

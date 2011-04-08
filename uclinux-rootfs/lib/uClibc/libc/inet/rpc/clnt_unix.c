@@ -60,33 +60,8 @@
 #include <rpc/pmap_clnt.h>
 #ifdef USE_IN_LIBIO
 # include <wchar.h>
-libc_hidden_proto(fwprintf)
 #endif
 
-libc_hidden_proto(strlen)
-libc_hidden_proto(memcpy)
-libc_hidden_proto(socket)
-libc_hidden_proto(close)
-libc_hidden_proto(getpid)
-libc_hidden_proto(authnone_create)
-libc_hidden_proto(xdrrec_create)
-libc_hidden_proto(xdrrec_endofrecord)
-libc_hidden_proto(xdrrec_skiprecord)
-libc_hidden_proto(xdr_callhdr)
-libc_hidden_proto(xdr_replymsg)
-libc_hidden_proto(xdr_opaque_auth)
-libc_hidden_proto(xdrmem_create)
-libc_hidden_proto(xdr_void)
-libc_hidden_proto(getegid)
-libc_hidden_proto(geteuid)
-libc_hidden_proto(_seterr_reply)
-libc_hidden_proto(setsockopt)
-libc_hidden_proto(connect)
-libc_hidden_proto(recvmsg)
-libc_hidden_proto(sendmsg)
-libc_hidden_proto(poll)
-libc_hidden_proto(fputs)
-libc_hidden_proto(__rpc_thread_createerr)
 
 extern u_long _create_xid (void) attribute_hidden;
 
@@ -116,7 +91,7 @@ static bool_t clntunix_freeres (CLIENT *, xdrproc_t, caddr_t);
 static bool_t clntunix_control (CLIENT *, int, char *);
 static void clntunix_destroy (CLIENT *);
 
-static struct clnt_ops unix_ops =
+static const struct clnt_ops unix_ops =
 {
   clntunix_call,
   clntunix_abort,
@@ -140,7 +115,6 @@ static struct clnt_ops unix_ops =
  * NB: The rpch->cl_auth is set null authentication.  Caller may wish to set this
  * something more useful.
  */
-libc_hidden_proto(clntunix_create)
 CLIENT *
 clntunix_create (struct sockaddr_un *raddr, u_long prog, u_long vers,
 		 int *sockp, u_int sendsz, u_int recvsz)
@@ -242,14 +216,9 @@ fooy:
 libc_hidden_def(clntunix_create)
 
 static enum clnt_stat
-clntunix_call (h, proc, xdr_args, args_ptr, xdr_results, results_ptr, timeout)
-     CLIENT *h;
-     u_long proc;
-     xdrproc_t xdr_args;
-     caddr_t args_ptr;
-     xdrproc_t xdr_results;
-     caddr_t results_ptr;
-     struct timeval timeout;
+clntunix_call (CLIENT *h, u_long proc, xdrproc_t xdr_args, caddr_t args_ptr,
+			   xdrproc_t xdr_results, caddr_t results_ptr,
+			   struct timeval timeout)
 {
   struct ct_data *ct = (struct ct_data *) h->cl_private;
   XDR *xdrs = &(ct->ct_xdrs);
@@ -356,10 +325,7 @@ clntunix_geterr (CLIENT *h, struct rpc_err *errp)
 }
 
 static bool_t
-clntunix_freeres (cl, xdr_res, res_ptr)
-     CLIENT *cl;
-     xdrproc_t xdr_res;
-     caddr_t res_ptr;
+clntunix_freeres (CLIENT *cl, xdrproc_t xdr_res, caddr_t res_ptr)
 {
   struct ct_data *ct = (struct ct_data *) cl->cl_private;
   XDR *xdrs = &(ct->ct_xdrs);
@@ -369,7 +335,7 @@ clntunix_freeres (cl, xdr_res, res_ptr)
 }
 
 static void
-clntunix_abort ()
+clntunix_abort (void)
 {
 }
 
@@ -474,7 +440,7 @@ __msgread (int sock, void *data, size_t cnt)
   struct iovec iov;
   struct msghdr msg;
 #ifdef SCM_CREDENTIALS
-  static char cm[CMSG_SPACE(sizeof (struct ucred))];
+  /*static -why??*/ char cm[CMSG_SPACE(sizeof (struct ucred))];
 #endif
   int len;
 

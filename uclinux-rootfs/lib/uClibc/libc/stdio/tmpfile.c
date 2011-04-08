@@ -18,18 +18,11 @@
 
 #include <features.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include "../misc/internals/tempname.h"
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
-#include <errno.h>
 #include <not-cancel.h>
-#endif
 
-libc_hidden_proto(fdopen)
-libc_hidden_proto(remove)
-#ifndef __UCLIBC_HAS_THREADS_NATIVE__
-libc_hidden_proto(close)
-#endif
 
 /* This returns a new stream opened on a temporary file (generated
    by tmpnam).  The file is opened with mode "w+b" (binary read/write).
@@ -43,7 +36,7 @@ FILE * tmpfile (void)
 
     if (__path_search (buf, FILENAME_MAX, NULL, "tmpf", 0))
 	return NULL;
-    fd = __gen_tempname (buf, __GT_FILE);
+    fd = __gen_tempname (buf, __GT_FILE, S_IRUSR | S_IWUSR);
     if (fd < 0)
 	return NULL;
 
@@ -52,11 +45,7 @@ FILE * tmpfile (void)
     (void) remove (buf);
 
     if ((f = fdopen (fd, "w+b")) == NULL)
-#ifdef __UCLIBC_HAS_THREADS_NATIVE__
 	close_not_cancel (fd);
-#else
-	close (fd);
-#endif
 
     return f;
 }

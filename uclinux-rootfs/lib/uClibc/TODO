@@ -9,21 +9,27 @@ TODO list for every uClibc release:
 	them in the include files as well by checking for the proper
 	define from include/bits/uClibc_config.h (pulled in from features.h)
 
-
-
-General release feature sets:
+TODO list for the uClibc 0.9.31 release:
 -------------------------------------------------
-.29 will be mostly as-is
-.30 will be the NPTL merge
-.31 for the no-kernel-headers fix, etc, etc.
-
+    *) merge NPTL
+       Settle cancellation
+       support arches: (- todo; + done)
+       + arm
+       + sh
+       + mips
+       - i386
+       - x86_64
+       - ...
+    *) Go through SUSv4
+       TOC: http://www.opengroup.org/onlinepubs/9699919799/xrat/contents.html
+       shell (busybox): http://www.opengroup.org/onlinepubs/9699919799/xrat/V4_xcu_chap01.html#tag_22_01_01
+       interface:
+         http://www.opengroup.org/onlinepubs/9699919799/xrat/V4_xbd_chap13.html#tag_21_13_02
+         http://www.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap01.html#tag_23_01_01
 
 
 TODO list for the uClibc 0.9.29 release:
 -------------------------------------------------
-    *) Delete current profiling code (because it is complete crap
-       and only works properly when static + PIC, and because it is
-       quite intrusive, and because there are better ways to profile)
     *) as many of the arch-specific issues as possible
     *) Remove N instances of libc_hidden_proto() from uClibc internals.
 	Instead add internal only header(s) defining all hidden prototypes.
@@ -93,6 +99,8 @@ TODO list for the uClibc 1.0.0 release:
 
 TODO list for AFTER the uClibc 1.0.0 release:
 -------------------------------------------------
+    *) Add support for 64bit time (to deal withhttp://2038bug.com/):
+	date -s 011903142038 sets epoch to roll over in a few seconds (2^31)
     *) Add support for Linux 2.6.x fast vsyscalls
     *) Enable pristine source tree builds
     *) Fix regex so it isn't so stinking big
@@ -110,6 +118,9 @@ Arch specific TODO:
   arm:
     update crt1 code again for nommu (http://bugs.uclibc.org/view.php?id=538)
     recruit jbowler and integrate thumb support
+  frv:
+    needs to be updated for the new ldso changes and unification of the
+    uClibc_main funcs (__uClibc_start_main doesnt exist anymore)
   hppa:
     errno.c test segfaults causes segfault in clone.S (seems to be in glibc too)
   i386:
@@ -118,16 +129,15 @@ Arch specific TODO:
     ldso is not implemented
   m68k:
     ldso lazy relocation doesnt work
+  sh64:
+    ldso is reasonably broken, presently requiring additional
+    coaxing/threatening.
   sparc:
     need a sigaction.c since common one doesnt work (signal tests)
     ldso needs to be updated since it's totally broken atm
   vax:
     pthread support, linktime warning support (implies GAS patches),
     general touchups, testing, ldso.
-  frv sh64:
-    need to be updated to new ldso changes and unification of the
-     two uClibc_main funcs (__uClibc_start_main doesnt exist anymore)
-
 
 
 -----------------------------------------------------------------------------
@@ -142,6 +152,11 @@ Manuel's todo:
   d) Implement glibc 'a' flag for scanf string conversions.
   e) Allow use of the older non-table-based ctype functions when using
      stub locale support. (smaller)
+  f) __drand48_iterate should be void
+  g) alphasort vs. versionsort. The former seems to be SVID, the latter GNU
+     i.e. reverse to what we currently do. The latter is unimplemented.
+  h) ponder removal/configs to turn off: __xpg_*, bsd_signal, dysize,
+     getw/putw, utimes,
 
   2) Additional str{f|p}time issues.
   ----------------------------------

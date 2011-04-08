@@ -10,17 +10,42 @@
  * GNU Lesser General Public License version 2.1 or later.
  */
 
-#include "math.h"
+#include <features.h>
+/* Prevent math.h from defining colliding inlines */
+#undef __USE_EXTERN_INLINES
+#include <math.h>
+#include <complex.h>
+
+
+#define WRAPPER1(func) \
+float func##f (float x) \
+{ \
+	return (float) func((double)x); \
+}
+#define int_WRAPPER1(func) \
+int func##f (float x) \
+{ \
+	return func((double)x); \
+}
+#define long_WRAPPER1(func) \
+long func##f (float x) \
+{ \
+	return func((double)x); \
+}
+#define long_long_WRAPPER1(func) \
+long long func##f (float x) \
+{ \
+	return func((double)x); \
+}
+
 
 /* For the time being, do _NOT_ implement these functions
- * that are defined by SuSv3 */
-#undef L_exp2f         /*float       exp2f(float);*/
+ * that are defined by SuSv3 [because we don't need them
+ * and nobody asked to include them] */
 #undef L_fdimf         /*float       fdimf(float, float);*/
 #undef L_fmaf          /*float       fmaf(float, float, float);*/
 #undef L_fmaxf         /*float       fmaxf(float, float);*/
 #undef L_fminf         /*float       fminf(float, float);*/
-#undef L_llrintf       /*long long   llrintf(float);*/
-#undef L_log2f         /*float       log2f(float);*/
 #undef L_nearbyintf    /*float       nearbyintf(float);*/
 #undef L_nexttowardf   /*float       nexttowardf(float, long double);*/
 #undef L_remquof       /*float       remquof(float, float, int *);*/
@@ -36,6 +61,7 @@ float       asinhf(float);
 float       atan2f(float, float);
 float       atanf(float);
 float       atanhf(float);
+float       cargf(float complex);
 float       cbrtf(float);
 float       ceilf(float);
 float       copysignf(float, float);
@@ -43,6 +69,7 @@ float       cosf(float);
 float       coshf(float);
 float       erfcf(float);
 float       erff(float);
+float       exp2f(float);
 float       expf(float);
 float       expm1f(float);
 float       fabsf(float);
@@ -56,11 +83,11 @@ float       lgammaf(float);
 long long   llroundf(float);
 float       log10f(float);
 float       log1pf(float);
+float       log2f(float);
 float       logbf(float);
 float       logf(float);
 long        lroundf(float);
 float       modff(float, float *);
-float       nextafterf(float, float);
 float       powf(float, float);
 float       remainderf(float, float);
 float       rintf(float);
@@ -73,510 +100,305 @@ float       tanf(float);
 float       tanhf(float);
 #endif
 
-
 #ifdef L_acosf
-libm_hidden_proto(acos)
-float acosf (float x)
-{
-	return (float) acos( (double)x );
-}
+WRAPPER1(acos)
 #endif
-
 
 #ifdef L_acoshf
-libm_hidden_proto(acosh)
-float acoshf (float x)
-{
-	return (float) acosh( (double)x );
-}
+WRAPPER1(acosh)
 #endif
-
 
 #ifdef L_asinf
-libm_hidden_proto(asin)
-float asinf (float x)
-{
-	return (float) asin( (double)x );
-}
+WRAPPER1(asin)
 #endif
-
 
 #ifdef L_asinhf
-libm_hidden_proto(asinh)
-float asinhf (float x)
-{
-	return (float) asinh( (double)x );
-}
+WRAPPER1(asinh)
 #endif
 
-
 #ifdef L_atan2f
-libm_hidden_proto(atan2)
 float atan2f (float x, float y)
 {
 	return (float) atan2( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_atanf
-libm_hidden_proto(atan)
-float atanf (float x)
-{
-	return (float) atan( (double)x );
-}
+WRAPPER1(atan)
 #endif
-
 
 #ifdef L_atanhf
-libm_hidden_proto(atanh)
-float atanhf (float x)
-{
-	return (float) atanh( (double)x );
-}
+WRAPPER1(atanh)
 #endif
 
+#ifdef L_cargf
+float cargf (float complex x)
+{
+	return (float) carg( (double complex)x );
+}
+#endif
 
 #ifdef L_cbrtf
-libm_hidden_proto(cbrt)
-float cbrtf (float x)
-{
-	return (float) cbrt( (double)x );
-}
+WRAPPER1(cbrt)
 #endif
-
 
 #ifdef L_ceilf
-libm_hidden_proto(ceil)
-float ceilf (float x)
-{
-	return (float) ceil( (double)x );
-}
+WRAPPER1(ceil)
 #endif
 
-
 #ifdef L_copysignf
-libm_hidden_proto(copysign)
 float copysignf (float x, float y)
 {
 	return (float) copysign( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_cosf
-libm_hidden_proto(cos)
-float cosf (float x)
-{
-	return (float) cos( (double)x );
-}
+WRAPPER1(cos)
 #endif
-
 
 #ifdef L_coshf
-libm_hidden_proto(cosh)
-float coshf (float x)
-{
-	return (float) cosh( (double)x );
-}
+WRAPPER1(cosh)
 #endif
-
 
 #ifdef L_erfcf
-libm_hidden_proto(erfc)
-float erfcf (float x)
-{
-	return (float) erfc( (double)x );
-}
+WRAPPER1(erfc)
 #endif
-
 
 #ifdef L_erff
-libm_hidden_proto(erf)
-float erff (float x)
-{
-	return (float) erf( (double)x );
-}
+WRAPPER1(erf)
 #endif
-
 
 #ifdef L_exp2f
-libm_hidden_proto(exp2)
-float exp2f (float x)
-{
-	return (float) exp2( (double)x );
-}
+WRAPPER1(exp2)
 #endif
-
 
 #ifdef L_expf
-libm_hidden_proto(exp)
-float expf (float x)
-{
-	return (float) exp( (double)x );
-}
+WRAPPER1(exp)
 #endif
-
 
 #ifdef L_expm1f
-libm_hidden_proto(expm1)
-float expm1f (float x)
-{
-	return (float) expm1( (double)x );
-}
+WRAPPER1(expm1)
 #endif
-
 
 #ifdef L_fabsf
-libm_hidden_proto(fabs)
-float fabsf (float x)
-{
-	return (float) fabs( (double)x );
-}
+WRAPPER1(fabs)
 #endif
 
-
 #ifdef L_fdimf
-libm_hidden_proto(fdim)
 float fdimf (float x, float y)
 {
 	return (float) fdim( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_floorf
-libm_hidden_proto(floor)
-float floorf (float x)
-{
-	return (float) floor( (double)x );
-}
+WRAPPER1(floor)
 #endif
 
-
 #ifdef L_fmaf
-libm_hidden_proto(fma)
 float fmaf (float x, float y, float z)
 {
 	return (float) fma( (double)x, (double)y, (double)z );
 }
 #endif
 
-
 #ifdef L_fmaxf
-libm_hidden_proto(fmax)
 float fmaxf (float x, float y)
 {
 	return (float) fmax( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_fminf
-libm_hidden_proto(fmin)
 float fminf (float x, float y)
 {
 	return (float) fmin( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_fmodf
-libm_hidden_proto(fmod)
 float fmodf (float x, float y)
 {
 	return (float) fmod( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_frexpf
-libm_hidden_proto(frexp)
 float frexpf (float x, int *_exp)
 {
 	return (float) frexp( (double)x, _exp );
 }
 #endif
 
-
 #ifdef L_hypotf
-libm_hidden_proto(hypot)
 float hypotf (float x, float y)
 {
 	return (float) hypot( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_ilogbf
-libm_hidden_proto(ilogb)
-int ilogbf (float x)
-{
-	return (int) ilogb( (double)x );
-}
+int_WRAPPER1(ilogb)
 #endif
 
-
 #ifdef L_ldexpf
-libm_hidden_proto(ldexp)
 float ldexpf (float x, int _exp)
 {
 	return (float) ldexp( (double)x, _exp );
 }
 #endif
 
-
 #ifdef L_lgammaf
-libm_hidden_proto(lgamma)
-float lgammaf (float x)
-{
-	return (float) lgamma( (double)x );
-}
+WRAPPER1(lgamma)
 #endif
-
 
 #ifdef L_llrintf
-libm_hidden_proto(llrint)
-long long llrintf (float x)
-{
-	return (long long) llrint( (double)x );
-}
+long_long_WRAPPER1(llrint)
 #endif
-
 
 #ifdef L_llroundf
-libm_hidden_proto(llround)
-long long llroundf (float x)
-{
-	return (long long) llround( (double)x );
-}
+long_long_WRAPPER1(llround)
 #endif
-
 
 #ifdef L_log10f
-libm_hidden_proto(log10)
-float log10f (float x)
-{
-	return (float) log10( (double)x );
-}
+WRAPPER1(log10)
 #endif
-
 
 #ifdef L_log1pf
-libm_hidden_proto(log1p)
-float log1pf (float x)
-{
-	return (float) log1p( (double)x );
-}
+WRAPPER1(log1p)
 #endif
-
 
 #ifdef L_log2f
-libm_hidden_proto(log2)
-float log2f (float x)
-{
-	return (float) log2( (double)x );
-}
+WRAPPER1(log2)
 #endif
-
 
 #ifdef L_logbf
-libm_hidden_proto(logb)
-float logbf (float x)
-{
-	return (float) logb( (double)x );
-}
+WRAPPER1(logb)
 #endif
-
 
 #ifdef L_logf
-libm_hidden_proto(log)
-float logf (float x)
-{
-	return (float) log( (double)x );
-}
+WRAPPER1(log)
 #endif
-
 
 #ifdef L_lrintf
-libm_hidden_proto(lrint)
-long lrintf (float x)
-{
-	return (long) lrint( (double)x );
-}
+long_WRAPPER1(lrint)
 #endif
-
 
 #ifdef L_lroundf
-libm_hidden_proto(lround)
-long lroundf (float x)
-{
-	return (long) lround( (double)x );
-}
+long_WRAPPER1(lround)
 #endif
 
-
 #ifdef L_modff
-libm_hidden_proto(modf)
 float modff (float x, float *iptr)
 {
 	double y, result;
-	result = modf ( x, &y );
+	result = modf( x, &y );
 	*iptr = (float)y;
 	return (float) result;
-
 }
 #endif
-
 
 #ifdef L_nearbyintf
-libm_hidden_proto(nearbyint)
-float nearbyintf (float x)
-{
-	return (float) nearbyint( (double)x );
-}
+WRAPPER1(nearbyint)
 #endif
-
-
-#ifdef L_nextafterf
-libm_hidden_proto(nextafter)
-float nextafterf (float x, float y)
-{
-	return (float) nextafter( (double)x, (double)y );
-}
-#endif
-
 
 #ifdef L_nexttowardf
-libm_hidden_proto(nexttoward)
 float nexttowardf (float x, long double y)
 {
 	return (float) nexttoward( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_powf
-libm_hidden_proto(pow)
 float powf (float x, float y)
 {
 	return (float) pow( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_remainderf
-libm_hidden_proto(remainder)
 float remainderf (float x, float y)
 {
 	return (float) remainder( (double)x, (double)y );
 }
 #endif
 
-
 #ifdef L_remquof
-libm_hidden_proto(remquo)
 float remquof (float x, float y, int *quo)
 {
 	return (float) remquo( (double)x, (double)y, quo );
 }
 #endif
 
-
 #ifdef L_rintf
-libm_hidden_proto(rint)
-float rintf (float x)
-{
-	return (float) rint( (double)x );
-}
+WRAPPER1(rint)
 #endif
-
 
 #ifdef L_roundf
-libm_hidden_proto(round)
-float roundf (float x)
-{
-	return (float) round( (double)x );
-}
+WRAPPER1(round)
 #endif
 
-
 #ifdef L_scalblnf
-libm_hidden_proto(scalbln)
 float scalblnf (float x, long _exp)
 {
 	return (float) scalbln( (double)x, _exp );
 }
 #endif
 
-
 #ifdef L_scalbnf
-libm_hidden_proto(scalbn)
 float scalbnf (float x, int _exp)
 {
 	return (float) scalbn( (double)x, _exp );
 }
 #endif
 
-
 #ifdef L_sinf
-libm_hidden_proto(sin)
-float sinf (float x)
-{
-	return (float) sin( (double)x );
-}
+WRAPPER1(sin)
 #endif
-
 
 #ifdef L_sinhf
-libm_hidden_proto(sinh)
-float sinhf (float x)
-{
-	return (float) sinh( (double)x );
-}
+WRAPPER1(sinh)
 #endif
-
 
 #ifdef L_sqrtf
-libm_hidden_proto(sqrt)
-float sqrtf (float x)
-{
-	return (float) sqrt( (double)x );
-}
+WRAPPER1(sqrt)
 #endif
-
 
 #ifdef L_tanf
-libm_hidden_proto(tan)
-float tanf (float x)
-{
-	return (float) tan( (double)x );
-}
+WRAPPER1(tan)
 #endif
-
 
 #ifdef L_tanhf
-libm_hidden_proto(tanh)
-float tanhf (float x)
-{
-	return (float) tanh( (double)x );
-}
+WRAPPER1(tanh)
 #endif
-
 
 #ifdef L_tgammaf
-libm_hidden_proto(tgamma)
-float tgammaf (float x)
+WRAPPER1(tgamma)
+#endif
+
+#ifdef L_truncf
+WRAPPER1(trunc)
+#endif
+
+#ifdef L_fmaf
+float fmaf (float x, float y, float z)
 {
-	return (float) tgamma( (double)x );
+	return (float) fma( (double)x, (double)y, (double)z );
 }
 #endif
 
-
-#ifdef L_truncf
-libm_hidden_proto(trunc)
-float truncf (float x)
+#if defined L_scalbf && defined __UCLIBC_SUSV3_LEGACY__
+float scalbf (float x, float y)
 {
-	return (float) trunc( (double)x );
+	return (float) scalb( (double)x, (double)y );
 }
+#endif
+
+#ifdef L_gammaf
+WRAPPER1(gamma)
+#endif
+
+#ifdef L_significandf
+WRAPPER1(significand)
 #endif

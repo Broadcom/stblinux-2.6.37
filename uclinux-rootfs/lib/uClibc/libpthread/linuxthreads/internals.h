@@ -174,19 +174,19 @@ extern int __pthread_smp_kernel;
 
 /* Return the handle corresponding to a thread id */
 
-static inline pthread_handle thread_handle(pthread_t id)
+static __inline__ pthread_handle thread_handle(pthread_t id)
 {
   return &__pthread_handles[id % PTHREAD_THREADS_MAX];
 }
 
 /* Validate a thread handle. Must have acquired h->h_spinlock before. */
 
-static inline int invalid_handle(pthread_handle h, pthread_t id)
+static __inline__ int invalid_handle(pthread_handle h, pthread_t id)
 {
   return h->h_descr == NULL || h->h_descr->p_tid != id || h->h_descr->p_terminated;
 }
 
-static inline int nonexisting_handle(pthread_handle h, pthread_t id)
+static __inline__ int nonexisting_handle(pthread_handle h, pthread_t id)
 {
   return h->h_descr == NULL || h->h_descr->p_tid != id;
 }
@@ -416,11 +416,6 @@ extern void (*__pthread_restart)(pthread_descr);
 extern void (*__pthread_suspend)(pthread_descr);
 extern int (*__pthread_timedsuspend)(pthread_descr, const struct timespec *);
 
-/* Prototypes for the function without cancelation support when the
-   normal version has it.  */
-extern int __libc_close (int fd);
-extern int __libc_nanosleep (const struct timespec *requested_time,
-			     struct timespec *remaining);
 /* Prototypes for some of the new semaphore functions.  */
 extern int sem_post (sem_t * sem);
 extern int sem_init (sem_t *__sem, int __pshared, unsigned int __value);
@@ -531,9 +526,9 @@ weak_extern (__pthread_thread_self)
 # define __manager_thread __pthread_manager_threadp
 #endif
 
-extern __always_inline pthread_descr
+static __always_inline pthread_descr
 check_thread_self (void);
-extern __always_inline pthread_descr
+static __always_inline pthread_descr
 check_thread_self (void)
 {
   pthread_descr self = thread_self ();

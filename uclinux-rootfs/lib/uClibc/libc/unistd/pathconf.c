@@ -29,10 +29,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
-//#include <sys/statvfs.h>
 
-libc_hidden_proto(statfs)
-libc_hidden_proto(stat)
+extern __typeof(statfs) __libc_statfs;
 
 
 /* The Linux kernel headers mention this as a kind of generic value. */
@@ -83,7 +81,7 @@ pathconf (const char *path, int name)
 	struct statfs buf;
 	int save_errno = errno;
 
-	if (statfs (path, &buf) < 0)
+	if (__libc_statfs (path, &buf) < 0)
 	  {
 	    if (errno == ENOSYS)
 	      {

@@ -76,7 +76,7 @@ volatile pthread_descr __pthread_last_event;
 /* Stack segment numbers are also indices into the __pthread_handles array. */
 /* Stack segment number 0 is reserved for the initial thread. */
 
-static inline pthread_descr thread_segment(int seg)
+static __inline__ pthread_descr thread_segment(int seg)
 {
   return (pthread_descr)(THREAD_STACK_START_ADDRESS - (seg - 1) * STACK_SIZE)
          - 1;
@@ -137,7 +137,7 @@ int attribute_noreturn __pthread_manager(void *arg)
 #endif /* __UCLIBC_HAS_XLOCALE__ */
 
   /* Block all signals except __pthread_sig_cancel and SIGTRAP */
-  sigfillset(&manager_mask);
+  __sigfillset(&manager_mask);
   sigdelset(&manager_mask, __pthread_sig_cancel); /* for thread termination */
   sigdelset(&manager_mask, SIGTRAP);            /* for debugging purposes */
   if (__pthread_threads_debug && __pthread_sig_debug > 0)
@@ -146,7 +146,7 @@ int attribute_noreturn __pthread_manager(void *arg)
   /* Raise our priority to match that of main thread */
   __pthread_manager_adjust_prio(__pthread_main_thread->p_priority);
   /* Synchronize debugging of the thread manager */
-  n = TEMP_FAILURE_RETRY(__libc_read(reqfd, (char *)&request,
+  n = TEMP_FAILURE_RETRY(read(reqfd, (char *)&request,
 				     sizeof(request)));
 #ifndef USE_SELECT
   ufd.fd = reqfd;
@@ -183,9 +183,9 @@ int attribute_noreturn __pthread_manager(void *arg)
 #endif
     {
 
-      PDEBUG("before __libc_read\n");
-      n = __libc_read(reqfd, (char *)&request, sizeof(request));
-      PDEBUG("after __libc_read, n=%d\n", n);
+      PDEBUG("before read\n");
+      n = read(reqfd, (char *)&request, sizeof(request));
+      PDEBUG("after read, n=%d\n", n);
       switch(request.req_kind) {
       case REQ_CREATE:
         PDEBUG("got REQ_CREATE\n");
@@ -198,7 +198,7 @@ int attribute_noreturn __pthread_manager(void *arg)
                                 request.req_thread->p_pid,
                                 request.req_thread->p_report_events,
                                 &request.req_thread->p_eventbuf.eventmask);
-        PDEBUG("restarting %d\n", request.req_thread);
+        PDEBUG("restarting %p\n", request.req_thread);
         restart(request.req_thread);
         break;
       case REQ_FREE:
@@ -206,7 +206,7 @@ int attribute_noreturn __pthread_manager(void *arg)
         pthread_handle_free(request.req_args.free.thread_id);
         break;
       case REQ_PROCESS_EXIT:
-        PDEBUG("got REQ_PROCESS_EXIT from %d, exit code = %d\n", 
+        PDEBUG("got REQ_PROCESS_EXIT from %p, exit code = %d\n",
         request.req_thread, request.req_args.exit.code);
         pthread_handle_exit(request.req_thread,
                             request.req_args.exit.code);
@@ -236,7 +236,7 @@ int attribute_noreturn __pthread_manager(void *arg)
 	/* Make gdb aware of new thread and gdb will restart the
 	   new thread when it is ready to handle the new thread. */
 	if (__pthread_threads_debug && __pthread_sig_debug > 0) {
-      PDEBUG("about to call raise(__pthread_sig_debug)\n");
+	  PDEBUG("about to call raise(__pthread_sig_debug)\n");
 	  raise(__pthread_sig_debug);
 	}
       case REQ_KICK:
@@ -248,7 +248,7 @@ int attribute_noreturn __pthread_manager(void *arg)
   }
 }
 
-int __pthread_manager_event(void *arg)
+int attribute_noreturn __pthread_manager_event(void *arg)
 {
   /* If we have special thread_self processing, initialize it.  */
 #ifdef INIT_THREAD_SELF
@@ -260,7 +260,7 @@ int __pthread_manager_event(void *arg)
   /* Free it immediately.  */
   __pthread_unlock (THREAD_GETMEM((&__pthread_manager_thread), p_lock));
 
-  return __pthread_manager(arg);
+  __pthread_manager(arg);
 }
 
 /* Process creation */
@@ -301,7 +301,7 @@ pthread_start_thread(void *arg)
   if (__pthread_threads_debug && __pthread_sig_debug > 0) {
     request.req_thread = self;
     request.req_kind = REQ_DEBUG;
-    TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+    TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		(char *) &request, sizeof(request)));
     suspend(self);
   }
@@ -349,19 +349,25 @@ static int pthread_allocate_stack(const pthread_attr_t *attr,
   if (attr != NULL && attr->__stackaddr_set)
     {
       /* The user provided a stack. */
-      new_thread =
-        (pthread_descr) ((long)(attr->__stackaddr) & -sizeof(void *)) - 1;
+      new_thread = (pthread_descr) ((long)(attr->__stackaddr) & -sizeof(void *)) - 1;
       new_thread_bottom = (char *) attr->__stackaddr - attr->__stacksize;
       guardaddr = NULL;
       guardsize = 0;
       __pthread_nonstandard_stacks = 1;
+#ifndef __ARCH_USE_MMU__
+      /* check the initial thread stack boundaries so they don't overlap */
+      NOMMU_INITIAL_THREAD_BOUNDS((char *) new_thread, (char *) new_thread_bottom);
+
+      PDEBUG("initial stack: bos=%p, tos=%p\n", __pthread_initial_thread_bos,
+            __pthread_initial_thread_tos);
+#endif
     }
   else
     {
 #ifdef __ARCH_USE_MMU__
       stacksize = STACK_SIZE - pagesize;
       if (attr != NULL)
-        stacksize = MIN (stacksize, roundup(attr->__stacksize, pagesize));
+        stacksize = MIN(stacksize, roundup(attr->__stacksize, pagesize));
       /* Allocate space for stack and thread descriptor at default address */
       new_thread = default_new_thread;
       new_thread_bottom = (char *) (new_thread + 1) - stacksize;
@@ -387,7 +393,7 @@ static int pthread_allocate_stack(const pthread_attr_t *attr,
           /* Put a bad page at the bottom of the stack */
           guardsize = attr->__guardsize;
           guardaddr = (void *)new_thread_bottom - guardsize;
-          if (mmap ((caddr_t) guardaddr, guardsize, 0, MAP_FIXED, -1, 0)
+          if (mmap((caddr_t) guardaddr, guardsize, 0, MAP_FIXED, -1, 0)
               == MAP_FAILED)
             {
               /* We don't make this an error.  */
@@ -407,7 +413,7 @@ static int pthread_allocate_stack(const pthread_attr_t *attr,
 	{
 	  stacksize = attr->__stacksize;
 	}
-      
+
       /* malloc a stack - memory from the bottom up */
       if ((new_thread_bottom = malloc(stacksize)) == NULL)
 	{
@@ -423,7 +429,7 @@ static int pthread_allocate_stack(const pthread_attr_t *attr,
        *
        *               ^ +------------------------+
        *               | |  pthread_descr struct  |
-       *               | +------------------------+  <- new_thread 
+       *               | +------------------------+  <- new_thread
        * malloc block  | |                        |
        *               | |  thread stack          |
        *               | |                        |
@@ -436,18 +442,18 @@ static int pthread_allocate_stack(const pthread_attr_t *attr,
       new_thread = ((pthread_descr) ((int)(new_thread_bottom + stacksize) & -sizeof(void*))) - 1;
       guardaddr = NULL;
       guardsize = 0;
-      
+
       PDEBUG("thread stack: bos=%p, tos=%p\n", new_thread_bottom, new_thread);
-      
+
       /* check the initial thread stack boundaries so they don't overlap */
       NOMMU_INITIAL_THREAD_BOUNDS((char *) new_thread, (char *) new_thread_bottom);
-      
-      PDEBUG("initial stack: bos=%p, tos=%p\n", __pthread_initial_thread_bos, 
+
+      PDEBUG("initial stack: bos=%p, tos=%p\n", __pthread_initial_thread_bos,
 	     __pthread_initial_thread_tos);
-      
+
       /* on non-MMU systems we always have non-standard stack frames */
       __pthread_nonstandard_stacks = 1;
-      
+
 #endif /* __ARCH_USE_MMU__ */
     }
 
@@ -560,7 +566,7 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
   /* ******************************************************** */
   /*  This code was moved from below to cope with running threads
    *  on uClinux systems.  See comment below...
-   * Insert new thread in doubly linked list of active threads */ 
+   * Insert new thread in doubly linked list of active threads */
   new_thread->p_prevlive = __pthread_main_thread;
   new_thread->p_nextlive = __pthread_main_thread->p_nextlive;
   __pthread_main_thread->p_nextlive->p_prevlive = new_thread;
@@ -572,9 +578,9 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
       /* See whether the TD_CREATE event bit is set in any of the
          masks.  */
       int idx = __td_eventword (TD_CREATE);
-      uint32_t mask = __td_eventmask (TD_CREATE);
+      uint32_t m = __td_eventmask (TD_CREATE);
 
-      if ((mask & (__pthread_threads_events.event_bits[idx]
+      if ((m & (__pthread_threads_events.event_bits[idx]
 		   | event_maskp->event_bits[idx])) != 0)
 	{
 	  /* Lock the mutex the child will use now so that it will stop.  */
@@ -633,9 +639,9 @@ static int pthread_handle_create(pthread_t *thread, const pthread_attr_t *attr,
     }
   /* Check if cloning succeeded */
   if (pid == -1) {
-    /******************************************************** 
+    /********************************************************
      * Code inserted to remove the thread from our list of active
-     * threads in case of failure (needed to cope with uClinux), 
+     * threads in case of failure (needed to cope with uClinux),
      * See comment below. */
     new_thread->p_nextlive->p_prevlive = new_thread->p_prevlive;
     new_thread->p_prevlive->p_nextlive = new_thread->p_nextlive;
@@ -801,7 +807,7 @@ static void pthread_reap_children(void)
   int status;
   PDEBUG("\n");
 
-  while ((pid = __libc_waitpid(-1, &status, WNOHANG | __WCLONE)) > 0) {
+  while ((pid = waitpid(-1, &status, WNOHANG | __WCLONE)) > 0) {
     pthread_exited(pid);
     if (WIFSIGNALED(status)) {
       /* If a thread died due to a signal, send the same signal to
@@ -900,7 +906,7 @@ void __pthread_manager_sighandler(int sig attribute_unused)
 	struct pthread_request request;
 	request.req_thread = 0;
 	request.req_kind = REQ_KICK;
-	TEMP_FAILURE_RETRY(__libc_write(__pthread_manager_request,
+	TEMP_FAILURE_RETRY(write(__pthread_manager_request,
 		    (char *) &request, sizeof(request)));
     }
 }

@@ -12,7 +12,6 @@
 extern void * __curbrk attribute_hidden;
 extern int __init_brk (void) attribute_hidden;
 
-libc_hidden_proto(brk)
 int brk(void * end_data_seg)
 {
 	if (__init_brk () == 0) {
@@ -20,7 +19,7 @@ int brk(void * end_data_seg)
 		 * Notice that we don't need to save/restore the GOT
 		 * register since that is not call clobbered by the syscall.
 		 */
-		asm ("move.d %1,$r10\n\t"
+		__asm__ ("move.d %1,$r10\n\t"
 		     "movu.w " STR(__NR_brk) ",$r9\n\t"
 		     "break 13\n\t"
 		     "move.d $r10, %0"

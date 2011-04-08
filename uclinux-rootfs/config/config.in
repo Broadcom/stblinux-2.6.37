@@ -93,7 +93,6 @@ bool 'Build libusb'		CONFIG_LIB_LIBUSB_FORCE
 
 # copy libraries from toolchain
 bool 'Install libstdc++'	CONFIG_LIB_LIBSTDCXX_FORCE
-bool 'Install libsupc++'	CONFIG_LIB_LIBSUPCXX_FORCE
 bool 'Install libgcc_s'		CONFIG_LIB_LIBGCC_FORCE
 
 comment 'Library Configuration'
@@ -422,6 +421,11 @@ bool 'squid'			CONFIG_USER_SQUID_SQUID
 bool 'ssh'			CONFIG_USER_SSH_SSH
 bool 'sshd'			CONFIG_USER_SSH_SSHD
 bool 'ssh-keygen'		CONFIG_USER_SSH_SSHKEYGEN
+if [ "$CONFIG_USER_SSH_SSH" = "y" -o "$CONFIG_USER_SSH_SSHD" = "y" -o "$CONFIG_USER_SSH_SSHKEYGEN" = "y" ]; then
+	define_bool CONFIG_LIB_LIBGCC y
+	define_bool CONFIG_LIB_LIBUTIL y
+	define_bool CONFIG_LIB_LIBCRYPT y
+fi
 
 bool 'stp'			CONFIG_USER_STP_STP
 bool 'tcpd'			CONFIG_USER_TCPWRAP_TCPD

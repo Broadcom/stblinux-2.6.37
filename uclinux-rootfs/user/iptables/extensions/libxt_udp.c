@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add UDP support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -21,11 +22,11 @@ static void udp_help(void)
 }
 
 static const struct option udp_opts[] = {
-	{ "source-port", 1, NULL, '1' },
-	{ "sport", 1, NULL, '1' }, /* synonym */
-	{ "destination-port", 1, NULL, '2' },
-	{ "dport", 1, NULL, '2' }, /* synonym */
-	{ .name = NULL }
+	{.name = "source-port",      .has_arg = true, .val = '1'},
+	{.name = "sport",            .has_arg = true, .val = '1'}, /* synonym */
+	{.name = "destination-port", .has_arg = true, .val = '2'},
+	{.name = "dport",            .has_arg = true, .val = '2'}, /* synonym */
+	XT_GETOPT_TABLEEND,
 };
 
 static void
@@ -72,8 +73,8 @@ udp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & UDP_SRC_PORTS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--source-port' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_udp_ports(argv[optind-1], udpinfo->spts);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_udp_ports(optarg, udpinfo->spts);
 		if (invert)
 			udpinfo->invflags |= XT_UDP_INV_SRCPT;
 		*flags |= UDP_SRC_PORTS;
@@ -83,8 +84,8 @@ udp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & UDP_DST_PORTS)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--destination-port' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_udp_ports(argv[optind-1], udpinfo->dpts);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_udp_ports(optarg, udpinfo->dpts);
 		if (invert)
 			udpinfo->invflags |= XT_UDP_INV_DSTPT;
 		*flags |= UDP_DST_PORTS;
@@ -191,21 +192,7 @@ static void udp_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match udp_match = {
-	.family		= NFPROTO_IPV4,
-	.name		= "udp",
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_udp)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_udp)),
-	.help		= udp_help,
-	.init		= udp_init,
-	.parse		= udp_parse,
-	.print		= udp_print,
-	.save		= udp_save,
-	.extra_opts	= udp_opts,
-};
-
-static struct xtables_match udp_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name		= "udp",
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_udp)),
@@ -222,5 +209,4 @@ void
 _init(void)
 {
 	xtables_register_match(&udp_match);
-	xtables_register_match(&udp_match6);
 }

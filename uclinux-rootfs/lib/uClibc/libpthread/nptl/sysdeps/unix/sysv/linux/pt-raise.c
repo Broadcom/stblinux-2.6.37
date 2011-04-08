@@ -21,12 +21,14 @@
 #include <signal.h>
 #include <sysdep.h>
 #include <tls.h>
-#include <kernel-features.h>
+#include <bits/kernel-features.h>
 
-extern __typeof(raise) __raise;
-int __raise (int sig)
+
+int
+raise (
+     int sig)
 {
-#if __ASSUME_TGKILL || defined __NR_tgkill
+#if (defined(__ASSUME_TGKILL) && __ASSUME_TGKILL) || defined __NR_tgkill
   /* raise is an async-safe function.  It could be called while the
      fork function temporarily invalidated the PID field.  Adjust for
      that.  */
@@ -35,7 +37,7 @@ int __raise (int sig)
     pid = -pid;
 #endif
 
-#if __ASSUME_TGKILL
+#if defined(__ASSUME_TGKILL) && __ASSUME_TGKILL
   return INLINE_SYSCALL (tgkill, 3, pid, THREAD_GETMEM (THREAD_SELF, tid),
 			 sig);
 #else
@@ -48,6 +50,3 @@ int __raise (int sig)
   return INLINE_SYSCALL (tkill, 2, THREAD_GETMEM (THREAD_SELF, tid), sig);
 #endif
 }
-libc_hidden_proto(raise)
-weak_alias(__raise, raise)
-libc_hidden_weak(raise)

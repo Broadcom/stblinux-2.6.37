@@ -1,4 +1,5 @@
 /* Shared library add-on to iptables to add ESP support. */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
@@ -19,8 +20,8 @@ static void esp_help(void)
 }
 
 static const struct option esp_opts[] = {
-	{ "espspi", 1, NULL, '1' },
-	{ .name = NULL }
+	{.name = "espspi", .has_arg = true, .val = '1'},
+	XT_GETOPT_TABLEEND,
 };
 
 static u_int32_t
@@ -88,8 +89,8 @@ esp_parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & ESP_SPI)
 			xtables_error(PARAMETER_PROBLEM,
 				   "Only one `--espspi' allowed");
-		xtables_check_inverse(optarg, &invert, &optind, 0);
-		parse_esp_spis(argv[optind-1], espinfo->spis);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+		parse_esp_spis(optarg, espinfo->spis);
 		if (invert)
 			espinfo->invflags |= XT_ESP_INV_SPI;
 		*flags |= ESP_SPI;
@@ -149,21 +150,7 @@ static void esp_save(const void *ip, const struct xt_entry_match *match)
 }
 
 static struct xtables_match esp_match = {
-	.family		= NFPROTO_IPV4,
-	.name 		= "esp",
-	.version 	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_esp)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_esp)),
-	.help		= esp_help,
-	.init		= esp_init,
-	.parse		= esp_parse,
-	.print		= esp_print,
-	.save		= esp_save,
-	.extra_opts	= esp_opts,
-};
-
-static struct xtables_match esp_match6 = {
-	.family		= NFPROTO_IPV6,
+	.family		= NFPROTO_UNSPEC,
 	.name 		= "esp",
 	.version 	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(struct xt_esp)),
@@ -180,5 +167,4 @@ void
 _init(void)
 {
 	xtables_register_match(&esp_match);
-	xtables_register_match(&esp_match6);
 }

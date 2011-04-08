@@ -99,7 +99,7 @@ static int newargc;
  * returns true if argument added, false otherwise */
 static int add_argv(char *what) {
 	DEBUGP("add_argv: %s\n", what);
-	if (what && ((newargc + 1) < sizeof(newargv)/sizeof(char *))) {
+	if (what && newargc + 1 < ARRAY_SIZE(newargv)) {
 		newargv[newargc] = strdup(what);
 		newargc++;
 		return 1;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 				ip6tables_globals.program_version);
 		exit(1);
 	}
-#ifdef NO_SHARED_LIBS
+#if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 	init_extensions();
 #endif
 
@@ -252,6 +252,12 @@ int main(int argc, char *argv[])
 					   line);
 				exit(1);
 			}
+
+			if (strlen(chain) >= XT_EXTENSION_MAXNAMELEN)
+				xtables_error(PARAMETER_PROBLEM,
+					   "Invalid chain name `%s' "
+					   "(%u chars max)",
+					   chain, XT_EXTENSION_MAXNAMELEN - 1);
 
 			if (ip6tc_builtin(chain, handle) <= 0) {
 				if (noflush && ip6tc_is_chain(chain, handle)) {
@@ -454,5 +460,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (in != NULL)
+		fclose(in);
 	return 0;
 }

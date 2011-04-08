@@ -33,8 +33,8 @@
 
 #define MOCA_IOC_MAGIC		'M'
 
-#define MOCA_IOCTL_GET_DRV_INFO_V1	_IOR(MOCA_IOC_MAGIC, 0, \
-	struct moca_kdrv_info_v1)
+#define MOCA_IOCTL_GET_DRV_INFO_V2	_IOR(MOCA_IOC_MAGIC, 0, \
+	struct moca_kdrv_info_v2)
 
 #define MOCA_IOCTL_START	_IOW(MOCA_IOC_MAGIC, 1, struct moca_start)
 #define MOCA_IOCTL_STOP		_IO(MOCA_IOC_MAGIC, 2)
@@ -48,7 +48,7 @@
 #define MOCA_IFNAMSIZ		16
 
 /* Legacy version of moca_kdrv_info */
-struct moca_kdrv_info_v1 {
+struct moca_kdrv_info_v2 {
 	__u32			version;
 	__u32			build_number;
 	__u32			builtin_fw;
@@ -65,6 +65,9 @@ struct moca_kdrv_info_v1 {
 
 	__u32			macaddr_hi;
 	__u32			macaddr_lo;
+
+	__u32			phy_freq;
+	__u32			cpu_freq;
 };
 
 /* this must match MoCAOS_DrvInfo */
@@ -88,6 +91,8 @@ struct moca_kdrv_info {
 
 	__u32			phy_freq;
 	__u32			cpu_freq;
+
+	__u32			chip_id;
 };
 
 struct moca_xfer {
@@ -129,11 +134,20 @@ struct moca_platform_data {
 	phys_t			bcm3450_i2c_base;
 	int			bcm3450_i2c_addr;
 
-	u32			hw_rev;
+	u32			hw_rev;  /* this is the chip_id */
 	u32			rf_band;
 
 	int			useDma;
 	int			useSpi;
+
+	u32			chip_id;
+};
+
+enum {
+	HWREV_MOCA_11 = 0x1100,
+	HWREV_MOCA_11_LITE = 0x1101,
+	HWREV_MOCA_11_PLUS = 0x1102,
+	HWREV_MOCA_20 = 0x2000
 };
 
 #endif /* __KERNEL__ */

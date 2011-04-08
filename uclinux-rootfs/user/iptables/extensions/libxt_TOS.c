@@ -5,6 +5,7 @@
  * Contact: Jan Engelhardt <jengelh@computergmbh.de>
  */
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,8 +13,11 @@
 
 #include <xtables.h>
 #include <linux/netfilter/xt_DSCP.h>
-#include <linux/netfilter_ipv4/ipt_TOS.h>
 #include "tos_values.c"
+
+struct ipt_tos_target_info {
+	u_int8_t tos;
+};
 
 enum {
 	FLAG_TOS = 1 << 0,
@@ -21,7 +25,7 @@ enum {
 
 static const struct option tos_tg_opts_v0[] = {
 	{.name = "set-tos", .has_arg = true, .val = '='},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static const struct option tos_tg_opts[] = {
@@ -29,7 +33,7 @@ static const struct option tos_tg_opts[] = {
 	{.name = "and-tos", .has_arg = true, .val = '&'},
 	{.name = "or-tos",  .has_arg = true, .val = '|'},
 	{.name = "xor-tos", .has_arg = true, .val = '^'},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static void tos_tg_help_v0(void)
@@ -205,54 +209,38 @@ static void tos_tg_save(const void *ip, const struct xt_entry_target *target)
 	printf("--set-tos 0x%02x/0x%02x ", info->tos_value, info->tos_mask);
 }
 
-static struct xtables_target tos_tg_reg_v0 = {
-	.version       = XTABLES_VERSION,
-	.name          = "TOS",
-	.revision      = 0,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.help          = tos_tg_help_v0,
-	.parse         = tos_tg_parse_v0,
-	.final_check   = tos_tg_check,
-	.print         = tos_tg_print_v0,
-	.save          = tos_tg_save_v0,
-	.extra_opts    = tos_tg_opts_v0,
-};
-
-static struct xtables_target tos_tg_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "TOS",
-	.revision      = 1,
-	.family        = NFPROTO_IPV4,
-	.size          = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.help          = tos_tg_help,
-	.parse         = tos_tg_parse,
-	.final_check   = tos_tg_check,
-	.print         = tos_tg_print,
-	.save          = tos_tg_save,
-	.extra_opts    = tos_tg_opts,
-};
-
-static struct xtables_target tos_tg6_reg = {
-	.version       = XTABLES_VERSION,
-	.name          = "TOS",
-	.family        = NFPROTO_IPV6,
-	.revision      = 1,
-	.size          = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_tos_target_info)),
-	.help          = tos_tg_help,
-	.parse         = tos_tg_parse,
-	.final_check   = tos_tg_check,
-	.print         = tos_tg_print,
-	.save          = tos_tg_save,
-	.extra_opts    = tos_tg_opts,
+static struct xtables_target tos_tg_reg[] = {
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "TOS",
+		.revision      = 0,
+		.family        = NFPROTO_IPV4,
+		.size          = XT_ALIGN(sizeof(struct xt_tos_target_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_tos_target_info)),
+		.help          = tos_tg_help_v0,
+		.parse         = tos_tg_parse_v0,
+		.final_check   = tos_tg_check,
+		.print         = tos_tg_print_v0,
+		.save          = tos_tg_save_v0,
+		.extra_opts    = tos_tg_opts_v0,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "TOS",
+		.revision      = 1,
+		.family        = NFPROTO_UNSPEC,
+		.size          = XT_ALIGN(sizeof(struct xt_tos_target_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_tos_target_info)),
+		.help          = tos_tg_help,
+		.parse         = tos_tg_parse,
+		.final_check   = tos_tg_check,
+		.print         = tos_tg_print,
+		.save          = tos_tg_save,
+		.extra_opts    = tos_tg_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_target(&tos_tg_reg_v0);
-	xtables_register_target(&tos_tg_reg);
-	xtables_register_target(&tos_tg6_reg);
+	xtables_register_targets(tos_tg_reg, ARRAY_SIZE(tos_tg_reg));
 }

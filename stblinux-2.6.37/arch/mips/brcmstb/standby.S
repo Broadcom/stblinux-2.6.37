@@ -19,10 +19,11 @@
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
 #include <asm/cacheops.h>
+#include <asm/addrspace.h>
 #include <asm/brcmstb/brcmstb.h>
 
 #define XTALFREQ		27000000
-#define REG_OFFSET		(0xa0000000 | BCHP_PHYSICAL_OFFSET)
+#define REG_OFFSET		(KSEG1 | BCHP_PHYSICAL_OFFSET)
 #define REG(x)			(REG_OFFSET + (x))
 #define UPG_USEC_TICKS		(XTALFREQ / 1000000)
 
@@ -35,6 +36,34 @@
 #define USE_WATCHDOG		0
 
 #define FLAGREG			s5
+
+#if defined(CONFIG_BRCM_HAS_AON)
+#define PM_STANDBY_COMMAND	0x0f
+#elif defined(CONFIG_BMIPS5000)
+#define PM_STANDBY_COMMAND	0x07
+#else
+#define PM_STANDBY_COMMAND	0x0b
+#endif
+
+#define VCDL_SAVE_REG		BCHP_MEMC_DDR23_APHY_WL1_0_SPARE0_RW
+
+#ifdef BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL
+#define RELOAD_VCDL		1
+#else
+#define RELOAD_VCDL		0
+#endif
+
+#if defined(CONFIG_BRCM_HAS_AON)
+#define PM_WAIT_COUNT			BCHP_AON_CTRL_PM_MIPS_WAIT_COUNT
+#define PM_CONTROL			BCHP_AON_CTRL_PM_CTRL
+#define PM_STATUS			BCHP_AON_CTRL_PM_STATUS
+#define PM_STATUS_bsp_ready		BCHP_AON_CTRL_PM_STATUS_pm_bsp_ready_for_pwrdn_MASK
+#else
+#define PM_WAIT_COUNT			BCHP_SUN_TOP_CTRL_PM_MIPS_WAIT_COUNT
+#define PM_CONTROL			BCHP_SUN_TOP_CTRL_PM_CTRL
+#define PM_STATUS			PM_CONTROL
+#define PM_STATUS_bsp_ready		BCHP_SUN_TOP_CTRL_PM_CTRL_pm_bsp_ready_for_pwrdn_MASK
+#endif
 
 	.text
 	.set	noreorder
@@ -68,6 +97,37 @@
 	nop
 	bnez	v0, standby_exit
 	nop
+
+#if RELOAD_VCDL
+	/*
+	 * Save VCDL values:
+	 * WL0_0_BYTE0 -> bits 07:00
+	 * WL0_0_BYTE1 -> bits 15:08
+	 * WL1_0_BYTE0 -> bits 23:16
+	 * WL1_0_BYTE1 -> bits 31:24
+	 */
+	li	t0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL)
+	lw	t1, 0(t0)
+	andi	t2, t1, 0x1f
+	lw	t1, 4(t0)
+	andi	t1, t1, 0x1f
+	sll	t1, 8
+	or	t2, t1
+
+	li	t0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE0_VCDL_PHASE_CNTL)
+	lw	t1, 0(t0)
+	andi	t1, t1, 0x1f
+	sll	t1, 16
+	or	t2, t1
+	lw	t1, 4(t0)
+	andi	t1, t1, 0x1f
+	sll	t1, 24
+	or	t2, t1
+
+	li	t0, REG(VCDL_SAVE_REG)
+	sw	t2, 0(t0)
+	lw	zero, 0(t0)
+#endif
 
 #ifdef CONFIG_BMIPS5000
 	/*
@@ -112,7 +172,6 @@
 /***********************************************************************
  * Flush memory transactions and put MEMC into standby
  ***********************************************************************/
-
 	sync
 
 #if !defined(CONFIG_BRCM_PWR_HANDSHAKE)
@@ -147,14 +206,15 @@
 	li	a0, 'W'
 
 # power down request
-
 2:
-	li	t0, REG(BCHP_SUN_TOP_CTRL_PM_CTRL)
-#if defined(CONFIG_BMIPS5000) && !defined(CONFIG_BCM7420C0)
-	li	t1, 0x0f
-#else
-	li	t1, 0x0b
-#endif
+	/* set wait count */
+	li	t0, REG(PM_WAIT_COUNT)
+	li	t1, 0xffff
+	sw	t1, 0(t0)
+	lw	zero, 0(t0)
+
+	li	t0, REG(PM_CONTROL)
+	li	t1, PM_STANDBY_COMMAND
 	sw	zero, 0(t0)
 	lw	zero, 0(t0)
 	sw	t1, 0(t0)
@@ -185,7 +245,6 @@ wait_loop:
 /***********************************************************************
  * Bring MEMC back up
  ***********************************************************************/
-
 	bal	dputc
 	li	a0, 'M'
 
@@ -205,9 +264,15 @@ wait_loop:
 	lw	t1, 0(t0)
 #endif
 
+	li	t0, BRCM_STANDBY_DDR_PLL_ON
+	and	t0, FLAGREG
+	bnez	t0, 2f
+	nop
+
 	bal	wake_up_memc_0
 	nop
 
+2:
 	bal	dputc
 	li	a0, 'm'
 
@@ -222,8 +287,8 @@ wait_loop:
 	bal	dputc
 	li	a0, 'B'
 
-	li	t0, REG(BCHP_SUN_TOP_CTRL_PM_CTRL)
-	li	t2, BCHP_SUN_TOP_CTRL_PM_CTRL_pm_bsp_ready_for_pwrdn_MASK
+	li	t0, REG(PM_STATUS)
+	li	t2, PM_STATUS_bsp_ready
 1:
 	lw	t1, 0(t0)
 	and	t1, t2
@@ -234,14 +299,12 @@ wait_loop:
 	li	a0, 'b'
 #endif /* CONFIG_BRCM_PWR_HANDSHAKE_V0 */
 
-	li	t0, REG(BCHP_SUN_TOP_CTRL_PM_CTRL)
+	li	t0, REG(PM_CONTROL)
 	sw	zero, 0(t0)
 	lw	zero, 0(t0)
-
 /***********************************************************************
  * Unlock I$ lines and resume execution
  ***********************************************************************/
-
 	sync
 
 rtn_from_wait:
@@ -264,14 +327,17 @@ rtn_from_wait:
 
 	bal	dputc
 	li	a0, 'L'
-	bal	dputc
-	li	a0, 0x0d
-	bal	dputc
-	li	a0, 0x0a
 
 # restore sr
 	sync
 	nop
+
+	bal	dputc
+	li	a0, 'l'
+	bal	dputc
+	li	a0, 0x0d
+	bal	dputc
+	li	a0, 0x0a
 
 	mtc0	s2, CP0_STATUS
 	nop
@@ -524,6 +590,27 @@ upg_sleep:
 
 	END(wake_up_memc_0)
 
+#if RELOAD_VCDL
+/*
+ * a0 - VCDL register
+ * a1 - maximum value
+ */
+reload_vcdl:
+	sll 	v0, a1, 8
+	or  	a1, v0		# max value to load
+
+	move	v1, zero
+vcdl_loop:
+	addi	v1, 0x0101
+	sw	v1, 0(a0)
+	lw	zero, 0(a0)
+	bne	v1, a1, vcdl_loop
+	nop
+
+	jr	ra
+	nop
+#endif
+
 .global reprogram_ddr_pll
 .ent reprogram_ddr_pll
 reprogram_ddr_pll:
@@ -734,6 +821,21 @@ reset_ws_new:
 	bal	upg_sleep
 	nop
 
+#if RELOAD_VCDL
+	/* reset VCDL values */
+	li	t0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL)
+	sw	zero, 0(t0)
+	lw	zero, 0(t0)
+	sw	zero, 4(t0)
+	lw	zero, 4(t0)
+
+	li	t0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE0_VCDL_PHASE_CNTL)
+	sw	zero, 0(t0)
+	lw	zero, 0(t0)
+	sw	zero, 4(t0)
+	lw	zero, 4(t0)
+#endif
+
 	li	v0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_WORD_SLICE_DLL_RESET)
 	li	v1, 0
 	sw	v1, 0(v0)
@@ -765,6 +867,37 @@ reset_ws_new:
 	li	a0, (SLEEP_1_MILLI_SEC)
 	bal	upg_sleep
 	nop
+
+#if RELOAD_VCDL
+	/*
+	 * Reload VCDL values:
+	 * WL0_0_BYTE0 <- bits 07:00
+	 * WL0_0_BYTE1 <- bits 15:08
+	 * WL1_0_BYTE0 <- bits 23:16
+	 * WL1_0_BYTE1 <- bits 31:24
+	 */
+
+	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL)
+	li	t0, REG(VCDL_SAVE_REG)
+	lw	t0, 0(t0)
+	bal 	reload_vcdl
+	andi	a1, t0, 0x1f
+
+	srl	a1, t0, 8
+	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE1_VCDL_PHASE_CNTL)
+	bal 	reload_vcdl
+	andi	a1, 0x1f
+
+	srl	a1, t0, 16
+	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE0_VCDL_PHASE_CNTL)
+	bal 	reload_vcdl
+	andi	a1, 0x1f
+
+	srl	a1, t0, 24
+	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE1_VCDL_PHASE_CNTL)
+	bal 	reload_vcdl
+	andi	a1, 0x1f
+#endif
 
 	jr	s6
 	nop
@@ -980,7 +1113,13 @@ LEAF(wake_up_memc_0)
 	sw	t1, 0(t0)
 #endif
 
+#ifdef BCHP_DDR23_PHY_CONTROL_REGS_0_PLL_STATUS
 	li	t0, REG(BCHP_DDR23_PHY_CONTROL_REGS_0_PLL_STATUS)
+#elif defined(BCHP_DDR40_PHY_CONTROL_REGS_0_PLL_STATUS)
+	li	t0, REG(BCHP_DDR40_PHY_CONTROL_REGS_0_PLL_STATUS)
+#else
+#error No MEMC phy control register defined
+#endif
 
 1:	lw	t1, 0(t0)
 	andi	t1, 1

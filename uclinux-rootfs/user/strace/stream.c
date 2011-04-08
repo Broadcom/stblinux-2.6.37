@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: stream.c,v 1.28 2007/11/01 21:50:54 roland Exp $
+ *	$Id$
  */
 
 #include "defs.h"
@@ -55,9 +55,9 @@
 #ifndef HAVE_STROPTS_H
 #define RS_HIPRI 1
 struct strbuf {
-        int     maxlen;                 /* no. of bytes in buffer */
-        int     len;                    /* no. of bytes returned */
-        char    *buf;                   /* pointer to data */
+	int     maxlen;                 /* no. of bytes in buffer */
+	int     len;                    /* no. of bytes returned */
+	char    *buf;                   /* pointer to data */
 };
 #define MORECTL 1
 #define MOREDATA 2
@@ -350,7 +350,7 @@ decode_poll(struct tcb *tcp, long pts)
 	} else {
 		static char outstr[1024];
 		char str[64];
-                const char *flagstr;
+		const char *flagstr;
 		unsigned int cumlen;
 
 		if (syserror(tcp))
@@ -468,7 +468,7 @@ int
 sys_poll(tcp)
 struct tcb *tcp;
 {
-    	return 0;
+	return 0;
 }
 #endif
 
@@ -1033,10 +1033,7 @@ int len;
 #endif /* TI_BIND */
 
 
-static int
-internal_stream_ioctl(tcp, arg)
-struct tcb *tcp;
-int arg;
+static int internal_stream_ioctl(struct tcb *tcp, int arg)
 {
 	struct strioctl si;
 	struct ioctlent *iop;
@@ -1151,9 +1148,6 @@ int arg;
 	case SI_GETUDATA:
 		if (entering(tcp))
 			break;
-#if 0
-		tprintf("struct si_udata ");
-#endif
 		if (umove(tcp, (int) si.ic_dp, &udata) < 0)
 			tprintf("{...}");
 		else {
@@ -1164,9 +1158,6 @@ int arg;
 			tprintf("servtype=%d, so_state=%d, ",
 				udata.servtype, udata.so_state);
 			tprintf("so_options=%d", udata.so_options);
-#if 0
-			tprintf(", tsdusize=%d", udata.tsdusize);
-#endif
 			tprintf("}");
 		}
 		break;
@@ -1177,7 +1168,7 @@ int arg;
 	}
 	if (exiting(tcp)) {
 		tprintf("}");
-		if (timod && tcp->u_rval) {
+		if (timod && tcp->u_rval && !syserror(tcp)) {
 			tcp->auxstr = xlookup (tli_errors, tcp->u_rval);
 			return RVAL_STR + 1;
 		}

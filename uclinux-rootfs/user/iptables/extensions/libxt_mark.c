@@ -9,6 +9,11 @@
 #include <xtables.h>
 #include <linux/netfilter/xt_mark.h>
 
+struct xt_mark_info {
+	unsigned long mark, mask;
+	u_int8_t invert;
+};
+
 enum {
 	F_MARK = 1 << 0,
 };
@@ -22,7 +27,7 @@ static void mark_mt_help(void)
 
 static const struct option mark_mt_opts[] = {
 	{.name = "mark", .has_arg = true, .val = '1'},
-	{ .name = NULL }
+	XT_GETOPT_TABLEEND,
 };
 
 static int mark_mt_parse(int c, char **argv, int invert, unsigned int *flags,
@@ -62,7 +67,7 @@ mark_parse(int c, char **argv, int invert, unsigned int *flags,
 	switch (c) {
 		char *end;
 	case '1':
-		xtables_check_inverse(optarg, &invert, &optind, 0);
+		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
 		markinfo->mark = strtoul(optarg, &end, 0);
 		if (*end == '/') {
 			markinfo->mask = strtoul(end+1, &end, 0);
@@ -110,7 +115,7 @@ mark_mt_print(const void *ip, const struct xt_entry_match *match, int numeric)
 static void
 mark_print(const void *ip, const struct xt_entry_match *match, int numeric)
 {
-	struct xt_mark_info *info = (struct xt_mark_info *)match->data;
+	const struct xt_mark_info *info = (const void *)match->data;
 
 	printf("MARK match ");
 
@@ -134,7 +139,7 @@ static void mark_mt_save(const void *ip, const struct xt_entry_match *match)
 static void
 mark_save(const void *ip, const struct xt_entry_match *match)
 {
-	struct xt_mark_info *info = (struct xt_mark_info *)match->data;
+	const struct xt_mark_info *info = (const void *)match->data;
 
 	if (info->invert)
 		printf("! ");
@@ -143,38 +148,38 @@ mark_save(const void *ip, const struct xt_entry_match *match)
 	print_mark(info->mark, info->mask);
 }
 
-static struct xtables_match mark_match = {
-	.family		= AF_UNSPEC,
-	.name		= "mark",
-	.revision	= 0,
-	.version	= XTABLES_VERSION,
-	.size		= XT_ALIGN(sizeof(struct xt_mark_info)),
-	.userspacesize	= XT_ALIGN(sizeof(struct xt_mark_info)),
-	.help		= mark_mt_help,
-	.parse		= mark_parse,
-	.final_check	= mark_mt_check,
-	.print		= mark_print,
-	.save		= mark_save,
-	.extra_opts	= mark_mt_opts,
-};
-
-static struct xtables_match mark_mt_reg = {
-	.version        = XTABLES_VERSION,
-	.name           = "mark",
-	.revision       = 1,
-	.family         = AF_UNSPEC,
-	.size           = XT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
-	.userspacesize  = XT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
-	.help           = mark_mt_help,
-	.parse          = mark_mt_parse,
-	.final_check    = mark_mt_check,
-	.print          = mark_mt_print,
-	.save           = mark_mt_save,
-	.extra_opts     = mark_mt_opts,
+static struct xtables_match mark_mt_reg[] = {
+	{
+		.family        = NFPROTO_UNSPEC,
+		.name          = "mark",
+		.revision      = 0,
+		.version       = XTABLES_VERSION,
+		.size          = XT_ALIGN(sizeof(struct xt_mark_info)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_mark_info)),
+		.help          = mark_mt_help,
+		.parse         = mark_parse,
+		.final_check   = mark_mt_check,
+		.print         = mark_print,
+		.save          = mark_save,
+		.extra_opts    = mark_mt_opts,
+	},
+	{
+		.version       = XTABLES_VERSION,
+		.name          = "mark",
+		.revision      = 1,
+		.family        = NFPROTO_UNSPEC,
+		.size          = XT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
+		.userspacesize = XT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
+		.help          = mark_mt_help,
+		.parse         = mark_mt_parse,
+		.final_check   = mark_mt_check,
+		.print         = mark_mt_print,
+		.save          = mark_mt_save,
+		.extra_opts    = mark_mt_opts,
+	},
 };
 
 void _init(void)
 {
-	xtables_register_match(&mark_match);
-	xtables_register_match(&mark_mt_reg);
+	xtables_register_matches(mark_mt_reg, ARRAY_SIZE(mark_mt_reg));
 }

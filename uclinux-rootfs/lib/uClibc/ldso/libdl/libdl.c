@@ -32,32 +32,27 @@
 
 #include <ldso.h>
 #include <stdio.h>
+#include <string.h> /* Needed for 'strstr' prototype' */
+#include <stdbool.h>
 
-#ifndef SHARED
-/* TLS currently not supported with static dlopen */
-#undef USE_TLS
+#ifdef __UCLIBC_HAS_TLS__
+#include <tls.h>
 #endif
 
-#if USE_TLS
-# include <ldsodefs.h>
+#if defined(USE_TLS) && USE_TLS
+#include <ldsodefs.h>
+extern void _dl_add_to_slotinfo(struct link_map  *l);
 #endif
-
 
 #ifdef SHARED
-
-#if USE_TLS
+# if defined(USE_TLS) && USE_TLS
 # include <dl-tls.h>
-
-extern void _dl_add_to_slotinfo(struct link_map  *l);
 extern struct link_map *_dl_update_slotinfo(unsigned long int req_modid);
-extern struct elf_resolve *_dl_tls_reloc_tpnt;
-extern ElfW(Sym) *_dl_tls_reloc_sym;
-#endif
+# endif
 
 /* When libdl is loaded as a shared library, we need to load in
  * and use a pile of symbols from ldso... */
 
-extern char *_dl_find_hash(const char *, struct dyn_elf *, struct elf_resolve *, int);
 extern struct elf_resolve * _dl_load_shared_library(int, struct dyn_elf **,
 	struct elf_resolve *, char *, int);
 extern int _dl_fixup(struct dyn_elf *rpnt, int lazy);
@@ -66,9 +61,11 @@ extern int _dl_errno;
 extern struct dyn_elf *_dl_symbol_tables;
 extern struct dyn_elf *_dl_handles;
 extern struct elf_resolve *_dl_loaded_modules;
+extern void _dl_free (void *__ptr);
 extern struct r_debug *_dl_debug_addr;
 extern unsigned long _dl_error_number;
 extern void *(*_dl_malloc_function)(size_t);
+extern void (*_dl_free_function) (void *p);
 extern void _dl_run_init_array(struct elf_resolve *);
 extern void _dl_run_fini_array(struct elf_resolve *);
 #ifdef __LDSO_CACHE_SUPPORT__
@@ -82,33 +79,45 @@ extern void _dl_perform_mips_global_got_relocations(struct elf_resolve *tpnt, in
 extern char *_dl_debug;
 #endif
 
+#else /* !SHARED */
 
-#else /* SHARED */
+#define _dl_malloc malloc
+#define _dl_free free
 
 /* When libdl is linked as a static library, we need to replace all
  * the symbols that otherwise would have been loaded in from ldso... */
 
 #ifdef __SUPPORT_LD_DEBUG__
-char *_dl_debug  = 0;
+char *_dl_debug  = NULL;
+char *_dl_debug_symbols   = NULL;
+char *_dl_debug_move      = NULL;
+char *_dl_debug_reloc     = NULL;
+char *_dl_debug_detail    = NULL;
+char *_dl_debug_nofixups  = NULL;
+char *_dl_debug_bindings  = NULL;
+int   _dl_debug_file      = 2;
 #endif
 const char *_dl_progname       = "";        /* Program name */
-char *_dl_library_path         = 0;         /* Where we look for libraries */
-char *_dl_ldsopath             = 0;         /* Location of the shared lib loader */
+void *(*_dl_malloc_function)(size_t);
+void (*_dl_free_function) (void *p);
+char *_dl_library_path         = NULL;         /* Where we look for libraries */
+char *_dl_ldsopath             = NULL;         /* Location of the shared lib loader */
 int _dl_errno                  = 0;         /* We can't use the real errno in ldso */
 size_t _dl_pagesize            = PAGE_SIZE; /* Store the page size for use later */
 /* This global variable is also to communicate with debuggers such as gdb. */
 struct r_debug *_dl_debug_addr = NULL;
-#define _dl_malloc malloc
-#include "../ldso/dl-debug.c"
-#if USE_TLS
-#include "../ldso/dl-tls.c"
 
+#include "../ldso/dl-array.c"
+#include "../ldso/dl-debug.c"
+
+
+# if defined(USE_TLS) && USE_TLS
 /*
  * Giving this initialized value preallocates some surplus bytes in the
  * static TLS area, see __libc_setup_tls (libc-tls.c).
  */
 size_t _dl_tls_static_size = 2048;
-#endif
+# endif
 #include LDSO_ELFINTERP
 #include "../ldso/dl-hash.c"
 #define _dl_trace_loaded_objects    0
@@ -128,7 +137,7 @@ size_t _dl_tls_static_size = 2048;
 static int do_dlclose(void *, int need_fini);
 
 
-static const char *dl_error_names[] = {
+static const char *const dl_error_names[] = {
 	"",
 	"File not found",
 	"Unable to open /dev/zero",
@@ -156,7 +165,7 @@ static const char *dl_error_names[] = {
 };
 
 
-#if USE_TLS
+#if defined(USE_TLS) && USE_TLS
 #ifdef SHARED
 /*
  * Systems which do not have tls_index also probably have to define
@@ -173,41 +182,37 @@ static const char *dl_error_names[] = {
  */
 static void *
 internal_function
-_dl_tls_symaddr(struct link_map *map, const ElfW(Sym) *ref)
+_dl_tls_symaddr(struct link_map *map, const Elf32_Addr st_value)
 {
 # ifndef DONT_USE_TLS_INDEX
 	tls_index tmp =
 	{
 		.ti_module = map->l_tls_modid,
-		.ti_offset = ref->st_value
+		.ti_offset = st_value
 	};
 
 	return __TLS_GET_ADDR (&tmp);
 # else
-	return __TLS_GET_ADDR (map->l_tls_modid, ref->st_value);
+	return __TLS_GET_ADDR (map->l_tls_modid, st_value);
 # endif
 }
 #endif
 
-/* Returns true we an non-empty was found.  */
+/* Returns true when a non-empty entry was found.  */
 static bool
 remove_slotinfo(size_t idx, struct dtv_slotinfo_list *listp, size_t disp,
 	 bool should_be_there)
 {
-	if(idx - disp >= listp->len)
-	{
-		if(listp->next == NULL)
-		{
+	if (idx - disp >= listp->len) {
+		if (listp->next == NULL) {
 			/*
 			 * The index is not actually valid in the slotinfo list,
 			 * because this object was closed before it was fully set
 			 * up due to some error.
 			 */
 			_dl_assert(!should_be_there);
-		}
-		else
-		{
-			if(remove_slotinfo(idx, listp->next, disp + listp->len,
+		} else {
+			if (remove_slotinfo(idx, listp->next, disp + listp->len,
 					should_be_there))
 				return true;
 
@@ -217,17 +222,14 @@ remove_slotinfo(size_t idx, struct dtv_slotinfo_list *listp, size_t disp,
 			 */
 			idx = disp + listp->len;
 		}
-	}
-	else
-	{
+	} else {
 		struct link_map *old_map = listp->slotinfo[idx - disp].map;
 
 		/*
 		 * The entry might still be in its unused state if we are
 		 * closing an object that wasn't fully set up.
 		 */
-		if(__builtin_expect(old_map != NULL, 1))
-		{
+		if (__builtin_expect(old_map != NULL, 1)) {
 			_dl_assert(old_map->l_tls_modid == idx);
 
 			/* Mark the entry as unused. */
@@ -243,12 +245,10 @@ remove_slotinfo(size_t idx, struct dtv_slotinfo_list *listp, size_t disp,
 			return true;
 	}
 
-	while(idx - disp > (disp == 0 ? 1 + _dl_tls_static_nelem : 0))
-	{
+	while (idx - disp > (disp == 0 ? 1 + _dl_tls_static_nelem : 0)) {
 		--idx;
 
-		if(listp->slotinfo[idx - disp].map != NULL)
-		{
+		if (listp->slotinfo[idx - disp].map != NULL) {
 			/* Found a new last used index.  */
 			_dl_tls_max_dtv_idx = idx;
 			return true;
@@ -263,9 +263,11 @@ remove_slotinfo(size_t idx, struct dtv_slotinfo_list *listp, size_t disp,
 void dl_cleanup(void) __attribute__ ((destructor));
 void dl_cleanup(void)
 {
-	struct dyn_elf *d;
-	for (d = _dl_handles; d; d = d->next_handle) {
-		do_dlclose(d, 1);
+	struct dyn_elf *h, *n;
+
+	for (h = _dl_handles; h; h = n) {
+		n = h->next_handle;
+		do_dlclose(h, 1);
 	}
 }
 
@@ -280,7 +282,8 @@ void *dlopen(const char *libname, int flag)
 	struct init_fini_list *tmp, *runp, *runp2, *dep_list;
 	unsigned int nlist, i;
 	struct elf_resolve **init_fini_list;
-#ifdef USE_TLS
+	static bool _dl_init;
+#if defined(USE_TLS) && USE_TLS
 	bool any_tls = false;
 #endif
 
@@ -292,9 +295,33 @@ void *dlopen(const char *libname, int flag)
 
 	from = (ElfW(Addr)) __builtin_return_address(0);
 
+	if (!_dl_init) {
+		_dl_init = true;
+		_dl_malloc_function = malloc;
+		_dl_free_function = free;
+	}
 	/* Cover the trivial case first */
 	if (!libname)
 		return _dl_symbol_tables;
+
+#ifndef SHARED
+# ifdef __SUPPORT_LD_DEBUG__
+	_dl_debug = getenv("LD_DEBUG");
+	if (_dl_debug) {
+		if (_dl_strstr(_dl_debug, "all")) {
+			_dl_debug_detail = _dl_debug_move = _dl_debug_symbols
+				= _dl_debug_reloc = _dl_debug_bindings = _dl_debug_nofixups = (void*)1;
+		} else {
+			_dl_debug_detail   = strstr(_dl_debug, "detail");
+			_dl_debug_move     = strstr(_dl_debug, "move");
+			_dl_debug_symbols  = strstr(_dl_debug, "sym");
+			_dl_debug_reloc    = strstr(_dl_debug, "reloc");
+			_dl_debug_nofixups = strstr(_dl_debug, "nofix");
+			_dl_debug_bindings = strstr(_dl_debug, "bind");
+		}
+	}
+# endif
+#endif
 
 	_dl_map_cache();
 
@@ -311,17 +338,22 @@ void *dlopen(const char *libname, int flag)
 		tfrom = NULL;
 		for (dpnt = _dl_symbol_tables; dpnt; dpnt = dpnt->next) {
 			tpnt = dpnt->dyn;
-			if (tpnt->loadaddr < from
-					&& (tfrom == NULL || tfrom->loadaddr < tpnt->loadaddr))
+			if (DL_ADDR_IN_LOADADDR(from, tpnt, tfrom))
 				tfrom = tpnt;
 		}
 	}
-	for(rpnt = _dl_symbol_tables; rpnt && rpnt->next; rpnt=rpnt->next);
+	for (rpnt = _dl_symbol_tables; rpnt && rpnt->next; rpnt = rpnt->next)
+		continue;
 
 	relro_ptr = rpnt;
 	now_flag = (flag & RTLD_NOW) ? RTLD_NOW : 0;
-	//if (getenv("LD_BIND_NOW"))
+	if (getenv("LD_BIND_NOW"))
 		now_flag = RTLD_NOW;
+
+#ifndef SHARED
+	/* When statically linked, the _dl_library_path is not yet initialized */
+	_dl_library_path = getenv("LD_LIBRARY_PATH");
+#endif
 
 	/* Try to load the specified library */
 	_dl_if_debug_print("Trying to dlopen '%s', RTLD_GLOBAL:%d RTLD_NOW:%d\n",
@@ -347,16 +379,16 @@ void *dlopen(const char *libname, int flag)
 			if (handle->dyn == tpnt) {
 				dyn_chain->init_fini.init_fini = handle->init_fini.init_fini;
 				dyn_chain->init_fini.nlist = handle->init_fini.nlist;
-				for(i=0; i < dyn_chain->init_fini.nlist; i++)
+				for (i = 0; i < dyn_chain->init_fini.nlist; i++)
 					dyn_chain->init_fini.init_fini[i]->rtld_flags |= (flag & RTLD_GLOBAL);
 				dyn_chain->next = handle->next;
 				break;
 			}
 		}
 		return dyn_chain;
-	} else {
-		tpnt->init_flag |= DL_OPENED;
 	}
+
+	tpnt->init_flag |= DL_OPENED;
 
 	_dl_if_debug_print("Looking for needed libraries\n");
 	nlist = 0;
@@ -364,8 +396,7 @@ void *dlopen(const char *libname, int flag)
 	runp->tpnt = tpnt;
 	runp->next = NULL;
 	dep_list = runp2 = runp;
-	for (; runp; runp = runp->next)
-	{
+	for (; runp; runp = runp->next)	{
 		ElfW(Dyn) *dpnt;
 		char *lpntstr;
 
@@ -383,35 +414,30 @@ void *dlopen(const char *libname, int flag)
 
 				tpnt1->rtld_flags |= (flag & RTLD_GLOBAL);
 
-				if (tpnt1->usage_count == 1) {
-					tpnt1->init_flag |= DL_OPENED;
-					/* This list is for dlsym() and relocation */
-					dyn_ptr->next = (struct dyn_elf *) malloc(sizeof(struct dyn_elf));
-					_dl_memset (dyn_ptr->next, 0, sizeof (struct dyn_elf));
-					dyn_ptr = dyn_ptr->next;
-					dyn_ptr->dyn = tpnt1;
-				}
-				if (tpnt1->init_flag & DL_OPENED) {
-					/* Used to record RTLD_LOCAL scope */
-					tmp = alloca(sizeof(struct init_fini_list));
-					tmp->tpnt = tpnt1;
-					tmp->next = runp->tpnt->init_fini;
-					runp->tpnt->init_fini = tmp;
+				/* This list is for dlsym() and relocation */
+				dyn_ptr->next = (struct dyn_elf *) malloc(sizeof(struct dyn_elf));
+				_dl_memset (dyn_ptr->next, 0, sizeof (struct dyn_elf));
+				dyn_ptr = dyn_ptr->next;
+				dyn_ptr->dyn = tpnt1;
+				/* Used to record RTLD_LOCAL scope */
+				tmp = alloca(sizeof(struct init_fini_list));
+				tmp->tpnt = tpnt1;
+				tmp->next = runp->tpnt->init_fini;
+				runp->tpnt->init_fini = tmp;
 
-					for (tmp=dep_list; tmp; tmp = tmp->next) {
-						if (tpnt1 == tmp->tpnt) { /* if match => cirular dependency, drop it */
-							_dl_if_debug_print("Circular dependency, skipping '%s',\n",
-									tmp->tpnt->libname);
-							tpnt1->usage_count--;
-							break;
-						}
+				for (tmp=dep_list; tmp; tmp = tmp->next) {
+					if (tpnt1 == tmp->tpnt) { /* if match => cirular dependency, drop it */
+						_dl_if_debug_print("Circular dependency, skipping '%s',\n",
+								   tmp->tpnt->libname);
+						tpnt1->usage_count--;
+						break;
 					}
-					if (!tmp) { /* Don't add if circular dependency detected */
-						runp2->next = alloca(sizeof(*runp));
-						runp2 = runp2->next;
-						runp2->tpnt = tpnt1;
-						runp2->next = NULL;
-					}
+				}
+				if (!tmp) { /* Don't add if circular dependency detected */
+					runp2->next = alloca(sizeof(*runp));
+					runp2 = runp2->next;
+					runp2->tpnt = tpnt1;
+					runp2->next = NULL;
 				}
 			}
 		}
@@ -422,7 +448,7 @@ void *dlopen(const char *libname, int flag)
 	i = 0;
 	for (runp2 = dep_list; runp2; runp2 = runp2->next) {
 		init_fini_list[i++] = runp2->tpnt;
-		for(runp = runp2->tpnt->init_fini; runp; runp = runp->next){
+		for (runp = runp2->tpnt->init_fini; runp; runp = runp->next) {
 			if (!(runp->tpnt->rtld_flags & RTLD_GLOBAL)) {
 				tmp = malloc(sizeof(struct init_fini_list));
 				tmp->tpnt = runp->tpnt;
@@ -454,14 +480,14 @@ void *dlopen(const char *libname, int flag)
 		}
 	}
 #ifdef __SUPPORT_LD_DEBUG__
-	if(_dl_debug) {
+	if (_dl_debug) {
 		fprintf(stderr, "\nINIT/FINI order and dependencies:\n");
-		for (i=0;i < nlist;i++) {
+		for (i = 0; i < nlist; i++) {
 			fprintf(stderr, "lib: %s has deps:\n", init_fini_list[i]->libname);
 			runp = init_fini_list[i]->init_fini;
 			for (; runp; runp = runp->next)
-				printf(" %s ", runp->tpnt->libname);
-			printf("\n");
+				fprintf(stderr, " %s ", runp->tpnt->libname);
+			fprintf(stderr, "\n");
 		}
 	}
 #endif
@@ -491,40 +517,42 @@ void *dlopen(const char *libname, int flag)
 	}
 	/* TODO:  Should we set the protections of all pages back to R/O now ? */
 
-#if USE_TLS
-	tpnt = dyn_chain->dyn;
-	/*
-	 * Only add TLS memory if this object is loaded now and
-	 * therefore is not yet initialized.
-	 */
-	if (!(tpnt->init_flag & INIT_FUNCS_CALLED)
-		/* Only if the module defines thread local data. */
-		&& __builtin_expect(tpnt->l_tls_blocksize > 0, 0))
-	{
-		/*
-		 * Now that we know the object is loaded successfully the
-		 * modules containing TLS data have been added to the slot
-		 * info table. We might have to increase its size.
-		 */
-		if(tpnt->l_need_tls_init)
-		{
-			tpnt->l_need_tls_init = 0;
 
+#if defined(USE_TLS) && USE_TLS
+
+	for (i=0; i < nlist; i++) {
+		struct elf_resolve *tmp_tpnt = init_fini_list[i];
+		/* Only add TLS memory if this object is loaded now and
+		   therefore is not yet initialized.  */
+
+		if (!(tmp_tpnt->init_flag & INIT_FUNCS_CALLED)
+		/* Only if the module defines thread local data. */
+			&& __builtin_expect (tmp_tpnt->l_tls_blocksize > 0, 0)) {
+
+			/* Now that we know the object is loaded successfully add
+			modules containing TLS data to the slot info table.  We
+			might have to increase its size.  */
+			_dl_add_to_slotinfo ((struct link_map*)tmp_tpnt);
+
+			/* It is the case in which we couldn't perform TLS static
+			   initialization at relocation time, and we delayed it until
+			   the relocation has been completed. */
+
+			if (tmp_tpnt->l_need_tls_init) {
+				tmp_tpnt->l_need_tls_init = 0;
 # ifdef SHARED
-			/*
-			 * Update the slot information data for at least the
-			 * generation of the DSO we are allocating data for.
-			 */
-			_dl_update_slotinfo (tpnt->l_tls_modid);
+				/* Update the slot information data for at least the
+				generation of the DSO we are allocating data for.  */
+				_dl_update_slotinfo (tmp_tpnt->l_tls_modid);
 # endif
 
-			_dl_init_static_tls((struct link_map *) tpnt);
-
-			_dl_assert(tpnt->l_need_tls_init == 0);
+				_dl_init_static_tls((struct link_map*)tmp_tpnt);
+				_dl_assert (tmp_tpnt->l_need_tls_init == 0);
 		}
 
 		/* We have to bump the generation counter. */
 		any_tls = true;
+		}
 	}
 
 	/* Bump the generation number if necessary.  */
@@ -547,7 +575,6 @@ void *dlopen(const char *libname, int flag)
 		}
 	}
 
-#ifdef SHARED
 	/* Run the ctors and setup the dtors */
 	for (i = nlist; i; --i) {
 		tpnt = init_fini_list[i-1];
@@ -557,17 +584,16 @@ void *dlopen(const char *libname, int flag)
 
 		if (tpnt->dynamic_info[DT_INIT]) {
 			void (*dl_elf_func) (void);
-			dl_elf_func = (void (*)(void)) (tpnt->loadaddr + tpnt->dynamic_info[DT_INIT]);
-			if (dl_elf_func && *dl_elf_func != NULL) {
+			dl_elf_func = (void (*)(void)) DL_RELOC_ADDR(tpnt->loadaddr, tpnt->dynamic_info[DT_INIT]);
+			if (dl_elf_func) {
 				_dl_if_debug_print("running ctors for library %s at '%p'\n",
 						tpnt->libname, dl_elf_func);
-				(*dl_elf_func) ();
+				DL_CALL_FUNC_AT_ADDR (dl_elf_func, tpnt->loadaddr, (void(*)(void)));
 			}
 		}
 
 		_dl_run_init_array(tpnt);
 	}
-#endif /* SHARED */
 
 	_dl_unmap_cache();
 	return (void *) dyn_chain;
@@ -579,10 +605,6 @@ oops:
 	return NULL;
 }
 
-#ifndef SHARED
-link_warning(dlopen, "libdl support is severely limited in static binaries");
-#endif
-
 void *dlsym(void *vhandle, const char *name)
 {
 	struct elf_resolve *tpnt, *tfrom;
@@ -590,7 +612,24 @@ void *dlsym(void *vhandle, const char *name)
 	ElfW(Addr) from;
 	struct dyn_elf *rpnt;
 	void *ret;
-
+	struct elf_resolve *tls_tpnt = NULL;
+	struct symbol_ref sym_ref = { NULL, NULL };
+	/* Nastiness to support underscore prefixes.  */
+#ifdef __UCLIBC_UNDERSCORES__
+	char tmp_buf[80];
+	char *name2 = tmp_buf;
+	size_t nlen = strlen (name) + 1;
+	if (nlen + 1 > sizeof (tmp_buf))
+		name2 = malloc (nlen + 1);
+	if (name2 == 0) {
+		_dl_error_number = LD_ERROR_MMAP_FAILED;
+		return 0;
+	}
+	name2[0] = '_';
+	memcpy (name2 + 1, name, nlen);
+#else
+	const char *name2 = name;
+#endif
 	handle = (struct dyn_elf *) vhandle;
 
 	/* First of all verify that we have a real handle
@@ -604,7 +643,8 @@ void *dlsym(void *vhandle, const char *name)
 				break;
 		if (!rpnt) {
 			_dl_error_number = LD_BAD_HANDLE;
-			return NULL;
+			ret = NULL;
+			goto out;
 		}
 	} else if (handle == RTLD_NEXT) {
 		/*
@@ -619,33 +659,23 @@ void *dlsym(void *vhandle, const char *name)
 		tfrom = NULL;
 		for (rpnt = _dl_symbol_tables; rpnt; rpnt = rpnt->next) {
 			tpnt = rpnt->dyn;
-			if (tpnt->loadaddr < from
-					&& (tfrom == NULL || tfrom->loadaddr < tpnt->loadaddr)) {
+			if (DL_ADDR_IN_LOADADDR(from, tpnt, tfrom)) {
 				tfrom = tpnt;
 				handle = rpnt->next;
 			}
 		}
 	}
+	tpnt = NULL;
+	if (handle == _dl_symbol_tables)
+		tpnt = handle->dyn; /* Only search RTLD_GLOBAL objs if global object */
+	ret = _dl_find_hash(name2, handle, tpnt, 0, &sym_ref);
 
-
-#if defined(USE_TLS) && defined(SHARED)
-	ret = _dl_find_hash((char*)name, handle, NULL, 1);
-
-	if (ret)
-	{
-		if(ELF_ST_TYPE(_dl_tls_reloc_sym->st_info) == STT_TLS)
-		{
-			/*
-			 * The found symbol is a thread-local storage variable.
-			 * Return the address for it to the current thread.
-			 */
-			ret = _dl_tls_symaddr((struct link_map *) _dl_tls_reloc_tpnt,
-				_dl_tls_reloc_sym);
-		}
+#if defined(USE_TLS) && USE_TLS && defined SHARED
+	if (sym_ref.tpnt) {
+		/* The found symbol is a thread-local storage variable.
+		Return the address for to the current thread.  */
+		ret = _dl_tls_symaddr ((struct link_map *)sym_ref.tpnt, (Elf32_Addr)ret);
 	}
-	else
-#else
-	ret = _dl_find_hash((char*)name, handle, NULL, 0);
 #endif
 
 	/*
@@ -653,6 +683,11 @@ void *dlsym(void *vhandle, const char *name)
 	 */
 	if (!ret)
 		_dl_error_number = LD_NO_SYMBOL;
+out:
+#ifdef __UCLIBC_UNDERSCORES__
+	if (name2 != tmp_buf)
+		free (name2);
+#endif
 	return ret;
 }
 
@@ -674,10 +709,10 @@ static int do_dlclose(void *vhandle, int need_fini)
 	struct dyn_elf *handle;
 	unsigned int end;
 	unsigned int i, j;
-#if USE_TLS
+#if defined(USE_TLS) && USE_TLS
 	bool any_tls = false;
 	size_t tls_free_start = NO_TLS_OFFSET;
-	size_t tls_free_end = NO_TLS_OFFSET; 
+	size_t tls_free_end = NO_TLS_OFFSET;
 	struct link_map *tls_lmap;
 #endif
 
@@ -701,7 +736,7 @@ static int do_dlclose(void *vhandle, int need_fini)
 		_dl_handles = rpnt->next_handle;
 	_dl_if_debug_print("%s: usage count: %d\n",
 			handle->dyn->libname, handle->dyn->usage_count);
-	if (handle->dyn->usage_count != 1) {
+	if (handle->dyn->usage_count != 1 || (handle->dyn->rtld_flags & RTLD_NODELETE)) {
 		handle->dyn->usage_count--;
 		free(handle);
 		return 0;
@@ -709,21 +744,21 @@ static int do_dlclose(void *vhandle, int need_fini)
 	/* OK, this is a valid handle - now close out the file */
 	for (j = 0; j < handle->init_fini.nlist; ++j) {
 		tpnt = handle->init_fini.init_fini[j];
-		if (--tpnt->usage_count == 0) {
+		tpnt->usage_count--;
+		if (tpnt->usage_count == 0 && !(tpnt->rtld_flags & RTLD_NODELETE)) {
 			if ((tpnt->dynamic_info[DT_FINI]
 			     || tpnt->dynamic_info[DT_FINI_ARRAY])
-			    && need_fini &&
-			    !(tpnt->init_flag & FINI_FUNCS_CALLED)) {
+			 && need_fini
+			 && !(tpnt->init_flag & FINI_FUNCS_CALLED)
+			) {
 				tpnt->init_flag |= FINI_FUNCS_CALLED;
-#ifdef SHARED
 				_dl_run_fini_array(tpnt);
-#endif
 
 				if (tpnt->dynamic_info[DT_FINI]) {
-					dl_elf_fini = (int (*)(void)) (tpnt->loadaddr + tpnt->dynamic_info[DT_FINI]);
+					dl_elf_fini = (int (*)(void)) DL_RELOC_ADDR(tpnt->loadaddr, tpnt->dynamic_info[DT_FINI]);
 					_dl_if_debug_print("running dtors for library %s at '%p'\n",
 							tpnt->libname, dl_elf_fini);
-					(*dl_elf_fini) ();
+					DL_CALL_FUNC_AT_ADDR (dl_elf_fini, tpnt->loadaddr, (int (*)(void)));
 				}
 			}
 
@@ -737,13 +772,12 @@ static int do_dlclose(void *vhandle, int need_fini)
 					end = ppnt->p_vaddr + ppnt->p_memsz;
 			}
 
-#if USE_TLS
+#if defined(USE_TLS) && USE_TLS
 			/* Do the cast to make things easy. */
 			tls_lmap = (struct link_map *) tpnt;
 
 			/* Remove the object from the dtv slotinfo array if it uses TLS. */
-			if (__builtin_expect (tls_lmap->l_tls_blocksize > 0, 0))
-			{
+			if (__builtin_expect (tls_lmap->l_tls_blocksize > 0, 0)) {
 				any_tls = true;
 
 				if (_dl_tls_dtv_slotinfo_list != NULL
@@ -753,18 +787,16 @@ static int do_dlclose(void *vhandle, int need_fini)
 					/* All dynamically loaded modules with TLS are unloaded. */
 					_dl_tls_max_dtv_idx = _dl_tls_static_nelem;
 
-				if (tls_lmap->l_tls_offset != NO_TLS_OFFSET)
-				{
+				if (tls_lmap->l_tls_offset != NO_TLS_OFFSET) {
 					/*
 					 * Collect a contiguous chunk built from the objects in
 					 * this search list, going in either direction.  When the
 					 * whole chunk is at the end of the used area then we can
 					 * reclaim it.
 					 */
-# if TLS_TCB_AT_TP
+# if defined(TLS_TCB_AT_TP)
 					if (tls_free_start == NO_TLS_OFFSET
-						|| (size_t) tls_lmap->l_tls_offset == tls_free_start)
-					{
+						|| (size_t) tls_lmap->l_tls_offset == tls_free_start) {
 						/* Extend the contiguous chunk being reclaimed. */
 						tls_free_start
 							= tls_lmap->l_tls_offset -
@@ -772,31 +804,26 @@ static int do_dlclose(void *vhandle, int need_fini)
 
 						if (tls_free_end == NO_TLS_OFFSET)
 							tls_free_end = tls_lmap->l_tls_offset;
-					}
-					else if (tls_lmap->l_tls_offset - tls_lmap->l_tls_blocksize
+					} else if (tls_lmap->l_tls_offset - tls_lmap->l_tls_blocksize
 							== tls_free_end)
 						/* Extend the chunk backwards.  */
 						tls_free_end = tls_lmap->l_tls_offset;
-					else
-					{
+					else {
 						/*
 						 * This isn't contiguous with the last chunk freed.
 						 * One of them will be leaked unless we can free
 						 * one block right away.
 						 */
-						if (tls_free_end == _dl_tls_static_used)
-						{
+						if (tls_free_end == _dl_tls_static_used) {
 							_dl_tls_static_used = tls_free_start;
 							tls_free_end = tls_lmap->l_tls_offset;
 							tls_free_start
 								= tls_free_end - tls_lmap->l_tls_blocksize;
-						}
-						else if ((size_t) tls_lmap->l_tls_offset
+						} else if ((size_t) tls_lmap->l_tls_offset
 								== _dl_tls_static_used)
 							_dl_tls_static_used = tls_lmap->l_tls_offset -
 								tls_lmap->l_tls_blocksize;
-						else if (tls_free_end < (size_t) tls_lmap->l_tls_offset)
-						{
+						else if (tls_free_end < (size_t) tls_lmap->l_tls_offset) {
 							/*
 							 * We pick the later block. It has a chance
 							 * to be freed.
@@ -806,7 +833,7 @@ static int do_dlclose(void *vhandle, int need_fini)
 								tls_lmap->l_tls_blocksize;
 						}
 					}
-# elif TLS_DTV_AT_TP
+# elif defined(TLS_DTV_AT_TP)
 					if ((size_t) tls_lmap->l_tls_offset == tls_free_end)
 						/* Extend the contiguous chunk being reclaimed. */
 						tls_free_end -= tls_lmap->l_tls_blocksize;
@@ -814,8 +841,7 @@ static int do_dlclose(void *vhandle, int need_fini)
 							== tls_free_start)
 						/* Extend the chunk backwards. */
 						tls_free_start = tls_lmap->l_tls_offset;
-					else
-					{
+					else {
 						/*
 						 * This isn't contiguous with the last chunk
 						 * freed. One of them will be leaked.
@@ -827,14 +853,29 @@ static int do_dlclose(void *vhandle, int need_fini)
 							tls_lmap->l_tls_blocksize;
 					}
 # else
-#  error "Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined"
+#  error Either TLS_TCB_AT_TP or TLS_DTV_AT_TP must be defined
 # endif
+				} else {
+
+#define TLS_DTV_UNALLOCATED	((void *) -1l)
+
+					dtv_t *dtv = THREAD_DTV ();
+
+					_dl_assert(!(dtv[tls_lmap->l_tls_modid].pointer.is_static));
+					if (dtv[tls_lmap->l_tls_modid].pointer.val != TLS_DTV_UNALLOCATED) {
+						/* Note that free is called for NULL is well.  We
+						deallocate even if it is this dtv entry we are
+						supposed to load.  The reason is that we call
+						memalign and not malloc.  */
+						_dl_free (dtv[tls_lmap->l_tls_modid].pointer.val);
+						dtv[tls_lmap->l_tls_modid].pointer.val = TLS_DTV_UNALLOCATED;
+					}
 				}
 			}
 #endif
 
-			_dl_munmap((void*)tpnt->loadaddr, end);
-			/* Free elements in RTLD_LOCAL scope list */ 
+			DL_LIB_UNMAP (tpnt, end);
+			/* Free elements in RTLD_LOCAL scope list */
 			for (runp = tpnt->rtld_local; runp; runp = tmp) {
 				tmp = runp->next;
 				free(runp);
@@ -845,8 +886,8 @@ static int do_dlclose(void *vhandle, int need_fini)
 				_dl_loaded_modules = tpnt->next;
 				if (_dl_loaded_modules)
 					_dl_loaded_modules->prev = 0;
-			} else
-				for (run_tpnt = _dl_loaded_modules; run_tpnt; run_tpnt = run_tpnt->next)
+			} else {
+				for (run_tpnt = _dl_loaded_modules; run_tpnt; run_tpnt = run_tpnt->next) {
 					if (run_tpnt->next == tpnt) {
 						_dl_if_debug_print("removing loaded_modules: %s\n", tpnt->libname);
 						run_tpnt->next = run_tpnt->next->next;
@@ -854,6 +895,8 @@ static int do_dlclose(void *vhandle, int need_fini)
 							run_tpnt->next->prev = run_tpnt;
 						break;
 					}
+				}
+			}
 
 			/* Next, remove tpnt from the global symbol table list */
 			if (_dl_symbol_tables) {
@@ -861,7 +904,7 @@ static int do_dlclose(void *vhandle, int need_fini)
 					_dl_symbol_tables = _dl_symbol_tables->next;
 					if (_dl_symbol_tables)
 						_dl_symbol_tables->prev = 0;
-				} else
+				} else {
 					for (rpnt1 = _dl_symbol_tables; rpnt1->next; rpnt1 = rpnt1->next) {
 						if (rpnt1->next->dyn == tpnt) {
 							_dl_if_debug_print("removing symbol_tables: %s\n", tpnt->libname);
@@ -873,6 +916,7 @@ static int do_dlclose(void *vhandle, int need_fini)
 							break;
 						}
 					}
+				}
 			}
 			free(tpnt->libname);
 			free(tpnt);
@@ -881,13 +925,11 @@ static int do_dlclose(void *vhandle, int need_fini)
 	free(handle->init_fini.init_fini);
 	free(handle);
 
-#if USE_TLS
+#if defined(USE_TLS) && USE_TLS
 	/* If we removed any object which uses TLS bump the generation counter.  */
-	if (any_tls)
-	{
-		if (__builtin_expect (++_dl_tls_generation == 0, 0))
-		{
-			_dl_debug_early ("TLS generation counter wrapped!  Please report to the uClibc mailing list.\n");
+	if (any_tls) {
+		if (__builtin_expect(++_dl_tls_generation == 0, 0)) {
+			_dl_debug_early("TLS generation counter wrapped!  Please report to the uClibc mailing list.\n");
 			_dl_exit(30);
 		}
 
@@ -927,10 +969,10 @@ char *dlerror(void)
 }
 
 /*
- * Dump information to stderrr about the current loaded modules
+ * Dump information to stderr about the current loaded modules
  */
 #ifdef __USE_GNU
-static char *type[] = { "Lib", "Exe", "Int", "Mod" };
+static const char type[][4] = { "Lib", "Exe", "Int", "Mod" };
 
 int dlinfo(void)
 {
@@ -941,7 +983,7 @@ int dlinfo(void)
 	/* First start with a complete list of all of the loaded files. */
 	for (tpnt = _dl_loaded_modules; tpnt; tpnt = tpnt->next) {
 		fprintf(stderr, "\t%p %p %p %s %d %s\n",
-		        tpnt->loadaddr, tpnt, tpnt->symbol_scope,
+		        DL_LOADADDR_BASE(tpnt->loadaddr), tpnt, tpnt->symbol_scope,
 		        type[tpnt->libtype],
 		        tpnt->usage_count, tpnt->libname);
 	}
@@ -971,22 +1013,20 @@ int dladdr(const void *__address, Dl_info * __info)
 	 */
 	pelf = NULL;
 
-#if 0
-	fprintf(stderr, "dladdr( %p, %p )\n", __address, __info);
-#endif
+	_dl_if_debug_print("__address: %p  __info: %p\n", __address, __info);
+
+	__address = DL_LOOKUP_ADDRESS (__address);
 
 	for (rpnt = _dl_loaded_modules; rpnt; rpnt = rpnt->next) {
 		struct elf_resolve *tpnt;
 
 		tpnt = rpnt;
-#if 0
-		fprintf(stderr, "Module \"%s\" at %p\n",
-				tpnt->libname, tpnt->loadaddr);
-#endif
-		if (tpnt->loadaddr < (ElfW(Addr)) __address
-				&& (pelf == NULL || pelf->loadaddr < tpnt->loadaddr)) {
+
+		_dl_if_debug_print("Module \"%s\" at %p\n",
+		                   tpnt->libname, DL_LOADADDR_BASE(tpnt->loadaddr));
+
+		if (DL_ADDR_IN_LOADADDR((ElfW(Addr)) __address, tpnt, pelf))
 			pelf = tpnt;
-		}
 	}
 
 	if (!pelf) {
@@ -1001,35 +1041,65 @@ int dladdr(const void *__address, Dl_info * __info)
 		char *strtab;
 		ElfW(Sym) *symtab;
 		unsigned int hn, si, sn, sf;
-		ElfW(Addr) sa;
+		ElfW(Addr) sa = 0;
 
-		sa = 0;
+		/* Set the info for the object the address lies in */
+		__info->dli_fname = pelf->libname;
+		__info->dli_fbase = (void *)pelf->mapaddr;
+
 		symtab = (ElfW(Sym) *) (pelf->dynamic_info[DT_SYMTAB]);
 		strtab = (char *) (pelf->dynamic_info[DT_STRTAB]);
 
 		sf = sn = 0;
+
+#ifdef __LDSO_GNU_HASH_SUPPORT__
+		if (pelf->l_gnu_bitmask) {
+			for (hn = 0; hn < pelf->nbucket; hn++) {
+				si = pelf->l_gnu_buckets[hn];
+				if (!si)
+					continue;
+
+				const Elf32_Word *hasharr = &pelf->l_gnu_chain_zero[si];
+				do {
+					ElfW(Addr) symbol_addr;
+
+					symbol_addr = (ElfW(Addr)) DL_RELOC_ADDR(pelf->loadaddr, symtab[si].st_value);
+					if (symbol_addr <= (ElfW(Addr))__address && (!sf || sa < symbol_addr)) {
+						sa = symbol_addr;
+						sn = si;
+						sf = 1;
+					}
+					_dl_if_debug_print("Symbol \"%s\" at %p\n", strtab + symtab[si].st_name, symbol_addr);
+					++si;
+				} while ((*hasharr++ & 1u) == 0);
+			}
+		} else
+#endif
 		for (hn = 0; hn < pelf->nbucket; hn++) {
 			for (si = pelf->elf_buckets[hn]; si; si = pelf->chains[si]) {
 				ElfW(Addr) symbol_addr;
 
-				symbol_addr = pelf->loadaddr + symtab[si].st_value;
+				symbol_addr = (ElfW(Addr)) DL_RELOC_ADDR(pelf->loadaddr, symtab[si].st_value);
 				if (symbol_addr <= (ElfW(Addr))__address && (!sf || sa < symbol_addr)) {
 					sa = symbol_addr;
 					sn = si;
 					sf = 1;
 				}
-#if 0
-				fprintf(stderr, "Symbol \"%s\" at %p\n",
-						strtab + symtab[si].st_name, symbol_addr);
-#endif
+
+				_dl_if_debug_print("Symbol \"%s\" at %p\n",
+				                   strtab + symtab[si].st_name, symbol_addr);
 			}
 		}
 
 		if (sf) {
-			__info->dli_fname = pelf->libname;
-			__info->dli_fbase = (void *)pelf->loadaddr;
+			/* A nearest symbol has been found; fill the entries */
 			__info->dli_sname = strtab + symtab[sn].st_name;
 			__info->dli_saddr = (void *)sa;
+		} else {
+			/* No symbol found, fill entries with NULL value,
+			only the containing object will be returned. */
+			__info->dli_sname = NULL;
+			__info->dli_saddr = NULL;
 		}
 		return 1;
 	}

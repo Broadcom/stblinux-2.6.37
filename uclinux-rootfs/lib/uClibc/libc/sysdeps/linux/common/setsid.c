@@ -7,10 +7,9 @@
  * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
  */
 
-#include "syscalls.h"
+#include <sys/syscall.h>
 #include <unistd.h>
 
-libc_hidden_proto(setsid)
 
-_syscall0(pid_t, setsid);
+_syscall0(pid_t, setsid)
 libc_hidden_def(setsid)

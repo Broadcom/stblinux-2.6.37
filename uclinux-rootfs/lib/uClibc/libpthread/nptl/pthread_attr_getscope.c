@@ -22,9 +22,10 @@
 
 
 int
-__pthread_attr_getscope (attr, scope)
-     const pthread_attr_t *attr;
-     int *scope;
+attribute_protected
+__pthread_attr_getscope (
+     const pthread_attr_t *attr,
+     int *scope)
 {
   struct pthread_attr *iattr;
 

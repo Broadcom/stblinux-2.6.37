@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jan 24 17:00:47 2011
- *                 MD5 Checksum         58cf64531fe9360f10d28bf0f34f4c73
+ * Date:           Generated on         Fri Feb 11 13:12:55 2011
+ *                 MD5 Checksum         5835d95b0bcc05430916aeaf481a16d6
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/35330/rdb/a0/bchp_sun_top_ctrl.h $
  * 
- * Hydra_Software_Devel/2   1/26/11 6:16p albertl
- * SW35330-6: Updated to match RDB.
+ * Hydra_Software_Devel/4   2/11/11 7:53p jhaberf
+ * SW35330-6: post tape out update of BCHP header files
  *
  ***************************************************************************/
 
@@ -415,37 +415,25 @@
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_strap_boot_shape_5_override_MASK 0x00080000
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_strap_boot_shape_5_override_SHIFT 19
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_jtag_otp_2 [18:18] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_2_MASK 0x00040000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_2_SHIFT 18
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_2 [18:18] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_MASK 0x00040000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_SHIFT 18
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_jtag_otp_1 [17:17] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_1_MASK 0x00020000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_1_SHIFT 17
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_1 [17:17] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_MASK 0x00020000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_SHIFT 17
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_jtag_otp_0 [16:16] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_0_MASK 0x00010000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_jtag_otp_0_SHIFT 16
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_0 [16:16] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_MASK 0x00010000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_SHIFT 16
 
 /* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: reserved1 [15:04] */
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_reserved1_MASK         0x0000fff0
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_reserved1_SHIFT        4
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_bsp_otp_3 [03:03] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_3_MASK 0x00000008
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_3_SHIFT 3
-
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_bsp_otp_2 [02:02] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_2_MASK 0x00000004
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_2_SHIFT 2
-
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_bsp_otp_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_1_SHIFT 1
-
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option1_spare_bsp_otp_0 [00:00] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_0_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option1_spare_bsp_otp_0_SHIFT 0
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_bsp_spares [03:00] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_bsp_spares_MASK 0x0000000f
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_bsp_spares_SHIFT 0
 
 /***************************************************************************
  *OTP_OPTION_STATUS_0 - OTP option status register
@@ -621,37 +609,25 @@
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_strap_boot_shape_5_override_MASK 0x00080000
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_strap_boot_shape_5_override_SHIFT 19
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_jtag_otp_2 [18:18] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_2_MASK 0x00040000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_2_SHIFT 18
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_2 [18:18] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_MASK 0x00040000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_SHIFT 18
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_jtag_otp_1 [17:17] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_1_MASK 0x00020000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_1_SHIFT 17
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_1 [17:17] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_MASK 0x00020000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_SHIFT 17
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_jtag_otp_0 [16:16] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_0_MASK 0x00010000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_jtag_otp_0_SHIFT 16
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_0 [16:16] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_MASK 0x00010000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_SHIFT 16
 
 /* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: reserved1 [15:04] */
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_reserved1_MASK       0x0000fff0
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_reserved1_SHIFT      4
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_bsp_otp_3 [03:03] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_3_MASK 0x00000008
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_3_SHIFT 3
-
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_bsp_otp_2 [02:02] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_2_MASK 0x00000004
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_2_SHIFT 2
-
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_bsp_otp_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_1_SHIFT 1
-
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option1_spare_bsp_otp_0 [00:00] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_0_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option1_spare_bsp_otp_0_SHIFT 0
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_bsp_spares [03:00] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_bsp_spares_MASK 0x0000000f
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_bsp_spares_SHIFT 0
 
 /***************************************************************************
  *SEMAPHORE_0 - Semaphore channel 0

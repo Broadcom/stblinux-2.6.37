@@ -25,13 +25,10 @@
 #endif
 #include "internals.h"
 
-#ifdef SHARED
-libc_hidden_proto(memcpy)
-#endif
 
-#if !(USE_TLS && HAVE___THREAD) && defined __UCLIBC_HAS_XLOCALE__
-libc_hidden_proto(uselocale)
-#endif
+int __libc_multiple_threads attribute_hidden __attribute__((nocommon));
+strong_alias (__libc_multiple_threads, __librt_multiple_threads)
+
 
 int *
 __libc_pthread_init (functions)

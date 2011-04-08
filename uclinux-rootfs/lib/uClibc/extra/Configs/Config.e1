@@ -4,6 +4,7 @@
 #
 
 config TARGET_ARCH
+	string
 	default "e1"
 
 config FORCE_OPTIONS_FOR_ARCH
@@ -11,15 +12,4 @@ config FORCE_OPTIONS_FOR_ARCH
 	default y
 	select ARCH_BIG_ENDIAN
 	select ARCH_HAS_NO_MMU
-	select HAVE_NO_SHARED
-
-config ARCH_E1 
-	bool
-	default y
-
-config ARCH_CFLAGS
-	string
-	default "-mgnu-param"
-
-config LIBGCC_CFLAGS
-	string
+	select ARCH_HAS_NO_SHARED

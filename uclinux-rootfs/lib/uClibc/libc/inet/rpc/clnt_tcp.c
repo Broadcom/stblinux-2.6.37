@@ -65,30 +65,6 @@ static char sccsid[] = "@(#)clnt_tcp.c 1.37 87/10/05 Copyr 1984 Sun Micro";
 # include <wchar.h>
 #endif
 
-libc_hidden_proto(socket)
-libc_hidden_proto(read)
-libc_hidden_proto(write)
-libc_hidden_proto(close)
-libc_hidden_proto(authnone_create)
-libc_hidden_proto(xdrrec_create)
-libc_hidden_proto(xdrrec_endofrecord)
-libc_hidden_proto(xdrrec_skiprecord)
-libc_hidden_proto(xdr_callhdr)
-libc_hidden_proto(xdr_replymsg)
-libc_hidden_proto(xdr_opaque_auth)
-libc_hidden_proto(xdrmem_create)
-libc_hidden_proto(xdr_void)
-libc_hidden_proto(pmap_getport)
-libc_hidden_proto(_seterr_reply)
-libc_hidden_proto(connect)
-libc_hidden_proto(bindresvport)
-libc_hidden_proto(poll)
-libc_hidden_proto(fputs)
-libc_hidden_proto(__rpc_thread_createerr)
-#ifdef USE_IN_LIBIO
-libc_hidden_proto(fwprintf)
-#endif
-
 extern u_long _create_xid (void) attribute_hidden;
 
 #define MCALL_MSG_SIZE 24
@@ -117,7 +93,7 @@ static bool_t clnttcp_freeres (CLIENT *, xdrproc_t, caddr_t);
 static bool_t clnttcp_control (CLIENT *, int, char *);
 static void clnttcp_destroy (CLIENT *);
 
-static struct clnt_ops tcp_ops =
+static const struct clnt_ops tcp_ops =
 {
   clnttcp_call,
   clnttcp_abort,
@@ -141,7 +117,6 @@ static struct clnt_ops tcp_ops =
  * NB: The rpch->cl_auth is set null authentication.  Caller may wish to set this
  * something more useful.
  */
-libc_hidden_proto(clnttcp_create)
 CLIENT *
 clnttcp_create (struct sockaddr_in *raddr, u_long prog, u_long vers,
 		int *sockp, u_int sendsz, u_int recvsz)
@@ -262,14 +237,9 @@ fooy:
 libc_hidden_def(clnttcp_create)
 
 static enum clnt_stat
-clnttcp_call (h, proc, xdr_args, args_ptr, xdr_results, results_ptr, timeout)
-     CLIENT *h;
-     u_long proc;
-     xdrproc_t xdr_args;
-     caddr_t args_ptr;
-     xdrproc_t xdr_results;
-     caddr_t results_ptr;
-     struct timeval timeout;
+clnttcp_call (CLIENT *h, u_long proc, xdrproc_t xdr_args, caddr_t args_ptr,
+			  xdrproc_t xdr_results, caddr_t results_ptr,
+			  struct timeval timeout)
 {
   struct ct_data *ct = (struct ct_data *) h->cl_private;
   XDR *xdrs = &(ct->ct_xdrs);
@@ -370,9 +340,7 @@ call_again:
 }
 
 static void
-clnttcp_geterr (h, errp)
-     CLIENT *h;
-     struct rpc_err *errp;
+clnttcp_geterr (CLIENT *h, struct rpc_err *errp)
 {
   struct ct_data *ct =
   (struct ct_data *) h->cl_private;
@@ -381,10 +349,7 @@ clnttcp_geterr (h, errp)
 }
 
 static bool_t
-clnttcp_freeres (cl, xdr_res, res_ptr)
-     CLIENT *cl;
-     xdrproc_t xdr_res;
-     caddr_t res_ptr;
+clnttcp_freeres (CLIENT *cl, xdrproc_t xdr_res, caddr_t res_ptr)
 {
   struct ct_data *ct = (struct ct_data *) cl->cl_private;
   XDR *xdrs = &(ct->ct_xdrs);
@@ -394,7 +359,7 @@ clnttcp_freeres (cl, xdr_res, res_ptr)
 }
 
 static void
-clnttcp_abort ()
+clnttcp_abort (void)
 {
 }
 

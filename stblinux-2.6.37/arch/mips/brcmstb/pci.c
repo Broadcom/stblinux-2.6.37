@@ -78,6 +78,31 @@
 
 #endif /* defined(CONFIG_BCM7420) */
 
+#if defined(CONFIG_BCM7420) || defined(CONFIG_BCM7425A0)
+	/*
+	 * legacy interface - this can be combined with the 7420 code above,
+	 * once 7425a0/a1 (both non-production revs) reach EOL
+	 */
+
+#define PCIE_OUTBOUND_WIN(win, start, len) do { \
+	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_LO, \
+		(start) + MMIO_ENDIAN); \
+	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_HI, 0); \
+	} while (0)
+
+#else /* defined(CONFIG_BCM7420) || defined(CONFIG_BCM7425A0) */
+
+#define PCIE_OUTBOUND_WIN(win, start, len) do { \
+	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_LO, \
+		(start) + MMIO_ENDIAN); \
+	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_HI, 0); \
+	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_BASE_LIMIT, \
+		(((start) >> 20) << 4) | \
+		 ((((start) + (len) - 1) >> 20) << 20)); \
+	} while (0)
+
+#endif
+
 static int brcm_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	int where, int size, u32 *data);
 static int brcm_pci_write_config(struct pci_bus *bus, unsigned int devfn,
@@ -412,21 +437,10 @@ void brcm_early_pcie_setup(void)
 	BDEV_WR(BCHP_PCIE_MISC_MISC_CTRL, 0x00103000);
 
 	/* set up MIPS->PCIE memory windows (4x 128MB) */
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO,
-		PCIE_MEM_START + 0x00000000 + MMIO_ENDIAN);
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI, 0);
-
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN1_LO,
-		PCIE_MEM_START + 0x08000000 + MMIO_ENDIAN);
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN1_HI, 0);
-
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN2_LO,
-		PCIE_MEM_START + 0x10000000 + MMIO_ENDIAN);
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN2_HI, 0);
-
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN3_LO,
-		PCIE_MEM_START + 0x18000000 + MMIO_ENDIAN);
-	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN3_HI, 0);
+	PCIE_OUTBOUND_WIN(0, PCIE_MEM_START + 0x00000000, 0x08000000);
+	PCIE_OUTBOUND_WIN(1, PCIE_MEM_START + 0x08000000, 0x08000000);
+	PCIE_OUTBOUND_WIN(2, PCIE_MEM_START + 0x10000000, 0x08000000);
+	PCIE_OUTBOUND_WIN(3, PCIE_MEM_START + 0x18000000, 0x08000000);
 
 #if defined(CONFIG_BRCM_HAS_2GB_MEMC0)
 	/* set up 4GB PCIE->SCB memory window on BAR2 */

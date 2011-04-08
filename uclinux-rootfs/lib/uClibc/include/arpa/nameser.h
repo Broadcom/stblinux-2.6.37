@@ -287,7 +287,7 @@ typedef enum __ns_type {
 	ns_t_naptr = 35,	/* Naming Authority PoinTeR */
 	ns_t_kx = 36,		/* Key Exchange */
 	ns_t_cert = 37,		/* Certification record */
-	ns_t_a6 = 38,		/* IPv6 address (deprecates AAAA) */
+	ns_t_a6 = 38,		/* IPv6 address (deprecated, use ns_t_aaaa) */
 	ns_t_dname = 39,	/* Non-terminal DNAME (for IPv6) */
 	ns_t_sink = 40,		/* Kitchen sink (experimentatl) */
 	ns_t_opt = 41,		/* EDNS0 option (meta-RR) */
@@ -519,13 +519,16 @@ int		ns_parse_ttl (const char *, u_long *) __THROW;
 u_int32_t	ns_datetosecs (const char *cp, int *errp) __THROW;
 int		ns_name_ntol (const u_char *, u_char *, size_t) __THROW;
 int		ns_name_ntop (const u_char *, char *, size_t) __THROW;
+libc_hidden_proto(ns_name_ntop)
 int		ns_name_pton (const char *, u_char *, size_t) __THROW;
 int		ns_name_unpack (const u_char *, const u_char *,
 				const u_char *, u_char *, size_t) __THROW;
+libc_hidden_proto(ns_name_unpack)
 int		ns_name_pack (const u_char *, u_char *, int,
 			      const u_char **, const u_char **) __THROW;
 int		ns_name_uncompress (const u_char *, const u_char *,
 				    const u_char *, char *, size_t) __THROW;
+libc_hidden_proto(ns_name_uncompress)
 int		ns_name_compress (const char *, u_char *, size_t,
 				  const u_char **, const u_char **) __THROW;
 int		ns_name_skip (const u_char **, const u_char *) __THROW;

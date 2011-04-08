@@ -7,7 +7,7 @@
 
 /* These are carefully optimized mem*() functions for PPC written in C.
  * Don't muck around with these function without checking the generated
- * assmbler code.
+ * assembler code.
  * It is possible to optimize these significantly more by using specific
  * data cache instructions(mainly dcbz). However that requires knownledge
  * about the CPU's cache line size.
@@ -21,9 +21,7 @@
 
 #include <string.h>
 
-libc_hidden_proto(memcpy)
 
-libc_hidden_proto(memmove)
 void *memmove(void *to, const void *from, size_t n)
 {
 	unsigned long rem, chunks, tmp1, tmp2;
@@ -62,7 +60,7 @@ void *memmove(void *to, const void *from, size_t n)
 	do {
 		*--tmp_to = *--tmp_from;
 	} while (--n);
-	
+
 	return to;
  align:
 	rem = 4 - rem;

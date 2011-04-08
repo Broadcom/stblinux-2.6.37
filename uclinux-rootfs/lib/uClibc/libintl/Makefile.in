@@ -1,9 +1,11 @@
 # Makefile for uClibc
 #
-# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
 #
 # Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
 #
+
+subdirs += libintl
 
 CFLAGS-libintl := -DNOT_IN_libc -DIS_IN_libintl $(SSP_ALL_CFLAGS)
 
@@ -11,7 +13,7 @@ LDFLAGS-libintl.so := $(LDFLAGS)
 
 LIBS-libintl.so := $(LIBS)
 
-libintl_FULL_NAME := libintl-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so
+libintl_FULL_NAME := libintl-$(VERSION).so
 
 MOBJ := \
 	gettext.o ngettext.o  dgettext.o dcgettext.o dngettext.o dcngettext.o \
@@ -37,34 +39,31 @@ libintl-so-y := $(libintl_MOBJ:.o=.os)
 
 lib-a-$(UCLIBC_HAS_GETTEXT_AWARENESS) += $(top_builddir)lib/libintl.a
 lib-so-$(UCLIBC_HAS_GETTEXT_AWARENESS) += $(top_builddir)lib/libintl.so
-objclean-y += libintl_clean
+objclean-y += CLEAN_libintl
 
 ifeq ($(DOMULTI),n)
 ifeq ($(DOPIC),y)
-$(top_builddir)lib/libintl.so: $(top_builddir)lib/libintl.a $(libc)
+$(top_builddir)lib/libintl.so: $(top_builddir)lib/libintl.a $(libc.depend)
 else
-$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl_so.a $(libc)
+$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl_so.a $(libc.depend)
 endif
-	$(call link.so,$(libintl_FULL_NAME),$(MAJOR_VERSION))
+	$(call link.so,$(libintl_FULL_NAME),$(ABI_VERSION))
 else
-$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl.oS | $(libc)
-	$(call linkm.so,$(libintl_FULL_NAME),$(MAJOR_VERSION))
+$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl.oS | $(libc.depend)
+	$(call linkm.so,$(libintl_FULL_NAME),$(ABI_VERSION))
 endif
 
 $(libintl_OUT)/libintl_so.a: $(libintl-so-y)
 	$(Q)$(RM) $@
-	$(do_strip)
 	$(do_ar)
 
 $(libintl_OUT)/libintl.oS: $(libintl_MSRC)
 	$(Q)$(RM) $@
 	$(compile-m)
-	$(do_t_strip)
 
 $(top_builddir)lib/libintl.a: $(libintl-a-y)
 	$(Q)$(INSTALL) -d $(dir $@)
 	$(Q)$(RM) $@
-	$(do_strip)
 	$(do_ar)
 
 $(libintl_MOBJ): $(libintl_MSRC)
@@ -73,5 +72,5 @@ $(libintl_MOBJ): $(libintl_MSRC)
 $(libintl_MOBJ:.o=.os): $(libintl_MSRC)
 	$(compile.m)
 
-libintl_clean:
-	$(RM) $(libintl_OUT)/*.{o,os,a}
+CLEAN_libintl:
+	$(do_rm) $(addprefix $(libintl_OUT)/*., o os oS a)
