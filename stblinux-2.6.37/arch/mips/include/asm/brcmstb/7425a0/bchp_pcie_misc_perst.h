@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May 17 04:43:10 2010
- *                 MD5 Checksum         d3eddea23beec7e33d13b4bcb5193126
+ * Date:           Generated on         Tue Mar 15 16:07:04 2011
+ *                 MD5 Checksum         0ee19441ea736d2ffddf4654d321c8fb
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7425/rdb/a0/bchp_pcie_misc_perst.h $
+ * 
+ * Hydra_Software_Devel/2   3/17/11 11:35a vanessah
+ * SW7425-6: sync with RDB
  *
  ***************************************************************************/
 
@@ -55,6 +58,7 @@
 /* PCIE_MISC_PERST :: ECO_CTRL_PERST :: ECO_PERST_N [15:00] */
 #define BCHP_PCIE_MISC_PERST_ECO_CTRL_PERST_ECO_PERST_N_MASK       0x0000ffff
 #define BCHP_PCIE_MISC_PERST_ECO_CTRL_PERST_ECO_PERST_N_SHIFT      0
+#define BCHP_PCIE_MISC_PERST_ECO_CTRL_PERST_ECO_PERST_N_DEFAULT    0
 
 /***************************************************************************
  *CCE_STATUS - Config Copy Engine Status

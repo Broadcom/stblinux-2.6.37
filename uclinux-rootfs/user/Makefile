@@ -12,8 +12,6 @@ ifndef ROOTDIR
 ROOTDIR=..
 endif
 
-MAKE	?=	make
-
 UCLINUX_BUILD_USER=1
 -include $(LINUX_CONFIG)
 #-include $(CONFIG_CONFIG)
@@ -338,18 +336,24 @@ endif
 endif
 
 all:
-	for i in $(dir_v) $(sort $(dir_y)) ; do  $(MAKE) -C $$i || exit $? ; done
+	@for i in $(dir_v) $(sort $(dir_y)); do \
+		echo "--> making all in user/$$i"; \
+		$(MAKE) -C $$i || exit $$?; \
+	done
 
 romfs:
-	for i in $(dir_v) $(sort $(dir_y)) ; do  $(MAKE) -C $$i romfs || exit $? ; done
+	@for i in $(dir_v) $(sort $(dir_y)); do \
+		echo "--> making romfs in user/$$i"; \
+		$(MAKE) -C $$i romfs || exit $$?; \
+	done
 
 clean:
-	-for i in $(dir_v) $(sort $(dir_y) $(dir_n) $(dir_) $(dir_clean) ) ; do \
+	-for i in $(dir_v) $(sort $(dir_y) $(dir_n) $(dir_) $(dir_clean) ); do \
 		[ ! -d $$i ] || $(MAKE) -C $$i clean; \
 	done
 
 distclean:
-	-for i in $(dir_v) $(sort $(dir_y) $(dir_n) $(dir_)) ; do \
+	-for i in $(dir_v) $(sort $(dir_y) $(dir_n) $(dir_)); do \
 		[ ! -d $$i ] || $(MAKE) -C $$i distclean; \
 	done
 

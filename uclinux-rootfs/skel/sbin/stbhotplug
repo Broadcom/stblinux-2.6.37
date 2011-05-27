@@ -19,8 +19,9 @@ if [ "$1" = "firmware" ]; then
 fi
 
 # network hotplug
+# NOTE: this only operates on real NICs (ethN), not lo/br0/sit0/etc.
 
-if [ "$1" = "net" ]; then
+if [ "$1" = "net" -a -e /sys/class/net/$INTERFACE/device ]; then
 	if [ "$ACTION" = "add" ]; then
 		/sbin/ifup $INTERFACE
 	elif [ "$ACTION" = "remove" ]; then

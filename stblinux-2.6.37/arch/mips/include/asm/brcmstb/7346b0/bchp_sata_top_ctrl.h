@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May 17 04:07:55 2010
- *                 MD5 Checksum         47fd0602d6c7abb64bf56c6d387b1fe1
+ * Date:           Generated on         Wed Apr 13 13:34:23 2011
+ *                 MD5 Checksum         c1b53a9408066d1e6123c0860dfb8065
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7346/rdb/b0/bchp_sata_top_ctrl.h $
+ * 
+ * Hydra_Software_Devel/1   4/14/11 5:13p albertl
+ * SW7346-143: Initial revision.
  *
  ***************************************************************************/
 
@@ -60,10 +63,12 @@
 /* SATA_TOP_CTRL :: Version :: major_version [07:04] */
 #define BCHP_SATA_TOP_CTRL_Version_major_version_MASK              0x000000f0
 #define BCHP_SATA_TOP_CTRL_Version_major_version_SHIFT             4
+#define BCHP_SATA_TOP_CTRL_Version_major_version_DEFAULT           0
 
 /* SATA_TOP_CTRL :: Version :: minor_version [03:00] */
 #define BCHP_SATA_TOP_CTRL_Version_minor_version_MASK              0x0000000f
 #define BCHP_SATA_TOP_CTRL_Version_minor_version_SHIFT             0
+#define BCHP_SATA_TOP_CTRL_Version_minor_version_DEFAULT           0
 
 /***************************************************************************
  *BUS_CTRL - SATA3 System Bus Access Control Register
@@ -71,6 +76,7 @@
 /* SATA_TOP_CTRL :: BUS_CTRL :: bus_ctrl [31:00] */
 #define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_MASK                  0xffffffff
 #define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_SHIFT                 0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_DEFAULT               0
 
 /***************************************************************************
  *TP_CTRL - SATA3 Test Port Control register
@@ -78,6 +84,7 @@
 /* SATA_TOP_CTRL :: TP_CTRL :: tp_ctrl [31:00] */
 #define BCHP_SATA_TOP_CTRL_TP_CTRL_tp_ctrl_MASK                    0xffffffff
 #define BCHP_SATA_TOP_CTRL_TP_CTRL_tp_ctrl_SHIFT                   0
+#define BCHP_SATA_TOP_CTRL_TP_CTRL_tp_ctrl_DEFAULT                 0
 
 /***************************************************************************
  *PHY_CTRL_1 - SATA3 phy interface control 1
@@ -85,6 +92,7 @@
 /* SATA_TOP_CTRL :: PHY_CTRL_1 :: phy_ctrl [31:00] */
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_1_phy_ctrl_MASK                0xffffffff
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_1_phy_ctrl_SHIFT               0
+#define BCHP_SATA_TOP_CTRL_PHY_CTRL_1_phy_ctrl_DEFAULT             0
 
 /***************************************************************************
  *PHY_CTRL_2 - SATA3 phy interface control 2
@@ -92,6 +100,7 @@
 /* SATA_TOP_CTRL :: PHY_CTRL_2 :: phy_ctrl [31:00] */
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_2_phy_ctrl_MASK                0xffffffff
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_2_phy_ctrl_SHIFT               0
+#define BCHP_SATA_TOP_CTRL_PHY_CTRL_2_phy_ctrl_DEFAULT             0
 
 /***************************************************************************
  *PHY_CTRL_3 - SATA3 phy interface control 3
@@ -99,6 +108,7 @@
 /* SATA_TOP_CTRL :: PHY_CTRL_3 :: phy_ctrl [31:00] */
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_3_phy_ctrl_MASK                0xffffffff
 #define BCHP_SATA_TOP_CTRL_PHY_CTRL_3_phy_ctrl_SHIFT               0
+#define BCHP_SATA_TOP_CTRL_PHY_CTRL_3_phy_ctrl_DEFAULT             0
 
 /***************************************************************************
  *SATA_TP_OUT - SATA3 TP OUT

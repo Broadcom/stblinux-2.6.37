@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Aug 18 11:00:53 2010
- *                 MD5 Checksum         1af347fab7c27212d0dc8fd98a206da1
+ * Date:           Generated on         Mon Apr 11 11:55:15 2011
+ *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,11 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/a0/bchp_ddr40_phy_control_regs_1.h $
+ * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_ddr40_phy_control_regs_1.h $
  * 
- * Hydra_Software_Devel/1   8/18/10 4:54p tdo
- * SW7425-6: Create scripts and checkin initial version of RDB header
- * files
+ * Hydra_Software_Devel/2   4/11/11 11:57p vanessah
+ * SW7425-112: Update rdb files for 7425 B0.
  *
  ***************************************************************************/
 
@@ -58,6 +57,7 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_IDLE_PAD_CONTROL 0x003c6038 /* Idle mode SSTL pad control register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_ZQ_PVT_COMP_CTL 0x003c603c /* PVT Compensation control and status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_DRIVE_PAD_CTL 0x003c6040 /* SSTL pad drive characteristics control register */
+#define BCHP_DDR40_PHY_CONTROL_REGS_1_VDL_RD_DATA_DLY_STATUS 0x003c6044 /* PHY Auto Init rd_data_dly result register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_VDL_CALIBRATE 0x003c6048 /* PHY VDL calibration control register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_VDL_CALIB_STATUS 0x003c604c /* PHY VDL calibration status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_1_VDL_DQ_CALIB_STATUS 0x003c6050 /* PHY DQ VDL calibration status register */

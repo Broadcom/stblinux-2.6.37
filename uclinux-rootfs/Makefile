@@ -31,7 +31,6 @@ CONFIG_CONFIG	:= $(ROOTDIR)/config/.config
 ARCH_CONFIG	:= $(ROOTDIR)/config.arch
 ROMFSDIR	:= $(ROOTDIR)/romfs
 ROMFSINST	:= $(ROOTDIR)/bin/romfs-inst.sh
-MAKEARCH	 = $(MAKE)
 LIBCDIR		:= uClibc
 
 CFG		:= perl -w bin/config.pl
@@ -40,7 +39,7 @@ CHKPATH		:= perl -w bin/checkpath.pl
 SHELL		:= /bin/bash
 PATH		:= $(shell $(CHKPATH) -a)
 export ROOTDIR LINUXDIR LINUX_CONFIG CONFIG_CONFIG ARCH_CONFIG ROMFSDIR \
-	ROMFSINST MAKEARCH LIBCDIR SHELL PATH 
+	ROMFSINST LIBCDIR SHELL PATH
 
 # hostname of TFTP server (defaults to the build machine)
 TFTPHOST	:= $(shell hostname)
@@ -72,7 +71,8 @@ MAKEOPTS	:= TFTPHOST=$(TFTPHOST) TFTPDIR=$(TFTPDIR) TFTPPATH=$(TFTPPATH)
 
 .PHONY: images
 images: .target
-	$(MAKE) $(MAKEOPTS) initrd_kernel kernel
+	$(MAKE) $(MAKEOPTS) initrd_kernel
+	$(MAKE) $(MAKEOPTS) kernel
 	bin/build_rootfs_images.sh
 	@echo ""
 	@echo "Build complete.  Images are in images/"
@@ -103,9 +103,13 @@ initrd_kernel: .target chkpath
 	fi
 	# build/install rootfs contents
 	if [[ "$(SUBDIRS)" != linux* ]]; then \
-		$(MAKE) -C lib all romfs \
+		$(MAKE) -C lib all \
 			INITRD_SUBDIR="$(SUBDIRS)" || exit 1 ; \
-		$(MAKE) -C user all romfs \
+		$(MAKE) -C user all \
+			INITRD_SUBDIR="$(SUBDIRS)" || exit 1 ; \
+		$(MAKE) -j1 -C lib romfs \
+			INITRD_SUBDIR="$(SUBDIRS)" || exit 1 ; \
+		$(MAKE) -j1 -C user romfs \
 			INITRD_SUBDIR="$(SUBDIRS)" || exit 1 ; \
 	fi
 	# configure kernel for initramfs, then build it
@@ -133,7 +137,10 @@ kernel_sign: .target chkpath
 	mkdir -p initramfs/{bin,dev,etc,proc,root,sbin,tmp};\
 	chmod -R a+x initramfs/{bin,sbin}
 	#build rootfs signing app.
-	$(MAKE) -C user all romfs BUILD_ROOT_SIGN=y SIGLIST=$(SIGLIST) ROOTFSDIR=$(ROOTFSDIR)
+	$(MAKE) -j1 -C user all \
+		BUILD_ROOT_SIGN=y SIGLIST=$(SIGLIST) ROOTFSDIR=$(ROOTFSDIR)
+	$(MAKE) -j1 -C user romfs \
+		BUILD_ROOT_SIGN=y SIGLIST=$(SIGLIST) ROOTFSDIR=$(ROOTFSDIR)
 	#build kernel.
 	$(CFG) initramfs-sign 
 	$(MAKE) -C $(LINUXDIR) vmlinux SUBDIRS= 
@@ -155,11 +162,13 @@ vmlinuz-%:
 
 .PHONY: kernels-%
 kernels-%:
-	$(MAKE) $(MAKEOPTS) vmlinuz-initrd-$* vmlinuz-$*
+	$(MAKE) $(MAKEOPTS) vmlinuz-initrd-$*
+	$(MAKE) $(MAKEOPTS) vmlinuz-$*
 
 .PHONY: images-%
 images-%:
-	$(MAKE) $(MAKEOPTS) defaults-$* images
+	$(MAKE) $(MAKEOPTS) defaults-$*
+	$(MAKE) $(MAKEOPTS) images
 
 .PHONY: release
 release:
@@ -222,7 +231,7 @@ defaults-%: chkpath
 	@touch .dirty
 	@chmod -R 0755 config/scripts/{Configure,Menuconfig} bin
 	$(CFG) defaults $*
-	$(MAKE) silentoldconfig
+	$(MAKE) -j1 silentoldconfig
 	@echo "***************************************************************"
 	@echo "* Build configuration"
 	@echo "*"

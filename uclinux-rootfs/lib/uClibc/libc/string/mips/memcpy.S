@@ -40,7 +40,7 @@
 #  define SDLO	sdl		/* low part is left in little-endian	*/
 #endif
 
-ENTRY (memcpy)
+ENTRY (__uclibc_memcpy)
 	.set	noreorder
 
 	slti	t0, a2, 16		# Less than 16?
@@ -137,7 +137,7 @@ L(shfth):
 	move	a2, t0
 
 	.set	reorder
-END (memcpy)
+END (__uclibc_memcpy)
 
 #else /* !__mips64 */
 
@@ -153,7 +153,7 @@ END (memcpy)
 #  define SWLO	swl		/* low part is left in little-endian	*/
 #endif
 
-ENTRY (memcpy)
+ENTRY (__uclibc_memcpy)
 	.set	noreorder
 
 	slti	t0, a2, 8		# Less than 8?
@@ -250,8 +250,8 @@ L(shfth):
 	move	a2, t0
 
 	.set	reorder
-END (memcpy)
+END (__uclibc_memcpy)
 
 #endif /* !__mips64 */
 
-libc_hidden_def(memcpy)
+libc_hidden_def(__uclibc_memcpy)

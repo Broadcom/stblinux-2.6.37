@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-0.1pre Kernel Configuration
-# Sat Feb 19 18:09:09 2011
+# Linux/mips 2.6.37-1.1pre Kernel Configuration
+# Thu Mar 31 13:30:31 2011
 #
 CONFIG_MIPS=y
 
@@ -52,8 +52,6 @@ CONFIG_BRCMSTB=y
 # CONFIG_ALCHEMY_GPIO_INDIRECT is not set
 CONFIG_ARCH_SPARSEMEM_ENABLE=y
 CONFIG_CAVIUM_OCTEON_HELPER=y
-CONFIG_LOONGSON_UART_BASE=y
-# CONFIG_LOONGSON_MC146818 is not set
 
 #
 # Broadcom STB options

@@ -50,6 +50,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+
 
 #include <pmlib.h>
 
@@ -63,6 +68,7 @@ void usage(void)
 	printf("  moca 1       power up MoCA controller(s)\n");
 	printf("  sata 1       power up SATA controller\n");
 	printf("  tp1 0        power down TP1 (second CPU thread)\n");
+	printf("  memc1 0      power down MEMC1 (if available)\n");
 	printf("  cpu 4        set CPU clock to BASE/4\n");
 	printf("  pll 1        set alternate CPU PLL mode #1\n");
 	printf("  ddr 64       enable DDR self-refresh after 64 idle cycles\n");
@@ -83,7 +89,7 @@ int main(int argc, char **argv)
 	struct brcm_pm_state state;
 	struct brcm_pm_cfg cfg;
 	void *brcm_pm_ctx;
-	int val, has_val = 0, ret;
+	int val = 0, has_val = 0, ret;
 	char *cmd, *arg;
 
 	while((ret = getopt(argc, argv, "h")) != -1) {
@@ -116,6 +122,7 @@ int main(int argc, char **argv)
 		printf("usb:          %d\n", state.usb_status);
 		printf("sata:         %d\n", state.sata_status);
 		printf("tp1:          %d\n", state.tp1_status);
+		printf("memc1:        %d\n", state.memc1_status);
 		printf("cpu_base:     %d\n", state.cpu_base);
 		printf("cpu_divisor:  %d\n", state.cpu_divisor);
 		printf("cpu_pll:      %d\n", state.cpu_pll);
@@ -166,7 +173,7 @@ int main(int argc, char **argv)
 	{
 		state.usb_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (USB)");
 		return(0);
 	}
 
@@ -174,7 +181,7 @@ int main(int argc, char **argv)
 	{
 		state.moca_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (MOCA)");
 		return(0);
 	}
 
@@ -182,7 +189,7 @@ int main(int argc, char **argv)
 	{
 		state.sata_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (SATA)");
 		return(0);
 	}
 
@@ -190,7 +197,15 @@ int main(int argc, char **argv)
 	{
 		state.tp1_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (TP1)");
+		return(0);
+	}
+
+	if(! strcmp(cmd, "memc1"))
+	{
+		state.memc1_status = val;
+		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
+			fatal("can't set PM state (MEMC1)");
 		return(0);
 	}
 
@@ -198,7 +213,7 @@ int main(int argc, char **argv)
 	{
 		state.cpu_divisor = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (CPU)");
 		return(0);
 	}
 
@@ -206,7 +221,7 @@ int main(int argc, char **argv)
 	{
 		state.ddr_timeout = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (DDR)");
 		return(0);
 	}
 
@@ -214,7 +229,7 @@ int main(int argc, char **argv)
 	{
 		state.cpu_pll = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state");
+			fatal("can't set PM state (CPU PLL)");
 		return(0);
 	}
 

@@ -9,6 +9,10 @@
 
 #include <sys/syscall.h>
 
+#ifdef __UCLIBC_HAS_THREADS_NATIVE__
+#include <pthreadP.h>
+#endif
+
 #if defined __USE_POSIX
 #include <signal.h>
 

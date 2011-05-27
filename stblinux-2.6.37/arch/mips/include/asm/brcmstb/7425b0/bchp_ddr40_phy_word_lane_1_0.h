@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jun 21 14:20:43 2010
- *                 MD5 Checksum         c4418434de1c0112239dd82af43be8cb
+ * Date:           Generated on         Mon Apr 11 12:01:44 2011
+ *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7422/rdb/a0/bchp_ddr40_phy_word_lane_1_0.h $
+ * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_ddr40_phy_word_lane_1_0.h $
  * 
- * Hydra_Software_Devel/2   6/21/10 6:14p albertl
- * SW7422-1: Updated to match RDB.
+ * Hydra_Software_Devel/2   4/11/11 11:57p vanessah
+ * SW7425-112: Update rdb files for 7425 B0.
  *
  ***************************************************************************/
 
@@ -132,6 +132,7 @@
 #define BCHP_DDR40_PHY_WORD_LANE_1_0_DRIVE_PAD_CTL 0x003b65a4 /* SSTL pad drive characteristics control register */
 #define BCHP_DDR40_PHY_WORD_LANE_1_0_CLOCK_PAD_DISABLE 0x003b65a8 /* Clock pad disable register */
 #define BCHP_DDR40_PHY_WORD_LANE_1_0_WR_PREAMBLE_MODE 0x003b65ac /* Write cycle preamble control register */
+#define BCHP_DDR40_PHY_WORD_LANE_1_0_PHYBIST_VDL_ADJ 0x003b65b0 /* PHYBIST mode VDL step select adjustment register */
 
 #endif /* #ifndef BCHP_DDR40_PHY_WORD_LANE_1_0_H__ */
 

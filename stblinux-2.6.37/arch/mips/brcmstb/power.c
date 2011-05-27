@@ -342,6 +342,7 @@ static void brcm_pm_network_enable(void);
 static void brcm_pm_usb_disable(void);
 static void brcm_pm_usb_enable(void);
 static void brcm_pm_set_ddr_timeout(int);
+static void brcm_pm_initialize(void);
 
 static int brcm_pm_ddr_timeout;
 static unsigned long brcm_pm_standby_flags;
@@ -459,6 +460,72 @@ ssize_t brcm_pm_store_standby_flags(struct device *dev,
 	return count;
 }
 
+/*
+ * brcm_pm_memc1_power
+ * Power state of secondary memory controller
+ * 0 - complete power down (with loss of content)
+ * 1 - full power mode
+ * 2 - SSPD (content preserved)
+ * Direct transition between 0 and 2 is not supported
+ */
+#define BRCM_PM_MEMC1_OFF	0
+#define BRCM_PM_MEMC1_ON	1
+#define BRCM_PM_MEMC1_SSPD	2
+
+static int brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
+void __weak brcm_pm_memc1_suspend(void) {}
+void __weak brcm_pm_memc1_resume(void) {}
+void __weak brcm_pm_memc1_powerdown(void) {}
+int  __weak brcm_pm_memc1_powerup(void) { return 0; }
+
+ssize_t brcm_pm_show_memc1_power(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", brcm_pm_memc1_power);
+}
+
+ssize_t brcm_pm_store_memc1_power(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	int val;
+
+	if (sscanf(buf, "%d", &val) != 1)
+		return -EINVAL;
+
+	/* check for no change */
+	if (val == brcm_pm_memc1_power)
+		return count;
+
+	switch (val) {
+	case BRCM_PM_MEMC1_OFF:
+		if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON)
+			brcm_pm_memc1_powerdown();
+		else
+			return -EINVAL;
+		break;
+	case BRCM_PM_MEMC1_ON:
+		if (brcm_pm_memc1_power == BRCM_PM_MEMC1_OFF) {
+			if (brcm_pm_memc1_powerup())
+				return -EINVAL;
+		} else if (brcm_pm_memc1_power == BRCM_PM_MEMC1_SSPD)
+			brcm_pm_memc1_resume();
+		else
+			return -EINVAL;
+		break;
+	case BRCM_PM_MEMC1_SSPD:
+		if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON)
+			brcm_pm_memc1_suspend();
+		else
+			return -EINVAL;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	brcm_pm_memc1_power = val;
+	return count;
+}
+
 /* Boot time functions */
 
 static int __init brcm_pm_init(void)
@@ -467,6 +534,8 @@ static int __init brcm_pm_init(void)
 		return 0;
 	if (!brcm_moca_enabled)
 		brcm_pm_moca_disable();
+	/* chip specific initialization */
+	brcm_pm_initialize();
 	return 0;
 }
 
@@ -490,7 +559,7 @@ static int __clk_enable(struct clk *clk)
 	if (++(clk->refcnt) == 1 && brcm_pm_enabled) {
 		if (clk->parent)
 			__clk_enable(clk->parent);
-		printk(KERN_INFO "brcm-pm: enabling %s clocks\n",
+		printk(KERN_DEBUG "brcm-pm: enabling %s clocks\n",
 			clk->name);
 		clk->enable();
 	}
@@ -500,7 +569,7 @@ static int __clk_enable(struct clk *clk)
 static void __clk_disable(struct clk *clk)
 {
 	if (--(clk->refcnt) == 0 && brcm_pm_enabled) {
-		printk(KERN_INFO "brcm-pm: disabling %s clocks\n",
+		printk(KERN_DEBUG "brcm-pm: disabling %s clocks\n",
 			clk->name);
 		clk->disable();
 		if (clk->parent)
@@ -733,6 +802,8 @@ early_initcall(brcm_pm_wakeup_init);
 /* Per-block power management operations pair.
  * Parameter flags can be later used to control wake-up capabilities
  */
+static __maybe_unused void brcm_ddr_aphy_initialize(void);
+
 struct brcm_chip_pm_block_ops {
 	void (*enable)(u32 flags);
 	void (*disable)(u32 flags);
@@ -745,6 +816,7 @@ struct brcm_chip_pm_ops {
 	struct brcm_chip_pm_block_ops usb;
 	struct brcm_chip_pm_block_ops moca_genet;
 	struct brcm_chip_pm_block_ops network;
+	void (*initialize)(void);
 	void (*suspend)(void);
 	void (*resume)(void);
 	/* for chip specific clock mappings ( see #SWLINUX-1764 ) */
@@ -769,6 +841,43 @@ static __maybe_unused struct clk *brcm_pm_clk_get(struct device *dev,
 	}
 	return NULL;
 }
+
+/***********************************************************************
+ * Encryption setup for S3 suspend
+ ***********************************************************************/
+static struct brcm_dram_encoder_ops *dram_encoder_ops;
+
+void brcm_pm_set_dram_encoder(struct brcm_dram_encoder_ops *ops)
+{
+	dram_encoder_ops = ops;
+}
+EXPORT_SYMBOL(brcm_pm_set_dram_encoder);
+
+#ifdef CONFIG_BRCM_HAS_AON
+
+int brcm_pm_dram_encoder_prepare(struct brcm_mem_transfer *param)
+{
+	if (dram_encoder_ops && dram_encoder_ops->prepare)
+		return dram_encoder_ops->prepare(param);
+	return -1;
+}
+EXPORT_SYMBOL(brcm_pm_dram_encoder_prepare);
+
+int brcm_pm_dram_encoder_complete(struct brcm_mem_transfer *param)
+{
+	if (dram_encoder_ops && dram_encoder_ops->complete)
+		return dram_encoder_ops->complete(param);
+	return -1;
+}
+EXPORT_SYMBOL(brcm_pm_dram_encoder_complete);
+
+void brcm_pm_dram_encoder_start(void)
+{
+	if (dram_encoder_ops && dram_encoder_ops->start)
+		dram_encoder_ops->start();
+}
+EXPORT_SYMBOL(brcm_pm_dram_encoder_start);
+#endif
 
 #if defined(CONFIG_BCM7125)
 static void bcm7125_pm_sata_disable(u32 flags)
@@ -844,21 +953,8 @@ static void bcm7125_pm_suspend(void)
 	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_216, 1);
 	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 1);
 
-	/* MEMC0 */
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_POWERDOWN,
-		PLLCLKS_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
 }
 
 static void bcm7125_pm_resume(void)
@@ -876,6 +972,7 @@ static void bcm7125_pm_resume(void)
 	BDEV_WR_F_RB(CLKGEN_CLK_27_OUT_PM_CTRL, DIS_CLK_27_OUT, 0);
 	BDEV_WR_RB(BCHP_HIF_TOP_CTRL_PM_CTRL, 0x00);
 
+	brcm_ddr_aphy_initialize();
 }
 
 #define PM_OPS_DEFINED
@@ -888,6 +985,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	.usb.disable		= bcm7125_pm_usb_disable,
 	.suspend		= bcm7125_pm_suspend,
 	.resume			= bcm7125_pm_resume,
+	.initialize		= brcm_ddr_aphy_initialize,
 };
 #endif
 
@@ -1008,45 +1106,21 @@ static void bcm7420_pm_suspend(void)
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_PLL_6, 0x2);
 	BDEV_WR_F_RB(CLK_SCRATCH, CML_REPEATER_2_POWERDOWN, 1);
 
-	/* MEMC1 */
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
-		HIZ_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_POWERDOWN,
-		PLLCLKS_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_1_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_1_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
 
-	/* MEMC0 */
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_POWERDOWN,
-		PLLCLKS_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	if (!(brcm_pm_standby_flags & BRCM_STANDBY_DDR_PLL_ON))
-		BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1,
-				PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	if (!(brcm_pm_standby_flags & BRCM_STANDBY_DDR_PLL_ON))
-		BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1,
-				PWRDN_DLL_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1,
+		PWRDN_DLL_ON_SELFREF,
+		!(brcm_pm_standby_flags & BRCM_STANDBY_DDR_PLL_ON));
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1,
+		PWRDN_DLL_ON_SELFREF,
+		!(brcm_pm_standby_flags & BRCM_STANDBY_DDR_PLL_ON));
 }
 
 static void bcm7420_pm_resume(void)
 {
+	brcm_ddr_aphy_initialize();
+
 	/* system PLLs */
 	BDEV_WR_F_RB(CLK_SCRATCH, CML_REPEATER_2_POWERDOWN, 0);
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_PLL_6, 0x1);
@@ -1090,6 +1164,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	.suspend		= bcm7420_pm_suspend,
 	.resume			= bcm7420_pm_resume,
 	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_aphy_initialize,
 };
 #endif
 
@@ -1328,21 +1403,8 @@ static void bcm7340_pm_suspend(void)
 	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN, 1);
 	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN_LDO, 1);
 
-	/* MEMC0 */
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_POWERDOWN,
-		PLLCLKS_OFF_ON_SELFREF, 1);
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
 }
 
 static void bcm7340_pm_resume(void)
@@ -1382,6 +1444,8 @@ static void bcm7340_pm_resume(void)
 	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_81, 0);
 	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH5_PM_CTRL, PWRDN_CH5_PLLMAIN, 0);
 	BDEV_WR_F_RB(CLKGEN_PAD_CLK_PM_CTRL, DIS_CLK_33_27_PCI, 0);
+
+	brcm_ddr_aphy_initialize();
 }
 
 #define PM_OPS_DEFINED
@@ -1395,6 +1459,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	.suspend		= bcm7340_pm_suspend,
 	.resume			= bcm7340_pm_resume,
 	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_aphy_initialize,
 };
 #endif
 
@@ -1513,20 +1578,9 @@ static void bcm7342_pm_suspend(void)
 	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, POWERDOWN, 1);
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, DIS_CH, 1);
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, EN_CMLBUF, 0);
-	/* MEMC0 */
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1,
-		PWRDN_DLL_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_POWERDOWN, PLLCLKS_OFF_ON_SELFREF, 1);
+
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
 }
 
 static void bcm7342_pm_resume(void)
@@ -1547,6 +1601,8 @@ static void bcm7342_pm_resume(void)
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, EN_CMLBUF, 1);
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, DIS_CH, 0);
 	BDEV_WR_F_RB(CLK_PCI_OUT_CLK_PM_CTRL, DIS_PCI_OUT_CLK, 0);
+
+	brcm_ddr_aphy_initialize();
 }
 
 #define PM_OPS_DEFINED
@@ -1562,6 +1618,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	.suspend		= bcm7342_pm_suspend,
 	.resume			= bcm7342_pm_resume,
 	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_aphy_initialize,
 };
 #endif
 
@@ -1708,34 +1765,34 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 
 #if defined(CONFIG_BCM7425)
 
-static int mem_power_down = 0;
+static int mem_power_down;
 /* IMPORTANT: must be done in TWO steps per RDB note */
 #define POWER_UP_MEMORY(core) \
-	do { \
-		BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-			core ## _POWER_SWITCH_MEMORY, 2); \
-		udelay(10); \
-		BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-			core ## _POWER_SWITCH_MEMORY, 0); \
-	} while (0)
+do { \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
+		core ## _POWER_SWITCH_MEMORY, 2); \
+	udelay(10); \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
+		core ## _POWER_SWITCH_MEMORY, 0); \
+} while (0)
 
 #define POWER_UP_MEMORY_A(core, mask, suffix) \
-	do { \
+do { \
 	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY_ ## suffix,\
 		mask ## _POWER_SWITCH_MEMORY_ ## suffix, 2); \
 	udelay(10); \
 	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY_ ## suffix,\
 		mask ## _POWER_SWITCH_MEMORY_ ## suffix, 0); \
-	} while (0)
+} while (0)
 
 #define POWER_UP_MEMORY2(core, mask) \
-	do { \
-		BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-			mask ## _POWER_SWITCH_MEMORY, 2); \
-		udelay(10); \
-		BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-			mask ## _POWER_SWITCH_MEMORY, 0); \
-	} while (0)
+do { \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
+		mask ## _POWER_SWITCH_MEMORY, 2); \
+	udelay(10); \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
+		mask ## _POWER_SWITCH_MEMORY, 0); \
+} while (0)
 
 static void bcm7425_pm_usb_disable(u32 flags)
 {
@@ -1841,7 +1898,7 @@ static void bcm7425_pm_usb_enable(u32 flags)
 
 static void bcm7425_pm_sata_disable(u32 flags)
 {
-	/* 
+	/*
 	 * TODO: need to find out how to reverse this
 	 */
 	/*
@@ -1991,59 +2048,16 @@ BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
 
 static void bcm7425_pm_suspend(void)
 {
-	u32 result;
-
-	/* MEMC_1 */
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 0);
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
-		PHY_IDLE_ENABLE, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
-		HIZ_ON_SELFREF, 1);
-	BDEV_WR_RB(BCHP_DDR40_PHY_CONTROL_REGS_1_IDLE_PAD_CONTROL,
-		0x132);
-	BDEV_WR_RB(BCHP_DDR40_PHY_WORD_LANE_0_1_IDLE_PAD_CONTROL,
-		BDEV_RD(BCHP_DDR40_PHY_WORD_LANE_0_1_IDLE_PAD_CONTROL) |
-			0xFFFFF);
-	BDEV_WR_RB(BCHP_DDR40_PHY_WORD_LANE_1_1_IDLE_PAD_CONTROL,
-		BDEV_RD(BCHP_DDR40_PHY_WORD_LANE_1_1_IDLE_PAD_CONTROL) |
-			0xFFFFF);
-
-	BDEV_WR_F_RB(MEMC_DDR_1_SSPD_CMD, SSPD, 1);
-	do {
-		result = BDEV_RD_F(MEMC_DDR_1_POWER_DOWN_STATUS, SSPD);
-	} while (!result);
-
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_SYS_PLL_PWRDN_ref_clk_sel,
-		PWRDN, 1);
-	BDEV_WR_RB(BCHP_DDR40_PHY_CONTROL_REGS_1_PLL_CONFIG, 3);
-
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_POWER_SWITCH_MEMORY,
-		DDR1_POWER_SWITCH_MEMORY, 3);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_MEMORY_STANDBY_ENABLE,
-		DDR1_MEMORY_STANDBY_ENABLE, 1);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_1_32_POWER_MANAGEMENT,
-		MEMSYS_PLL_PWRDN_POWER_MANAGEMENT, 1);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_SCB_CLOCK_ENABLE, 0);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_108_CLOCK_ENABLE, 0);
-
-	/* SECTOP */
-	BDEV_WR_F_RB(CLKGEN_SECTOP_INST_MEMORY_STANDBY_ENABLE,
-		SEC_MEMORY_STANDBY_ENABLE, 1);
-	BDEV_WR_F_RB(CLKGEN_SECTOP_INST_CLOCK_ENABLE,
-		SEC_ALTERNATE_SCB_CLOCK_ENABLE, 0);
-
+#ifdef CONFIG_BCM7425A0
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 1);
+#endif
 }
 
 static void bcm7425_pm_resume(void)
 {
-	/* SECTOP */
-	BDEV_WR_F_RB(CLKGEN_SECTOP_INST_MEMORY_STANDBY_ENABLE,
-		SEC_MEMORY_STANDBY_ENABLE, 0);
-	BDEV_WR_F_RB(CLKGEN_SECTOP_INST_CLOCK_ENABLE,
-		SEC_ALTERNATE_SCB_CLOCK_ENABLE, 1);
+#ifdef CONFIG_BCM7425A0
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 0);
+#endif
 }
 
 #define PM_OPS_DEFINED
@@ -2068,6 +2082,40 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 /* default structure - no pm callbacks available */
 static struct brcm_chip_pm_ops chip_pm_ops;
 #endif
+
+static __maybe_unused void brcm_ddr_aphy_initialize(void)
+{
+#ifdef BCHP_MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL
+	/* MEMC0 */
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
+		DEVCLK_OFF_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_0_POWERDOWN,
+		PLLCLKS_OFF_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+#endif
+#ifdef BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL
+	/* MEMC1 */
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
+		DEVCLK_OFF_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
+		HIZ_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_POWERDOWN,
+		PLLCLKS_OFF_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL0_1_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 1);
+#endif
+	/* restore self-refresh mode */
+	brcm_pm_set_ddr_timeout(brcm_pm_ddr_timeout);
+}
 
 struct clk *clk_get(struct device *dev, const char *id)
 {
@@ -2153,10 +2201,15 @@ static void brcm_pm_usb_enable(void)
 		chip_pm_ops.usb.enable(0);
 }
 
+static void brcm_pm_initialize(void)
+{
+	if (chip_pm_ops.initialize)
+		chip_pm_ops.initialize();
+}
+
 static void brcm_pm_set_ddr_timeout(int val)
 {
-#if defined(CONFIG_BCM7125) || defined(CONFIG_BCM7420) || \
-		defined(CONFIG_BCM7340) || defined(CONFIG_BCM7342)
+#if defined(BCHP_MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL)
 	if (val) {
 		BDEV_WR_F(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
 			IDDQ_MODE_ON_SELFREF, 1);
@@ -2192,9 +2245,13 @@ static void brcm_pm_set_ddr_timeout(int val)
 /***********************************************************************
  * Passive standby - per-chip
  ***********************************************************************/
-
 static void brcm_system_standby(void)
 {
+	/* if MEMC1 is powered down/suspended, do not touch it */
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON) {
+		brcm_pm_memc1_suspend();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_SSPD;
+	}
 	if (chip_pm_ops.suspend)
 		chip_pm_ops.suspend();
 }
@@ -2203,6 +2260,11 @@ static void brcm_system_resume(void)
 {
 	if (chip_pm_ops.resume)
 		chip_pm_ops.resume();
+	/* if MEMC1 was powered down before standby, do not power it up */
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_SSPD) {
+		brcm_pm_memc1_resume();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
+	}
 }
 
 /***********************************************************************
@@ -2301,7 +2363,6 @@ static void brcm_pm_set_alarm(int timeout)
 	BDEV_WR_RB(BCHP_AON_PM_L2_CPU_CLEAR, 0xffffffff);
 	BDEV_WR_F_RB(AON_PM_L2_CPU_MASK_CLEAR, TIMER_INTR, 1);
 #endif
-
 	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
 	BDEV_WR_RB(BCHP_WKTMR_ALARM, BDEV_RD(BCHP_WKTMR_COUNTER) + timeout);
 }
@@ -2344,6 +2405,106 @@ static int brcm_pm_standby(int mode)
 
 	brcm_system_standby();
 	brcm_pm_wakeup_enable();
+
+#ifdef DEBUG_M2M_DMA
+	if (brcm_pm_standby_flags & 0x40) {
+		unsigned char *tb = kzalloc(PAGE_SIZE*16, GFP_ATOMIC);
+		int result, ii;
+		/* Test 1: simple copy */
+		if (1) {
+			struct brcm_mem_transfer xfer = {
+			.src		= tb,
+			.dst		= tb+PAGE_SIZE,
+			.pa_src		= 0,
+			.pa_dst		= 0,
+			.len		= PAGE_SIZE,
+			.mode		= BRCM_MEM_DMA_SCRAM_NONE,
+			.key		= 0,
+			.next		= NULL
+		};
+		memset(tb, 0xa3, PAGE_SIZE);
+		memset(tb+PAGE_SIZE, 0, PAGE_SIZE);
+
+		brcm_mem_dma_simple_transfer(&xfer);
+		result = memcmp(tb, tb+PAGE_SIZE, PAGE_SIZE);
+		DBG("MEM DMA TEST 1: result %d\n", result);
+		}
+		/* Test 2: encryption/decryption */
+		if (1) {
+			struct brcm_mem_transfer xfer[] = {
+			[0] = {
+				.src		= tb,
+				.dst		= tb+PAGE_SIZE*2,
+				.pa_src		= 0,
+				.pa_dst		= 0,
+				.len		= PAGE_SIZE,
+				.mode		= BRCM_MEM_DMA_SCRAM_BLOCK,
+				.key		= 5,
+				.next		= &xfer[1],
+			},
+			[1] = {
+				.src		= tb+PAGE_SIZE,
+				.dst		= tb+PAGE_SIZE*3,
+				.pa_src		= 0,
+				.pa_dst		= 0,
+				.len		= PAGE_SIZE,
+				.mode		= BRCM_MEM_DMA_SCRAM_BLOCK,
+				.key		= 5,
+				.next		= NULL,
+			},
+			[2] = {
+				.src		= tb+PAGE_SIZE*2,
+				.dst		= tb+PAGE_SIZE*4,
+				.pa_src		= 0,
+				.pa_dst		= 0,
+				.len		= PAGE_SIZE,
+				.mode		= BRCM_MEM_DMA_SCRAM_BLOCK,
+				.key		= 6,
+				.next		= &xfer[3],
+			},
+			[3] = {
+				.src		= tb+PAGE_SIZE*3,
+				.dst		= tb+PAGE_SIZE*5,
+				.pa_src		= 0,
+				.pa_dst		= 0,
+				.len		= PAGE_SIZE,
+				.mode		= BRCM_MEM_DMA_SCRAM_BLOCK,
+				.key		= 6,
+				.next		= NULL,
+			},
+		};
+		memset(tb, 0xa3, PAGE_SIZE*2);
+		memset(tb+PAGE_SIZE*2, 0x45, PAGE_SIZE*4);
+
+		DBG("MEM DMA TEST 2:\ninput\n");
+		for (ii = 0; ii < PAGE_SIZE; ii++) {
+			DBG("%02x ", *(tb+ii));
+			if (ii%32 == 31) {
+				DBG("\n"); break;
+			}
+		}
+		brcm_mem_dma_transfer(&xfer[0]);
+		DBG("encrypted\n");
+		for (ii = 0; ii < PAGE_SIZE; ii++) {
+			DBG("%02x ", *(tb+PAGE_SIZE*2+ii));
+			if (ii%32 == 31) {
+				DBG("\n"); break;
+			}
+		}
+		brcm_mem_dma_transfer(&xfer[2]);
+		DBG("decrypted\n");
+		for (ii = 0; ii < PAGE_SIZE; ii++) {
+			DBG("%02x ", *(tb+PAGE_SIZE*4+ii));
+			if (ii%32 == 31) {
+				DBG("\n"); break;
+			}
+		}
+		result = memcmp(tb, tb+(PAGE_SIZE*4), PAGE_SIZE*2);
+		DBG("result %02x\n", (unsigned char)result);
+		}
+		kfree(tb);
+	} else
+#endif
 	if (brcm_pm_standby_flags & BRCM_STANDBY_NO_SLEEP) {
 		if (brcm_pm_standby_flags & BRCM_STANDBY_DELAY)
 			mdelay(120000);
@@ -2358,8 +2519,7 @@ static int brcm_pm_standby(int mode)
 #ifdef CONFIG_BRCM_HAS_AON
 			if (mode)
 				ret = brcm_pm_s3_standby(
-					current_cpu_data.icache.linesz,
-						brcm_pm_standby_flags);
+					brcm_pm_standby_flags);
 			else
 #endif
 				ret = brcm_pm_standby_asm(

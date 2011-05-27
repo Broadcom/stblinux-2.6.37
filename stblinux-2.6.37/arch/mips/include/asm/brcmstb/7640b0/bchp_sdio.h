@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May 17 04:49:35 2010
- *                 MD5 Checksum         2140f8c1f86e8a5296b6aebfc26dee55
+ * Date:           Generated on         Wed Mar 16 05:19:48 2011
+ *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -77,6 +77,7 @@
 /* SDIO :: SDMA :: ADDRESS [31:00] */
 #define BCHP_SDIO_SDMA_ADDRESS_MASK                                0xffffffff
 #define BCHP_SDIO_SDMA_ADDRESS_SHIFT                               0
+#define BCHP_SDIO_SDMA_ADDRESS_DEFAULT                             0
 
 /***************************************************************************
  *BLOCK - Block Reset Register
@@ -84,18 +85,22 @@
 /* SDIO :: BLOCK :: TRANSFER_BLOCK_COUNT [31:16] */
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_COUNT_MASK                  0xffff0000
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_COUNT_SHIFT                 16
+#define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_COUNT_DEFAULT               0
 
 /* SDIO :: BLOCK :: TRANSFER_BLOCK_SIZE_MSB [15:15] */
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_MSB_MASK               0x00008000
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_MSB_SHIFT              15
+#define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_MSB_DEFAULT            0
 
 /* SDIO :: BLOCK :: HOST_BUFFER_SIZE [14:12] */
 #define BCHP_SDIO_BLOCK_HOST_BUFFER_SIZE_MASK                      0x00007000
 #define BCHP_SDIO_BLOCK_HOST_BUFFER_SIZE_SHIFT                     12
+#define BCHP_SDIO_BLOCK_HOST_BUFFER_SIZE_DEFAULT                   0
 
 /* SDIO :: BLOCK :: TRANSFER_BLOCK_SIZE [11:00] */
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_MASK                   0x00000fff
 #define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_SHIFT                  0
+#define BCHP_SDIO_BLOCK_TRANSFER_BLOCK_SIZE_DEFAULT                0
 
 /***************************************************************************
  *ARGUMENT - Argument Register
@@ -103,10 +108,12 @@
 /* SDIO :: ARGUMENT :: CMD_ARG1 [31:16] */
 #define BCHP_SDIO_ARGUMENT_CMD_ARG1_MASK                           0xffff0000
 #define BCHP_SDIO_ARGUMENT_CMD_ARG1_SHIFT                          16
+#define BCHP_SDIO_ARGUMENT_CMD_ARG1_DEFAULT                        0
 
 /* SDIO :: ARGUMENT :: CMD_ARG0 [15:00] */
 #define BCHP_SDIO_ARGUMENT_CMD_ARG0_MASK                           0x0000ffff
 #define BCHP_SDIO_ARGUMENT_CMD_ARG0_SHIFT                          0
+#define BCHP_SDIO_ARGUMENT_CMD_ARG0_DEFAULT                        0
 
 /***************************************************************************
  *CMD_MODE - Command and Mode Register
@@ -118,22 +125,27 @@
 /* SDIO :: CMD_MODE :: CMD_INDEX [29:24] */
 #define BCHP_SDIO_CMD_MODE_CMD_INDEX_MASK                          0x3f000000
 #define BCHP_SDIO_CMD_MODE_CMD_INDEX_SHIFT                         24
+#define BCHP_SDIO_CMD_MODE_CMD_INDEX_DEFAULT                       0
 
 /* SDIO :: CMD_MODE :: CMD_TYPE [23:22] */
 #define BCHP_SDIO_CMD_MODE_CMD_TYPE_MASK                           0x00c00000
 #define BCHP_SDIO_CMD_MODE_CMD_TYPE_SHIFT                          22
+#define BCHP_SDIO_CMD_MODE_CMD_TYPE_DEFAULT                        0
 
 /* SDIO :: CMD_MODE :: DATA_PRESENT [21:21] */
 #define BCHP_SDIO_CMD_MODE_DATA_PRESENT_MASK                       0x00200000
 #define BCHP_SDIO_CMD_MODE_DATA_PRESENT_SHIFT                      21
+#define BCHP_SDIO_CMD_MODE_DATA_PRESENT_DEFAULT                    0
 
 /* SDIO :: CMD_MODE :: CMD_INDEX_CHECK [20:20] */
 #define BCHP_SDIO_CMD_MODE_CMD_INDEX_CHECK_MASK                    0x00100000
 #define BCHP_SDIO_CMD_MODE_CMD_INDEX_CHECK_SHIFT                   20
+#define BCHP_SDIO_CMD_MODE_CMD_INDEX_CHECK_DEFAULT                 0
 
 /* SDIO :: CMD_MODE :: CMD_CRC_CHECK [19:19] */
 #define BCHP_SDIO_CMD_MODE_CMD_CRC_CHECK_MASK                      0x00080000
 #define BCHP_SDIO_CMD_MODE_CMD_CRC_CHECK_SHIFT                     19
+#define BCHP_SDIO_CMD_MODE_CMD_CRC_CHECK_DEFAULT                   0
 
 /* SDIO :: CMD_MODE :: reserved1 [18:18] */
 #define BCHP_SDIO_CMD_MODE_reserved1_MASK                          0x00040000
@@ -142,6 +154,7 @@
 /* SDIO :: CMD_MODE :: RESPONSE_TYPE [17:16] */
 #define BCHP_SDIO_CMD_MODE_RESPONSE_TYPE_MASK                      0x00030000
 #define BCHP_SDIO_CMD_MODE_RESPONSE_TYPE_SHIFT                     16
+#define BCHP_SDIO_CMD_MODE_RESPONSE_TYPE_DEFAULT                   0
 
 /* SDIO :: CMD_MODE :: reserved2 [15:07] */
 #define BCHP_SDIO_CMD_MODE_reserved2_MASK                          0x0000ff80
@@ -150,14 +163,17 @@
 /* SDIO :: CMD_MODE :: CMD_COMP_ATA [06:06] */
 #define BCHP_SDIO_CMD_MODE_CMD_COMP_ATA_MASK                       0x00000040
 #define BCHP_SDIO_CMD_MODE_CMD_COMP_ATA_SHIFT                      6
+#define BCHP_SDIO_CMD_MODE_CMD_COMP_ATA_DEFAULT                    0
 
 /* SDIO :: CMD_MODE :: MULTI_BLOCK [05:05] */
 #define BCHP_SDIO_CMD_MODE_MULTI_BLOCK_MASK                        0x00000020
 #define BCHP_SDIO_CMD_MODE_MULTI_BLOCK_SHIFT                       5
+#define BCHP_SDIO_CMD_MODE_MULTI_BLOCK_DEFAULT                     0
 
 /* SDIO :: CMD_MODE :: TRANFER_WRITE [04:04] */
 #define BCHP_SDIO_CMD_MODE_TRANFER_WRITE_MASK                      0x00000010
 #define BCHP_SDIO_CMD_MODE_TRANFER_WRITE_SHIFT                     4
+#define BCHP_SDIO_CMD_MODE_TRANFER_WRITE_DEFAULT                   0
 
 /* SDIO :: CMD_MODE :: reserved3 [03:03] */
 #define BCHP_SDIO_CMD_MODE_reserved3_MASK                          0x00000008
@@ -166,14 +182,17 @@
 /* SDIO :: CMD_MODE :: AUTO_CMD12_ENA [02:02] */
 #define BCHP_SDIO_CMD_MODE_AUTO_CMD12_ENA_MASK                     0x00000004
 #define BCHP_SDIO_CMD_MODE_AUTO_CMD12_ENA_SHIFT                    2
+#define BCHP_SDIO_CMD_MODE_AUTO_CMD12_ENA_DEFAULT                  0
 
 /* SDIO :: CMD_MODE :: BLOCK_COUNT_ENABLE [01:01] */
 #define BCHP_SDIO_CMD_MODE_BLOCK_COUNT_ENABLE_MASK                 0x00000002
 #define BCHP_SDIO_CMD_MODE_BLOCK_COUNT_ENABLE_SHIFT                1
+#define BCHP_SDIO_CMD_MODE_BLOCK_COUNT_ENABLE_DEFAULT              0
 
 /* SDIO :: CMD_MODE :: DMA_ENABLE [00:00] */
 #define BCHP_SDIO_CMD_MODE_DMA_ENABLE_MASK                         0x00000001
 #define BCHP_SDIO_CMD_MODE_DMA_ENABLE_SHIFT                        0
+#define BCHP_SDIO_CMD_MODE_DMA_ENABLE_DEFAULT                      0
 
 /***************************************************************************
  *RESP_01 - Response Word 0 and 1
@@ -181,10 +200,12 @@
 /* SDIO :: RESP_01 :: RESP_HI [31:16] */
 #define BCHP_SDIO_RESP_01_RESP_HI_MASK                             0xffff0000
 #define BCHP_SDIO_RESP_01_RESP_HI_SHIFT                            16
+#define BCHP_SDIO_RESP_01_RESP_HI_DEFAULT                          0
 
 /* SDIO :: RESP_01 :: RESP_LO [15:00] */
 #define BCHP_SDIO_RESP_01_RESP_LO_MASK                             0x0000ffff
 #define BCHP_SDIO_RESP_01_RESP_LO_SHIFT                            0
+#define BCHP_SDIO_RESP_01_RESP_LO_DEFAULT                          0
 
 /***************************************************************************
  *RESP_23 - Response Word 2 and 3
@@ -192,10 +213,12 @@
 /* SDIO :: RESP_23 :: RESP_HI [31:16] */
 #define BCHP_SDIO_RESP_23_RESP_HI_MASK                             0xffff0000
 #define BCHP_SDIO_RESP_23_RESP_HI_SHIFT                            16
+#define BCHP_SDIO_RESP_23_RESP_HI_DEFAULT                          0
 
 /* SDIO :: RESP_23 :: RESP_LO [15:00] */
 #define BCHP_SDIO_RESP_23_RESP_LO_MASK                             0x0000ffff
 #define BCHP_SDIO_RESP_23_RESP_LO_SHIFT                            0
+#define BCHP_SDIO_RESP_23_RESP_LO_DEFAULT                          0
 
 /***************************************************************************
  *RESP_45 - Response Word 4 and 5
@@ -203,10 +226,12 @@
 /* SDIO :: RESP_45 :: RESP_HI [31:16] */
 #define BCHP_SDIO_RESP_45_RESP_HI_MASK                             0xffff0000
 #define BCHP_SDIO_RESP_45_RESP_HI_SHIFT                            16
+#define BCHP_SDIO_RESP_45_RESP_HI_DEFAULT                          0
 
 /* SDIO :: RESP_45 :: RESP_LO [15:00] */
 #define BCHP_SDIO_RESP_45_RESP_LO_MASK                             0x0000ffff
 #define BCHP_SDIO_RESP_45_RESP_LO_SHIFT                            0
+#define BCHP_SDIO_RESP_45_RESP_LO_DEFAULT                          0
 
 /***************************************************************************
  *RESP_67 - Response Word 6 and 7
@@ -214,10 +239,12 @@
 /* SDIO :: RESP_67 :: RESP_HI [31:16] */
 #define BCHP_SDIO_RESP_67_RESP_HI_MASK                             0xffff0000
 #define BCHP_SDIO_RESP_67_RESP_HI_SHIFT                            16
+#define BCHP_SDIO_RESP_67_RESP_HI_DEFAULT                          0
 
 /* SDIO :: RESP_67 :: RESP_LO [15:00] */
 #define BCHP_SDIO_RESP_67_RESP_LO_MASK                             0x0000ffff
 #define BCHP_SDIO_RESP_67_RESP_LO_SHIFT                            0
+#define BCHP_SDIO_RESP_67_RESP_LO_DEFAULT                          0
 
 /***************************************************************************
  *BUFFDATA - Buffer Data Port for PIO Tranfers
@@ -225,10 +252,12 @@
 /* SDIO :: BUFFDATA :: PORT1 [31:16] */
 #define BCHP_SDIO_BUFFDATA_PORT1_MASK                              0xffff0000
 #define BCHP_SDIO_BUFFDATA_PORT1_SHIFT                             16
+#define BCHP_SDIO_BUFFDATA_PORT1_DEFAULT                           0
 
 /* SDIO :: BUFFDATA :: PORT0 [15:00] */
 #define BCHP_SDIO_BUFFDATA_PORT0_MASK                              0x0000ffff
 #define BCHP_SDIO_BUFFDATA_PORT0_SHIFT                             0
+#define BCHP_SDIO_BUFFDATA_PORT0_DEFAULT                           0
 
 /***************************************************************************
  *STATE - Present State of Controller
@@ -240,14 +269,17 @@
 /* SDIO :: STATE :: LINE_7TO4 [28:25] */
 #define BCHP_SDIO_STATE_LINE_7TO4_MASK                             0x1e000000
 #define BCHP_SDIO_STATE_LINE_7TO4_SHIFT                            25
+#define BCHP_SDIO_STATE_LINE_7TO4_DEFAULT                          15
 
 /* SDIO :: STATE :: LINE_CMD [24:24] */
 #define BCHP_SDIO_STATE_LINE_CMD_MASK                              0x01000000
 #define BCHP_SDIO_STATE_LINE_CMD_SHIFT                             24
+#define BCHP_SDIO_STATE_LINE_CMD_DEFAULT                           1
 
 /* SDIO :: STATE :: LINE_3TO0 [23:20] */
 #define BCHP_SDIO_STATE_LINE_3TO0_MASK                             0x00f00000
 #define BCHP_SDIO_STATE_LINE_3TO0_SHIFT                            20
+#define BCHP_SDIO_STATE_LINE_3TO0_DEFAULT                          15
 
 /* SDIO :: STATE :: WP_LEVEL [19:19] */
 #define BCHP_SDIO_STATE_WP_LEVEL_MASK                              0x00080000
@@ -272,18 +304,22 @@
 /* SDIO :: STATE :: BUFF_RDEN [11:11] */
 #define BCHP_SDIO_STATE_BUFF_RDEN_MASK                             0x00000800
 #define BCHP_SDIO_STATE_BUFF_RDEN_SHIFT                            11
+#define BCHP_SDIO_STATE_BUFF_RDEN_DEFAULT                          0
 
 /* SDIO :: STATE :: BUFF_WREN [10:10] */
 #define BCHP_SDIO_STATE_BUFF_WREN_MASK                             0x00000400
 #define BCHP_SDIO_STATE_BUFF_WREN_SHIFT                            10
+#define BCHP_SDIO_STATE_BUFF_WREN_DEFAULT                          0
 
 /* SDIO :: STATE :: RD_ACTIVE [09:09] */
 #define BCHP_SDIO_STATE_RD_ACTIVE_MASK                             0x00000200
 #define BCHP_SDIO_STATE_RD_ACTIVE_SHIFT                            9
+#define BCHP_SDIO_STATE_RD_ACTIVE_DEFAULT                          0
 
 /* SDIO :: STATE :: WR_ACTIVE [08:08] */
 #define BCHP_SDIO_STATE_WR_ACTIVE_MASK                             0x00000100
 #define BCHP_SDIO_STATE_WR_ACTIVE_SHIFT                            8
+#define BCHP_SDIO_STATE_WR_ACTIVE_DEFAULT                          0
 
 /* SDIO :: STATE :: reserved2 [07:03] */
 #define BCHP_SDIO_STATE_reserved2_MASK                             0x000000f8
@@ -292,14 +328,17 @@
 /* SDIO :: STATE :: DAT_ACTIVE [02:02] */
 #define BCHP_SDIO_STATE_DAT_ACTIVE_MASK                            0x00000004
 #define BCHP_SDIO_STATE_DAT_ACTIVE_SHIFT                           2
+#define BCHP_SDIO_STATE_DAT_ACTIVE_DEFAULT                         0
 
 /* SDIO :: STATE :: CMD_INHIBIT_DAT [01:01] */
 #define BCHP_SDIO_STATE_CMD_INHIBIT_DAT_MASK                       0x00000002
 #define BCHP_SDIO_STATE_CMD_INHIBIT_DAT_SHIFT                      1
+#define BCHP_SDIO_STATE_CMD_INHIBIT_DAT_DEFAULT                    0
 
 /* SDIO :: STATE :: CMD_INHIBIT_CMD [00:00] */
 #define BCHP_SDIO_STATE_CMD_INHIBIT_CMD_MASK                       0x00000001
 #define BCHP_SDIO_STATE_CMD_INHIBIT_CMD_SHIFT                      0
+#define BCHP_SDIO_STATE_CMD_INHIBIT_CMD_DEFAULT                    0
 
 /***************************************************************************
  *CTRL_SET0 - SD Standard Control Registers for Host, Power, BlockGap, WakeUp
@@ -311,46 +350,57 @@
 /* SDIO :: CTRL_SET0 :: WAKE_ON_REMOVAL [26:26] */
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_REMOVAL_MASK                   0x04000000
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_REMOVAL_SHIFT                  26
+#define BCHP_SDIO_CTRL_SET0_WAKE_ON_REMOVAL_DEFAULT                0
 
 /* SDIO :: CTRL_SET0 :: WAKE_ON_INSERTION [25:25] */
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_INSERTION_MASK                 0x02000000
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_INSERTION_SHIFT                25
+#define BCHP_SDIO_CTRL_SET0_WAKE_ON_INSERTION_DEFAULT              0
 
 /* SDIO :: CTRL_SET0 :: WAKE_ON_INTERRUPT [24:24] */
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_INTERRUPT_MASK                 0x01000000
 #define BCHP_SDIO_CTRL_SET0_WAKE_ON_INTERRUPT_SHIFT                24
+#define BCHP_SDIO_CTRL_SET0_WAKE_ON_INTERRUPT_DEFAULT              0
 
 /* SDIO :: CTRL_SET0 :: ALT_BOOT_EN [23:23] */
 #define BCHP_SDIO_CTRL_SET0_ALT_BOOT_EN_MASK                       0x00800000
 #define BCHP_SDIO_CTRL_SET0_ALT_BOOT_EN_SHIFT                      23
+#define BCHP_SDIO_CTRL_SET0_ALT_BOOT_EN_DEFAULT                    0
 
 /* SDIO :: CTRL_SET0 :: BOOT_EN [22:22] */
 #define BCHP_SDIO_CTRL_SET0_BOOT_EN_MASK                           0x00400000
 #define BCHP_SDIO_CTRL_SET0_BOOT_EN_SHIFT                          22
+#define BCHP_SDIO_CTRL_SET0_BOOT_EN_DEFAULT                        0
 
 /* SDIO :: CTRL_SET0 :: SPI_MODE [21:21] */
 #define BCHP_SDIO_CTRL_SET0_SPI_MODE_MASK                          0x00200000
 #define BCHP_SDIO_CTRL_SET0_SPI_MODE_SHIFT                         21
+#define BCHP_SDIO_CTRL_SET0_SPI_MODE_DEFAULT                       0
 
 /* SDIO :: CTRL_SET0 :: DRIVE_CCSD [20:20] */
 #define BCHP_SDIO_CTRL_SET0_DRIVE_CCSD_MASK                        0x00100000
 #define BCHP_SDIO_CTRL_SET0_DRIVE_CCSD_SHIFT                       20
+#define BCHP_SDIO_CTRL_SET0_DRIVE_CCSD_DEFAULT                     0
 
 /* SDIO :: CTRL_SET0 :: INT_AT_BLOCK_GAP [19:19] */
 #define BCHP_SDIO_CTRL_SET0_INT_AT_BLOCK_GAP_MASK                  0x00080000
 #define BCHP_SDIO_CTRL_SET0_INT_AT_BLOCK_GAP_SHIFT                 19
+#define BCHP_SDIO_CTRL_SET0_INT_AT_BLOCK_GAP_DEFAULT               0
 
 /* SDIO :: CTRL_SET0 :: READ_WAIT_CTRL [18:18] */
 #define BCHP_SDIO_CTRL_SET0_READ_WAIT_CTRL_MASK                    0x00040000
 #define BCHP_SDIO_CTRL_SET0_READ_WAIT_CTRL_SHIFT                   18
+#define BCHP_SDIO_CTRL_SET0_READ_WAIT_CTRL_DEFAULT                 0
 
 /* SDIO :: CTRL_SET0 :: CONTINUE_REQUESTS [17:17] */
 #define BCHP_SDIO_CTRL_SET0_CONTINUE_REQUESTS_MASK                 0x00020000
 #define BCHP_SDIO_CTRL_SET0_CONTINUE_REQUESTS_SHIFT                17
+#define BCHP_SDIO_CTRL_SET0_CONTINUE_REQUESTS_DEFAULT              0
 
 /* SDIO :: CTRL_SET0 :: STOP_AT_BLOCK_GAP [16:16] */
 #define BCHP_SDIO_CTRL_SET0_STOP_AT_BLOCK_GAP_MASK                 0x00010000
 #define BCHP_SDIO_CTRL_SET0_STOP_AT_BLOCK_GAP_SHIFT                16
+#define BCHP_SDIO_CTRL_SET0_STOP_AT_BLOCK_GAP_DEFAULT              0
 
 /* SDIO :: CTRL_SET0 :: reserved1 [15:12] */
 #define BCHP_SDIO_CTRL_SET0_reserved1_MASK                         0x0000f000
@@ -359,38 +409,47 @@
 /* SDIO :: CTRL_SET0 :: SD_BUS_VOLTAGE_SELECT [11:09] */
 #define BCHP_SDIO_CTRL_SET0_SD_BUS_VOLTAGE_SELECT_MASK             0x00000e00
 #define BCHP_SDIO_CTRL_SET0_SD_BUS_VOLTAGE_SELECT_SHIFT            9
+#define BCHP_SDIO_CTRL_SET0_SD_BUS_VOLTAGE_SELECT_DEFAULT          0
 
 /* SDIO :: CTRL_SET0 :: SD_BUS_POWER [08:08] */
 #define BCHP_SDIO_CTRL_SET0_SD_BUS_POWER_MASK                      0x00000100
 #define BCHP_SDIO_CTRL_SET0_SD_BUS_POWER_SHIFT                     8
+#define BCHP_SDIO_CTRL_SET0_SD_BUS_POWER_DEFAULT                   0
 
 /* SDIO :: CTRL_SET0 :: CARD_DETECT_SELECT [07:07] */
 #define BCHP_SDIO_CTRL_SET0_CARD_DETECT_SELECT_MASK                0x00000080
 #define BCHP_SDIO_CTRL_SET0_CARD_DETECT_SELECT_SHIFT               7
+#define BCHP_SDIO_CTRL_SET0_CARD_DETECT_SELECT_DEFAULT             0
 
 /* SDIO :: CTRL_SET0 :: CARD_DETECT_TEST [06:06] */
 #define BCHP_SDIO_CTRL_SET0_CARD_DETECT_TEST_MASK                  0x00000040
 #define BCHP_SDIO_CTRL_SET0_CARD_DETECT_TEST_SHIFT                 6
+#define BCHP_SDIO_CTRL_SET0_CARD_DETECT_TEST_DEFAULT               0
 
 /* SDIO :: CTRL_SET0 :: SD_8BIT_MODE [05:05] */
 #define BCHP_SDIO_CTRL_SET0_SD_8BIT_MODE_MASK                      0x00000020
 #define BCHP_SDIO_CTRL_SET0_SD_8BIT_MODE_SHIFT                     5
+#define BCHP_SDIO_CTRL_SET0_SD_8BIT_MODE_DEFAULT                   0
 
 /* SDIO :: CTRL_SET0 :: DMA_SELECT [04:03] */
 #define BCHP_SDIO_CTRL_SET0_DMA_SELECT_MASK                        0x00000018
 #define BCHP_SDIO_CTRL_SET0_DMA_SELECT_SHIFT                       3
+#define BCHP_SDIO_CTRL_SET0_DMA_SELECT_DEFAULT                     0
 
 /* SDIO :: CTRL_SET0 :: HIGH_SPEED_ENABLE [02:02] */
 #define BCHP_SDIO_CTRL_SET0_HIGH_SPEED_ENABLE_MASK                 0x00000004
 #define BCHP_SDIO_CTRL_SET0_HIGH_SPEED_ENABLE_SHIFT                2
+#define BCHP_SDIO_CTRL_SET0_HIGH_SPEED_ENABLE_DEFAULT              0
 
 /* SDIO :: CTRL_SET0 :: SD_4BIT_MODE [01:01] */
 #define BCHP_SDIO_CTRL_SET0_SD_4BIT_MODE_MASK                      0x00000002
 #define BCHP_SDIO_CTRL_SET0_SD_4BIT_MODE_SHIFT                     1
+#define BCHP_SDIO_CTRL_SET0_SD_4BIT_MODE_DEFAULT                   0
 
 /* SDIO :: CTRL_SET0 :: LED_CONTROL [00:00] */
 #define BCHP_SDIO_CTRL_SET0_LED_CONTROL_MASK                       0x00000001
 #define BCHP_SDIO_CTRL_SET0_LED_CONTROL_SHIFT                      0
+#define BCHP_SDIO_CTRL_SET0_LED_CONTROL_DEFAULT                    0
 
 /***************************************************************************
  *CTRL_SET1 - SD Standard Control Registers for Clock, Timeout, Resets
@@ -402,14 +461,17 @@
 /* SDIO :: CTRL_SET1 :: SOFT_RESET_DAT [26:26] */
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_DAT_MASK                    0x04000000
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_DAT_SHIFT                   26
+#define BCHP_SDIO_CTRL_SET1_SOFT_RESET_DAT_DEFAULT                 0
 
 /* SDIO :: CTRL_SET1 :: SOFT_RESET_CMD [25:25] */
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CMD_MASK                    0x02000000
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CMD_SHIFT                   25
+#define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CMD_DEFAULT                 0
 
 /* SDIO :: CTRL_SET1 :: SOFT_RESET_CORE [24:24] */
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CORE_MASK                   0x01000000
 #define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CORE_SHIFT                  24
+#define BCHP_SDIO_CTRL_SET1_SOFT_RESET_CORE_DEFAULT                0
 
 /* SDIO :: CTRL_SET1 :: reserved1 [23:20] */
 #define BCHP_SDIO_CTRL_SET1_reserved1_MASK                         0x00f00000
@@ -418,10 +480,12 @@
 /* SDIO :: CTRL_SET1 :: TIMEOUT_COUNT [19:16] */
 #define BCHP_SDIO_CTRL_SET1_TIMEOUT_COUNT_MASK                     0x000f0000
 #define BCHP_SDIO_CTRL_SET1_TIMEOUT_COUNT_SHIFT                    16
+#define BCHP_SDIO_CTRL_SET1_TIMEOUT_COUNT_DEFAULT                  0
 
 /* SDIO :: CTRL_SET1 :: FREQ_CTRL [15:08] */
 #define BCHP_SDIO_CTRL_SET1_FREQ_CTRL_MASK                         0x0000ff00
 #define BCHP_SDIO_CTRL_SET1_FREQ_CTRL_SHIFT                        8
+#define BCHP_SDIO_CTRL_SET1_FREQ_CTRL_DEFAULT                      0
 
 /* SDIO :: CTRL_SET1 :: reserved2 [07:03] */
 #define BCHP_SDIO_CTRL_SET1_reserved2_MASK                         0x000000f8
@@ -430,14 +494,17 @@
 /* SDIO :: CTRL_SET1 :: SD_CLK_ENA [02:02] */
 #define BCHP_SDIO_CTRL_SET1_SD_CLK_ENA_MASK                        0x00000004
 #define BCHP_SDIO_CTRL_SET1_SD_CLK_ENA_SHIFT                       2
+#define BCHP_SDIO_CTRL_SET1_SD_CLK_ENA_DEFAULT                     0
 
 /* SDIO :: CTRL_SET1 :: INTERNAL_CLK_STABLE [01:01] */
 #define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_STABLE_MASK               0x00000002
 #define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_STABLE_SHIFT              1
+#define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_STABLE_DEFAULT            0
 
 /* SDIO :: CTRL_SET1 :: INTERNAL_CLK_ENA [00:00] */
 #define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_ENA_MASK                  0x00000001
 #define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_ENA_SHIFT                 0
+#define BCHP_SDIO_CTRL_SET1_INTERNAL_CLK_ENA_DEFAULT               0
 
 /***************************************************************************
  *INT_STATUS - Interrupt Status for Normal and Error conditions
@@ -449,10 +516,12 @@
 /* SDIO :: INT_STATUS :: CEATA_ERR_INT [29:29] */
 #define BCHP_SDIO_INT_STATUS_CEATA_ERR_INT_MASK                    0x20000000
 #define BCHP_SDIO_INT_STATUS_CEATA_ERR_INT_SHIFT                   29
+#define BCHP_SDIO_INT_STATUS_CEATA_ERR_INT_DEFAULT                 0
 
 /* SDIO :: INT_STATUS :: TARGET_RESP_ERR_INT [28:28] */
 #define BCHP_SDIO_INT_STATUS_TARGET_RESP_ERR_INT_MASK              0x10000000
 #define BCHP_SDIO_INT_STATUS_TARGET_RESP_ERR_INT_SHIFT             28
+#define BCHP_SDIO_INT_STATUS_TARGET_RESP_ERR_INT_DEFAULT           0
 
 /* SDIO :: INT_STATUS :: reserved1 [27:26] */
 #define BCHP_SDIO_INT_STATUS_reserved1_MASK                        0x0c000000
@@ -461,46 +530,57 @@
 /* SDIO :: INT_STATUS :: ADMA_ERR_INT [25:25] */
 #define BCHP_SDIO_INT_STATUS_ADMA_ERR_INT_MASK                     0x02000000
 #define BCHP_SDIO_INT_STATUS_ADMA_ERR_INT_SHIFT                    25
+#define BCHP_SDIO_INT_STATUS_ADMA_ERR_INT_DEFAULT                  0
 
 /* SDIO :: INT_STATUS :: AUTO_CMD12_ERR_INT [24:24] */
 #define BCHP_SDIO_INT_STATUS_AUTO_CMD12_ERR_INT_MASK               0x01000000
 #define BCHP_SDIO_INT_STATUS_AUTO_CMD12_ERR_INT_SHIFT              24
+#define BCHP_SDIO_INT_STATUS_AUTO_CMD12_ERR_INT_DEFAULT            0
 
 /* SDIO :: INT_STATUS :: CURRENT_LIMIT_ERR_INT [23:23] */
 #define BCHP_SDIO_INT_STATUS_CURRENT_LIMIT_ERR_INT_MASK            0x00800000
 #define BCHP_SDIO_INT_STATUS_CURRENT_LIMIT_ERR_INT_SHIFT           23
+#define BCHP_SDIO_INT_STATUS_CURRENT_LIMIT_ERR_INT_DEFAULT         0
 
 /* SDIO :: INT_STATUS :: DATA_END_BIT_ERR_INT [22:22] */
 #define BCHP_SDIO_INT_STATUS_DATA_END_BIT_ERR_INT_MASK             0x00400000
 #define BCHP_SDIO_INT_STATUS_DATA_END_BIT_ERR_INT_SHIFT            22
+#define BCHP_SDIO_INT_STATUS_DATA_END_BIT_ERR_INT_DEFAULT          0
 
 /* SDIO :: INT_STATUS :: DATA_CRC_ERR_INT [21:21] */
 #define BCHP_SDIO_INT_STATUS_DATA_CRC_ERR_INT_MASK                 0x00200000
 #define BCHP_SDIO_INT_STATUS_DATA_CRC_ERR_INT_SHIFT                21
+#define BCHP_SDIO_INT_STATUS_DATA_CRC_ERR_INT_DEFAULT              0
 
 /* SDIO :: INT_STATUS :: DATA_TIMEOUT_ERR_INT [20:20] */
 #define BCHP_SDIO_INT_STATUS_DATA_TIMEOUT_ERR_INT_MASK             0x00100000
 #define BCHP_SDIO_INT_STATUS_DATA_TIMEOUT_ERR_INT_SHIFT            20
+#define BCHP_SDIO_INT_STATUS_DATA_TIMEOUT_ERR_INT_DEFAULT          0
 
 /* SDIO :: INT_STATUS :: CMD_INDEX_ERR_INT [19:19] */
 #define BCHP_SDIO_INT_STATUS_CMD_INDEX_ERR_INT_MASK                0x00080000
 #define BCHP_SDIO_INT_STATUS_CMD_INDEX_ERR_INT_SHIFT               19
+#define BCHP_SDIO_INT_STATUS_CMD_INDEX_ERR_INT_DEFAULT             0
 
 /* SDIO :: INT_STATUS :: CMD_END_BIT_ERR_INT [18:18] */
 #define BCHP_SDIO_INT_STATUS_CMD_END_BIT_ERR_INT_MASK              0x00040000
 #define BCHP_SDIO_INT_STATUS_CMD_END_BIT_ERR_INT_SHIFT             18
+#define BCHP_SDIO_INT_STATUS_CMD_END_BIT_ERR_INT_DEFAULT           0
 
 /* SDIO :: INT_STATUS :: CMD_CRC_ERR_INT [17:17] */
 #define BCHP_SDIO_INT_STATUS_CMD_CRC_ERR_INT_MASK                  0x00020000
 #define BCHP_SDIO_INT_STATUS_CMD_CRC_ERR_INT_SHIFT                 17
+#define BCHP_SDIO_INT_STATUS_CMD_CRC_ERR_INT_DEFAULT               0
 
 /* SDIO :: INT_STATUS :: CMD_TIMEOUT_ERR_INT [16:16] */
 #define BCHP_SDIO_INT_STATUS_CMD_TIMEOUT_ERR_INT_MASK              0x00010000
 #define BCHP_SDIO_INT_STATUS_CMD_TIMEOUT_ERR_INT_SHIFT             16
+#define BCHP_SDIO_INT_STATUS_CMD_TIMEOUT_ERR_INT_DEFAULT           0
 
 /* SDIO :: INT_STATUS :: ERROR_INT [15:15] */
 #define BCHP_SDIO_INT_STATUS_ERROR_INT_MASK                        0x00008000
 #define BCHP_SDIO_INT_STATUS_ERROR_INT_SHIFT                       15
+#define BCHP_SDIO_INT_STATUS_ERROR_INT_DEFAULT                     0
 
 /* SDIO :: INT_STATUS :: reserved2 [14:11] */
 #define BCHP_SDIO_INT_STATUS_reserved2_MASK                        0x00007800
@@ -509,46 +589,57 @@
 /* SDIO :: INT_STATUS :: BOOT_TERM_INT [10:10] */
 #define BCHP_SDIO_INT_STATUS_BOOT_TERM_INT_MASK                    0x00000400
 #define BCHP_SDIO_INT_STATUS_BOOT_TERM_INT_SHIFT                   10
+#define BCHP_SDIO_INT_STATUS_BOOT_TERM_INT_DEFAULT                 0
 
 /* SDIO :: INT_STATUS :: BOOT_ACK_INT [09:09] */
 #define BCHP_SDIO_INT_STATUS_BOOT_ACK_INT_MASK                     0x00000200
 #define BCHP_SDIO_INT_STATUS_BOOT_ACK_INT_SHIFT                    9
+#define BCHP_SDIO_INT_STATUS_BOOT_ACK_INT_DEFAULT                  0
 
 /* SDIO :: INT_STATUS :: CARD_INT [08:08] */
 #define BCHP_SDIO_INT_STATUS_CARD_INT_MASK                         0x00000100
 #define BCHP_SDIO_INT_STATUS_CARD_INT_SHIFT                        8
+#define BCHP_SDIO_INT_STATUS_CARD_INT_DEFAULT                      0
 
 /* SDIO :: INT_STATUS :: CAR_REMOVAL_INT [07:07] */
 #define BCHP_SDIO_INT_STATUS_CAR_REMOVAL_INT_MASK                  0x00000080
 #define BCHP_SDIO_INT_STATUS_CAR_REMOVAL_INT_SHIFT                 7
+#define BCHP_SDIO_INT_STATUS_CAR_REMOVAL_INT_DEFAULT               0
 
 /* SDIO :: INT_STATUS :: CAR_INSERT_INT [06:06] */
 #define BCHP_SDIO_INT_STATUS_CAR_INSERT_INT_MASK                   0x00000040
 #define BCHP_SDIO_INT_STATUS_CAR_INSERT_INT_SHIFT                  6
+#define BCHP_SDIO_INT_STATUS_CAR_INSERT_INT_DEFAULT                0
 
 /* SDIO :: INT_STATUS :: BUFFER_READ_INT [05:05] */
 #define BCHP_SDIO_INT_STATUS_BUFFER_READ_INT_MASK                  0x00000020
 #define BCHP_SDIO_INT_STATUS_BUFFER_READ_INT_SHIFT                 5
+#define BCHP_SDIO_INT_STATUS_BUFFER_READ_INT_DEFAULT               0
 
 /* SDIO :: INT_STATUS :: BUFFER_WRITE_INT [04:04] */
 #define BCHP_SDIO_INT_STATUS_BUFFER_WRITE_INT_MASK                 0x00000010
 #define BCHP_SDIO_INT_STATUS_BUFFER_WRITE_INT_SHIFT                4
+#define BCHP_SDIO_INT_STATUS_BUFFER_WRITE_INT_DEFAULT              0
 
 /* SDIO :: INT_STATUS :: DMA_INT [03:03] */
 #define BCHP_SDIO_INT_STATUS_DMA_INT_MASK                          0x00000008
 #define BCHP_SDIO_INT_STATUS_DMA_INT_SHIFT                         3
+#define BCHP_SDIO_INT_STATUS_DMA_INT_DEFAULT                       0
 
 /* SDIO :: INT_STATUS :: BLOCK_GAP_INT [02:02] */
 #define BCHP_SDIO_INT_STATUS_BLOCK_GAP_INT_MASK                    0x00000004
 #define BCHP_SDIO_INT_STATUS_BLOCK_GAP_INT_SHIFT                   2
+#define BCHP_SDIO_INT_STATUS_BLOCK_GAP_INT_DEFAULT                 0
 
 /* SDIO :: INT_STATUS :: TRANSFER_COMPLETE_INT [01:01] */
 #define BCHP_SDIO_INT_STATUS_TRANSFER_COMPLETE_INT_MASK            0x00000002
 #define BCHP_SDIO_INT_STATUS_TRANSFER_COMPLETE_INT_SHIFT           1
+#define BCHP_SDIO_INT_STATUS_TRANSFER_COMPLETE_INT_DEFAULT         0
 
 /* SDIO :: INT_STATUS :: COMMAND_COMPLETE_INT [00:00] */
 #define BCHP_SDIO_INT_STATUS_COMMAND_COMPLETE_INT_MASK             0x00000001
 #define BCHP_SDIO_INT_STATUS_COMMAND_COMPLETE_INT_SHIFT            0
+#define BCHP_SDIO_INT_STATUS_COMMAND_COMPLETE_INT_DEFAULT          0
 
 /***************************************************************************
  *INT_STATUS_ENA - Interrupt Enables for Normal and Error conditions
@@ -560,10 +651,12 @@
 /* SDIO :: INT_STATUS_ENA :: CEATA_ERR_INT_ENA [29:29] */
 #define BCHP_SDIO_INT_STATUS_ENA_CEATA_ERR_INT_ENA_MASK            0x20000000
 #define BCHP_SDIO_INT_STATUS_ENA_CEATA_ERR_INT_ENA_SHIFT           29
+#define BCHP_SDIO_INT_STATUS_ENA_CEATA_ERR_INT_ENA_DEFAULT         0
 
 /* SDIO :: INT_STATUS_ENA :: TARGET_RESP_ERR_INT_ENA [28:28] */
 #define BCHP_SDIO_INT_STATUS_ENA_TARGET_RESP_ERR_INT_ENA_MASK      0x10000000
 #define BCHP_SDIO_INT_STATUS_ENA_TARGET_RESP_ERR_INT_ENA_SHIFT     28
+#define BCHP_SDIO_INT_STATUS_ENA_TARGET_RESP_ERR_INT_ENA_DEFAULT   0
 
 /* SDIO :: INT_STATUS_ENA :: reserved1 [27:26] */
 #define BCHP_SDIO_INT_STATUS_ENA_reserved1_MASK                    0x0c000000
@@ -572,42 +665,52 @@
 /* SDIO :: INT_STATUS_ENA :: ADMA_ERR_INT_ENA [25:25] */
 #define BCHP_SDIO_INT_STATUS_ENA_ADMA_ERR_INT_ENA_MASK             0x02000000
 #define BCHP_SDIO_INT_STATUS_ENA_ADMA_ERR_INT_ENA_SHIFT            25
+#define BCHP_SDIO_INT_STATUS_ENA_ADMA_ERR_INT_ENA_DEFAULT          0
 
 /* SDIO :: INT_STATUS_ENA :: AUTO_CMD12_ERR_INT_ENA [24:24] */
 #define BCHP_SDIO_INT_STATUS_ENA_AUTO_CMD12_ERR_INT_ENA_MASK       0x01000000
 #define BCHP_SDIO_INT_STATUS_ENA_AUTO_CMD12_ERR_INT_ENA_SHIFT      24
+#define BCHP_SDIO_INT_STATUS_ENA_AUTO_CMD12_ERR_INT_ENA_DEFAULT    0
 
 /* SDIO :: INT_STATUS_ENA :: CURRENT_LIMIT_ERR_INT_ENA [23:23] */
 #define BCHP_SDIO_INT_STATUS_ENA_CURRENT_LIMIT_ERR_INT_ENA_MASK    0x00800000
 #define BCHP_SDIO_INT_STATUS_ENA_CURRENT_LIMIT_ERR_INT_ENA_SHIFT   23
+#define BCHP_SDIO_INT_STATUS_ENA_CURRENT_LIMIT_ERR_INT_ENA_DEFAULT 0
 
 /* SDIO :: INT_STATUS_ENA :: DATA_END_BIT_ERR_INT_ENA [22:22] */
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_END_BIT_ERR_INT_ENA_MASK     0x00400000
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_END_BIT_ERR_INT_ENA_SHIFT    22
+#define BCHP_SDIO_INT_STATUS_ENA_DATA_END_BIT_ERR_INT_ENA_DEFAULT  0
 
 /* SDIO :: INT_STATUS_ENA :: DATA_CRC_ERR_INT_ENA [21:21] */
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_CRC_ERR_INT_ENA_MASK         0x00200000
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_CRC_ERR_INT_ENA_SHIFT        21
+#define BCHP_SDIO_INT_STATUS_ENA_DATA_CRC_ERR_INT_ENA_DEFAULT      0
 
 /* SDIO :: INT_STATUS_ENA :: DATA_TIMEOUT_ERR_INT_ENA [20:20] */
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_TIMEOUT_ERR_INT_ENA_MASK     0x00100000
 #define BCHP_SDIO_INT_STATUS_ENA_DATA_TIMEOUT_ERR_INT_ENA_SHIFT    20
+#define BCHP_SDIO_INT_STATUS_ENA_DATA_TIMEOUT_ERR_INT_ENA_DEFAULT  0
 
 /* SDIO :: INT_STATUS_ENA :: CMD_INDEX_ERR_INT_ENA [19:19] */
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_INDEX_ERR_INT_ENA_MASK        0x00080000
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_INDEX_ERR_INT_ENA_SHIFT       19
+#define BCHP_SDIO_INT_STATUS_ENA_CMD_INDEX_ERR_INT_ENA_DEFAULT     0
 
 /* SDIO :: INT_STATUS_ENA :: CMD_END_BIT_ERR_INT_ENA [18:18] */
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_END_BIT_ERR_INT_ENA_MASK      0x00040000
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_END_BIT_ERR_INT_ENA_SHIFT     18
+#define BCHP_SDIO_INT_STATUS_ENA_CMD_END_BIT_ERR_INT_ENA_DEFAULT   0
 
 /* SDIO :: INT_STATUS_ENA :: CMD_CRC_ERR_INT_ENA [17:17] */
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_CRC_ERR_INT_ENA_MASK          0x00020000
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_CRC_ERR_INT_ENA_SHIFT         17
+#define BCHP_SDIO_INT_STATUS_ENA_CMD_CRC_ERR_INT_ENA_DEFAULT       0
 
 /* SDIO :: INT_STATUS_ENA :: CMD_TIMEOUT_ERR_INT_ENA [16:16] */
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_TIMEOUT_ERR_INT_ENA_MASK      0x00010000
 #define BCHP_SDIO_INT_STATUS_ENA_CMD_TIMEOUT_ERR_INT_ENA_SHIFT     16
+#define BCHP_SDIO_INT_STATUS_ENA_CMD_TIMEOUT_ERR_INT_ENA_DEFAULT   0
 
 /* SDIO :: INT_STATUS_ENA :: reserved2 [15:11] */
 #define BCHP_SDIO_INT_STATUS_ENA_reserved2_MASK                    0x0000f800
@@ -616,46 +719,57 @@
 /* SDIO :: INT_STATUS_ENA :: BOOT_TERM_INT_ENA [10:10] */
 #define BCHP_SDIO_INT_STATUS_ENA_BOOT_TERM_INT_ENA_MASK            0x00000400
 #define BCHP_SDIO_INT_STATUS_ENA_BOOT_TERM_INT_ENA_SHIFT           10
+#define BCHP_SDIO_INT_STATUS_ENA_BOOT_TERM_INT_ENA_DEFAULT         0
 
 /* SDIO :: INT_STATUS_ENA :: BOOT_ACK_INT_ENA [09:09] */
 #define BCHP_SDIO_INT_STATUS_ENA_BOOT_ACK_INT_ENA_MASK             0x00000200
 #define BCHP_SDIO_INT_STATUS_ENA_BOOT_ACK_INT_ENA_SHIFT            9
+#define BCHP_SDIO_INT_STATUS_ENA_BOOT_ACK_INT_ENA_DEFAULT          0
 
 /* SDIO :: INT_STATUS_ENA :: CARD_INT_ENA [08:08] */
 #define BCHP_SDIO_INT_STATUS_ENA_CARD_INT_ENA_MASK                 0x00000100
 #define BCHP_SDIO_INT_STATUS_ENA_CARD_INT_ENA_SHIFT                8
+#define BCHP_SDIO_INT_STATUS_ENA_CARD_INT_ENA_DEFAULT              0
 
 /* SDIO :: INT_STATUS_ENA :: CAR_REMOVAL_INT_ENA [07:07] */
 #define BCHP_SDIO_INT_STATUS_ENA_CAR_REMOVAL_INT_ENA_MASK          0x00000080
 #define BCHP_SDIO_INT_STATUS_ENA_CAR_REMOVAL_INT_ENA_SHIFT         7
+#define BCHP_SDIO_INT_STATUS_ENA_CAR_REMOVAL_INT_ENA_DEFAULT       0
 
 /* SDIO :: INT_STATUS_ENA :: CAR_INSERT_INT_ENA [06:06] */
 #define BCHP_SDIO_INT_STATUS_ENA_CAR_INSERT_INT_ENA_MASK           0x00000040
 #define BCHP_SDIO_INT_STATUS_ENA_CAR_INSERT_INT_ENA_SHIFT          6
+#define BCHP_SDIO_INT_STATUS_ENA_CAR_INSERT_INT_ENA_DEFAULT        0
 
 /* SDIO :: INT_STATUS_ENA :: BUFFER_READ_INT_ENA [05:05] */
 #define BCHP_SDIO_INT_STATUS_ENA_BUFFER_READ_INT_ENA_MASK          0x00000020
 #define BCHP_SDIO_INT_STATUS_ENA_BUFFER_READ_INT_ENA_SHIFT         5
+#define BCHP_SDIO_INT_STATUS_ENA_BUFFER_READ_INT_ENA_DEFAULT       0
 
 /* SDIO :: INT_STATUS_ENA :: BUFFER_WRITE_INT_ENA [04:04] */
 #define BCHP_SDIO_INT_STATUS_ENA_BUFFER_WRITE_INT_ENA_MASK         0x00000010
 #define BCHP_SDIO_INT_STATUS_ENA_BUFFER_WRITE_INT_ENA_SHIFT        4
+#define BCHP_SDIO_INT_STATUS_ENA_BUFFER_WRITE_INT_ENA_DEFAULT      0
 
 /* SDIO :: INT_STATUS_ENA :: DMA_INT_ENA [03:03] */
 #define BCHP_SDIO_INT_STATUS_ENA_DMA_INT_ENA_MASK                  0x00000008
 #define BCHP_SDIO_INT_STATUS_ENA_DMA_INT_ENA_SHIFT                 3
+#define BCHP_SDIO_INT_STATUS_ENA_DMA_INT_ENA_DEFAULT               0
 
 /* SDIO :: INT_STATUS_ENA :: BLOCK_GAP_INT_ENA [02:02] */
 #define BCHP_SDIO_INT_STATUS_ENA_BLOCK_GAP_INT_ENA_MASK            0x00000004
 #define BCHP_SDIO_INT_STATUS_ENA_BLOCK_GAP_INT_ENA_SHIFT           2
+#define BCHP_SDIO_INT_STATUS_ENA_BLOCK_GAP_INT_ENA_DEFAULT         0
 
 /* SDIO :: INT_STATUS_ENA :: TRANSFER_COMPLETE_INT_ENA [01:01] */
 #define BCHP_SDIO_INT_STATUS_ENA_TRANSFER_COMPLETE_INT_ENA_MASK    0x00000002
 #define BCHP_SDIO_INT_STATUS_ENA_TRANSFER_COMPLETE_INT_ENA_SHIFT   1
+#define BCHP_SDIO_INT_STATUS_ENA_TRANSFER_COMPLETE_INT_ENA_DEFAULT 0
 
 /* SDIO :: INT_STATUS_ENA :: COMMAND_COMPLETE_INT_ENA [00:00] */
 #define BCHP_SDIO_INT_STATUS_ENA_COMMAND_COMPLETE_INT_ENA_MASK     0x00000001
 #define BCHP_SDIO_INT_STATUS_ENA_COMMAND_COMPLETE_INT_ENA_SHIFT    0
+#define BCHP_SDIO_INT_STATUS_ENA_COMMAND_COMPLETE_INT_ENA_DEFAULT  0
 
 /***************************************************************************
  *INT_SIGNAL_ENA - Interrupt Signal Enables for Normal and Error conditions
@@ -667,10 +781,12 @@
 /* SDIO :: INT_SIGNAL_ENA :: CEATA_ERR_INT_SIG_ENA [29:29] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CEATA_ERR_INT_SIG_ENA_MASK        0x20000000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CEATA_ERR_INT_SIG_ENA_SHIFT       29
+#define BCHP_SDIO_INT_SIGNAL_ENA_CEATA_ERR_INT_SIG_ENA_DEFAULT     0
 
 /* SDIO :: INT_SIGNAL_ENA :: TARGET_RESP_ERR_INT_SIG_ENA [28:28] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_TARGET_RESP_ERR_INT_SIG_ENA_MASK  0x10000000
 #define BCHP_SDIO_INT_SIGNAL_ENA_TARGET_RESP_ERR_INT_SIG_ENA_SHIFT 28
+#define BCHP_SDIO_INT_SIGNAL_ENA_TARGET_RESP_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: reserved1 [27:26] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_reserved1_MASK                    0x0c000000
@@ -679,42 +795,52 @@
 /* SDIO :: INT_SIGNAL_ENA :: ADMA_ERR_INT_SIG_ENA [25:25] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_ADMA_ERR_INT_SIG_ENA_MASK         0x02000000
 #define BCHP_SDIO_INT_SIGNAL_ENA_ADMA_ERR_INT_SIG_ENA_SHIFT        25
+#define BCHP_SDIO_INT_SIGNAL_ENA_ADMA_ERR_INT_SIG_ENA_DEFAULT      0
 
 /* SDIO :: INT_SIGNAL_ENA :: AUTO_CMD12_ERR_INT_SIG_ENA [24:24] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_AUTO_CMD12_ERR_INT_SIG_ENA_MASK   0x01000000
 #define BCHP_SDIO_INT_SIGNAL_ENA_AUTO_CMD12_ERR_INT_SIG_ENA_SHIFT  24
+#define BCHP_SDIO_INT_SIGNAL_ENA_AUTO_CMD12_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: CURRENT_LIMIT_ERR_INT_SIG_ENA [23:23] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CURRENT_LIMIT_ERR_INT_SIG_ENA_MASK 0x00800000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CURRENT_LIMIT_ERR_INT_SIG_ENA_SHIFT 23
+#define BCHP_SDIO_INT_SIGNAL_ENA_CURRENT_LIMIT_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: DATA_END_BIT_ERR_INT_SIG_ENA [22:22] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_END_BIT_ERR_INT_SIG_ENA_MASK 0x00400000
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_END_BIT_ERR_INT_SIG_ENA_SHIFT 22
+#define BCHP_SDIO_INT_SIGNAL_ENA_DATA_END_BIT_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: DATA_CRC_ERR_INT_SIG_ENA [21:21] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_CRC_ERR_INT_SIG_ENA_MASK     0x00200000
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_CRC_ERR_INT_SIG_ENA_SHIFT    21
+#define BCHP_SDIO_INT_SIGNAL_ENA_DATA_CRC_ERR_INT_SIG_ENA_DEFAULT  0
 
 /* SDIO :: INT_SIGNAL_ENA :: DATA_TIMEOUT_ERR_INT_SIG_ENA [20:20] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_TIMEOUT_ERR_INT_SIG_ENA_MASK 0x00100000
 #define BCHP_SDIO_INT_SIGNAL_ENA_DATA_TIMEOUT_ERR_INT_SIG_ENA_SHIFT 20
+#define BCHP_SDIO_INT_SIGNAL_ENA_DATA_TIMEOUT_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: CMD_INDEX_ERR_INT_SIG_ENA [19:19] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_INDEX_ERR_INT_SIG_ENA_MASK    0x00080000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_INDEX_ERR_INT_SIG_ENA_SHIFT   19
+#define BCHP_SDIO_INT_SIGNAL_ENA_CMD_INDEX_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: CMD_END_BIT_ERR_INT_SIG_ENA [18:18] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_END_BIT_ERR_INT_SIG_ENA_MASK  0x00040000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_END_BIT_ERR_INT_SIG_ENA_SHIFT 18
+#define BCHP_SDIO_INT_SIGNAL_ENA_CMD_END_BIT_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: CMD_CRC_ERR_INT_SIG_ENA [17:17] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_CRC_ERR_INT_SIG_ENA_MASK      0x00020000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_CRC_ERR_INT_SIG_ENA_SHIFT     17
+#define BCHP_SDIO_INT_SIGNAL_ENA_CMD_CRC_ERR_INT_SIG_ENA_DEFAULT   0
 
 /* SDIO :: INT_SIGNAL_ENA :: CMD_TIMEOUT_ERR_INT_SIG_ENA [16:16] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_TIMEOUT_ERR_INT_SIG_ENA_MASK  0x00010000
 #define BCHP_SDIO_INT_SIGNAL_ENA_CMD_TIMEOUT_ERR_INT_SIG_ENA_SHIFT 16
+#define BCHP_SDIO_INT_SIGNAL_ENA_CMD_TIMEOUT_ERR_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: reserved2 [15:11] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_reserved2_MASK                    0x0000f800
@@ -723,46 +849,57 @@
 /* SDIO :: INT_SIGNAL_ENA :: BOOT_TERM_INT_SIG_ENA [10:10] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_TERM_INT_SIG_ENA_MASK        0x00000400
 #define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_TERM_INT_SIG_ENA_SHIFT       10
+#define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_TERM_INT_SIG_ENA_DEFAULT     0
 
 /* SDIO :: INT_SIGNAL_ENA :: BOOT_ACK_INT_SIG_ENA [09:09] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_ACK_INT_SIG_ENA_MASK         0x00000200
 #define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_ACK_INT_SIG_ENA_SHIFT        9
+#define BCHP_SDIO_INT_SIGNAL_ENA_BOOT_ACK_INT_SIG_ENA_DEFAULT      0
 
 /* SDIO :: INT_SIGNAL_ENA :: CARD_INT_SIG_ENA [08:08] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CARD_INT_SIG_ENA_MASK             0x00000100
 #define BCHP_SDIO_INT_SIGNAL_ENA_CARD_INT_SIG_ENA_SHIFT            8
+#define BCHP_SDIO_INT_SIGNAL_ENA_CARD_INT_SIG_ENA_DEFAULT          0
 
 /* SDIO :: INT_SIGNAL_ENA :: CAR_REMOVAL_INT_SIG_ENA [07:07] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CAR_REMOVAL_INT_SIG_ENA_MASK      0x00000080
 #define BCHP_SDIO_INT_SIGNAL_ENA_CAR_REMOVAL_INT_SIG_ENA_SHIFT     7
+#define BCHP_SDIO_INT_SIGNAL_ENA_CAR_REMOVAL_INT_SIG_ENA_DEFAULT   0
 
 /* SDIO :: INT_SIGNAL_ENA :: CAR_INSERT_INT_SIG_ENA [06:06] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_CAR_INSERT_INT_SIG_ENA_MASK       0x00000040
 #define BCHP_SDIO_INT_SIGNAL_ENA_CAR_INSERT_INT_SIG_ENA_SHIFT      6
+#define BCHP_SDIO_INT_SIGNAL_ENA_CAR_INSERT_INT_SIG_ENA_DEFAULT    0
 
 /* SDIO :: INT_SIGNAL_ENA :: BUFFER_READ_INT_SIG_ENA [05:05] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_READ_INT_SIG_ENA_MASK      0x00000020
 #define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_READ_INT_SIG_ENA_SHIFT     5
+#define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_READ_INT_SIG_ENA_DEFAULT   0
 
 /* SDIO :: INT_SIGNAL_ENA :: BUFFER_WRITE_INT_SIG_ENA [04:04] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_WRITE_INT_SIG_ENA_MASK     0x00000010
 #define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_WRITE_INT_SIG_ENA_SHIFT    4
+#define BCHP_SDIO_INT_SIGNAL_ENA_BUFFER_WRITE_INT_SIG_ENA_DEFAULT  0
 
 /* SDIO :: INT_SIGNAL_ENA :: DMA_INT_SIG_ENA [03:03] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_DMA_INT_SIG_ENA_MASK              0x00000008
 #define BCHP_SDIO_INT_SIGNAL_ENA_DMA_INT_SIG_ENA_SHIFT             3
+#define BCHP_SDIO_INT_SIGNAL_ENA_DMA_INT_SIG_ENA_DEFAULT           0
 
 /* SDIO :: INT_SIGNAL_ENA :: BLOCK_GAP_INT_SIG_ENA [02:02] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_BLOCK_GAP_INT_SIG_ENA_MASK        0x00000004
 #define BCHP_SDIO_INT_SIGNAL_ENA_BLOCK_GAP_INT_SIG_ENA_SHIFT       2
+#define BCHP_SDIO_INT_SIGNAL_ENA_BLOCK_GAP_INT_SIG_ENA_DEFAULT     0
 
 /* SDIO :: INT_SIGNAL_ENA :: TRANSFER_COMPLETE_INT_SIG_ENA [01:01] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_TRANSFER_COMPLETE_INT_SIG_ENA_MASK 0x00000002
 #define BCHP_SDIO_INT_SIGNAL_ENA_TRANSFER_COMPLETE_INT_SIG_ENA_SHIFT 1
+#define BCHP_SDIO_INT_SIGNAL_ENA_TRANSFER_COMPLETE_INT_SIG_ENA_DEFAULT 0
 
 /* SDIO :: INT_SIGNAL_ENA :: COMMAND_COMPLETE_INT_SIG_ENA [00:00] */
 #define BCHP_SDIO_INT_SIGNAL_ENA_COMMAND_COMPLETE_INT_SIG_ENA_MASK 0x00000001
 #define BCHP_SDIO_INT_SIGNAL_ENA_COMMAND_COMPLETE_INT_SIG_ENA_SHIFT 0
+#define BCHP_SDIO_INT_SIGNAL_ENA_COMMAND_COMPLETE_INT_SIG_ENA_DEFAULT 0
 
 /***************************************************************************
  *AUTOCMD12_STAT - Auto Cmd12 Error Status
@@ -774,6 +911,7 @@
 /* SDIO :: AUTOCMD12_STAT :: CMD12_NOT_ISSUED [07:07] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_ISSUED_MASK             0x00000080
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_ISSUED_SHIFT            7
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_ISSUED_DEFAULT          0
 
 /* SDIO :: AUTOCMD12_STAT :: reserved1 [06:05] */
 #define BCHP_SDIO_AUTOCMD12_STAT_reserved1_MASK                    0x00000060
@@ -782,22 +920,27 @@
 /* SDIO :: AUTOCMD12_STAT :: CMD12_INDEX_ERR [04:04] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_INDEX_ERR_MASK              0x00000010
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_INDEX_ERR_SHIFT             4
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_INDEX_ERR_DEFAULT           0
 
 /* SDIO :: AUTOCMD12_STAT :: CMD12_END_ERR [03:03] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_END_ERR_MASK                0x00000008
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_END_ERR_SHIFT               3
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_END_ERR_DEFAULT             0
 
 /* SDIO :: AUTOCMD12_STAT :: CMD12_CRC_ERR [02:02] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_CRC_ERR_MASK                0x00000004
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_CRC_ERR_SHIFT               2
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_CRC_ERR_DEFAULT             0
 
 /* SDIO :: AUTOCMD12_STAT :: CMD12_TIMEOUT_ERR [01:01] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_TIMEOUT_ERR_MASK            0x00000002
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_TIMEOUT_ERR_SHIFT           1
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_TIMEOUT_ERR_DEFAULT         0
 
 /* SDIO :: AUTOCMD12_STAT :: CMD12_NOT_EXEC_ERR [00:00] */
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_EXEC_ERR_MASK           0x00000001
 #define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_EXEC_ERR_SHIFT          0
+#define BCHP_SDIO_AUTOCMD12_STAT_CMD12_NOT_EXEC_ERR_DEFAULT        0
 
 /***************************************************************************
  *CAPABLE - Host Controller Capabilities to Software
@@ -809,42 +952,52 @@
 /* SDIO :: CAPABLE :: SPI_BLOCK_MODE [30:30] */
 #define BCHP_SDIO_CAPABLE_SPI_BLOCK_MODE_MASK                      0x40000000
 #define BCHP_SDIO_CAPABLE_SPI_BLOCK_MODE_SHIFT                     30
+#define BCHP_SDIO_CAPABLE_SPI_BLOCK_MODE_DEFAULT                   1
 
 /* SDIO :: CAPABLE :: SPI_MODE [29:29] */
 #define BCHP_SDIO_CAPABLE_SPI_MODE_MASK                            0x20000000
 #define BCHP_SDIO_CAPABLE_SPI_MODE_SHIFT                           29
+#define BCHP_SDIO_CAPABLE_SPI_MODE_DEFAULT                         1
 
 /* SDIO :: CAPABLE :: SYS_BUT_64BIT [28:28] */
 #define BCHP_SDIO_CAPABLE_SYS_BUT_64BIT_MASK                       0x10000000
 #define BCHP_SDIO_CAPABLE_SYS_BUT_64BIT_SHIFT                      28
+#define BCHP_SDIO_CAPABLE_SYS_BUT_64BIT_DEFAULT                    0
 
 /* SDIO :: CAPABLE :: INT_MODE [27:27] */
 #define BCHP_SDIO_CAPABLE_INT_MODE_MASK                            0x08000000
 #define BCHP_SDIO_CAPABLE_INT_MODE_SHIFT                           27
+#define BCHP_SDIO_CAPABLE_INT_MODE_DEFAULT                         1
 
 /* SDIO :: CAPABLE :: VOLTAGE_1P8V [26:26] */
 #define BCHP_SDIO_CAPABLE_VOLTAGE_1P8V_MASK                        0x04000000
 #define BCHP_SDIO_CAPABLE_VOLTAGE_1P8V_SHIFT                       26
+#define BCHP_SDIO_CAPABLE_VOLTAGE_1P8V_DEFAULT                     0
 
 /* SDIO :: CAPABLE :: VOLTAGE_3P0V [25:25] */
 #define BCHP_SDIO_CAPABLE_VOLTAGE_3P0V_MASK                        0x02000000
 #define BCHP_SDIO_CAPABLE_VOLTAGE_3P0V_SHIFT                       25
+#define BCHP_SDIO_CAPABLE_VOLTAGE_3P0V_DEFAULT                     0
 
 /* SDIO :: CAPABLE :: VOLTAGE_3P3V [24:24] */
 #define BCHP_SDIO_CAPABLE_VOLTAGE_3P3V_MASK                        0x01000000
 #define BCHP_SDIO_CAPABLE_VOLTAGE_3P3V_SHIFT                       24
+#define BCHP_SDIO_CAPABLE_VOLTAGE_3P3V_DEFAULT                     1
 
 /* SDIO :: CAPABLE :: SUSPEND_RESUME [23:23] */
 #define BCHP_SDIO_CAPABLE_SUSPEND_RESUME_MASK                      0x00800000
 #define BCHP_SDIO_CAPABLE_SUSPEND_RESUME_SHIFT                     23
+#define BCHP_SDIO_CAPABLE_SUSPEND_RESUME_DEFAULT                   1
 
 /* SDIO :: CAPABLE :: SDMA [22:22] */
 #define BCHP_SDIO_CAPABLE_SDMA_MASK                                0x00400000
 #define BCHP_SDIO_CAPABLE_SDMA_SHIFT                               22
+#define BCHP_SDIO_CAPABLE_SDMA_DEFAULT                             1
 
 /* SDIO :: CAPABLE :: HIGH_SPEED [21:21] */
 #define BCHP_SDIO_CAPABLE_HIGH_SPEED_MASK                          0x00200000
 #define BCHP_SDIO_CAPABLE_HIGH_SPEED_SHIFT                         21
+#define BCHP_SDIO_CAPABLE_HIGH_SPEED_DEFAULT                       1
 
 /* SDIO :: CAPABLE :: reserved1 [20:20] */
 #define BCHP_SDIO_CAPABLE_reserved1_MASK                           0x00100000
@@ -853,14 +1006,17 @@
 /* SDIO :: CAPABLE :: ADMA2 [19:19] */
 #define BCHP_SDIO_CAPABLE_ADMA2_MASK                               0x00080000
 #define BCHP_SDIO_CAPABLE_ADMA2_SHIFT                              19
+#define BCHP_SDIO_CAPABLE_ADMA2_DEFAULT                            1
 
 /* SDIO :: CAPABLE :: EXTENDED_MEDIA [18:18] */
 #define BCHP_SDIO_CAPABLE_EXTENDED_MEDIA_MASK                      0x00040000
 #define BCHP_SDIO_CAPABLE_EXTENDED_MEDIA_SHIFT                     18
+#define BCHP_SDIO_CAPABLE_EXTENDED_MEDIA_DEFAULT                   1
 
 /* SDIO :: CAPABLE :: MAX_BLOCK_LEN [17:16] */
 #define BCHP_SDIO_CAPABLE_MAX_BLOCK_LEN_MASK                       0x00030000
 #define BCHP_SDIO_CAPABLE_MAX_BLOCK_LEN_SHIFT                      16
+#define BCHP_SDIO_CAPABLE_MAX_BLOCK_LEN_DEFAULT                    1
 
 /* SDIO :: CAPABLE :: reserved2 [15:14] */
 #define BCHP_SDIO_CAPABLE_reserved2_MASK                           0x0000c000
@@ -869,10 +1025,12 @@
 /* SDIO :: CAPABLE :: BASE_CLK_FREQ [13:08] */
 #define BCHP_SDIO_CAPABLE_BASE_CLK_FREQ_MASK                       0x00003f00
 #define BCHP_SDIO_CAPABLE_BASE_CLK_FREQ_SHIFT                      8
+#define BCHP_SDIO_CAPABLE_BASE_CLK_FREQ_DEFAULT                    50
 
 /* SDIO :: CAPABLE :: TIMEOUT_UNIT [07:07] */
 #define BCHP_SDIO_CAPABLE_TIMEOUT_UNIT_MASK                        0x00000080
 #define BCHP_SDIO_CAPABLE_TIMEOUT_UNIT_SHIFT                       7
+#define BCHP_SDIO_CAPABLE_TIMEOUT_UNIT_DEFAULT                     1
 
 /* SDIO :: CAPABLE :: reserved3 [06:06] */
 #define BCHP_SDIO_CAPABLE_reserved3_MASK                           0x00000040
@@ -881,6 +1039,7 @@
 /* SDIO :: CAPABLE :: TIMEOUT_CLK_FREQ [05:00] */
 #define BCHP_SDIO_CAPABLE_TIMEOUT_CLK_FREQ_MASK                    0x0000003f
 #define BCHP_SDIO_CAPABLE_TIMEOUT_CLK_FREQ_SHIFT                   0
+#define BCHP_SDIO_CAPABLE_TIMEOUT_CLK_FREQ_DEFAULT                 50
 
 /***************************************************************************
  *CAPABLE_RSVD - Future Host Controller Capabilities to Software
@@ -888,6 +1047,7 @@
 /* SDIO :: CAPABLE_RSVD :: CAPS_RSVD [31:00] */
 #define BCHP_SDIO_CAPABLE_RSVD_CAPS_RSVD_MASK                      0xffffffff
 #define BCHP_SDIO_CAPABLE_RSVD_CAPS_RSVD_SHIFT                     0
+#define BCHP_SDIO_CAPABLE_RSVD_CAPS_RSVD_DEFAULT                   0
 
 /***************************************************************************
  *POWER_CAPABLE - Host Controller Power Capabilities to Software
@@ -899,14 +1059,17 @@
 /* SDIO :: POWER_CAPABLE :: MAX_CURRENT_1P8V [23:16] */
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_1P8V_MASK              0x00ff0000
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_1P8V_SHIFT             16
+#define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_1P8V_DEFAULT           0
 
 /* SDIO :: POWER_CAPABLE :: MAX_CURRENT_3P0V [15:08] */
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P0V_MASK              0x0000ff00
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P0V_SHIFT             8
+#define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P0V_DEFAULT           0
 
 /* SDIO :: POWER_CAPABLE :: MAX_CURRENT_3P3V [07:00] */
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P3V_MASK              0x000000ff
 #define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P3V_SHIFT             0
+#define BCHP_SDIO_POWER_CAPABLE_MAX_CURRENT_3P3V_DEFAULT           1
 
 /***************************************************************************
  *POWER_CAPABLE_RSVD - Future Host Controller Power Capabilities to Software
@@ -914,6 +1077,7 @@
 /* SDIO :: POWER_CAPABLE_RSVD :: POWERCAPS_RSVD [31:00] */
 #define BCHP_SDIO_POWER_CAPABLE_RSVD_POWERCAPS_RSVD_MASK           0xffffffff
 #define BCHP_SDIO_POWER_CAPABLE_RSVD_POWERCAPS_RSVD_SHIFT          0
+#define BCHP_SDIO_POWER_CAPABLE_RSVD_POWERCAPS_RSVD_DEFAULT        0
 
 /***************************************************************************
  *FORCE_EVENTS - Force Events on Error Status Bits
@@ -921,14 +1085,17 @@
 /* SDIO :: FORCE_EVENTS :: FORCE_VENDOR_ERR_INT [31:30] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_VENDOR_ERR_INT_MASK           0xc0000000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_VENDOR_ERR_INT_SHIFT          30
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_VENDOR_ERR_INT_DEFAULT        0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CEATA_ERR_INT [29:29] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CEATA_ERR_INT_MASK            0x20000000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CEATA_ERR_INT_SHIFT           29
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CEATA_ERR_INT_DEFAULT         0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_TARGET_RESP_ERR_INT [28:28] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_TARGET_RESP_ERR_INT_MASK      0x10000000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_TARGET_RESP_ERR_INT_SHIFT     28
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_TARGET_RESP_ERR_INT_DEFAULT   0
 
 /* SDIO :: FORCE_EVENTS :: reserved0 [27:26] */
 #define BCHP_SDIO_FORCE_EVENTS_reserved0_MASK                      0x0c000000
@@ -937,42 +1104,52 @@
 /* SDIO :: FORCE_EVENTS :: FORCE_ADMA_ERR_INT [25:25] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_ADMA_ERR_INT_MASK             0x02000000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_ADMA_ERR_INT_SHIFT            25
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_ADMA_ERR_INT_DEFAULT          0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_AUTO_CMD12_ERR_INT [24:24] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_AUTO_CMD12_ERR_INT_MASK       0x01000000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_AUTO_CMD12_ERR_INT_SHIFT      24
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_AUTO_CMD12_ERR_INT_DEFAULT    0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CURRENT_LIMIT_ERR_INT [23:23] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CURRENT_LIMIT_ERR_INT_MASK    0x00800000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CURRENT_LIMIT_ERR_INT_SHIFT   23
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CURRENT_LIMIT_ERR_INT_DEFAULT 0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_DATA_END_BIT_ERR_INT [22:22] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_END_BIT_ERR_INT_MASK     0x00400000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_END_BIT_ERR_INT_SHIFT    22
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_END_BIT_ERR_INT_DEFAULT  0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_DATA_CRC_ERR_INT [21:21] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_CRC_ERR_INT_MASK         0x00200000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_CRC_ERR_INT_SHIFT        21
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_CRC_ERR_INT_DEFAULT      0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_DATA_TIMEOUT_ERR_INT [20:20] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_TIMEOUT_ERR_INT_MASK     0x00100000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_TIMEOUT_ERR_INT_SHIFT    20
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_DATA_TIMEOUT_ERR_INT_DEFAULT  0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD_INDEX_ERR_INT [19:19] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_INDEX_ERR_INT_MASK        0x00080000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_INDEX_ERR_INT_SHIFT       19
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_INDEX_ERR_INT_DEFAULT     0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD_END_BIT_ERR_INT [18:18] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_END_BIT_ERR_INT_MASK      0x00040000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_END_BIT_ERR_INT_SHIFT     18
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_END_BIT_ERR_INT_DEFAULT   0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD_CRC_ERR_INT [17:17] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_CRC_ERR_INT_MASK          0x00020000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_CRC_ERR_INT_SHIFT         17
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_CRC_ERR_INT_DEFAULT       0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD_TIMEOUT_ERR_INT [16:16] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_TIMEOUT_ERR_INT_MASK      0x00010000
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_TIMEOUT_ERR_INT_SHIFT     16
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD_TIMEOUT_ERR_INT_DEFAULT   0
 
 /* SDIO :: FORCE_EVENTS :: reserved1 [15:08] */
 #define BCHP_SDIO_FORCE_EVENTS_reserved1_MASK                      0x0000ff00
@@ -981,6 +1158,7 @@
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_NOT_ISSUED [07:07] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_ISSUED_MASK         0x00000080
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_ISSUED_SHIFT        7
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_ISSUED_DEFAULT      0
 
 /* SDIO :: FORCE_EVENTS :: reserved2 [06:05] */
 #define BCHP_SDIO_FORCE_EVENTS_reserved2_MASK                      0x00000060
@@ -989,22 +1167,27 @@
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_INDEX_ERR [04:04] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_INDEX_ERR_MASK          0x00000010
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_INDEX_ERR_SHIFT         4
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_INDEX_ERR_DEFAULT       0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_END_ERR [03:03] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_END_ERR_MASK            0x00000008
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_END_ERR_SHIFT           3
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_END_ERR_DEFAULT         0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_CRC_ERR [02:02] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_CRC_ERR_MASK            0x00000004
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_CRC_ERR_SHIFT           2
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_CRC_ERR_DEFAULT         0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_TIMEOUT_ERR [01:01] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_TIMEOUT_ERR_MASK        0x00000002
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_TIMEOUT_ERR_SHIFT       1
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_TIMEOUT_ERR_DEFAULT     0
 
 /* SDIO :: FORCE_EVENTS :: FORCE_CMD12_NOT_EXEC_ERR [00:00] */
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_EXEC_ERR_MASK       0x00000001
 #define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_EXEC_ERR_SHIFT      0
+#define BCHP_SDIO_FORCE_EVENTS_FORCE_CMD12_NOT_EXEC_ERR_DEFAULT    0
 
 /***************************************************************************
  *ADMA_ERR_STAT - ADMA Error Status Bits
@@ -1016,10 +1199,12 @@
 /* SDIO :: ADMA_ERR_STAT :: LENGTH_MATCH_ERR [02:02] */
 #define BCHP_SDIO_ADMA_ERR_STAT_LENGTH_MATCH_ERR_MASK              0x00000004
 #define BCHP_SDIO_ADMA_ERR_STAT_LENGTH_MATCH_ERR_SHIFT             2
+#define BCHP_SDIO_ADMA_ERR_STAT_LENGTH_MATCH_ERR_DEFAULT           0
 
 /* SDIO :: ADMA_ERR_STAT :: STATE_ERR [01:00] */
 #define BCHP_SDIO_ADMA_ERR_STAT_STATE_ERR_MASK                     0x00000003
 #define BCHP_SDIO_ADMA_ERR_STAT_STATE_ERR_SHIFT                    0
+#define BCHP_SDIO_ADMA_ERR_STAT_STATE_ERR_DEFAULT                  0
 
 /***************************************************************************
  *ADMA_SYSADDR_LO - ADMA System Address Low Bits
@@ -1027,6 +1212,7 @@
 /* SDIO :: ADMA_SYSADDR_LO :: ADMA_SYSADDR_LO [31:00] */
 #define BCHP_SDIO_ADMA_SYSADDR_LO_ADMA_SYSADDR_LO_MASK             0xffffffff
 #define BCHP_SDIO_ADMA_SYSADDR_LO_ADMA_SYSADDR_LO_SHIFT            0
+#define BCHP_SDIO_ADMA_SYSADDR_LO_ADMA_SYSADDR_LO_DEFAULT          0
 
 /***************************************************************************
  *ADMA_SYSADDR_HI - ADMA System Address High Bits
@@ -1034,6 +1220,7 @@
 /* SDIO :: ADMA_SYSADDR_HI :: ADMA_SYSADDR_HI [31:00] */
 #define BCHP_SDIO_ADMA_SYSADDR_HI_ADMA_SYSADDR_HI_MASK             0xffffffff
 #define BCHP_SDIO_ADMA_SYSADDR_HI_ADMA_SYSADDR_HI_SHIFT            0
+#define BCHP_SDIO_ADMA_SYSADDR_HI_ADMA_SYSADDR_HI_DEFAULT          0
 
 /***************************************************************************
  *BOOT_TIMEOUT - DAT line inactivity timeout on boot
@@ -1041,6 +1228,7 @@
 /* SDIO :: BOOT_TIMEOUT :: BOOT_TIMEOUT [31:00] */
 #define BCHP_SDIO_BOOT_TIMEOUT_BOOT_TIMEOUT_MASK                   0xffffffff
 #define BCHP_SDIO_BOOT_TIMEOUT_BOOT_TIMEOUT_SHIFT                  0
+#define BCHP_SDIO_BOOT_TIMEOUT_BOOT_TIMEOUT_DEFAULT                0
 
 /***************************************************************************
  *DEBUG_SELECT - Debug probe output selection
@@ -1052,6 +1240,7 @@
 /* SDIO :: DEBUG_SELECT :: DEBUG_SEL [01:00] */
 #define BCHP_SDIO_DEBUG_SELECT_DEBUG_SEL_MASK                      0x00000003
 #define BCHP_SDIO_DEBUG_SELECT_DEBUG_SEL_SHIFT                     0
+#define BCHP_SDIO_DEBUG_SELECT_DEBUG_SEL_DEFAULT                   0
 
 /***************************************************************************
  *SPI_INTERRUPT - SPI Interrupt support
@@ -1063,6 +1252,7 @@
 /* SDIO :: SPI_INTERRUPT :: SPI_INT [00:00] */
 #define BCHP_SDIO_SPI_INTERRUPT_SPI_INT_MASK                       0x00000001
 #define BCHP_SDIO_SPI_INTERRUPT_SPI_INT_SHIFT                      0
+#define BCHP_SDIO_SPI_INTERRUPT_SPI_INT_DEFAULT                    0
 
 /***************************************************************************
  *VERSION_STATUS - Controller Version and Slot Status
@@ -1070,10 +1260,12 @@
 /* SDIO :: VERSION_STATUS :: VENDOR_VERSION [31:24] */
 #define BCHP_SDIO_VERSION_STATUS_VENDOR_VERSION_MASK               0xff000000
 #define BCHP_SDIO_VERSION_STATUS_VENDOR_VERSION_SHIFT              24
+#define BCHP_SDIO_VERSION_STATUS_VENDOR_VERSION_DEFAULT            129
 
 /* SDIO :: VERSION_STATUS :: CONTROLLER_VERSION [23:16] */
 #define BCHP_SDIO_VERSION_STATUS_CONTROLLER_VERSION_MASK           0x00ff0000
 #define BCHP_SDIO_VERSION_STATUS_CONTROLLER_VERSION_SHIFT          16
+#define BCHP_SDIO_VERSION_STATUS_CONTROLLER_VERSION_DEFAULT        1
 
 /* SDIO :: VERSION_STATUS :: reserved0 [15:01] */
 #define BCHP_SDIO_VERSION_STATUS_reserved0_MASK                    0x0000fffe
@@ -1082,6 +1274,7 @@
 /* SDIO :: VERSION_STATUS :: SLOT_INTS [00:00] */
 #define BCHP_SDIO_VERSION_STATUS_SLOT_INTS_MASK                    0x00000001
 #define BCHP_SDIO_VERSION_STATUS_SLOT_INTS_SHIFT                   0
+#define BCHP_SDIO_VERSION_STATUS_SLOT_INTS_DEFAULT                 0
 
 #endif /* #ifndef BCHP_SDIO_H__ */
 

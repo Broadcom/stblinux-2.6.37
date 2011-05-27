@@ -21,6 +21,7 @@
 #include <linux/mm.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>
+#include <linux/bitops.h>
 #include <linux/module.h>
 #include <linux/version.h>
 
@@ -31,6 +32,8 @@
 #include <asm/asm-offsets.h>
 #include <asm/inst.h>
 #include <asm/fpu.h>
+#include <asm/hazards.h>
+#include <asm/cpu-features.h>
 #include <asm/brcmstb/brcmstb.h>
 #include <dma-coherence.h>
 
@@ -163,6 +166,9 @@ void __init bchip_check_compat(void)
 	MAIN_CHIP_ID(7344, a0);
 #elif defined(CONFIG_BCM7346)
 	MAIN_CHIP_ID(7346, a0);
+#elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
+	ALT_CHIP_ID(7552, a0);
+	MAIN_CHIP_ID(7358, a0);
 #elif defined(CONFIG_BCM7400)
 	MAIN_CHIP_ID(7400, d0);
 #elif defined(CONFIG_BCM7401)
@@ -222,7 +228,7 @@ void bchip_mips_setup(void)
 	unsigned long cbr = BMIPS_GET_CBR();
 
 	/* Set BIU to async mode */
-	set_c0_brcm_bus_pll(1 << 22);
+	set_c0_brcm_bus_pll(BIT(22));
 	__sync();
 
 #ifdef BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT
@@ -235,10 +241,10 @@ void bchip_mips_setup(void)
 #endif
 
 	/* put the BIU back in sync mode */
-	clear_c0_brcm_bus_pll(1 << 22);
+	clear_c0_brcm_bus_pll(BIT(22));
 
 	/* clear BHTD to enable branch history table */
-	clear_c0_brcm_reset(1 << 16);
+	clear_c0_brcm_reset(BIT(16));
 
 	/* Flush and enable RAC */
 	DEV_WR_RB(cbr + BMIPS_RAC_CONFIG, 0x100);
@@ -259,12 +265,32 @@ void bchip_mips_setup(void)
 	}
 
 	/* clear BHTD to enable branch history table */
-	clear_c0_brcm_config_0(1 << 21);
+	clear_c0_brcm_config_0(BIT(21));
+
+	/* XI enable */
+	if (kernel_uses_smartmips_rixi)
+		set_c0_brcm_config_0(BIT(23));
 
 #elif defined(CONFIG_BMIPS5000)
 
 	/* enable RDHWR, BRDHWR */
-	set_c0_brcm_config((1 << 17) | (1 << 21));
+	set_c0_brcm_config(BIT(17) | BIT(21));
+
+	if (kernel_uses_smartmips_rixi) {
+		/* XI enable */
+		set_c0_brcm_config(BIT(27));
+
+		/* enable MIPS32R2 ROR instruction for XI TLB handlers */
+		__asm__ __volatile__(
+		"	li	$8, 0x5a455048\n"
+		"	.word	0x4088b00f\n"	/* mtc0 $8, $22, 15 */
+		"	nop; nop; nop\n"
+		"	.word	0x4008b008\n"	/* mfc0 $8, $22, 8 */
+		"	lui	$9, 0x0100\n"
+		"	or	$8, $9\n"
+		"	.word	0x4088b008\n"	/* mtc0 $8, $22, 8 */
+		: : : "$8", "$9");
+	}
 
 #elif defined(CONFIG_MTI_R5K)
 
@@ -450,10 +476,10 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 	defined(CONFIG_BCM7231A0)
 
 	/* Disable SDHCI capabilities that are broken in A0 silicon */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), 1 << 18);	/* ADMA=0 */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), 1 << 24);	/* 1.8V=0 */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG1), 1 << 7);	/* Tuning=0 */
-	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), 1 << 31);	/* Override=1 */
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(18));	/* ADMA=0 */
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(24));	/* 1.8V=0 */
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG1), BIT(7));	/* Tuning=0 */
+	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
 
 	/* Use better defaults for timing */
 	BDEV_WR(SDIO_REG(cfg_base, IP_DLY), 0);
@@ -586,6 +612,12 @@ void __init bchip_set_features(void)
 #ifdef BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_0_otp_option_pcie_disable_MASK
 	if (BDEV_RD_F(SUN_TOP_CTRL_OTP_OPTION_STATUS_0,
 			otp_option_pcie_disable) == 1)
+		brcm_pcie_enabled = 0;
+#endif
+
+#ifdef CONFIG_BCM7425
+	/* disable PCIe initialization in EP mode */
+	if (BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE_0, strap_rc_ep) == 0)
 		brcm_pcie_enabled = 0;
 #endif
 }

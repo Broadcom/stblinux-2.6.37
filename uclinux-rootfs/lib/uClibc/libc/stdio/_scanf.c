@@ -198,7 +198,6 @@ int vscanf(const char * __restrict format, va_list arg)
 {
 	return vfscanf(stdin, format, arg);
 }
-libc_hidden_def(vscanf)
 
 #endif
 /**********************************************************************/
@@ -550,7 +549,7 @@ enum {
 #elif defined(LLONG_MAX) && (INTMAX_MAX == LLONG_MAX)
 #define IMS		8
 #else
-#error fix QUAL_CHARS ptrdiff_t entry 't'!
+#error fix QUAL_CHARS intmax_t entry 'j'!
 #endif
 
 #define QUAL_CHARS		{ \

@@ -498,11 +498,6 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 
 			read_cfg("defaults/override.linux-android", \%linux_o);
 			override_cfg(\%linux, \%linux_o);
-
-			# 256MB upper memory is OK, but disable XKS01 (768MB)
-			if(defined($linux{'CONFIG_BRCM_HAS_XKS01'})) {
-				$linux{'CONFIG_BRCM_UPPER_MEMORY'} = 'n';
-			}
 		} elsif($mod eq "newubi") {
 
 			# UBI/UBIFS backport from the mainline MTD tree
@@ -550,10 +545,14 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 
 	$busybox{"CONFIG_PREFIX"} = "\"$topdir/romfs\"";
 
-	# yecch, old uClibc doesn't know about arch/<ARCH>/include
-	$uclibc{"KERNEL_HEADERS"} = "\"$topdir/linux-2.6.x/include ".
-		"-I$topdir/linux-2.6.x/arch/mips/include\"";
-	
+	my $CC = $be ? "mips-linux-gcc" : "mipsel-linux-gcc";
+	my $sysroot = `$CC --print-sysroot`;
+	if(WEXITSTATUS($?) != 0) {
+		die "can't invoke $CC to find sysroot";
+	}
+	$sysroot =~ s/\s//g;
+	$uclibc{"KERNEL_HEADERS"} = "\"$sysroot/usr/include\"";
+
 	# clean up the build system if switching targets
 	# "quick" mode (skip distclean) is for testing only
 	if(-e ".target" && ! $quick) {

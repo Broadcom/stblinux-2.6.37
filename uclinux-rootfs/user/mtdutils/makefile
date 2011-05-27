@@ -36,6 +36,7 @@ export BUILDDIR PWD
 
 .PHONY: all
 all::
+	$(MAKE) -f Makefile $(MTD_PATHS) subdirs_lib_all
 	$(MAKE) -f Makefile $(MTD_PATHS) subdirs_ubi-utils_all
 
 .PHONY: romfs

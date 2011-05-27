@@ -14,7 +14,7 @@ all::
 		./configure --host=$(MACHINE)-linux \
 			--without-shared --enable-termcap || exit 1 ; \
 	fi
-	$(MAKE) -C ncurses
+	$(MAKE) -j1 -C ncurses
 	ln -sf curses.h include/ncurses.h
 
 .PHONY: romfs

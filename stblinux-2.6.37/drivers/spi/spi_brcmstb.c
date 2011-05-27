@@ -99,10 +99,20 @@
 #define BSPI_FLASH_TYPE_SST		3
 #define BSPI_FLASH_TYPE_UNKNOWN		-1
 
+static int nobspi;
+module_param(nobspi, int, 0444);
+
 static int bspi_width  = BSPI_WIDTH_1BIT;
+module_param(bspi_width, int, 0444);
+
 static int bspi_addrlen  = BSPI_ADDRLEN_3BYTES;
+module_param(bspi_addrlen, int, 0444);
+
 static int bspi_hp;
+module_param(bspi_hp, int, 0444);
+
 static int bspi_flash = BSPI_FLASH_TYPE_UNKNOWN;
+module_param(bspi_flash, int, 0444);
 
 struct bcmspi_parms {
 	u32			speed_hz;
@@ -268,23 +278,30 @@ static int bcmspi_lr_is_fifo_empty(struct bcmspi_priv *priv)
 	return priv->bspi_hw_raf->status & BCHP_BSPI_RAF_STATUS_FIFO_EMPTY_MASK;
 }
 
-static u32 bcmspi_lr_read_fifo(struct bcmspi_priv *priv)
+/* BSPI v3 LR is LE only, convert data to host endianness */
+#if CONFIG_BRCM_BSPI_MAJOR_VERS >= 4
+#define BSPI_DATA(a) (a)
+#else
+#define BSPI_DATA(a) le32_to_cpu(a)
+#endif
+
+static inline u32 bcmspi_lr_read_fifo(struct bcmspi_priv *priv)
 {
-	return priv->bspi_hw_raf->read_data;
+	return BSPI_DATA(priv->bspi_hw_raf->read_data);
 }
 
-static void bcmspi_lr_start(struct bcmspi_priv *priv)
+static inline void bcmspi_lr_start(struct bcmspi_priv *priv)
 {
 	priv->bspi_hw_raf->ctrl = BCHP_BSPI_RAF_CTRL_START_MASK;
 }
 
-static void bcmspi_lr_clear(struct bcmspi_priv *priv)
+static inline void bcmspi_lr_clear(struct bcmspi_priv *priv)
 {
 	priv->bspi_hw_raf->ctrl = BCHP_BSPI_RAF_CTRL_CLEAR_MASK;
 	bcmspi_flush_prefetch_buffers(priv);
 }
 
-static int bcmspi_is_4_byte_mode(struct bcmspi_priv *priv)
+static inline int bcmspi_is_4_byte_mode(struct bcmspi_priv *priv)
 {
 	return priv->flex_mode.addrlen == BSPI_ADDRLEN_4BYTES;
 }
@@ -857,8 +874,10 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 
 	buf = (void *)trans->rx_buf;
 
+	/* non-aligned and very short transfers are handled by MSPI */
 	if (unlikely(!DWORD_ALIGNED(addr) ||
 		     !DWORD_ALIGNED(buf) ||
+		     len < sizeof(u32) ||
 		     !priv->bspi_hw_raf)) {
 		spin_unlock_irqrestore(&priv->lock, flags);
 		return -1;
@@ -1037,9 +1056,13 @@ static irqreturn_t bcmspi_interrupt(int irq, void *dev_id)
 					buf[priv->cur_xfer_idx++] = data;
 					priv->cur_xfer_len -= 4;
 				} else {
-					/* read out remaining bytes */
+					/*
+					 * Read out remaining bytes, make sure
+					 * we do not cross the buffer boundary
+					 */
 					u8 *cbuf =
 						(u8 *)&buf[priv->cur_xfer_idx];
+					data = cpu_to_le32(data);
 					while (priv->cur_xfer_len) {
 						*cbuf++ = (u8)data;
 						data >>= 8;
@@ -1354,7 +1377,7 @@ static int bcmspi_probe(struct platform_device *pdev)
 
 	/* BSPI register range (not supported on all platforms) */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-	if (res) {
+	if (res && !nobspi) {
 		priv->bspi_hw = (volatile void *)ioremap(res->start,
 			res->end - res->start);
 		if (!priv->bspi_hw) {
@@ -1367,7 +1390,7 @@ static int bcmspi_probe(struct platform_device *pdev)
 
 	/* BSPI_RAF register range */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 2);
-	if (res) {
+	if (res && !nobspi) {
 		priv->bspi_hw_raf = (volatile void *)ioremap(res->start,
 			res->end - res->start);
 		if (!priv->bspi_hw_raf) {
@@ -1487,11 +1510,6 @@ static void __exit bcmspi_spi_exit(void)
 	platform_driver_unregister(&driver);
 }
 module_exit(bcmspi_spi_exit);
-
-module_param(bspi_width, int, 0444);
-module_param(bspi_addrlen, int, 0444);
-module_param(bspi_hp, int, 0444);
-module_param(bspi_flash, int, 0444);
 
 MODULE_AUTHOR("Broadcom Corporation");
 MODULE_DESCRIPTION("MSPI/HIF SPI driver");

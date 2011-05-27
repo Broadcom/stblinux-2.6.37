@@ -2104,6 +2104,10 @@ static int init_umac(struct BcmEnet_devctrl *pDevCtrl)
 
 	TRACE(("bcmgenet: init_umac "));
 
+	/* 7358a0/7552a0: bad default in RBUF_FLUSH_CTRL.umac_sw_rst */
+	GENET_RBUF_FLUSH_CTRL(pDevCtrl) = 0;
+	udelay(10);
+
 	/* disable MAC while updating its registers */
 	umac->cmd = 0 ;
 

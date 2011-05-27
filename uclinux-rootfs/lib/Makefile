@@ -91,15 +91,15 @@ ifeq ($(LIBCDIR),glibc/build)
 			--enable-add-ons ; \
 	fi
 endif
-# Force a rebuild of the Makefiles in the directfb tree.
-	if [ -d directfb ]; then $(RM) directfb/Makefile directfb/configure directfb/config.cache; fi
-	@echo '$$$$$$$$$$$$$$$$$ Building all libraries $$$$$$$$$$$$$$$$$$$$$$$$'
-	@echo 'dir_y =' "$(dir_y)"
-	for i in $(dir_y) ; do [ ! -d $$i ] || $(MAKEARCH) -C $$i || exit $? ; done
+	@for i in $(dir_y); do \
+		echo "--> making all in lib/$$i"; \
+		$(MAKE) -C $$i || exit $$?; \
+	done
 
 romfs:
-	for i in $(dir_y) ; do \
-		[ ! -d $$i ] || $(MAKEARCH) -C $$i romfs || exit $$? ; \
+	@for i in $(dir_y); do \
+		echo "--> making romfs in lib/$$i"; \
+		$(MAKE) -C $$i romfs || exit $$?; \
 	done
 ifeq ($(INITRD_SUBDIR),) 
 ifeq ($(findstring y,$(CONFIG_LIB_LIBSTDCXX_FORCE)$(CONFIG_LIB_LIBSTDCXX)),y)
@@ -132,16 +132,10 @@ ifeq ($(LIBCDIR),glibc/build)
 	rm -rf glibc/build
 endif
 	-for i in $(dir_y) $(dir_n) $(dir_); do \
-		[ ! -d $$i ] || $(MAKEARCH) -C $$i clean ; \
+		$(MAKE) -C $$i clean ; \
 	done
-ifeq ($(LIBCDIR),uClibc)
-	rm -f $(LIBCDIR)/Config
-endif
 
 distclean:
 	-for i in $(dir_y) $(dir_n) $(dir_); do \
-		[ ! -d $$i ] || $(MAKEARCH) -C $$i distclean ; \
+		$(MAKE) -C $$i distclean ; \
 	done
-ifeq ($(LIBCDIR),uClibc)
-	rm -f $(LIBCDIR)/Config
-endif

@@ -20,6 +20,7 @@
 #include <linux/smp.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/bitops.h>
 #include <linux/bmoca.h>
 #include <linux/mtd/partitions.h>
 
@@ -125,6 +126,22 @@ char irq_tab_brcmstb_docsis[NUM_SLOTS][4] __devinitdata = {
 		 ~BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_##reg##_##field##_MASK) | \
 		((val) << \
 		 BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_##reg##_##field##_SHIFT)); \
+	} while (0)
+
+#define PADCTRL(reg, field, val) do { \
+	BDEV_WR(BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_##reg, \
+		(BDEV_RD(BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_##reg) & \
+		 ~BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_##reg##_##field##_MASK) | \
+		((val) << \
+		 BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_##reg##_##field##_SHIFT)); \
+	} while (0)
+
+#define AON_PADCTRL(reg, field, val) do { \
+	BDEV_WR(BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_##reg, \
+		(BDEV_RD(BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_##reg) & \
+		 ~BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_##reg##_##field##_MASK) | \
+		((val) << \
+		 BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_##reg##_##field##_SHIFT)); \
 	} while (0)
 
 void board_pinmux_setup(void)
@@ -246,6 +263,45 @@ void board_pinmux_setup(void)
 		BDEV_UNSET(BCHP_SDIO_0_CFG_CAP_REG0, 1 << 19);	/* Highspd=0 */
 		BDEV_SET(BCHP_SDIO_0_CFG_CAP_REG1, 1 << 31);	/* Override=1 */
 	} else {
+		/* set RGMII lines to 2.5V */
+		BDEV_WR_F(SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0,
+			rgmii_0_pad_mode, 1);
+
+		PINMUX(15, gpio_132, 1);	/* RGMII RX */
+		PINMUX(15, gpio_133, 1);
+		PINMUX(15, gpio_134, 1);
+		PINMUX(16, gpio_139, 1);
+		PINMUX(16, gpio_140, 1);
+		PINMUX(16, gpio_141, 1);
+		PINMUX(16, gpio_142, 1);
+
+		PINMUX(16, gpio_138, 1);	/* RGMII TX */
+		PINMUX(17, gpio_143, 1);
+		PINMUX(17, gpio_144, 1);
+		PINMUX(17, gpio_145, 1);
+		PINMUX(17, gpio_146, 1);
+		PINMUX(17, gpio_147, 1);
+
+		PINMUX(17, gpio_149, 1);	/* RGMII MDIO */
+		PINMUX(16, gpio_137, 1);
+
+		/* no pulldown on RGMII lines */
+		PADCTRL(8, gpio_132_pad_ctrl, 0);
+		PADCTRL(8, gpio_133_pad_ctrl, 0);
+		PADCTRL(8, gpio_134_pad_ctrl, 0);
+		PADCTRL(8, gpio_137_pad_ctrl, 0);
+		PADCTRL(8, gpio_138_pad_ctrl, 0);
+		PADCTRL(9, gpio_139_pad_ctrl, 0);
+		PADCTRL(9, gpio_140_pad_ctrl, 0);
+		PADCTRL(9, gpio_141_pad_ctrl, 0);
+		PADCTRL(9, gpio_142_pad_ctrl, 0);
+		PADCTRL(9, gpio_143_pad_ctrl, 0);
+		PADCTRL(9, gpio_144_pad_ctrl, 0);
+		PADCTRL(9, gpio_145_pad_ctrl, 0);
+		PADCTRL(9, gpio_146_pad_ctrl, 0);
+		PADCTRL(9, gpio_147_pad_ctrl, 0);
+		PADCTRL(9, gpio_149_pad_ctrl, 0);
+
 		PINMUX(14, gpio_122, 1);	/* SDIO */
 		PINMUX(14, gpio_123, 1);
 		PINMUX(14, gpio_124, 1);
@@ -257,27 +313,17 @@ void board_pinmux_setup(void)
 		PINMUX(15, gpio_130, 1);
 		PINMUX(15, gpio_131, 1);
 
-		/* disable GPIO pulldowns */
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_7,
-			gpio_122_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_7,
-			gpio_123_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_124_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_125_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_126_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_127_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_128_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_129_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_130_pad_ctrl, 0);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
-			gpio_131_pad_ctrl, 0);
+		/* no pulldown on SDIO lines */
+		PADCTRL(7, gpio_122_pad_ctrl, 0);
+		PADCTRL(7, gpio_123_pad_ctrl, 0);
+		PADCTRL(8, gpio_124_pad_ctrl, 0);
+		PADCTRL(8, gpio_125_pad_ctrl, 0);
+		PADCTRL(8, gpio_126_pad_ctrl, 0);
+		PADCTRL(8, gpio_127_pad_ctrl, 0);
+		PADCTRL(8, gpio_128_pad_ctrl, 0);
+		PADCTRL(8, gpio_129_pad_ctrl, 0);
+		PADCTRL(8, gpio_130_pad_ctrl, 0);
+		PADCTRL(8, gpio_131_pad_ctrl, 0);
 	}
 
 #elif defined(CONFIG_BCM7325B0)
@@ -385,7 +431,6 @@ void board_pinmux_setup(void)
 	PINMUX(9, gpio_34, 1);		/* RGMII TX */
 	PINMUX(9, gpio_35, 1);
 	PINMUX(10, gpio_36, 1);
-
 	PINMUX(10, gpio_40, 1);
 	PINMUX(10, gpio_39, 1);
 	PINMUX(10, gpio_38, 1);
@@ -410,6 +455,75 @@ void board_pinmux_setup(void)
 	PINMUX(16, sgpio_02, 1);	/* MoCA I2C on BSCB */
 	PINMUX(16, sgpio_03, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCB_REG_START);
+
+#elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
+
+	PINMUX(11, gpio_89, 1);		/* UARTB TX */
+	PINMUX(11, gpio_90, 1);		/* UARTB RX */
+	PINMUX(11, gpio_91, 1);		/* UARTC TX */
+	PINMUX(11, gpio_92, 1);		/* UARTC RX */
+
+	AON_PINMUX(1, aon_gpio_08, 6);	/* SDIO */
+	AON_PINMUX(1, aon_gpio_12, 5);
+	AON_PINMUX(1, aon_gpio_13, 5);
+	AON_PINMUX(2, aon_gpio_14, 4);
+	AON_PINMUX(2, aon_gpio_15, 5);
+	AON_PINMUX(2, aon_gpio_16, 5);
+	AON_PINMUX(2, aon_gpio_17, 5);
+	AON_PINMUX(2, aon_gpio_18, 5);
+	AON_PINMUX(2, aon_gpio_19, 5);
+	AON_PINMUX(2, aon_gpio_20, 5);
+
+	/* disable pulldowns */
+	AON_PADCTRL(0, aon_gpio_08_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_12_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_13_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_14_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_15_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_16_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_17_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_18_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_19_pad_ctrl, 0);
+	AON_PADCTRL(1, aon_gpio_20_pad_ctrl, 0);
+
+#if defined(CONFIG_BCMGENET_0_GPHY)
+	/* set RGMII lines to 2.5V */
+	BDEV_WR_F(SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0, rgmii_0_pad_mode, 1);
+
+	PINMUX(14, gpio_111, 1);	/* RGMII RX */
+	PINMUX(14, gpio_112, 1);
+	PINMUX(14, gpio_114, 1);
+	PINMUX(14, gpio_115, 1);
+	PINMUX(14, gpio_116, 1);
+	PINMUX(14, gpio_117, 1);
+
+	PINMUX(14, gpio_113, 1);	/* RGMII TX */
+	PINMUX(14, gpio_118, 1);
+	PINMUX(15, gpio_119, 1);
+	PINMUX(15, gpio_120, 1);
+	PINMUX(15, gpio_121, 1);
+	PINMUX(15, gpio_122, 1);
+
+	PINMUX(15, gpio_123, 1);	/* RGMII MDIO */
+	PINMUX(15, gpio_124, 1);
+
+	/* disable GPIO pulldowns */
+	PADCTRL(7, gpio_111_pad_ctrl, 0);
+	PADCTRL(7, gpio_112_pad_ctrl, 0);
+	PADCTRL(7, gpio_113_pad_ctrl, 0);
+	PADCTRL(7, gpio_114_pad_ctrl, 0);
+	PADCTRL(7, gpio_115_pad_ctrl, 0);
+	PADCTRL(7, gpio_116_pad_ctrl, 0);
+	PADCTRL(8, gpio_117_pad_ctrl, 0);
+	PADCTRL(8, gpio_118_pad_ctrl, 0);
+	PADCTRL(8, gpio_119_pad_ctrl, 0);
+	PADCTRL(8, gpio_120_pad_ctrl, 0);
+	PADCTRL(8, gpio_121_pad_ctrl, 0);
+	PADCTRL(8, gpio_122_pad_ctrl, 0);
+	PADCTRL(8, gpio_123_pad_ctrl, 0);
+	PADCTRL(8, gpio_124_pad_ctrl, 0);
+
+#endif /* defined(CONFIG_BCMGENET_0_GPHY) */
 
 #elif defined(CONFIG_BCM7400D0)
 
@@ -534,11 +648,11 @@ void board_pinmux_setup(void)
 	PINMUX(8, gpio_013, 1);
 	PINMUX(8, gpio_014, 1);
 
-	PINMUX(20, gpio_108, 3);	/* ENET MDIO  */
+	PINMUX(20, gpio_108, 3);	/* ENET MDIO */
 	PINMUX(20, gpio_109, 4);
 #endif
 
-#elif defined(CONFIG_BCM7422) || defined(CONFIG_BCM7425)
+#elif defined(CONFIG_BCM7425)
 
 	/* Bootloader indicates the availability of SDIO_0 in SCRATCH reg */
 	if ((BDEV_RD(BCHP_SDIO_0_CFG_SCRATCH) & 0x01) == 0) {
@@ -554,8 +668,13 @@ void board_pinmux_setup(void)
 		PINMUX(15, gpio_081, 2);
 
 		/* enable internal pullups */
+#ifdef CONFIG_BCM7425A0
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9,
 			gpio_072_pad_ctrl, 2);
+#else
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
+			gpio_072_pad_ctrl, 2);
+#endif
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
 			gpio_073_pad_ctrl, 2);
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
@@ -651,6 +770,20 @@ void board_pinmux_setup(void)
 
 	/* disable GPIO pulldowns, in order to get 3.3v on SDIO pins */
 	BDEV_WR_F_RB(VCXO_CTL_MISC_GPIO_PAD_CTRL, GPIO_PDN, 0);
+
+	PINMUX(12, gpio_36, 1);		/* SDIO */
+	PINMUX(12, gpio_37, 1);
+	PINMUX(12, gpio_38, 1);
+	PINMUX(12, gpio_39, 1);
+	PINMUX(12, gpio_40, 1);
+	PINMUX(12, gpio_41, 1);
+	PINMUX(12, gpio_42, 1);
+	PINMUX(13, gpio_43, 1);
+	PINMUX(13, gpio_44, 1);
+
+#elif defined(CONFIG_BCM7640)
+	PINMUX(8, gpio_03, 1);		/* UARTB TX */
+	PINMUX(7, gpio_02, 1);		/* UARTB RX */
 
 	PINMUX(12, gpio_36, 1);		/* SDIO */
 	PINMUX(12, gpio_37, 1);

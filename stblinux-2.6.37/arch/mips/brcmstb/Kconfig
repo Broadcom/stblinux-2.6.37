@@ -328,8 +328,9 @@ config BCM7344B0
 	bool "7344 Bx"
 	select BRCM_PLATFORM_DEFAULTS
 	select BCM7344
-	select BMIPS4380
+	select BMIPS5000
 	select BRCM_HAS_XKS01
+	select BRCM_HAS_XI
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
@@ -374,8 +375,9 @@ config BCM7346B0
 	bool "7346 Bx"
 	select BRCM_PLATFORM_DEFAULTS
 	select BCM7346
-	select BMIPS4380
+	select BMIPS5000
 	select BRCM_HAS_XKS01
+	select BRCM_HAS_XI
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
@@ -614,13 +616,14 @@ config BCM7425B0
 	select BCM7425
 	select BMIPS5000
 	select BRCM_HAS_XKS01
+	select BRCM_HAS_XI
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
 	select BRCM_HAS_PCIE
 	select BRCM_HAS_GENET_0
-	select BRCM_HAS_MOCA_11_PLUS
-	select BRCM_MOCA_ON_GENET_1
+	# select BRCM_HAS_MOCA_20
+	# select BRCM_MOCA_ON_GENET_1
 	select BRCM_GENET_V2
 	select BRCM_HAS_NOR
 	select BRCM_HAS_NAND_MAJOR_5
@@ -852,7 +855,7 @@ comment "Memory map"
 config BRCM_UPPER_MEMORY
 	bool "Large (>256MB) memory support"
 	depends on BRCM_HAS_UPPER_MEMORY
-	select ARCH_SPARSEMEM_ENABLE if !HIGHMEM
+	select ARCH_SPARSEMEM_ENABLE
 	select BRCM_UPPER_256MB if !BRCM_HAS_XKS01
 	select BRCM_UPPER_768MB if BRCM_HAS_XKS01
 	default y
@@ -1715,6 +1718,10 @@ config BRCM_IRW_HALT
 
 # MIPS: extended kseg0/kseg1 feature
 config BRCM_HAS_XKS01
+	bool
+
+# MIPS: eXecute Inhibit (for no-exec stack)
+config BRCM_HAS_XI
 	bool
 
 config BRCM_HAS_UPPER_MEMORY

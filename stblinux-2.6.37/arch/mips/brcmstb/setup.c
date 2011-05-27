@@ -524,10 +524,9 @@ static int __init platform_devices_setup(void)
 
 #if defined(CONFIG_BRCM_HAS_GENET_1)
 
+		phy_type = brcm_ext_mii_mode;
 #if defined(CONFIG_BRCM_MOCA_ON_GENET_1)
-		if (!brcm_moca_enabled)
-			phy_type = brcm_ext_mii_mode;
-		else {
+		if (brcm_moca_enabled) {
 			phy_type = BRCM_PHY_TYPE_MOCA;
 			brcm_register_moca(id);
 		}

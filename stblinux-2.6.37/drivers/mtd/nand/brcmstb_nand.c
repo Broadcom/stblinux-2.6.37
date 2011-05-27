@@ -37,6 +37,16 @@
 #include <asm/addrspace.h>
 #include <asm/brcmstb/brcmstb.h>
 
+/*
+ * SWLINUX-1818: this flag controls if WP stays on between erase/write
+ * commands to mitigate flash corruption due to power glitches. Values:
+ * 0: NAND_WP is not used or not available
+ * 1: NAND_WP is set by default, cleared for erase/write operations
+ * 2: NAND_WP is always cleared
+ */
+static int wp_on = 1;
+module_param(wp_on, int, 0444);
+
 /***********************************************************************
  * Definitions
  ***********************************************************************/
@@ -244,6 +254,19 @@ static void brcmstb_erase_cmd(struct mtd_info *mtd, int page)
 	chip->cmdfunc(mtd, NAND_CMD_ERASE1, -1, page);
 }
 
+static void brcmstb_nand_wp(struct mtd_info *mtd, int wp)
+{
+#ifdef BCHP_NAND_CS_NAND_SELECT_NAND_WP_MASK
+	if (wp_on == 1) {
+		static int old_wp = -1;
+		if (old_wp != wp) {
+			DBG("%s: WP %s\n", __func__, wp ? "on" : "off");
+			old_wp = wp;
+		}
+		BDEV_WR_F_RB(NAND_CS_NAND_SELECT, NAND_WP, wp);
+	}
+#endif
+}
 
 static int brcmstb_check_exceptions(struct mtd_info *mtd)
 {
@@ -377,6 +400,7 @@ static int brcmstb_nand_waitfunc(struct mtd_info *mtd, struct nand_chip *this)
 			BDEV_RD(BCHP_NAND_INTFC_STATUS));
 	}
 	ctrl.cmd_pending = 0;
+	brcmstb_nand_wp(mtd, 1);
 	return BDEV_RD_F(NAND_INTFC_STATUS, FLASH_STATUS);
 }
 
@@ -412,6 +436,7 @@ static void brcmstb_nand_cmdfunc(struct mtd_info *mtd, unsigned command,
 		break;
 	case NAND_CMD_ERASE1:
 		native_cmd = CMD_BLOCK_ERASE;
+		brcmstb_nand_wp(mtd, 0);
 		break;
 #if CONTROLLER_VER >= 40
 	case NAND_CMD_PARAM:
@@ -453,6 +478,8 @@ static uint8_t brcmstb_nand_read_byte(struct mtd_info *mtd)
 
 	case NAND_CMD_STATUS:
 		ret = BDEV_RD(BCHP_NAND_INTFC_STATUS) & 0xff;
+		if (wp_on) /* SWLINUX-1818: hide WP status from MTD */
+			ret |= NAND_STATUS_WP;
 		break;
 
 #if CONTROLLER_VER >= 40
@@ -494,6 +521,8 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	ctrl.edu_ext_addr = addr;
 	ctrl.edu_cmd = edu_cmd;
 	ctrl.edu_count = trans - 1;
+
+	brcmstb_nand_wp(mtd, edu_cmd == EDU_CMD_READ);
 
 	BDEV_WR_RB(BCHP_EDU_DRAM_ADDR, (u32)ctrl.edu_dram_addr);
 	BDEV_WR_RB(BCHP_EDU_EXT_ADDR, ctrl.edu_ext_addr);
@@ -761,6 +790,8 @@ static int brcmstb_nand_write(struct mtd_info *mtd,
 					(oob[j * 4 + 3] <<  0));
 			oob += tbytes;
 		}
+
+		brcmstb_nand_wp(mtd, 0);
 
 		/* we cannot use SPARE_AREA_PROGRAM when PARTIAL_PAGE_EN=0 */
 		brcmstb_nand_send_cmd(CMD_PROGRAM_PAGE);
@@ -1051,7 +1082,8 @@ static int __devinit brcmstb_nand_probe(struct platform_device *pdev)
 		goto out;
 	}
 	chip->options |= NAND_NO_SUBPAGE_WRITE | NAND_NO_AUTOINCR |
-		NAND_SKIP_BBTSCAN;
+		NAND_SKIP_BBTSCAN | NAND_USE_FLASH_BBT |
+		NAND_USE_FLASH_BBT_NO_OOB;
 	if (nand_scan_tail(mtd) || brcmstb_nand_setup_dev(host) ||
 			chip->scan_bbt(mtd)) {
 		ret = -ENXIO;
@@ -1143,6 +1175,13 @@ static int __init brcmstb_nand_init(void)
 	/* disable direct addressing + XOR for all NAND devices */
 	BDEV_UNSET(BCHP_NAND_CS_NAND_SELECT, 0xff);
 	BDEV_UNSET(BCHP_NAND_CS_NAND_XOR, 0xff);
+
+#ifdef BCHP_NAND_CS_NAND_SELECT_NAND_WP_MASK
+	if (wp_on == 2) /* SWLINUX-1818: Permanently remove write-protection */
+		BDEV_WR_F_RB(NAND_CS_NAND_SELECT, NAND_WP, 0);
+#else
+	wp_on = 0;
+#endif
 
 	ctrl.irq = BRCM_IRQ_HIF;
 

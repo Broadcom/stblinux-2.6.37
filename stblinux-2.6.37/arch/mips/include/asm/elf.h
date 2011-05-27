@@ -348,6 +348,12 @@ extern int dump_task_fpu(struct task_struct *, elf_fpregset_t *);
 #define ELF_PLATFORM  __elf_platform
 extern const char *__elf_platform;
 
+static inline void set_elf_platform(int cpu, const char *plat)
+{
+	if (cpu == 0)
+		__elf_platform = plat;
+}
+
 /*
  * See comments in asm-alpha/elf.h, this is the same thing
  * on the MIPS.

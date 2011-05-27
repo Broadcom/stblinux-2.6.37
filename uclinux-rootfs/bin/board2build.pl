@@ -95,7 +95,8 @@ if($chip eq "3549" || $chip eq "3556") {
 	$chip = "7344";
 } elsif($chip eq "7356") {
 	$chip = "7346";
-} elsif($chip eq "7421") {
+} elsif($chip eq "7421" || $chip eq "7422" || $chip eq "74122" ||
+		$chip eq "7424") {
 	$chip = "7425";
 }
 
@@ -105,10 +106,6 @@ if($chip eq "7125" && ($rev eq "d0" || $rev eq "e0")) {
 
 if($chip eq "7418" && $rev eq "a0") {
 	$chip = "7344";
-}
-
-if($chip eq "7422" && $rev ne "a0") {
-	$chip = "7425";
 }
 
 print "${chip}${rev}\n";

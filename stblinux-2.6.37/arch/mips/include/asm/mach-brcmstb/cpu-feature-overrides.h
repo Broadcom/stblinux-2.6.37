@@ -70,4 +70,8 @@
 
 #endif
 
+#if defined(CONFIG_BRCM_HAS_XI)
+#define kernel_uses_smartmips_rixi	1
+#endif
+
 #endif /* __ASM_MACH_BRCMSTB_CPU_FEATURE_OVERRIDES_H */

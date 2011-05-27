@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <libc-internal.h>
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
 #include <errno.h>
 #include <pthread-functions.h>
@@ -45,22 +46,15 @@ void *__libc_stack_end = NULL;
 
 # ifdef __UCLIBC_HAS_SSP__
 #  include <dl-osinfo.h>
+static uintptr_t stack_chk_guard;
 #  ifndef THREAD_SET_STACK_GUARD
 /* Only exported for architectures that don't store the stack guard canary
  * in thread local area. */
-#   include <stdint.h>
-uintptr_t stack_chk_guard;
 /* for gcc-4.1 non-TLS */
 uintptr_t __stack_chk_guard attribute_relro;
+#  endif
 /* for gcc-3.x + Etoh ssp */
-#   ifdef __UCLIBC_HAS_SSP_COMPAT__
-#    ifdef __HAVE_SHARED__
-strong_alias(__stack_chk_guard,__guard)
-#    else
-uintptr_t __guard attribute_relro;
-#    endif
-#   endif
-#  elif defined __UCLIBC_HAS_SSP_COMPAT__
+#  ifdef __UCLIBC_HAS_SSP_COMPAT__
 uintptr_t __guard attribute_relro;
 #  endif
 # endif
@@ -163,6 +157,12 @@ weak_alias (program_invocation_short_name, __progname)
 weak_alias (program_invocation_name, __progname_full)
 #endif
 
+/* Highest numbered auxvec entry to copy into auxvt[] */
+#define AT_MAX		AT_L3_CACHESHAPE
+
+attribute_hidden const char *__auxv_platform = NULL;
+attribute_hidden int __auxv_l1d_cacheshape = 0;
+
 /*
  * Declare the __environ global variable and create a weak alias environ.
  * This must be initialized; we cannot have a weak alias into bss.
@@ -251,18 +251,14 @@ void __uClibc_init(void)
 #ifndef SHARED
 # ifdef __UCLIBC_HAS_SSP__
     /* Set up the stack checker's canary.  */
-#  ifdef THREAD_SET_STACK_GUARD
-    uintptr_t stack_chk_guard = _dl_setup_stack_chk_guard();
-    THREAD_SET_STACK_GUARD (stack_chk_guard);
-#   ifdef __UCLIBC_HAS_SSP_COMPAT__
     stack_chk_guard = _dl_setup_stack_chk_guard();
-    __guard = stack_chk_guard;
-#   endif
+#  ifdef THREAD_SET_STACK_GUARD
+    THREAD_SET_STACK_GUARD (stack_chk_guard);
 #  else
     __stack_chk_guard = stack_chk_guard;
-#   if !defined __HAVE_SHARED__ && defined __UCLIBC_HAS_SSP_COMPAT__
-     __guard = stack_chk_guard;
-#   endif
+#  endif
+#  ifdef __UCLIBC_HAS_SSP_COMPAT__
+    __guard = stack_chk_guard;
 #  endif
 # endif
 #endif
@@ -313,6 +309,11 @@ void __uClibc_fini(void)
 }
 libc_hidden_def(__uClibc_fini)
 
+#ifndef SHARED
+extern void __nptl_deallocate_tsd (void) __attribute ((weak));
+extern unsigned int __nptl_nthreads __attribute ((weak));
+#endif
+
 /* __uClibc_main is the new main stub for uClibc. This function is
  * called from crt1 (version 0.9.28 or newer), after ALL shared libraries
  * are initialized, just before we call the application's main function.
@@ -327,7 +328,7 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 {
 #ifndef __ARCH_HAS_NO_LDSO__
     unsigned long *aux_dat;
-    ElfW(auxv_t) auxvt[AT_EGID + 1];
+    ElfW(auxv_t) auxvt[AT_MAX + 1];
 #endif
 
 #ifdef __UCLIBC_HAS_THREADS_NATIVE__
@@ -361,7 +362,7 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
     aux_dat++;
     while (*aux_dat) {
 	ElfW(auxv_t) *auxv_entry = (ElfW(auxv_t) *) aux_dat;
-	if (auxv_entry->a_type <= AT_EGID) {
+	if (auxv_entry->a_type <= AT_MAX) {
 	    memcpy(&(auxvt[auxv_entry->a_type]), auxv_entry, sizeof(ElfW(auxv_t)));
 	}
 	aux_dat += 2;
@@ -382,6 +383,8 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 #ifndef __ARCH_HAS_NO_LDSO__
     /* Make certain getpagesize() gives the correct answer */
     __pagesize = (auxvt[AT_PAGESZ].a_un.a_val)? auxvt[AT_PAGESZ].a_un.a_val : PAGE_SIZE;
+    __auxv_platform = (char *)auxvt[AT_PLATFORM].a_un.a_val;
+    __auxv_l1d_cacheshape = (int)auxvt[AT_L1D_CACHESHAPE].a_un.a_val;
 
     /* Prevent starting SUID binaries where the stdin. stdout, and
      * stderr file descriptors are not already opened. */
@@ -481,7 +484,6 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 # ifdef SHARED
 		__libc_pthread_functions.ptr__nptl_deallocate_tsd ();
 # else
-		extern void __nptl_deallocate_tsd (void) __attribute ((weak));
 		__nptl_deallocate_tsd ();
 # endif
 
@@ -491,7 +493,6 @@ void __uClibc_main(int (*main)(int, char **, char **), int argc,
 # ifdef SHARED
 		unsigned int *const ptr = __libc_pthread_functions.ptr_nthreads;
 # else
-		extern unsigned int __nptl_nthreads __attribute ((weak));
 		unsigned int *const ptr = &__nptl_nthreads;
 # endif
 

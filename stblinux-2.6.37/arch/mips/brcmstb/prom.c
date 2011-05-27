@@ -397,9 +397,10 @@ void __init prom_init(void)
 		"enet1_en=%d moca=%d\n",
 		brcm_enet_enabled, brcm_enet0_force_ext_mii,
 		brcm_enet_no_mdio, brcm_enet1_enabled, brcm_moca_enabled);
-	printk(KERN_INFO "         sata=%d docsis=%d pci=%d smp=%d usb=%d\n",
+	printk(KERN_INFO "         sata=%d docsis=%d pci=%d pcie=%d smp=%d "
+		"usb=%d\n",
 		brcm_sata_enabled, brcm_docsis_platform, brcm_pci_enabled,
-		brcm_smp_enabled, brcm_usb_enabled);
+		brcm_pcie_enabled, brcm_smp_enabled, brcm_usb_enabled);
 
 	bchip_early_setup();
 
@@ -418,9 +419,10 @@ void __init prom_init(void)
 #ifdef CONFIG_BRCM_UPPER_MEMORY
 #if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0)
 		/* HW7425-451: broken in A0, fixed in A1 */
-		if (BRCM_CHIP_REV() == 0x00)
+		if (BRCM_CHIP_REV() == 0x00) {
 			mb = min(dram0_mb, 512UL);
-		else
+			dram0_mb = mb;
+		} else
 #endif
 		mb = min(dram0_mb, BRCM_MAX_UPPER_MB);
 		dram0_mb -= mb;

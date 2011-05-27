@@ -77,6 +77,7 @@ struct brcm_pm_priv
 #define BUF_SIZE	64
 #define MAX_ARGS	16
 
+#define SYS_MEMC1_STAT	"/sys/devices/platform/brcmstb/memc1_power"
 #define SYS_MOCA_STAT	"/sys/devices/platform/brcmstb/moca_power"
 #define SYS_SATA_STAT	"/sys/devices/platform/brcmstb/sata_power"
 #define SYS_DDR_STAT	"/sys/devices/platform/brcmstb/ddr_timeout"
@@ -495,6 +496,9 @@ int brcm_pm_get_status(void *vctx, struct brcm_pm_state *st)
 	if(sysfs_get(SYS_TP1_STAT, (unsigned int *)&st->tp1_status) != 0) {
 		st->tp1_status = BRCM_PM_UNDEF;
 	}
+	if(sysfs_get(SYS_MEMC1_STAT, (unsigned int *)&st->memc1_status) != 0) {
+		st->memc1_status = BRCM_PM_UNDEF;
+	}
 	if(sysfs_get(SYS_CPU_KHZ, (unsigned int *)&st->cpu_base) != 0) {
 		st->cpu_base = BRCM_PM_UNDEF;
 	}
@@ -603,6 +607,11 @@ int brcm_pm_set_status(void *vctx, struct brcm_pm_state *st)
 	if(CHANGED(ddr_timeout))
 	{
 		ret |= sysfs_set(SYS_DDR_STAT, st->ddr_timeout);
+	}
+
+	if(CHANGED(memc1_status))
+	{
+		ret |= sysfs_set(SYS_MEMC1_STAT, st->memc1_status);
 	}
 
 	if(CHANGED(standby_flags))

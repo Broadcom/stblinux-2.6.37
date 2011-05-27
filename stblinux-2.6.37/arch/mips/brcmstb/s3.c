@@ -26,8 +26,14 @@
 #define MAX_CP0_REGS	32
 #define MAX_IO_REGS	(256 - MAX_GP_REGS - MAX_CP0_REGS)
 
-#define DBG(...)	printk(KERN_INFO __VA_ARGS__)
+#if 0
+#define DBG(...)	printk(KERN_DEBUG __VA_ARGS__)
+#else
+#define DBG(...)	do { } while (0)
+#endif
 
+#define CALCULATE_MEM_HASH		(1)
+#define VERIFY_HASH			(0)
 struct cp0_value {
 	u32	value;
 	u32	index;
@@ -46,7 +52,8 @@ struct	brcm_pm_s3_context {
 struct brcm_pm_s3_context s3_context;
 static struct brcm_pm_s3_context s3_context2;
 
-asmlinkage int brcm_pm_s3_standby_asm(unsigned long flags);
+asmlinkage int brcm_pm_s3_standby_asm(unsigned long options,
+	void (*dram_encoder_start)(void));
 
 extern void brcmstb_enable_xks01(void);
 
@@ -196,10 +203,145 @@ static void brcm_pm_dump_context(struct brcm_pm_s3_context *cxt)
 
 }
 
-int __ref brcm_pm_s3_standby(int icache_linesize, unsigned long options)
+/***********************************************************************
+ * Encryption setup for S3 suspend
+ ***********************************************************************/
+#if CALCULATE_MEM_HASH
+/*
+ * Default scheme encrypts specified memory region and writes encoded data
+ * to a temporary buffer, overwriting previous data on every block write.
+ * Upon encoding final block, last 16 bytes are stored into AON, then
+ * entire temporary buffer is wiped out
+ * Test code will repeat encoding immediately after fake S3 suspend to see
+ * if hash value remains the same. Different hash would indicate that encoded
+ * area has been written to since M2M DMA pass.
+ * brcm_pm_s3_tmpbuf - temporary buffer
+ * hash_pointer - pointer to location in memory where hash value is located
+ * after encoding
+ */
+static char __section(.s3_enc_tmpbuf) brcm_pm_s3_tmpbuf[PAGE_SIZE];
+static char *hash_pointer;
+
+#define MEM_ENCRYPTED_START_ADDR	(0x80000000)
+#define MEM_ENCRYPTED_LEN		(1*1024*1024)
+#define	S3_HASH_LEN			16
+
+#define MAX_TRANSFER_SIZE_MB		(16)
+#define MAX_TRANSFER_SIZE		(MAX_TRANSFER_SIZE_MB*1024*1024)
+
+#define AES_CBC_ENCRYPTION_KEY_SLOT	(5)
+#define AES_CBC_DECRYPTION_KEY_SLOT	(6)
+
+/*
+ * brcm_pm_dram_encoder_set_area
+ * Generates a list of descriptors needed to encrypt area
+ * VA _begin.._begin+len-1 into PA outbuf..outbuf+out_len-1
+ * On return out_len is the length of the last transfer, this
+ * can be used as an offset into the outbuf to extract hash
+ */
+static struct brcm_mem_transfer *brcm_pm_dram_encoder_set_area(void *_begin,
+	u32 len, dma_addr_t outbuf, u32 *out_len)
+{
+	int num_descr = (len + *out_len - 1) / *out_len;
+	struct brcm_mem_transfer *xfer, *x, *last_x;
+	void *_end = _begin + len;
+
+	BUG_ON(*out_len > MAX_TRANSFER_SIZE);
+
+	xfer = kzalloc(num_descr * sizeof(struct brcm_mem_transfer),
+		GFP_ATOMIC);
+
+	if (!xfer) {
+		printk(KERN_ERR "%s: out of memory\n", __func__);
+		return NULL;
+	}
+
+	last_x = x = xfer;
+	while (_begin < _end) {
+		dma_addr_t pa_src = virt_to_phys(_begin);
+		if (_begin + *out_len > _end)
+			*out_len = _end - _begin;
+		/* workaround - M2M DMA does not like 0 address */
+		x->len		= *out_len;
+		if (!pa_src) {
+			pa_src += 0x10;
+			x->len -= 0x10;
+		}
+		x->pa_src	= pa_src;
+		x->pa_dst	= outbuf;
+		x->mode		= BRCM_MEM_DMA_SCRAM_BLOCK;
+		x->key		= AES_CBC_ENCRYPTION_KEY_SLOT;
+		x->next		= x + 1;
+		last_x = x;
+		x++;
+		_begin += *out_len;
+	}
+	last_x->next = NULL;
+
+	return xfer;
+}
+
+static void brcm_pm_dram_encoder_free_area(struct brcm_mem_transfer *xfer)
+{
+	kfree(xfer);
+}
+
+/* TODO: rewrite in assembly to avoid memory writes after encoding started */
+static void brcm_pm_dram_encode(void)
+{
+	u32 *hp = (u32 *)hash_pointer;
+	/* clear temporary buffer */
+	memset(brcm_pm_s3_tmpbuf, 0, sizeof(brcm_pm_s3_tmpbuf));
+	_dma_cache_wback_inv(0, ~0);
+	/* start M2M encoder */
+	brcm_pm_dram_encoder_start();
+	/* save hash in AON register */
+	BDEV_WR(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x10, *hp++);
+	BDEV_WR(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x14, *hp++);
+	BDEV_WR(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x18, *hp++);
+	BDEV_WR(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x1c, *hp++);
+
+	/* clear temporary buffer */
+	memset(brcm_pm_s3_tmpbuf, 0, sizeof(brcm_pm_s3_tmpbuf));
+}
+#else
+#define brcm_pm_dram_encode	NULL
+#endif
+
+int __ref brcm_pm_s3_standby(unsigned long options)
 {
 	int retval = 0;
 	unsigned long flags;
+
+#if CALCULATE_MEM_HASH
+	struct brcm_mem_transfer *xfer;
+	u32 outlen = PAGE_SIZE;
+#if VERIFY_HASH
+	u32 old_hash[S3_HASH_LEN/4], new_hash[S3_HASH_LEN/4];
+#endif
+	/*
+	 * We are using bi-directional mapping to avoid synchronizing cache
+	 * after encoding
+	 */
+	dma_addr_t pa_dst = dma_map_single(NULL, brcm_pm_s3_tmpbuf, PAGE_SIZE,
+		DMA_BIDIRECTIONAL);
+
+	if (dma_mapping_error(NULL, pa_dst))
+		return -1;
+
+	xfer = brcm_pm_dram_encoder_set_area((void *)MEM_ENCRYPTED_START_ADDR,
+		MEM_ENCRYPTED_LEN, pa_dst, &outlen);
+	hash_pointer = brcm_pm_s3_tmpbuf + outlen - S3_HASH_LEN;
+
+	if (!xfer)
+		return -1;
+
+	if (brcm_pm_dram_encoder_prepare(xfer)) {
+		brcm_pm_dram_encoder_free_area(xfer);
+		dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
+		return -1;
+	}
+#endif
 
 	local_irq_save(flags);
 	/* save CP0 context */
@@ -207,6 +349,9 @@ int __ref brcm_pm_s3_standby(int icache_linesize, unsigned long options)
 	brcm_pm_save_cp0_context(&s3_context);
 
 	/* save I/O context */
+
+	/* Test code to simulate power down of ONOFF part of the chip */
+#if 0
 	/*
 	 * reset uart
 	 */
@@ -238,8 +383,27 @@ int __ref brcm_pm_s3_standby(int icache_linesize, unsigned long options)
 	BDEV_WR_RB(BCHP_SUN_TOP_CTRL_SW_INIT_0_SET, 0x20000000);
 
 	BDEV_WR_RB(BCHP_SUN_TOP_CTRL_SW_INIT_0_CLEAR, 0xff000000);
+#endif
 
-	retval = brcm_pm_s3_standby_asm(flags);
+	retval = brcm_pm_s3_standby_asm(options, brcm_pm_dram_encode);
+
+#if CALCULATE_MEM_HASH && VERIFY_HASH
+	/*
+	 * Test assumes memory has not changed since previous encryption.
+	 * This is why we cannot run the hash calculation over entire
+	 * memory. In real life bootloader will be doing this at the early
+	 * stages of warm boot
+	 */
+	/* save for comparison */
+	old_hash[0] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x10);
+	old_hash[1] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x14);
+	old_hash[2] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x18);
+	old_hash[3] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x1c);
+	/* Calculate hash again */
+	brcm_pm_dram_encoder_complete(xfer);
+	brcm_pm_dram_encoder_prepare(xfer);
+	brcm_pm_dram_encode();
+#endif
 
 	/* CPU reconfiguration */
 	brcmstb_enable_xks01();
@@ -268,5 +432,34 @@ int __ref brcm_pm_s3_standby(int icache_linesize, unsigned long options)
 	bchip_usb_init();
 	bchip_moca_init();
 	local_irq_restore(flags);
+
+#if CALCULATE_MEM_HASH
+	brcm_pm_dram_encoder_complete(xfer);
+	brcm_pm_dram_encoder_free_area(xfer);
+	dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
+
+#if VERIFY_HASH
+	{
+		int ii;
+		unsigned char *hp;
+		new_hash[0] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x10);
+		new_hash[1] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x14);
+		new_hash[2] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x18);
+		new_hash[3] = BDEV_RD(BCHP_AON_CTRL_SYSTEM_DATA_00 + 0x1c);
+		if (memcmp(new_hash, old_hash, S3_HASH_LEN))
+			DBG("Hash mismatch!\n");
+		DBG("Old hash: ");
+		hp = (unsigned char *)old_hash;
+		for (ii = 0; ii < S3_HASH_LEN; ii++)
+			DBG("%02x", *hp++);
+		DBG("\nNew hash: ");
+		hp = (unsigned char *)new_hash;
+		for (ii = 0; ii < S3_HASH_LEN; ii++)
+			DBG("%02x", *hp++);
+		DBG("\n");
+	}
+#endif
+#endif
+
 	return retval;
 }

@@ -322,6 +322,7 @@
 
 #elif defined(CONFIG_BCM7346A0)
 #include <asm/brcmstb/7346a0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7346a0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7346a0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7346a0/bchp_bspi.h>
 #include <asm/brcmstb/7346a0/bchp_bspi_raf.h>
@@ -353,6 +354,7 @@
 
 #elif defined(CONFIG_BCM7346B0)
 #include <asm/brcmstb/7346b0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7346b0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7346b0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7346b0/bchp_bspi.h>
 #include <asm/brcmstb/7346b0/bchp_bspi_raf.h>
@@ -385,6 +387,7 @@
 
 #elif defined(CONFIG_BCM7358A0)
 #include <asm/brcmstb/7358a0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7358a0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7358a0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7358a0/bchp_bspi.h>
 #include <asm/brcmstb/7358a0/bchp_bspi_raf.h>
@@ -520,6 +523,7 @@
 #include <asm/brcmstb/7420c0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7420c0/bchp_irq0.h>
 #include <asm/brcmstb/7420c0/bchp_irq1.h>
+#include <asm/brcmstb/7420c0/bchp_memc_arb_1.h>
 #include <asm/brcmstb/7420c0/bchp_memc_ddr23_aphy_ac_0.h>
 #include <asm/brcmstb/7420c0/bchp_memc_ddr23_aphy_ac_1.h>
 #include <asm/brcmstb/7420c0/bchp_memc_ddr23_aphy_wl0_0.h>
@@ -527,8 +531,11 @@
 #include <asm/brcmstb/7420c0/bchp_memc_ddr23_aphy_wl1_0.h>
 #include <asm/brcmstb/7420c0/bchp_memc_ddr23_aphy_wl1_1.h>
 #include <asm/brcmstb/7420c0/bchp_memc_ddr_0.h>
+#include <asm/brcmstb/7420c0/bchp_memc_ddr_1.h>
 #include <asm/brcmstb/7420c0/bchp_memc_gen_0.h>
+#include <asm/brcmstb/7420c0/bchp_memc_gen_1.h>
 #include <asm/brcmstb/7420c0/bchp_memc_misc_0.h>
+#include <asm/brcmstb/7420c0/bchp_memc_misc_1.h>
 #include <asm/brcmstb/7420c0/bchp_mips_biu.h>
 #include <asm/brcmstb/7420c0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7420c0/bchp_nand.h>
@@ -557,6 +564,7 @@
 
 #elif defined(CONFIG_BCM7425A0)
 #include <asm/brcmstb/7425a0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7425a0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7425a0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7425a0/bchp_bspi.h>
 #include <asm/brcmstb/7425a0/bchp_bspi_raf.h>
@@ -581,6 +589,7 @@
 #include <asm/brcmstb/7425a0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7425a0/bchp_irq0.h>
 #include <asm/brcmstb/7425a0/bchp_irq1.h>
+#include <asm/brcmstb/7425a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr23_shim_addr_cntl_0.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr23_shim_addr_cntl_1.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr_0.h>
@@ -607,6 +616,7 @@
 
 #elif defined(CONFIG_BCM7425B0)
 #include <asm/brcmstb/7425b0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7425b0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7425b0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7425b0/bchp_bspi.h>
 #include <asm/brcmstb/7425b0/bchp_bspi_raf.h>
@@ -734,6 +744,7 @@
 
 #elif defined(CONFIG_BCM7552A0)
 #include <asm/brcmstb/7552a0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7552a0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7552a0/bchp_aon_pm_l2.h>
 #include <asm/brcmstb/7552a0/bchp_bspi.h>
 #include <asm/brcmstb/7552a0/bchp_bspi_raf.h>
@@ -783,12 +794,14 @@
 
 #elif defined(CONFIG_BCM7640A0)
 #include <asm/brcmstb/7640a0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7640a0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7640a0/bchp_clk.h>
 #include <asm/brcmstb/7640a0/bchp_common.h>
 #include <asm/brcmstb/7640a0/bchp_ebi.h>
 #include <asm/brcmstb/7640a0/bchp_edu.h>
 #include <asm/brcmstb/7640a0/bchp_hif_cpu_intr1.h>
 #include <asm/brcmstb/7640a0/bchp_hif_intr2.h>
+#include <asm/brcmstb/7640a0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7640a0/bchp_irq0.h>
 #include <asm/brcmstb/7640a0/bchp_irq1.h>
 #include <asm/brcmstb/7640a0/bchp_nand.h>
@@ -805,12 +818,14 @@
 
 #elif defined(CONFIG_BCM7640B0)
 #include <asm/brcmstb/7640b0/bchp_aon_ctrl.h>
+#include <asm/brcmstb/7640b0/bchp_aon_pin_ctrl.h>
 #include <asm/brcmstb/7640b0/bchp_clk.h>
 #include <asm/brcmstb/7640b0/bchp_common.h>
 #include <asm/brcmstb/7640b0/bchp_ebi.h>
 #include <asm/brcmstb/7640b0/bchp_edu.h>
 #include <asm/brcmstb/7640b0/bchp_hif_cpu_intr1.h>
 #include <asm/brcmstb/7640b0/bchp_hif_intr2.h>
+#include <asm/brcmstb/7640b0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7640b0/bchp_irq0.h>
 #include <asm/brcmstb/7640b0/bchp_irq1.h>
 #include <asm/brcmstb/7640b0/bchp_nand.h>
@@ -831,17 +846,17 @@
 #define BRCM_WARM_RESTART_VEC	0x80000380
 
 /* Kernel will program WKTMR to expire in 1 second */
-#define BRCM_STANDBY_TEST	0x01
+#define BRCM_STANDBY_TEST		0x01
 /* Wait 120s before entering standby, to allow registers to be read */
-#define BRCM_STANDBY_DELAY	0x02
+#define BRCM_STANDBY_DELAY		0x02
 /* Show UART output at each step */
-#define BRCM_STANDBY_VERBOSE	0x04
+#define BRCM_STANDBY_VERBOSE		0x04
 /* Don't enter standby - just delay for 5s then return */
-#define BRCM_STANDBY_NO_SLEEP	0x08
+#define BRCM_STANDBY_NO_SLEEP		0x08
 /* Don't shut down MIPS PLL */
 #define BRCM_STANDBY_MIPS_PLL_ON	0x10
 /* Don't shut down DDR PLL */
-#define BRCM_STANDBY_DDR_PLL_ON	0x20
+#define BRCM_STANDBY_DDR_PLL_ON		0x20
 
 #if !defined(__ASSEMBLY__)
 
@@ -1103,13 +1118,51 @@ ssize_t brcm_pm_show_standby_flags(struct device *dev,
 	struct device_attribute *attr, char *buf);
 ssize_t brcm_pm_store_standby_flags(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count);
+ssize_t brcm_pm_show_memc1_power(struct device *dev,
+	struct device_attribute *attr, char *buf);
+ssize_t brcm_pm_store_memc1_power(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count);
 
 void brcm_irq_standby_enter(int wake_irq);
 void brcm_irq_standby_exit(void);
 
 asmlinkage int brcm_pm_standby_asm(int icache_linesz, unsigned long ebase,
 	unsigned long flags);
-int brcm_pm_s3_standby(int icache_linesz, unsigned long flags);
+int brcm_pm_s3_standby(unsigned long options);
+
+#define BRCM_MEM_DMA_SCRAM_NONE		0
+#define BRCM_MEM_DMA_SCRAM_BLOCK	1
+#define BRCM_MEM_DMA_SCRAM_MPEG		2
+#define BRCM_MEM_DMA_SCRAM_DTV		3
+
+struct brcm_mem_transfer;
+
+struct brcm_mem_transfer {
+	struct brcm_mem_transfer *next; /* chained transfers */
+	void		*src;
+	void		*dst;
+	dma_addr_t	pa_src; /* remapped by or known to the caller */
+	dma_addr_t	pa_dst; /* remapped by or known to the caller */
+	u32		len;
+	u8		key;
+	u8		mode:2;
+	u8		src_remapped:1;
+	u8		dst_remapped:1;
+	u8		src_dst_remapped:1;
+};
+
+int brcm_pm_dram_encoder_prepare(struct brcm_mem_transfer *param);
+int brcm_pm_dram_encoder_complete(struct brcm_mem_transfer *param);
+void brcm_pm_dram_encoder_start(void);
+
+struct brcm_dram_encoder_ops {
+	int (*prepare)(struct brcm_mem_transfer *);
+	void (*start)(void);
+	int (*complete)(struct brcm_mem_transfer *);
+};
+
+void brcm_pm_set_dram_encoder(struct brcm_dram_encoder_ops *);
+
 asmlinkage void brcm_pm_irq(void);
 int brcm_pm_deep_sleep(void);
 

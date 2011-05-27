@@ -26,7 +26,7 @@
 #include <linux/device.h>
 #include <linux/types.h>
 #include <linux/cache.h>
-#include <linux/slab_def.h>
+#include <linux/slab.h>
 #include <linux/mm_types.h>
 #include <linux/scatterlist.h>
 
@@ -41,7 +41,7 @@
  ***********************************************************************/
 
 #define BRCM_RX_NUM_HOOKS	2
-#define BRCM_RX_HOOK_NETACCEL	0 
+#define BRCM_RX_HOOK_NETACCEL	0
 #define BRCM_RX_HOOK_EROUTER	1
 
 void __init brcm_free_bootmem(unsigned long addr, unsigned long size);
@@ -129,7 +129,7 @@ int brcm_pm_unregister_cb(char *name);
 struct brcm_wakeup_ops {
 	int	(*enable)(void *ref);
 	int	(*disable)(void *ref);
-	int	(*poll)(void *ref);	/* returns 1 if a wakeup event has happened */
+	int	(*poll)(void *ref); /* returns 1 if a wakeup event occurred */
 };
 
 int brcm_pm_wakeup_register(struct brcm_wakeup_ops *ops, void* ref, char* name);

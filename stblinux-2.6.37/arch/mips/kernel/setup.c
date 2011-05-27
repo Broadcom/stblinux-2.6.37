@@ -399,7 +399,6 @@ static void __init bootmem_init(void)
 #else
 		free_bootmem(PFN_PHYS(start), size << PAGE_SHIFT);
 #endif
-		memory_present(0, start, end);
 	}
 
 	/*
@@ -411,6 +410,23 @@ static void __init bootmem_init(void)
 	 * Reserve initrd memory if needed.
 	 */
 	finalize_initrd();
+
+	/*
+	 * Call memory_present() on all valid ranges, for SPARSEMEM.
+	 * This must be done after setting up bootmem, since memory_present()
+	 * may allocate bootmem.
+	 */
+	for (i = 0; i < boot_mem_map.nr_map; i++) {
+		unsigned long start, end;
+
+		if (boot_mem_map.map[i].type != BOOT_MEM_RAM)
+			continue;
+
+		start = PFN_UP(boot_mem_map.map[i].addr);
+		end   = PFN_DOWN(boot_mem_map.map[i].addr
+				    + boot_mem_map.map[i].size);
+		memory_present(0, start, end);
+	}
 }
 
 #endif	/* CONFIG_SGI_IP27 */

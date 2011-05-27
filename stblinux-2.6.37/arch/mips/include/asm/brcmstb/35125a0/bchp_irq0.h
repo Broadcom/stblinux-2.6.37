@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May 17 02:05:36 2010
- *                 MD5 Checksum         a4ae86dca58fbde79c2e9efa9a2a5291
+ * Date:           Generated on         Sat Apr 16 01:11:53 2011
+ *                 MD5 Checksum         4b1f3c943c1beefd71aba1dddda2b705
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -55,6 +55,7 @@
 /* IRQ0 :: IRQEN :: reserved_for_eco1 [28:24] */
 #define BCHP_IRQ0_IRQEN_reserved_for_eco1_MASK                     0x1f000000
 #define BCHP_IRQ0_IRQEN_reserved_for_eco1_SHIFT                    24
+#define BCHP_IRQ0_IRQEN_reserved_for_eco1_DEFAULT                  0
 
 /* IRQ0 :: IRQEN :: reserved2 [23:21] */
 #define BCHP_IRQ0_IRQEN_reserved2_MASK                             0x00e00000
@@ -63,6 +64,7 @@
 /* IRQ0 :: IRQEN :: reserved_for_eco3 [20:16] */
 #define BCHP_IRQ0_IRQEN_reserved_for_eco3_MASK                     0x001f0000
 #define BCHP_IRQ0_IRQEN_reserved_for_eco3_SHIFT                    16
+#define BCHP_IRQ0_IRQEN_reserved_for_eco3_DEFAULT                  0
 
 /* IRQ0 :: IRQEN :: reserved4 [15:10] */
 #define BCHP_IRQ0_IRQEN_reserved4_MASK                             0x0000fc00
@@ -71,14 +73,17 @@
 /* IRQ0 :: IRQEN :: reserved_for_eco5 [09:07] */
 #define BCHP_IRQ0_IRQEN_reserved_for_eco5_MASK                     0x00000380
 #define BCHP_IRQ0_IRQEN_reserved_for_eco5_SHIFT                    7
+#define BCHP_IRQ0_IRQEN_reserved_for_eco5_DEFAULT                  0
 
 /* IRQ0 :: IRQEN :: gio_irqen [06:06] */
 #define BCHP_IRQ0_IRQEN_gio_irqen_MASK                             0x00000040
 #define BCHP_IRQ0_IRQEN_gio_irqen_SHIFT                            6
+#define BCHP_IRQ0_IRQEN_gio_irqen_DEFAULT                          0
 
 /* IRQ0 :: IRQEN :: reserved_for_eco6 [05:00] */
 #define BCHP_IRQ0_IRQEN_reserved_for_eco6_MASK                     0x0000003f
 #define BCHP_IRQ0_IRQEN_reserved_for_eco6_SHIFT                    0
+#define BCHP_IRQ0_IRQEN_reserved_for_eco6_DEFAULT                  0
 
 /***************************************************************************
  *IRQSTAT - Interrupt Status
@@ -90,6 +95,7 @@
 /* IRQ0 :: IRQSTAT :: gioirq [06:06] */
 #define BCHP_IRQ0_IRQSTAT_gioirq_MASK                              0x00000040
 #define BCHP_IRQ0_IRQSTAT_gioirq_SHIFT                             6
+#define BCHP_IRQ0_IRQSTAT_gioirq_DEFAULT                           0
 
 /* IRQ0 :: IRQSTAT :: reserved1 [05:00] */
 #define BCHP_IRQ0_IRQSTAT_reserved1_MASK                           0x0000003f

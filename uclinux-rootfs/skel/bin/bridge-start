@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ ! -e /sbin/brctl ]; then
 	echo "ERROR: brctl not present"
@@ -11,14 +11,13 @@ if ifconfig br0 >& /dev/null; then
 fi
 
 echo -n "Bringing down network interfaces... "
+
+ifaces=""
 for x in $(ls /sys/class/net); do
-	case $x in
-		lo|br*)
-			;;
-		*)
-			ifdown $x
-			;;
-	esac
+	if [ -e /sys/class/net/$x/device ]; then
+		ifaces="$ifaces $x"
+		ifdown $x;
+	fi
 done
 
 killall udhcpc &> /dev/null
@@ -32,21 +31,15 @@ brctl setfd br0 1 || exit 1
 echo "done"
 
 echo -n "Adding interfaces... "
-for x in $(ls /sys/class/net); do
-	case $x in
-		lo|br*)
-			;;
-		*)
-			ifconfig $x 0.0.0.0 up
-			brctl addif br0 $x
-			;;
-	esac
+for x in $ifaces; do
+	ifconfig $x 0.0.0.0 up
+	brctl addif br0 $x
 done
 
 echo "done"
 
 echo -n "Bringing up the bridge... "
-ifconfig br0 0.0.0.0 up
+ifup br0
 echo "done"
 
 exit 0

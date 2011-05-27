@@ -18,7 +18,7 @@ all::
 			bash_cv_func_sigsetjmp=present \
 			bash_cv_sys_named_pipes=present || exit 1 ; \
 	fi
-	$(MAKE) -C build
+	$(MAKE) -j1 -C build
 
 .PHONY: distclean
 distclean::

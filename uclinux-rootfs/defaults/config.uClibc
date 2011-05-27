@@ -28,6 +28,7 @@ TARGET_mips=y
 # TARGET_vax is not set
 # TARGET_x86_64 is not set
 # TARGET_xtensa is not set
+# TARGET_c6x is not set
 
 #
 # Target Architecture Features and Options
@@ -67,11 +68,11 @@ HAVE_DOT_CONFIG=y
 # General Library Settings
 #
 # HAVE_NO_PIC is not set
-DOPIC=y
+# DOPIC is not set
 # ARCH_HAS_NO_SHARED is not set
 # ARCH_HAS_NO_LDSO is not set
 HAVE_SHARED=y
-FORCE_SHAREABLE_TEXT_SEGMENTS=y
+# FORCE_SHAREABLE_TEXT_SEGMENTS is not set
 LDSO_LDD_SUPPORT=y
 LDSO_CACHE_SUPPORT=y
 LDSO_PRELOAD_ENV_SUPPORT=y
@@ -100,6 +101,7 @@ UCLIBC_DYNAMIC_ATEXIT=y
 UCLIBC_SUSV3_LEGACY=y
 UCLIBC_SUSV3_LEGACY_MACROS=y
 UCLIBC_SUSV4_LEGACY=y
+# UCLIBC_STRICT_HEADERS is not set
 # UCLIBC_HAS_STUBS is not set
 UCLIBC_HAS_SHADOW=y
 UCLIBC_HAS_PROGRAM_INVOCATION_NAME=y

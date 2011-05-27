@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ ! -e /sbin/brctl ]; then
 	echo "ERROR: brctl not present"
@@ -10,25 +10,13 @@ if ! ifconfig br0 >& /dev/null; then
 	exit 1
 fi
 
-echo -n "Killing DHCP clients... "
-killall udhcpc &> /dev/null
-usleep 200000
-killall -9 udhcpc &> /dev/null
-echo "done"
-
 echo -n "Tearing down the bridge... "
-ifconfig br0 down
+ifdown br0
 brctl delbr br0
 
 echo -n "Bringing interfaces back up... "
 for x in $(ls /sys/class/net); do
-	case $x in
-		lo|br*)
-			;;
-		*)
-			ifup $x
-			;;
-	esac
+	[ -e /sys/class/net/$x/device ] && ifup $x
 done
 
 echo "done"

@@ -102,15 +102,13 @@ extern void _start(void);
 
 #ifdef __UCLIBC_HAS_SSP__
 # include <dl-osinfo.h>
-uintptr_t stack_chk_guard;
+static uintptr_t stack_chk_guard;
 # ifndef THREAD_SET_STACK_GUARD
 /* Only exported for architectures that don't store the stack guard canary
  * in local thread area.  */
 uintptr_t __stack_chk_guard attribute_relro;
-#  ifdef __UCLIBC_HAS_SSP_COMPAT__
-strong_alias(__stack_chk_guard,__guard)
-#  endif
-# elif __UCLIBC_HAS_SSP_COMPAT__
+# endif
+# ifdef __UCLIBC_HAS_SSP_COMPAT__
 uintptr_t __guard attribute_relro;
 # endif
 #endif
@@ -870,7 +868,16 @@ void _dl_get_ready_to_run(struct elf_resolve *tpnt, DL_LOADADDR_TYPE load_addr,
 		ElfW(Ehdr) *epnt = (ElfW(Ehdr) *) auxvt[AT_BASE].a_un.a_val;
 		ElfW(Phdr) *myppnt = (ElfW(Phdr) *) DL_RELOC_ADDR(load_addr, epnt->e_phoff);
 		int j;
+#ifdef __DSBT__
+		struct elf_resolve *ref = _dl_loaded_modules;
+		_dl_if_debug_dprint("ref is %x, dsbt %x, ref-dsbt %x size %x\n",
+				    ref, tpnt->loadaddr.map->dsbt_table,
+				    ref->loadaddr.map->dsbt_table,
+				    tpnt->loadaddr.map->dsbt_size);
 
+		_dl_memcpy(tpnt->loadaddr.map->dsbt_table, ref->loadaddr.map->dsbt_table,
+			   tpnt->loadaddr.map->dsbt_size * sizeof(unsigned *));
+#endif
 		tpnt = _dl_add_elf_hash_table(tpnt->libname, load_addr,
 					      tpnt->dynamic_info,
 					      (unsigned long)tpnt->dynamic_addr,
@@ -944,11 +951,11 @@ void _dl_get_ready_to_run(struct elf_resolve *tpnt, DL_LOADADDR_TYPE load_addr,
 	stack_chk_guard = _dl_setup_stack_chk_guard ();
 # ifdef THREAD_SET_STACK_GUARD
 	THREAD_SET_STACK_GUARD (stack_chk_guard);
-#  ifdef __UCLIBC_HAS_SSP_COMPAT__
-	__guard = stack_chk_guard;
-#  endif
 # else
 	__stack_chk_guard = stack_chk_guard;
+# endif
+# ifdef __UCLIBC_HAS_SSP_COMPAT__
+	__guard = stack_chk_guard;
 # endif
 #endif
 

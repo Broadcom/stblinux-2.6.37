@@ -65,6 +65,7 @@ struct brcm_pm_state
 	int moca_status;	/* 1=on, 0=off */
 	int sata_status;	/* 1=on, 0=off */
 	int tp1_status;		/* 1=on, 0=off */
+	int memc1_status;	/* 1=on, 0=off, 2=testmode */
 
 	int cpu_base;		/* current base frequency, in Hz */
 	int cpu_divisor;	/* 1, 2, 4, or 8 */
