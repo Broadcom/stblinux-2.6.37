@@ -35,13 +35,20 @@
 
 #define USE_WATCHDOG		0
 
-#if defined(CONFIG_BRCM_HAS_AON)
-#define PM_STANDBY_COMMAND	0x0f
-#elif defined(CONFIG_BMIPS5000)
-#define PM_STANDBY_COMMAND	0x07
+#if defined(BCHP_AON_CTRL_PM_CTRL_pm_clk_divider_reset_en_MASK) || \
+ defined(BCHP_SUN_TOP_CTRL_PM_CTRL_pm_clk_divider_reset_en_MASK)
+#define PM_CMD_BASE		0x0b
 #else
-#define PM_STANDBY_COMMAND	0x0b
+#define PM_CMD_BASE		0x03
 #endif
+
+#if defined(CONFIG_BMIPS5000)
+#define PM_USE_MIPS_READY	0x04
+#else
+#define PM_USE_MIPS_READY	0x00
+#endif
+
+#define PM_STANDBY_COMMAND	(PM_CMD_BASE|PM_USE_MIPS_READY)
 
 #ifdef BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL
 #define VCDL_SAVE_REG		BCHP_MEMC_DDR23_APHY_WL1_0_SPARE0_RW

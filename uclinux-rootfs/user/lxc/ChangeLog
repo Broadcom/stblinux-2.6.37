@@ -1,0 +1,172 @@
+Andrew Phillips (2):
+      Fix spec file
+      support shutdown/reboot with upstart within a system container
+
+Cedric Le Goater (9):
+      lxc: forbid open fds upon startup
+      introduce struct lxc_operations
+      simplify lxc_spawn() gotos
+      start sequence cleanups
+      replace common start_arg by private start_arg
+      merge lxc_restart() and lxc_start()
+      introduce a sync API
+      use ptmxmode mount option
+      add restart framework
+
+Daniel LEzcano (1):
+      factor out pivot_root code
+
+Daniel Lezcano (74):
+      fix cpuset configuration with smp only
+      fix compilation warning
+      fix empty network namespace
+      factor-out-console code
+      use a mainloop for the console
+      Fix header inclusion
+      rename network type enum
+      allocate a console to be proxied
+      set terminal settings when console is a tty
+      fix no rootfs no console
+      use lazy umount when umount returns EBUSY
+      add missing cgroup include
+      delete network devices by index
+      fix function prototype implementation
+      fix network devices cleanup on error
+      add console.h to dist file
+      fix kill -1 process
+      open the console later
+      lxc: enter / exec a command inside a container V2
+      fix lxc-attach returned error
+      fix lxc-setcap script for lxc-attach
+      fix when console is not specified
+      count the number of tasks in the container
+      Store the container name in the handler
+      shutdown the container when powering off the container
+      restart the container at reboot
+      fork/exec after attach
+      change to the same directory when attaching
+      Fail gracefully with attach
+      do not exit mainloop when child is stopped
+      more robustness against SIGCHLD
+      Fix console infinite loop
+      fix pivot_root temporary directory
+      update INSTALL file
+      add missing /dev/pts directory
+      Make dynamic busybox supported
+      whitespace cleanup in configure.ac
+      add a configure option to set a rootfs mount point
+      encapsulate rootfs data in a structure
+      add lxc.rootfs.mount config option
+      use defined rootfs mount point
+      support ipv4 broadcast specification
+      added locally modified files for broadcast support
+      fix indentation
+      close socket command
+      Don't close fd 0, fd 1
+      change the rootfs mount location and add the README
+      move lxc-init to $libdir/lxc
+      remove unused field
+      fix whitespace
+      update lxc-checkpoint / lxc-restart man
+      update checkpoint / restart man page
+      fix lxc-execute man page
+      change repository url in MAINTAINERS
+      fix pivot umount algorithm
+      disable rootfs automatic detection
+      fix compilation warnings
+      fix compilation warning
+      Fix ubuntu template
+      change root passwd for debian template
+      fix busybox template
+      add console login in ubuntu
+      move script templates to an adequate place
+      ubunutu - fix ssh runlevel stop condition
+      generate locales on debian
+      update the fedora template
+      update .gitignore with new location
+      fix ipv6 acast / mcast restriction
+      fix return code
+      update .gitignore
+      Fix lxc-checkconfig
+      add lxc.console documentation
+      fix lxc.spec.in
+      change version number to 0.7.0
+
+Denis Rizaev (1):
+      fix initial run level
+
+Ferenc Wagner (11):
+      no need to use a temporary directory for pivoting
+      remove pivotdir only if it was created by us
+      fix typos in error messages
+      .gitignore new components
+      conditional use of new capabilities
+      uint32_t is defined in stdint.h
+      document rootfs options
+      change pivotdir default to mnt
+      fix comment
+      remove misleading copy&paste comment
+      correct template directory documentation
+
+Greg Kurz (2):
+      assertion on lxc_checkpoint() return value
+      kill white spaces in lxc_init.c
+
+Guillaume Zitta (1):
+      make lxc-checkconfig more explicit
+
+Michel Normand (31):
+      typo in error message
+      do not use logfile in lxc_init (V2)
+      lxc: add --statefile opt to lxc-checkpoint/restart
+      avoid compile warning lxc_init.c
+      close fd 0 and 1 where not required
+      add --statefd option to lxc-checkpoint/restart
+      report error if statefd parm is not a digit
+      get_init_pid moved to lxc/commands.c
+      remove unused _config_console function
+      lxc: lxc-unshare to remove its /cgroup/<pid> (V3)
+      lxc: add usage and help to lxc-netstat (V2)
+      man update lxc
+      man update lxc-execute and lxc-start (V2)
+      man update lxc-create lxc-destroy
+      man update lxc.conf
+      lxc: remove perror call in nl.c (V2)
+      lxc: remove unused lxc_bridge_detach
+      lxc: child failing before container rename
+      lxc: move lxc_unlink_nsgroup out of lxc_fini
+      add fd to ignore to lxc_check_inherited function
+      sigprocmask moved in fini of start.c
+      move LXC_TTY_HANDLER_ADD/DEL out of init/fini in start.c
+      prepare do_start for restart code
+      Add ops for start
+      remove obsolete lxc_utils.h
+      lxc-kill man update about SIGSTOP and SIGKILL
+      remove remaining .cvsignore files
+      update .gitignore w/ autogen.sh created files
+      update man pages about logpriority
+      lxc-unshare asprintf error checking
+      README should not be a copy of lxc man page
+
+Nathan Lynch (1):
+      correct asprintf error checking
+
+Panagiotis H.M. Issaris (1):
+      Forgotten @LIBEXECDIR@ replacement
+
+Silas Sewell (1):
+      Add missing stat.h include to start.c
+
+Wilhelm Meier (1):
+      few enhancement on the ubuntu template
+
+Willem Meier (2):
+      ubunutu template
+      fixes to the ubuntu template
+
+clg@linux.vnet.ibm.com (1):
+      drop capabilities in lxc-init (V2)
+
+gkurz@linux.vnet.ibm.com (1):
+      lxc: introduce lxc-kill command (v4)
+

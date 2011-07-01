@@ -173,6 +173,7 @@
 #include <asm/brcmstb/7231a0/bchp_uarta.h>
 #include <asm/brcmstb/7231a0/bchp_uartb.h>
 #include <asm/brcmstb/7231a0/bchp_uartc.h>
+#include <asm/brcmstb/7231a0/bchp_usb1_ctrl.h>
 #include <asm/brcmstb/7231a0/bchp_usb_ctrl.h>
 #include <asm/brcmstb/7231a0/bchp_wktmr.h>
 #include <asm/brcmstb/7231a0/brcmirq.h>
@@ -348,6 +349,7 @@
 #include <asm/brcmstb/7346a0/bchp_uarta.h>
 #include <asm/brcmstb/7346a0/bchp_uartb.h>
 #include <asm/brcmstb/7346a0/bchp_uartc.h>
+#include <asm/brcmstb/7346a0/bchp_usb1_ctrl.h>
 #include <asm/brcmstb/7346a0/bchp_usb_ctrl.h>
 #include <asm/brcmstb/7346a0/bchp_wktmr.h>
 #include <asm/brcmstb/7346a0/brcmirq.h>
@@ -381,6 +383,7 @@
 #include <asm/brcmstb/7346b0/bchp_uarta.h>
 #include <asm/brcmstb/7346b0/bchp_uartb.h>
 #include <asm/brcmstb/7346b0/bchp_uartc.h>
+#include <asm/brcmstb/7346b0/bchp_usb1_ctrl.h>
 #include <asm/brcmstb/7346b0/bchp_usb_ctrl.h>
 #include <asm/brcmstb/7346b0/bchp_wktmr.h>
 #include <asm/brcmstb/7346b0/brcmirq.h>
@@ -544,6 +547,7 @@
 #include <asm/brcmstb/7420c0/bchp_pcie_intr2.h>
 #include <asm/brcmstb/7420c0/bchp_pcie_misc.h>
 #include <asm/brcmstb/7420c0/bchp_pcie_misc_perst.h>
+#include <asm/brcmstb/7420c0/bchp_pcie_rc_cfg_pcie.h>
 #include <asm/brcmstb/7420c0/bchp_pcie_rc_cfg_type1.h>
 #include <asm/brcmstb/7420c0/bchp_pcie_rc_cfg_vendor.h>
 #include <asm/brcmstb/7420c0/bchp_pcix_bridge.h>
@@ -590,16 +594,19 @@
 #include <asm/brcmstb/7425a0/bchp_irq0.h>
 #include <asm/brcmstb/7425a0/bchp_irq1.h>
 #include <asm/brcmstb/7425a0/bchp_mem_dma_0.h>
+#include <asm/brcmstb/7425a0/bchp_memc_arb_1.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr23_shim_addr_cntl_0.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr23_shim_addr_cntl_1.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7425a0/bchp_memc_ddr_1.h>
+#include <asm/brcmstb/7425a0/bchp_memc_misc_1.h>
 #include <asm/brcmstb/7425a0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7425a0/bchp_nand.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_dma.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_intr2.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_misc.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_misc_perst.h>
+#include <asm/brcmstb/7425a0/bchp_pcie_rc_cfg_pcie.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_rc_cfg_type1.h>
 #include <asm/brcmstb/7425a0/bchp_pcie_rc_cfg_vendor.h>
 #include <asm/brcmstb/7425a0/bchp_sata_top_ctrl.h>
@@ -651,6 +658,7 @@
 #include <asm/brcmstb/7425b0/bchp_pcie_intr2.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_misc.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_misc_perst.h>
+#include <asm/brcmstb/7425b0/bchp_pcie_rc_cfg_pcie.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_rc_cfg_type1.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_rc_cfg_vendor.h>
 #include <asm/brcmstb/7425b0/bchp_sata_top_ctrl.h>
@@ -1126,6 +1134,34 @@ ssize_t brcm_pm_store_memc1_power(struct device *dev,
 void brcm_irq_standby_enter(int wake_irq);
 void brcm_irq_standby_exit(void);
 
+#ifdef BCHP_PM_L2_CPU_STATUS
+#define TIMER_INTR_MASK		BCHP_PM_L2_CPU_STATUS_TIMER_INTR_MASK
+#ifdef BCHP_PM_L2_CPU_STATUS_WOL_ENET_MASK
+#define WOL_ENET_MASK		BCHP_PM_L2_CPU_STATUS_WOL_ENET_MASK
+#elif defined(BCHP_PM_L2_CPU_STATUS_WOL_MPD_MASK)
+#define WOL_ENET_MASK		(BCHP_PM_L2_CPU_STATUS_WOL_MPD_MASK | \
+				 BCHP_PM_L2_CPU_STATUS_WOL_HFB_MASK)
+#else
+#define WOL_ENET_MASK		(0)
+#endif
+#ifdef BCHP_PM_L2_CPU_STATUS_WOL_MOCA_MASK
+#define WOL_MOCA_MASK		BCHP_PM_L2_CPU_STATUS_WOL_MOCA_MASK
+#else
+#define WOL_MOCA_MASK		(0)
+#endif
+#else
+#define TIMER_INTR_MASK		BCHP_AON_PM_L2_CPU_STATUS_TIMER_INTR_MASK
+#define WOL_ENET_MASK		BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET_MASK
+#ifdef BCHP_AON_PM_L2_CPU_STATUS_WOL_MOCA_MASK
+#define WOL_MOCA_MASK		BCHP_AON_PM_L2_CPU_STATUS_WOL_MOCA_MASK
+#else
+#define WOL_MOCA_MASK		(0)
+#endif
+#endif
+
+void brcm_pm_wakeup_source_enable(u32 mask, int enable);
+int brcm_pm_wakeup_get_status(u32 mask);
+
 asmlinkage int brcm_pm_standby_asm(int icache_linesz, unsigned long ebase,
 	unsigned long flags);
 int brcm_pm_s3_standby(unsigned long options);
@@ -1165,6 +1201,8 @@ void brcm_pm_set_dram_encoder(struct brcm_dram_encoder_ops *);
 
 asmlinkage void brcm_pm_irq(void);
 int brcm_pm_deep_sleep(void);
+
+void brcm_pm_sata3(int enable);
 
 extern unsigned long brcm_dram0_size_mb;
 extern unsigned long brcm_dram1_size_mb;

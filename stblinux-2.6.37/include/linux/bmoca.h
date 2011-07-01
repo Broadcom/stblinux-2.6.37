@@ -42,6 +42,7 @@
 #define MOCA_IOCTL_WRITEMEM	_IOR(MOCA_IOC_MAGIC, 4, struct moca_xfer)
 
 #define MOCA_IOCTL_CHECK_FOR_DATA	_IOR(MOCA_IOC_MAGIC, 5, int)
+#define MOCA_IOCTL_WOL		_IOW(MOCA_IOC_MAGIC, 6, int)
 #define MOCA_IOCTL_GET_DRV_INFO	_IOR(MOCA_IOC_MAGIC, 0, struct moca_kdrv_info)
 
 /* this must match MoCAOS_IFNAMSIZE */

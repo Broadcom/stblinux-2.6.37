@@ -65,7 +65,6 @@ void usage(void)
 	printf("examples:\n");
 	printf("  status       show current power status\n");
 	printf("  usb 0        power down USB controllers\n");
-	printf("  moca 1       power up MoCA controller(s)\n");
 	printf("  sata 1       power up SATA controller\n");
 	printf("  tp1 0        power down TP1 (second CPU thread)\n");
 	printf("  memc1 0      power down MEMC1 (if available)\n");
@@ -174,14 +173,6 @@ int main(int argc, char **argv)
 		state.usb_status = val;
 		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
 			fatal("can't set PM state (USB)");
-		return(0);
-	}
-
-	if(! strcmp(cmd, "moca"))
-	{
-		state.moca_status = val;
-		if(brcm_pm_set_status(brcm_pm_ctx, &state) != 0)
-			fatal("can't set PM state (MOCA)");
 		return(0);
 	}
 

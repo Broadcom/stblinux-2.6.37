@@ -430,7 +430,9 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	}
 
 	bchip_usb_init();
+#if defined(CONFIG_BRCM_HAS_MOCA)
 	bchip_moca_init();
+#endif
 	local_irq_restore(flags);
 
 #if CALCULATE_MEM_HASH

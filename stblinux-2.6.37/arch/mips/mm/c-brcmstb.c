@@ -19,6 +19,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
+#include <linux/pfn.h>
 #include <linux/bitops.h>
 #include <linux/module.h>
 #include <linux/seq_file.h>
@@ -395,66 +396,69 @@ EXPORT_SYMBOL(brcm_inv_prefetch);
 /*
  * Hooks for extra RAC/prefetch flush after DMA
  */
-void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
-	size_t size, int dir)
+static inline void __brcm_sync(struct page *page,
+	unsigned long offset, size_t size, enum dma_data_direction direction)
 {
-	/* extra RAC flush after DMA */
+	size_t left = size;
 
-	unsigned long va = (unsigned long)
-		phys_to_virt(plat_dma_addr_to_phys(dev, dma_addr));
-
-	if (dir == DMA_FROM_DEVICE || dir == DMA_BIDIRECTIONAL)
-		brcm_inv_prefetch(va, size);
-}
-
-void brcm_sync_for_cpu(struct device *dev, dma_addr_t dma_handle, size_t size,
-	enum dma_data_direction dir)
-{
-	if (dir == DMA_TO_DEVICE)
+	if (direction == DMA_TO_DEVICE)
 		return;
-	brcm_inv_prefetch((unsigned long)phys_to_virt(
-		plat_dma_addr_to_phys(dev, dma_handle)), size);
-}
 
-void brcm_sync_for_cpu_sg(struct scatterlist *sg, enum dma_data_direction dir)
-{
-	void *addr;
-	struct page *page = sg_page(sg);
-	unsigned long offset = sg->offset;
-	size_t left = sg->length;
-
-	if (dir == DMA_TO_DEVICE)
-		return;
-	if (likely(!PageHighMem(page))) {
-		addr = page_address(page) + sg->offset;
-		brcm_inv_prefetch((unsigned long)addr, sg->length);
-		return;
-	}
-
-	/* use temporary mappings to handle HIGHMEM pages */
 	do {
 		size_t len = left;
-		unsigned long flags;
 
-		if (offset + len > PAGE_SIZE) {
-			if (offset >= PAGE_SIZE) {
-				page += offset >> PAGE_SHIFT;
-				offset &= ~PAGE_MASK;
+		if (PageHighMem(page)) {
+			void *addr;
+
+			if (offset + len > PAGE_SIZE) {
+				if (offset >= PAGE_SIZE) {
+					page += offset >> PAGE_SHIFT;
+					offset &= ~PAGE_MASK;
+				}
+				len = PAGE_SIZE - offset;
 			}
-			len = PAGE_SIZE - offset;
-		}
 
-		local_irq_save(flags);
-		addr = kmap_atomic(page, KM_SYNC_DCACHE);
-		brcm_inv_prefetch((unsigned long)addr + offset, len);
-		kunmap_atomic(addr, KM_SYNC_DCACHE);
-		local_irq_restore(flags);
-
+			addr = kmap_atomic(page);
+			brcm_inv_prefetch((unsigned long)addr + offset, len);
+			kunmap_atomic(addr);
+		} else
+			brcm_inv_prefetch((unsigned long)page_address(page) +
+				offset, size);
 		offset = 0;
 		page++;
 		left -= len;
 	} while (left);
 }
+
+void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
+	size_t size, int dir)
+{
+	unsigned long pa = plat_dma_addr_to_phys(dev, dma_addr);
+	__brcm_sync(pfn_to_page(PFN_DOWN(pa)), pa & ~PAGE_MASK, size, dir);
+}
+
+static void brcm_dma_sync_single_for_cpu(struct device *dev,
+	dma_addr_t dma_handle, size_t size, enum dma_data_direction dir)
+{
+	unsigned long pa = plat_dma_addr_to_phys(dev, dma_handle);
+	__brcm_sync(pfn_to_page(PFN_DOWN(pa)), pa & ~PAGE_MASK, size, dir);
+}
+
+static void brcm_dma_sync_sg_for_cpu(struct device *dev,
+	struct scatterlist *sg, int nelems, enum dma_data_direction direction)
+{
+	int i;
+	for (i = 0; i < nelems; i++, sg++)
+		__brcm_sync(sg_page(sg), sg->offset, sg->length, direction);
+}
+
+static int __init brcm_setup_dma_ops(void)
+{
+	mips_dma_map_ops->sync_single_for_cpu = brcm_dma_sync_single_for_cpu;
+	mips_dma_map_ops->sync_sg_for_cpu = brcm_dma_sync_sg_for_cpu;
+	return 0;
+}
+core_initcall(brcm_setup_dma_ops);
 
 /*
  * Provide cache details for PI/Nexus

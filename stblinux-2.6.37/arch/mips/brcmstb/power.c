@@ -39,13 +39,18 @@
 #include <asm/cacheflush.h>
 #include <asm/brcmstb/brcmstb.h>
 
+/* Wakeup on timeout (20 sec) even if standby_flags does not request this */
+#define WATCHDOG_TIMER_WAKEUP_ALWAYS		(0)
+
+#define PRINT_PM_CALLBACK		printk(KERN_DEBUG "%s %02x\n", \
+	__func__, (u8)flags)
 #if 0
 #define DBG			printk
 #else
 #define DBG(...)		do { } while (0)
 #endif
 
-#define BRCM_PM_LIGHTWEIGHT_RESUME	(0)
+#define BRCM_PM_LIGHTWEIGHT_RESUME	(1)
 
 /***********************************************************************
  * CPU divisor / PLL manipulation
@@ -323,24 +328,42 @@ struct clk {
 	struct clk     *parent;
 	int		(*cb)(int, void *);
 	void		*cb_arg;
-	void		(*disable)(void);
-	void		(*enable)(void);
+	void		(*disable)(u32 flags);
+	void		(*enable)(u32 flags);
+	u32		flags;
 };
+/*
+ * Flags:
+ * BRCM_PM_FLAG_S3		- S3 standby inititated. Since all blocks lose
+ *	power, there is no need to preserve state.
+ *	On-chip SRAM can be unconditionally powered down.
+ * BRCM_PM_FLAG_ENET_WOL	- Ethernet WOL is a wake-up event
+ * BRCM_PM_FLAG_MOCA_WOL	- MoCA WOL is a wake-up event
+ * BRCM_PM_FLAG_USB_WAKEUP	- USB insertion/removal is a wake-up event
+ */
+#define BRCM_PM_FLAG_S3		0x01 /* set when suspend begins */
+#define BRCM_PM_FLAG_ENET_WOL	0x02 /* ENET WOL is enabled */
+#define BRCM_PM_FLAG_MOCA_WOL	0x04 /* MoCA WOL is enabled */
+#define BRCM_PM_FLAG_USB_WAKEUP	0x08 /* USB insertion/removal wakeup */
 
 static DEFINE_SPINLOCK(brcm_pm_clk_lock);
 
-static void brcm_pm_sata_disable(void);
-static void brcm_pm_sata_enable(void);
-static void brcm_pm_enet_disable(void);
-static void brcm_pm_enet_enable(void);
-static void brcm_pm_moca_disable(void);
-static void brcm_pm_moca_enable(void);
-static void brcm_pm_moca_genet_disable(void);
-static void brcm_pm_moca_genet_enable(void);
-static void brcm_pm_network_disable(void);
-static void brcm_pm_network_enable(void);
-static void brcm_pm_usb_disable(void);
-static void brcm_pm_usb_enable(void);
+static void brcm_pm_sata_disable(u32 flags);
+static void brcm_pm_sata_enable(u32 flags);
+static void brcm_pm_genet_disable(u32 flags);
+static void brcm_pm_genet_enable(u32 flags);
+static void brcm_pm_genet_disable_wol(u32 flags);
+static void brcm_pm_genet_enable_wol(u32 flags);
+static void brcm_pm_moca_disable(u32 flags);
+static void brcm_pm_moca_enable(u32 flags);
+static void brcm_pm_moca_disable_wol(u32 flags);
+static void brcm_pm_moca_enable_wol(u32 flags);
+static void brcm_pm_genet1_disable(u32 flags);
+static void brcm_pm_genet1_enable(u32 flags);
+static void brcm_pm_network_disable(u32 flags);
+static void brcm_pm_network_enable(u32 flags);
+static void brcm_pm_usb_disable(u32 flags);
+static void brcm_pm_usb_enable(u32 flags);
 static void brcm_pm_set_ddr_timeout(int);
 static void brcm_pm_initialize(void);
 
@@ -349,11 +372,13 @@ static unsigned long brcm_pm_standby_flags;
 
 enum {
 	BRCM_CLK_SATA,
-	BRCM_CLK_ENET,
+	BRCM_CLK_GENET,
 	BRCM_CLK_MOCA,
 	BRCM_CLK_USB,
-	BRCM_CLK_MOCA_GENET,
-	BRCM_CLK_NETWORK	/* PLLs/clocks common to all GENETs */
+	BRCM_CLK_GENET1,
+	BRCM_CLK_NETWORK,	/* PLLs/clocks common to all GENETs */
+	BRCM_CLK_GENET_WOL,
+	BRCM_CLK_MOCA_WOL,
 };
 
 static struct clk brcm_clk_table[] = {
@@ -362,27 +387,27 @@ static struct clk brcm_clk_table[] = {
 		.disable	= &brcm_pm_sata_disable,
 		.enable		= &brcm_pm_sata_enable,
 	},
-	[BRCM_CLK_ENET] = {
+	[BRCM_CLK_GENET] = {
 		.name		= "enet",
-		.disable	= &brcm_pm_enet_disable,
-		.enable		= &brcm_pm_enet_enable,
+		.disable	= &brcm_pm_genet_disable,
+		.enable		= &brcm_pm_genet_enable,
 		.parent		= &brcm_clk_table[BRCM_CLK_NETWORK],
 	},
 	[BRCM_CLK_MOCA] = {
 		.name		= "moca",
 		.disable	= &brcm_pm_moca_disable,
 		.enable		= &brcm_pm_moca_enable,
-		.parent		= &brcm_clk_table[BRCM_CLK_MOCA_GENET],
+		.parent		= &brcm_clk_table[BRCM_CLK_GENET1],
 	},
 	[BRCM_CLK_USB] = {
 		.name		= "usb",
 		.disable	= &brcm_pm_usb_disable,
 		.enable		= &brcm_pm_usb_enable,
 	},
-	[BRCM_CLK_MOCA_GENET] = {
+	[BRCM_CLK_GENET1] = {
 		.name		= "moca_genet",
-		.disable	= &brcm_pm_moca_genet_disable,
-		.enable		= &brcm_pm_moca_genet_enable,
+		.disable	= &brcm_pm_genet1_disable,
+		.enable		= &brcm_pm_genet1_enable,
 		.parent		= &brcm_clk_table[BRCM_CLK_NETWORK],
 	},
 	[BRCM_CLK_NETWORK] = {
@@ -390,14 +415,26 @@ static struct clk brcm_clk_table[] = {
 		.disable	= &brcm_pm_network_disable,
 		.enable		= &brcm_pm_network_enable,
 	},
+	[BRCM_CLK_GENET_WOL] = {
+		.name		= "enet-wol",
+		.disable	= &brcm_pm_genet_disable_wol,
+		.enable		= &brcm_pm_genet_enable_wol,
+	},
+	[BRCM_CLK_MOCA_WOL] = {
+		.name		= "moca-wol",
+		.disable	= &brcm_pm_moca_disable_wol,
+		.enable		= &brcm_pm_moca_enable_wol,
+	},
 };
 
 static struct clk *brcm_pm_clk_find(const char *name)
 {
 	int i;
 	struct clk *clk = brcm_clk_table;
+
+	BUG_ON(!name);
 	for (i = 0; i < ARRAY_SIZE(brcm_clk_table); i++, clk++)
-		if (!strcmp(name, clk->name))
+		if (!strncmp(name, clk->name, strlen(name)))
 			return clk;
 	return NULL;
 }
@@ -460,6 +497,7 @@ ssize_t brcm_pm_store_standby_flags(struct device *dev,
 	return count;
 }
 
+#if defined(CONFIG_BRCM_HAS_1GB_MEMC1) || defined(CONFIG_BCM7420)
 /*
  * brcm_pm_memc1_power
  * Power state of secondary memory controller
@@ -488,6 +526,16 @@ ssize_t brcm_pm_store_memc1_power(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	int val;
+
+	/*
+	 * if memc1 memory has been added to system memory pool,
+	 * disable memc1 dynamic PM
+	 */
+	if (brcm_dram1_linux_mb && brcm_dram1_linux_mb <= brcm_dram1_size_mb) {
+		sysfs_chmod_file(&dev->kobj,
+			&attr->attr, attr->attr.mode & ~S_IWUGO);
+		return -EINVAL;
+	}
 
 	if (sscanf(buf, "%d", &val) != 1)
 		return -EINVAL;
@@ -526,6 +574,8 @@ ssize_t brcm_pm_store_memc1_power(struct device *dev,
 	return count;
 }
 
+#endif
+
 /* Boot time functions */
 
 static int __init brcm_pm_init(void)
@@ -533,7 +583,7 @@ static int __init brcm_pm_init(void)
 	if (!brcm_pm_enabled)
 		return 0;
 	if (!brcm_moca_enabled)
-		brcm_pm_moca_disable();
+		brcm_pm_moca_disable(0);
 	/* chip specific initialization */
 	brcm_pm_initialize();
 	return 0;
@@ -554,27 +604,29 @@ __setup("nopm", nopm_setup);
  ***********************************************************************/
 
 /* internal functions assume the lock is held */
-static int __clk_enable(struct clk *clk)
+static int __clk_enable(struct clk *clk, u32 flags)
 {
+	BUG_ON(clk->refcnt < 0);
 	if (++(clk->refcnt) == 1 && brcm_pm_enabled) {
 		if (clk->parent)
-			__clk_enable(clk->parent);
-		printk(KERN_DEBUG "brcm-pm: enabling %s clocks\n",
-			clk->name);
-		clk->enable();
+			__clk_enable(clk->parent, clk->flags | flags);
+		printk(KERN_DEBUG "%s: %s [%d]\n",
+			__func__, clk->name, clk->refcnt);
+		clk->enable(clk->flags | flags);
 	}
 	return 0;
 }
 
-static void __clk_disable(struct clk *clk)
+static void __clk_disable(struct clk *clk, u32 flags)
 {
 	if (--(clk->refcnt) == 0 && brcm_pm_enabled) {
-		printk(KERN_DEBUG "brcm-pm: disabling %s clocks\n",
-			clk->name);
-		clk->disable();
+		printk(KERN_DEBUG "%s: %s [%d]\n",
+			__func__, clk->name, clk->refcnt);
+		clk->disable(clk->flags | flags);
 		if (clk->parent)
-			__clk_disable(clk->parent);
+			__clk_disable(clk->parent, clk->flags | flags);
 	}
+	BUG_ON(clk->refcnt < 0);
 }
 
 int clk_enable(struct clk *clk)
@@ -583,7 +635,7 @@ int clk_enable(struct clk *clk)
 
 	if (clk && !IS_ERR(clk)) {
 		spin_lock_irqsave(&brcm_pm_clk_lock, flags);
-		__clk_enable(clk);
+		__clk_enable(clk, 0);
 		spin_unlock_irqrestore(&brcm_pm_clk_lock, flags);
 		return 0;
 	} else {
@@ -598,7 +650,7 @@ void clk_disable(struct clk *clk)
 
 	if (clk && !IS_ERR(clk)) {
 		spin_lock_irqsave(&brcm_pm_clk_lock, flags);
-		__clk_disable(clk);
+		__clk_disable(clk, 0);
 		spin_unlock_irqrestore(&brcm_pm_clk_lock, flags);
 	}
 }
@@ -798,30 +850,60 @@ early_initcall(brcm_pm_wakeup_init);
 /***********************************************************************
  * USB / ENET / GENET / MoCA / SATA PM implementations (per-chip)
  ***********************************************************************/
+static __maybe_unused void brcm_ddr_phy_initialize(void);
 
-/* Per-block power management operations pair.
- * Parameter flags can be later used to control wake-up capabilities
+/*
+ * Per-block power management operations pair.
+ * Parameter flags is used to control wake-up capabilities
  */
-static __maybe_unused void brcm_ddr_aphy_initialize(void);
 
 struct brcm_chip_pm_block_ops {
 	void (*enable)(u32 flags);
 	void (*disable)(u32 flags);
 };
 
+static u32 brcm_pm_flags;
+
 struct brcm_chip_pm_ops {
+	/* SATA power/clock gating */
 	struct brcm_chip_pm_block_ops sata;
+	/* genet0 power/clock gating */
 	struct brcm_chip_pm_block_ops genet;
+	/* genet1 power/clock gating */
+	struct brcm_chip_pm_block_ops genet1;
+	/* MoCA power/clock gating */
 	struct brcm_chip_pm_block_ops moca;
+	/* USB power/clock gating */
 	struct brcm_chip_pm_block_ops usb;
-	struct brcm_chip_pm_block_ops moca_genet;
+	/* genet0/genet1/MoCA common power/clock gating */
 	struct brcm_chip_pm_block_ops network;
+	/* system-wide initialization code */
 	void (*initialize)(void);
-	void (*suspend)(void);
-	void (*resume)(void);
+	/* system suspend code */
+	void (*suspend)(u32 flags);
+	/* system resume code */
+	void (*resume)(u32 flags);
+	/*
+	 * System suspend code executed immediately before
+	 * initiating low-level suspend sequence.
+	 * For example, shutting down secondary memory controller
+	 * can be done here when system no longer uses highmem regions
+	 */
+	void (*late_suspend)(void);
+	void (*early_resume)(void);
 	/* for chip specific clock mappings ( see #SWLINUX-1764 ) */
 	struct clk* (*clk_get)(struct device *dev, const char *id);
 };
+
+#define DEF_BLOCK_PM_OP(block, chip) \
+	.block.enable	= bcm##chip##_pm_##block##_enable, \
+	.block.disable	= bcm##chip##_pm_##block##_disable
+#define DEF_SYSTEM_PM_OP(chip) \
+	.suspend	= bcm##chip##_pm_suspend, \
+	.resume		= bcm##chip##_pm_resume
+#define DEF_SYSTEM_LATE_PM_OP(chip) \
+	.late_suspend	= bcm##chip##_pm_late_suspend, \
+	.early_resume	= bcm##chip##_pm_early_resume
 
 #define PLL_DIS(x)		BDEV_WR_RB(BCHP_##x, 0x04)
 #define PLL_ENA(x)		do { \
@@ -832,12 +914,15 @@ struct brcm_chip_pm_ops {
 static __maybe_unused struct clk *brcm_pm_clk_get(struct device *dev,
 	const char *id)
 {
-	if (!strcmp(id, "enet") && dev) {
+	if (!strncmp(id, "enet", 4) && dev) {
 		struct platform_device *pdev = to_platform_device(dev);
 		if (pdev->id == 0) /* enet */
-			return brcm_pm_clk_find("enet");
-		if (pdev->id == 1) /* moca_genet */
+			return brcm_pm_clk_find(id);
+		if (pdev->id == 1) /* moca_genet */ {
+			if (strstr(id, "-wol"))
+				return brcm_pm_clk_find("moca-wol");
 			return brcm_pm_clk_find("moca");
+		}
 	}
 	return NULL;
 }
@@ -877,7 +962,7 @@ void brcm_pm_dram_encoder_start(void)
 		dram_encoder_ops->start();
 }
 EXPORT_SYMBOL(brcm_pm_dram_encoder_start);
-#endif
+#endif /* CONFIG_BRCM_HAS_AON */
 
 #if defined(CONFIG_BCM7125)
 static void bcm7125_pm_sata_disable(u32 flags)
@@ -900,6 +985,24 @@ static void bcm7125_pm_sata_enable(u32 flags)
 
 static void bcm7125_pm_network_disable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_ENET_CG_MOCA, 1);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_GMII_CG_MOCA, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_HFB, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_L2_INTR, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL,
+			DIS_CLK_UNIMAC_SYS_TX, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_216, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL,
+			DIS_CLK_250_GENET_MOCA, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_54, 1);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_108, 1);
+		return;
+	}
 	BDEV_SET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL, 0xf77);
 	BDEV_WR_RB(BCHP_CLKGEN_PLL_MOCA_CH3_PM_CTRL, 0x04);
 	BDEV_WR_RB(BCHP_CLKGEN_PLL_MOCA_CH4_PM_CTRL, 0x04);
@@ -910,6 +1013,23 @@ static void bcm7125_pm_network_disable(u32 flags)
 
 static void bcm7125_pm_network_enable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_ENET_CG_MOCA, 0);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_GMII_CG_MOCA, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_L2_INTR, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL,
+			DIS_CLK_UNIMAC_SYS_TX, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_216, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL,
+			DIS_CLK_250_GENET_MOCA, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_54, 0);
+		BDEV_WR_F_RB(CLKGEN_MOCA_CLK_PM_CTRL, DIS_CLK_108, 0);
+		return;
+	}
 	BDEV_UNSET_RB(BCHP_CLKGEN_PLL_MOCA_CTRL, 0x13);
 	BDEV_WR_RB(BCHP_CLKGEN_PLL_MOCA_CH6_PM_CTRL, 0x01);
 	BDEV_WR_RB(BCHP_CLKGEN_PLL_MOCA_CH5_PM_CTRL, 0x01);
@@ -938,7 +1058,7 @@ static void bcm7125_pm_usb_enable(u32 flags)
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
 }
 
-static void bcm7125_pm_suspend(void)
+static void bcm7125_pm_suspend(u32 flags)
 {
 	/* PCI/EBI */
 	BDEV_WR_RB(BCHP_HIF_TOP_CTRL_PM_CTRL, 0x3ff8);
@@ -957,7 +1077,7 @@ static void bcm7125_pm_suspend(void)
 	brcm_pm_set_ddr_timeout(0);
 }
 
-static void bcm7125_pm_resume(void)
+static void bcm7125_pm_resume(u32 flags)
 {
 	/* system PLLs */
 	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 0);
@@ -972,20 +1092,762 @@ static void bcm7125_pm_resume(void)
 	BDEV_WR_F_RB(CLKGEN_CLK_27_OUT_PM_CTRL, DIS_CLK_27_OUT, 0);
 	BDEV_WR_RB(BCHP_HIF_TOP_CTRL_PM_CTRL, 0x00);
 
-	brcm_ddr_aphy_initialize();
+	brcm_ddr_phy_initialize();
+}
+
+/* There is no non-MoCA GENET on 7125, so any request for 'enet' clock is
+ * redirected to 'moca'
+ */
+static struct clk *bcm7125_pm_clk_get(struct device *dev, const char *id)
+{
+	if (!strncmp(id, "enet", 4)) {
+		if (strstr(id, "-wol"))
+			return brcm_pm_clk_find("moca-wol");
+		else
+			return brcm_pm_clk_find("moca");
+	}
+	return NULL;
 }
 
 #define PM_OPS_DEFINED
 static struct brcm_chip_pm_ops chip_pm_ops = {
-	.sata.enable		= bcm7125_pm_sata_enable,
-	.sata.disable		= bcm7125_pm_sata_disable,
-	.network.enable		= bcm7125_pm_network_enable,
-	.network.disable	= bcm7125_pm_network_disable,
-	.usb.enable		= bcm7125_pm_usb_enable,
-	.usb.disable		= bcm7125_pm_usb_disable,
-	.suspend		= bcm7125_pm_suspend,
-	.resume			= bcm7125_pm_resume,
-	.initialize		= brcm_ddr_aphy_initialize,
+	DEF_BLOCK_PM_OP(usb, 7125),
+	DEF_BLOCK_PM_OP(sata, 7125),
+	DEF_BLOCK_PM_OP(network, 7125),
+	DEF_SYSTEM_PM_OP(7125),
+	.clk_get		= bcm7125_pm_clk_get,
+	.initialize		= brcm_ddr_phy_initialize,
+};
+#endif
+
+#if defined(CONFIG_BCM7340)
+
+static void bcm7340_pm_genet_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		/*
+		 * TODO: Stop HFB clock and switch to 27MHz if ACPI
+		 * detector is disabled
+		 */
+		if (0) {
+			/* switch to slower 27MHz clocks */
+			BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+				CLOCK_SEL_CG_GENET, 1);
+			BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+				CLOCK_SEL_GMII_CG_GENET, 1);
+			BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
+			    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK);
+		}
+
+		BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK);
+		return;
+	}
+
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, PWRDN_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, ENB_CLOCKOUT_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, EN_CMLBUF_CH4, 0);
+	BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_250_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_25_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK);
+}
+
+static void bcm7340_pm_genet_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_UNSET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,	CLOCK_SEL_CG_GENET, 0);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_GMII_CG_GENET, 0);
+		return;
+	}
+
+	BDEV_UNSET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_250_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_25_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
+		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, EN_CMLBUF_CH4, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, ENB_CLOCKOUT_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, PWRDN_CH, 0);
+}
+
+static void bcm7340_pm_moca_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		/* switch to slower 27MHz clocks */
+	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 1);
+	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA, 1);
+
+	    BDEV_SET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
+	    return;
+	}
+
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, PWRDN_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, ENB_CLOCKOUT_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, EN_CMLBUF_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, PWRDN_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, ENB_CLOCKOUT_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, EN_CMLBUF_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, PWRDN_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, ENB_CLOCKOUT_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, EN_CMLBUF_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, PWRDN_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, ENB_CLOCKOUT_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, EN_CMLBUF_CH6, 0);
+	BDEV_SET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
+}
+
+static void bcm7340_pm_moca_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_UNSET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
+
+	    /* Restore fast clocks */
+	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 0);
+	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA, 0);
+
+	    return;
+	}
+
+	BDEV_UNSET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
+		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, EN_CMLBUF_CH6, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, ENB_CLOCKOUT_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, PWRDN_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, EN_CMLBUF_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, ENB_CLOCKOUT_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, PWRDN_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, EN_CMLBUF_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, ENB_CLOCKOUT_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, PWRDN_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, EN_CMLBUF_CH, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, ENB_CLOCKOUT_CH, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, PWRDN_CH, 0);
+}
+
+static void bcm7340_pm_usb_disable(u32 flags)
+{
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xC);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xC);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
+	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 1);
+	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_108, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH4_PM_CTRL, PWRDN_CH4_PLLMAIN, 1);
+}
+
+static void bcm7340_pm_usb_enable(u32 flags)
+{
+	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH4_PM_CTRL, PWRDN_CH4_PLLMAIN, 0);
+	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_108, 0);
+	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 0);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
+}
+
+static void bcm7340_pm_network_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_MOCA_WOL|BRCM_PM_FLAG_ENET_WOL))
+		return;
+
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN_LDO, 1);
+}
+
+static void bcm7340_pm_network_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_MOCA_WOL|BRCM_PM_FLAG_ENET_WOL))
+		return;
+
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN_LDO, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, DRESET, 0);
+}
+
+static void bcm7340_pm_suspend(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	/* PCI/EBI */
+	BDEV_WR_F_RB(CLKGEN_PAD_CLK_PM_CTRL, DIS_CLK_33_27_PCI, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH5_PM_CTRL, PWRDN_CH5_PLLMAIN, 1);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_81, 1);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_27, 1);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_54, 1);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_216_CG, 1);
+	BDEV_WR_F_RB(CLKGEN_HIF_CLK_PM_CTRL, DIS_CLK_SPI, 1);
+
+	/* system PLLs */
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, POWERDOWN, 1);
+
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, EN_CMLBUF, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, PWRDN, 1);
+
+	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, RESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, POWERDOWN, 1);
+
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ENB_CLOCKOUT, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, PWRDN, 1);
+
+	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_216, 1);
+	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 1);
+
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
+}
+
+static void bcm7340_pm_resume(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	/* system PLLs */
+	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 0);
+	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_216, 0);
+
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, PWRDN, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, DRESET, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ENB_CLOCKOUT, 0);
+
+	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, RESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, POWERDOWN, 0);
+
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, PWRDN, 1);
+	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, EN_CMLBUF, 0);
+
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, POWERDOWN, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, DRESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 0);
+
+	/* PCI/EBI */
+	BDEV_WR_F_RB(CLKGEN_HIF_CLK_PM_CTRL, DIS_CLK_SPI, 0);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_216_CG, 0);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_54, 0);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_27, 0);
+	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_81, 0);
+	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH5_PM_CTRL, PWRDN_CH5_PLLMAIN, 0);
+	BDEV_WR_F_RB(CLKGEN_PAD_CLK_PM_CTRL, DIS_CLK_33_27_PCI, 0);
+
+	brcm_ddr_phy_initialize();
+}
+
+#define PM_OPS_DEFINED
+static struct brcm_chip_pm_ops chip_pm_ops = {
+	DEF_BLOCK_PM_OP(usb, 7340),
+	DEF_BLOCK_PM_OP(moca, 7340),
+	DEF_BLOCK_PM_OP(genet, 7340),
+	DEF_BLOCK_PM_OP(network, 7340),
+	DEF_SYSTEM_PM_OP(7340),
+	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_phy_initialize,
+};
+#endif
+
+#if defined(CONFIG_BCM7342)
+
+static void bcm7342_pm_sata_disable(u32 flags)
+{
+	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, sata_ana_pwrdn, 1);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_216M_CLK, 1);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_SATA_PCI_CLK, 1);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_108M_CLK, 1);
+	PLL_DIS(CLK_SYS_PLL_1_6);
+}
+
+static void bcm7342_pm_sata_enable(u32 flags)
+{
+	PLL_ENA(CLK_SYS_PLL_1_6);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_108M_CLK, 0);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_216M_CLK, 0);
+	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_SATA_PCI_CLK, 0);
+	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, sata_ana_pwrdn, 0);
+}
+
+
+static void bcm7342_pm_genet_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		/* switch to slower 27MHz clocks */
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 1);
+
+		BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL,
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_GENET_GISB_108M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_216M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_\
+GENET_UNIMAC_SYS_TX_27_54M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_\
+GENET_L2_INTR_27_54M_CLK_MASK);
+		return;
+	}
+
+	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_1);
+	BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x0000076f);
+}
+
+static void bcm7342_pm_genet_enable(u32 flags)
+{
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL,
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_GENET_GISB_108M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_216M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_\
+GENET_UNIMAC_SYS_TX_27_54M_CLK_MASK|
+		    BCHP_CLK_GENET_CLK_PM_CTRL_DIS_\
+GENET_L2_INTR_27_54M_CLK_MASK);
+
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 0);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 0);
+		return;
+	}
+
+	BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x0000076f);
+	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_1);
+}
+
+static void bcm7342_pm_moca_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL,
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_216M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_108M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_MOCA_54M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_GENET_RGMII_216M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_\
+MOCA_ENET_UNIMAC_SYS_TX_27_54M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_\
+MOCA_ENET_L2_INTR_27_54M_CLK_MASK);
+
+		return;
+	}
+
+	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_3);
+	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_4);
+	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_5);
+	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_6);
+	BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
+}
+
+static void bcm7342_pm_moca_enable(u32 flags)
+{
+	/* switch to slower 27MHz clocks */
+	BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_CLK_SEL, 1);
+	BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 1);
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL,
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_216M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_108M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_MOCA_54M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_GENET_RGMII_216M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_\
+MOCA_ENET_UNIMAC_SYS_TX_27_54M_CLK_MASK|
+		    BCHP_CLK_MOCA_CLK_PM_CTRL_DIS_\
+MOCA_ENET_L2_INTR_27_54M_CLK_MASK);
+		return;
+	}
+
+	BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
+	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_6);
+	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_5);
+	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_4);
+	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_3);
+}
+
+static void bcm7342_pm_usb_disable(u32 flags)
+{
+	/* reset and power down all 4 ports */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
+	/* disable the clocks */
+	BDEV_SET_RB(BCHP_CLK_USB_PM_CTRL,
+		BCHP_CLK_USB_PM_CTRL_DIS_54M_CLK_MASK|
+		BCHP_CLK_USB_PM_CTRL_DIS_108M_CLK_MASK|
+		BCHP_CLK_USB_PM_CTRL_DIS_216M_CLK_MASK);
+	/* disable PLL */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, EN_CMLBUF, 0);
+}
+
+static void bcm7342_pm_usb_enable(u32 flags)
+{
+	/* enable PLL */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, DIS_CH, 0);
+	/* enable the clocks */
+	BDEV_UNSET_RB(BCHP_CLK_USB_PM_CTRL,
+		BCHP_CLK_USB_PM_CTRL_DIS_54M_CLK_MASK|
+		BCHP_CLK_USB_PM_CTRL_DIS_108M_CLK_MASK|
+		BCHP_CLK_USB_PM_CTRL_DIS_216M_CLK_MASK);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
+	/* power up all 4 ports */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
+}
+
+static void bcm7342_pm_network_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_MOCA_WOL|BRCM_PM_FLAG_ENET_WOL))
+		return;
+
+	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, RESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, POWERDOWN, 1);
+
+}
+
+static void bcm7342_pm_network_enable(u32 flags)
+{
+	if (flags & (BRCM_PM_FLAG_MOCA_WOL|BRCM_PM_FLAG_ENET_WOL))
+		return;
+
+	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, POWERDOWN, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, RESET, 0);
+}
+
+static void bcm7342_pm_suspend(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	/* PCI/EBI */
+	BDEV_WR_F_RB(CLK_PCI_OUT_CLK_PM_CTRL, DIS_PCI_OUT_CLK, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, EN_CMLBUF, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, EN_CMLBUF, 0);
+
+	/* system PLLs */
+	/* RMY: powering down 3OT oscillator kills UART */
+	if ((brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE) ||
+	    (flags & (BRCM_PM_FLAG_MOCA_WOL|BRCM_PM_FLAG_ENET_WOL))) {
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+			FREQ_DOUBLER_POWER_DOWN, 0);
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 0);
+	} else {
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+			FREQ_DOUBLER_POWER_DOWN, 1);
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 1);
+	}
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, EN_CMLBUF, 0);
+
+	/* disable self-refresh since it interferes with suspend */
+	brcm_pm_set_ddr_timeout(0);
+}
+
+static void bcm7342_pm_resume(u32 flags)
+{
+	/* system PLLs */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 0);
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, FREQ_DOUBLER_POWER_DOWN, 0);
+
+	/* PCI/EBI */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_PCI_OUT_CLK_PM_CTRL, DIS_PCI_OUT_CLK, 0);
+
+	brcm_ddr_phy_initialize();
+}
+
+#define PM_OPS_DEFINED
+static struct brcm_chip_pm_ops chip_pm_ops = {
+	DEF_BLOCK_PM_OP(sata, 7342),
+	DEF_BLOCK_PM_OP(usb, 7342),
+	DEF_BLOCK_PM_OP(moca, 7342),
+	DEF_BLOCK_PM_OP(genet, 7342),
+	DEF_BLOCK_PM_OP(network, 7342),
+	DEF_SYSTEM_PM_OP(7342),
+	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_phy_initialize,
+};
+#endif
+
+#if defined(CONFIG_BCM7408)
+static void bcm7408_pm_network_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	/*
+	 * 7408B0 does not support MoCA WOL due to a h/w bug. The
+	 * following code is added in case the bug is fixed in the next
+	 * revision
+	 * http://jira.broadcom.com/browse/HW7408-186
+	 */
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_GENET_RGMII_216M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_UNIMAC_SYS_TX_27_108M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_L2_INTR_27_108M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_GMII_TX_27_108M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_54M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_216M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_108M_CLK, 1);
+		return;
+	}
+	BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_ENET_HFB_27_108M_CLK, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, EN_CMLBUF, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, EN_CMLBUF, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, EN_CMLBUF, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_6, DIS_CH, 1);
+	BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x6ab);
+}
+
+static void bcm7408_pm_network_enable(u32 flags)
+{
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_GENET_RGMII_216M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_UNIMAC_SYS_TX_27_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_L2_INTR_27_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_GMII_TX_27_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_54M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_216M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_CLK_SEL, 0);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 0);
+		return;
+	}
+	BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x6ab);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_6, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_ENET_HFB_27_108M_CLK, 0);
+}
+
+static void bcm7408_pm_usb_disable(u32 flags)
+{
+	/* reset and power down all 4 ports */
+/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0); */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
+	/* disable the clocks */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
+	BDEV_SET_RB(BCHP_CLK_USB_CLK_PM_CTRL,
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_54M_CLK_MASK|
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_108M_CLK_MASK|
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
+	/* disable PLL */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, DIS_CH, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, EN_CMLBUF, 0);
+}
+
+static void bcm7408_pm_usb_enable(u32 flags)
+{
+	/* enable PLL */
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, EN_CMLBUF, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, DIS_CH, 0);
+	/* enable the clocks */
+	BDEV_UNSET_RB(BCHP_CLK_USB_CLK_PM_CTRL,
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_54M_CLK_MASK|
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_108M_CLK_MASK|
+		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
+	/* power up all 4 ports */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
+/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xE); */
+}
+
+static void bcm7408_pm_suspend(u32 flags)
+{
+	/* UART */
+	if (!(brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE)) {
+		BDEV_WR_F_RB(CLK_SUN_27M_CLK_PM_CTRL,
+			DIS_SUN_27M_CLK, 1);
+		BDEV_WR_F_RB(CLK_SUN_UART_CLK_PM_CTRL,
+			DIS_SUN_UART_108M_CLK, 1);
+	}
+	/* PAD clocks */
+	BDEV_WR_F_RB(CLK_MISC, VCXOA_OUTCLK_ENABLE, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_PM_DIS_CHL_1, DIS_CH, 1);
+
+	/* system PLLs */
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 1);
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+		CML_2_N_P_EN, 1);
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+		FREQ_DOUBLER_POWER_DOWN, 1);
+
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, DRESET, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, ARESET, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
+
+	/* MEMC0 */
+	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
+		IDDQ_MODE_ON_SELFREF, 0);
+	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
+		HIZ_ON_SELFREF, 1);
+	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
+		DEVCLK_OFF_ON_SELFREF, 1);
+	BDEV_WR_RB(BCHP_DDR23_PHY_CONTROL_REGS_0_IDLE_PAD_CONTROL, 0x132);
+	BDEV_SET_RB(BCHP_DDR23_PHY_BYTE_LANE_0_0_IDLE_PAD_CONTROL, 0xfffff);
+	BDEV_SET_RB(BCHP_DDR23_PHY_BYTE_LANE_1_0_IDLE_PAD_CONTROL, 0xfffff);
+
+}
+
+static void bcm7408_pm_resume(u32 flags)
+{
+	/* system PLLs */
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, DRESET, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
+
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+		CML_2_N_P_EN, 0);
+	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+		FREQ_DOUBLER_POWER_DOWN, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 0);
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 0);
+
+	/* PAD clocks */
+	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_PM_DIS_CHL_1, DIS_CH, 0);
+	BDEV_WR_F_RB(CLK_MISC, VCXOA_OUTCLK_ENABLE, 1);
+
+	/* UART */
+	if (!(brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE)) {
+		BDEV_WR_F_RB(CLK_SUN_UART_CLK_PM_CTRL,
+			DIS_SUN_UART_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_SUN_27M_CLK_PM_CTRL,
+			DIS_SUN_27M_CLK, 0);
+	}
+}
+
+#define PM_OPS_DEFINED
+static struct brcm_chip_pm_ops chip_pm_ops = {
+	DEF_BLOCK_PM_OP(network, 7408),
+	DEF_BLOCK_PM_OP(usb, 7408),
+	DEF_SYSTEM_PM_OP(7408),
 };
 #endif
 
@@ -1047,15 +1909,47 @@ static void bcm7420_pm_sata_enable(u32 flags)
 
 static void bcm7420_pm_moca_disable(u32 flags)
 {
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_L2_INTR_27_108M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_UNIMAC_SYS_TX_27_108M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_216M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_54M_CLK, 1);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_108M_CLK, 1);
+		return;
+	}
+
 	PLL_DIS(CLK_SYS_PLL_1_3);
 	PLL_DIS(CLK_SYS_PLL_1_4);
 	PLL_DIS(CLK_SYS_PLL_1_5);
 	PLL_DIS(CLK_SYS_PLL_1_6);
 	BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
+
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 1);
 }
 
 static void bcm7420_pm_moca_enable(u32 flags)
 {
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_L2_INTR_27_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL,
+			DIS_MOCA_ENET_UNIMAC_SYS_TX_27_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_216M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_54M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_108M_CLK, 0);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_CLK_SEL, 0);
+		BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 0);
+		return;
+	}
+
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 0);
+	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
+
 	BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
 	PLL_ENA(CLK_SYS_PLL_1_6);
 	PLL_ENA(CLK_SYS_PLL_1_5);
@@ -1063,23 +1957,66 @@ static void bcm7420_pm_moca_enable(u32 flags)
 	PLL_ENA(CLK_SYS_PLL_1_3);
 }
 
-static void bcm7420_pm_enet_disable(u32 flags)
+static void bcm7420_pm_genet_disable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 1);
+		PLL_DIS(CLK_GENET_NETWORK_PLL_5);
+		BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x143);
+		return;
+	}
 	PLL_DIS(CLK_GENET_NETWORK_PLL_3);
 	PLL_DIS(CLK_GENET_NETWORK_PLL_5);
 	PLL_DIS(CLK_GENET_NETWORK_PLL_6);
 	BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x77F);
 }
 
-static void bcm7420_pm_enet_enable(u32 flags)
+static void bcm7420_pm_genet_enable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x143);
+		PLL_ENA(CLK_GENET_NETWORK_PLL_5);
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 0);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 0);
+		return;
+	}
 	BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x77F);
 	PLL_ENA(CLK_GENET_NETWORK_PLL_3);
 	PLL_ENA(CLK_GENET_NETWORK_PLL_5);
 	PLL_ENA(CLK_GENET_NETWORK_PLL_6);
 }
 
-static void bcm7420_pm_suspend(void)
+static void bcm7420_pm_network_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
+	/* TODO - this clock is shared with HDMI */
+	PLL_DIS(CLK_GENET_NETWORK_PLL_1);
+	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, POWERDOWN, 1);
+	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, RESET, 1);
+}
+
+static void bcm7420_pm_network_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
+	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, RESET, 0);
+	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, POWERDOWN, 0);
+	PLL_ENA(CLK_GENET_NETWORK_PLL_1);
+}
+
+static void bcm7420_pm_suspend(u32 flags)
 {
 	/* BT */
 	PLL_DIS(CLK_SYS_PLL_1_1);
@@ -1096,15 +2033,14 @@ static void bcm7420_pm_suspend(void)
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_PLL_5, 0x2);
 
 	/* system PLLs */
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, FREQ_DOUBLER_POWER_DOWN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 1);
-	PLL_DIS(CLK_GENET_NETWORK_PLL_1);
-	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, RESET, 1);
+	if (!(flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))) {
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+			FREQ_DOUBLER_POWER_DOWN, 0);
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 1);
+		BDEV_WR_F_RB(CLK_SCRATCH, CML_REPEATER_2_POWERDOWN, 1);
+	}
+
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_PLL_6, 0x2);
-	BDEV_WR_F_RB(CLK_SCRATCH, CML_REPEATER_2_POWERDOWN, 1);
 
 	/* disable self-refresh since it interferes with suspend */
 	brcm_pm_set_ddr_timeout(0);
@@ -1117,20 +2053,19 @@ static void bcm7420_pm_suspend(void)
 		!(brcm_pm_standby_flags & BRCM_STANDBY_DDR_PLL_ON));
 }
 
-static void bcm7420_pm_resume(void)
+static void bcm7420_pm_resume(u32 flags)
 {
-	brcm_ddr_aphy_initialize();
+	brcm_ddr_phy_initialize();
 
 	/* system PLLs */
 	BDEV_WR_F_RB(CLK_SCRATCH, CML_REPEATER_2_POWERDOWN, 0);
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_PLL_6, 0x1);
-	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, RESET, 0);
-	BDEV_WR_F_RB(CLK_GENET_NETWORK_PLL_CTRL, POWERDOWN, 0);
-	PLL_ENA(CLK_GENET_NETWORK_PLL_1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, FREQ_DOUBLER_POWER_DOWN, 1);
+
+	if (!(flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))) {
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 0);
+		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
+			FREQ_DOUBLER_POWER_DOWN, 1);
+	}
 
 	/* Sundry */
 	BDEV_WR_F(CLK_SUN_27M_CLK_PM_CTRL, DIS_SUN_27M_CLK, 0);
@@ -1151,33 +2086,65 @@ static void bcm7420_pm_resume(void)
 
 }
 
+static void bcm7420_pm_late_suspend(void)
+{
+	/* if MEMC1 is powered down/suspended, do not touch it */
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON) {
+		brcm_pm_memc1_suspend();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_SSPD;
+	}
+}
+
+static void bcm7420_pm_early_resume(void)
+{
+	/* if MEMC1 was powered down before standby, do not power it up */
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_SSPD) {
+		brcm_pm_memc1_resume();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
+	}
+}
+
 #define PM_OPS_DEFINED
 static struct brcm_chip_pm_ops chip_pm_ops = {
-	.usb.enable		= bcm7420_pm_usb_enable,
-	.usb.disable		= bcm7420_pm_usb_disable,
-	.sata.enable		= bcm7420_pm_sata_enable,
-	.sata.disable		= bcm7420_pm_sata_disable,
-	.genet.enable		= bcm7420_pm_enet_enable,
-	.genet.disable		= bcm7420_pm_enet_disable,
-	.moca.enable		= bcm7420_pm_moca_enable,
-	.moca.disable		= bcm7420_pm_moca_disable,
-	.suspend		= bcm7420_pm_suspend,
-	.resume			= bcm7420_pm_resume,
+	DEF_BLOCK_PM_OP(sata, 7420),
+	DEF_BLOCK_PM_OP(usb, 7420),
+	DEF_BLOCK_PM_OP(moca, 7420),
+	DEF_BLOCK_PM_OP(genet, 7420),
+	DEF_BLOCK_PM_OP(network, 7420),
+	DEF_SYSTEM_PM_OP(7420),
+	DEF_SYSTEM_LATE_PM_OP(7420),
 	.clk_get		= brcm_pm_clk_get,
-	.initialize		= brcm_ddr_aphy_initialize,
+	.initialize		= brcm_ddr_phy_initialize,
 };
 #endif
 
 #if defined(CONFIG_BCM7468)
 
-static void bcm7468_pm_enet_disable(u32 flags)
+static void bcm7468_pm_genet_disable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		/* switch to slower 27MHz clocks */
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 1);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 1);
+		BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x503);
+		return;
+	}
+
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_1_4, 1);
 	BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x767);
 }
 
-static void bcm7468_pm_enet_enable(u32 flags)
+static void bcm7468_pm_genet_enable(u32 flags)
 {
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x503);
+		BDEV_WR_F_RB(CLK_MISC, GENET_CLK_SEL, 0);
+		BDEV_WR_F_RB(CLK_MISC, GENET_GMII_TX_CLK_SEL, 0);
+		return;
+	}
+
 	BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x767);
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_1_4, 0);
 }
@@ -1202,7 +2169,7 @@ static void bcm7468_pm_usb_enable(u32 flags)
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
 }
 
-static void bcm7468_pm_suspend(void)
+static void bcm7468_pm_suspend(u32 flags)
 {
 	/* SDIO */
 	BDEV_WR_F_RB(CLK_HIF_SDIO_CLK_PM_CTRL, DIS_HIF_SDIO_48M_CLK, 1);
@@ -1213,12 +2180,16 @@ static void bcm7468_pm_suspend(void)
 
 	/* system PLLs */
 	BDEV_WR_RB(BCHP_CLK_SYS_PLL_0_3, 0x02);
-	BDEV_SET_RB(BCHP_CLK_SYS_PLL_1_CTRL, 0x83);
+
+	if (!(flags & BRCM_PM_FLAG_ENET_WOL))
+		/* this PLL is needed for EPHY */
+		BDEV_SET_RB(BCHP_CLK_SYS_PLL_1_CTRL, 0x83);
+
 	BDEV_WR_RB(BCHP_VCXO_CTL_MISC_AC1_CTRL, 0x06);
 	BDEV_SET_RB(BCHP_VCXO_CTL_MISC_VC0_CTRL, 0x0b);
 }
 
-static void bcm7468_pm_resume(void)
+static void bcm7468_pm_resume(u32 flags)
 {
 	/* system PLLs */
 	BDEV_UNSET_RB(BCHP_VCXO_CTL_MISC_VC0_CTRL, 0x0b);
@@ -1236,566 +2207,86 @@ static void bcm7468_pm_resume(void)
 
 #define PM_OPS_DEFINED
 static struct brcm_chip_pm_ops chip_pm_ops = {
-	.genet.enable		= bcm7468_pm_enet_enable,
-	.genet.disable		= bcm7468_pm_enet_disable,
-	.usb.enable		= bcm7468_pm_usb_enable,
-	.usb.disable		= bcm7468_pm_usb_disable,
-	.suspend		= bcm7468_pm_suspend,
-	.resume			= bcm7468_pm_resume,
+	DEF_BLOCK_PM_OP(usb, 7468),
+	DEF_BLOCK_PM_OP(genet, 7468),
+	DEF_SYSTEM_PM_OP(7468),
 };
 #endif
 
-#if defined(CONFIG_BCM7340)
+/* 40nm chips start here */
 
-static void bcm7340_pm_enet_disable(u32 flags)
-{
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, PWRDN_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, ENB_CLOCKOUT_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, EN_CMLBUF_CH4, 0);
-	BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_250_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_25_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_54_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_108_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK);
-}
+#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346) || \
+defined(CONFIG_BCM7231)
+static int mem_power_down = 1;
 
-static void bcm7340_pm_enet_enable(u32 flags)
-{
-	BDEV_UNSET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_250_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_25_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_54_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_108_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
-		BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, EN_CMLBUF_CH4, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, ENB_CLOCKOUT_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH4_PM_CTRL, PWRDN_CH, 0);
-}
-
-static void bcm7340_pm_moca_disable(u32 flags)
-{
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, PWRDN_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, ENB_CLOCKOUT_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, EN_CMLBUF_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, PWRDN_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, ENB_CLOCKOUT_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, EN_CMLBUF_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, PWRDN_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, ENB_CLOCKOUT_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, EN_CMLBUF_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, PWRDN_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, ENB_CLOCKOUT_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, EN_CMLBUF_CH6, 0);
-	BDEV_SET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
-}
-
-static void bcm7340_pm_moca_enable(u32 flags)
-{
-	BDEV_UNSET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_RX_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_HFB_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_27X_PM_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_54_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_108_MASK|
-		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, EN_CMLBUF_CH6, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, ENB_CLOCKOUT_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH6_PM_CTRL, PWRDN_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, EN_CMLBUF_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, ENB_CLOCKOUT_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH3_PM_CTRL, PWRDN_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, EN_CMLBUF_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, ENB_CLOCKOUT_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH2_PM_CTRL, PWRDN_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, EN_CMLBUF_CH, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, ENB_CLOCKOUT_CH, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CH1_PM_CTRL, PWRDN_CH, 0);
-}
-
-static void bcm7340_pm_usb_disable(u32 flags)
-{
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xC);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xC);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
-	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 1);
-	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_108, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH4_PM_CTRL, PWRDN_CH4_PLLMAIN, 1);
-}
-
-static void bcm7340_pm_usb_enable(u32 flags)
-{
-	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH4_PM_CTRL, PWRDN_CH4_PLLMAIN, 0);
-	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_108, 0);
-	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 0);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
-}
-
-static void bcm7340_pm_suspend(void)
-{
-	/* PCI/EBI */
-	BDEV_WR_F_RB(CLKGEN_PAD_CLK_PM_CTRL, DIS_CLK_33_27_PCI, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH5_PM_CTRL, PWRDN_CH5_PLLMAIN, 1);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_81, 1);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_27, 1);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_54, 1);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_216_CG, 1);
-	BDEV_WR_F_RB(CLKGEN_HIF_CLK_PM_CTRL, DIS_CLK_SPI, 1);
-
-	/* system PLLs */
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, POWERDOWN, 1);
-
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, EN_CMLBUF, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, PWRDN, 1);
-
-	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, RESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, POWERDOWN, 1);
-
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ENB_CLOCKOUT, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, PWRDN, 1);
-
-	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_216, 1);
-	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 1);
-
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN_LDO, 1);
-
-	/* disable self-refresh since it interferes with suspend */
-	brcm_pm_set_ddr_timeout(0);
-}
-
-static void bcm7340_pm_resume(void)
-{
-	/* system PLLs */
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN_LDO, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, PWRDN, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMOCA_CTRL, DRESET, 0);
-
-	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_108, 0);
-	BDEV_WR_F_RB(CLKGEN_VCXO_CLK_PM_CTRL, DIS_CLK_216, 0);
-
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, PWRDN, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, DRESET, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_CTRL, ENB_CLOCKOUT, 0);
-
-	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, RESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_RAP_AVD_PLL_CTRL, POWERDOWN, 0);
-
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, PWRDN, 1);
-	BDEV_WR_F_RB(CLKGEN_PLLAVD_RDSP_PM_CH2_CTRL, EN_CMLBUF, 0);
-
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, POWERDOWN, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC1_CTRL, DRESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 0);
-
-	/* PCI/EBI */
-	BDEV_WR_F_RB(CLKGEN_HIF_CLK_PM_CTRL, DIS_CLK_SPI, 0);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_216_CG, 0);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_54, 0);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_27, 0);
-	BDEV_WR_F_RB(CLKGEN_CG_CLK_PM_CTRL, DIS_CLK_81, 0);
-	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH5_PM_CTRL, PWRDN_CH5_PLLMAIN, 0);
-	BDEV_WR_F_RB(CLKGEN_PAD_CLK_PM_CTRL, DIS_CLK_33_27_PCI, 0);
-
-	brcm_ddr_aphy_initialize();
-}
-
-#define PM_OPS_DEFINED
-static struct brcm_chip_pm_ops chip_pm_ops = {
-	.genet.enable		= bcm7340_pm_enet_enable,
-	.genet.disable		= bcm7340_pm_enet_disable,
-	.moca.enable		= bcm7340_pm_moca_enable,
-	.moca.disable		= bcm7340_pm_moca_disable,
-	.usb.enable		= bcm7340_pm_usb_enable,
-	.usb.disable		= bcm7340_pm_usb_disable,
-	.suspend		= bcm7340_pm_suspend,
-	.resume			= bcm7340_pm_resume,
-	.clk_get		= brcm_pm_clk_get,
-	.initialize		= brcm_ddr_aphy_initialize,
-};
-#endif
-
-#if defined(CONFIG_BCM7342)
-
-static void bcm7342_pm_sata_disable(u32 flags)
-{
-	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, sata_ana_pwrdn, 1);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_216M_CLK, 1);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_SATA_PCI_CLK, 1);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_108M_CLK, 1);
-	PLL_DIS(CLK_SYS_PLL_1_6);
-}
-
-static void bcm7342_pm_sata_enable(u32 flags)
-{
-	PLL_ENA(CLK_SYS_PLL_1_6);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_108M_CLK, 0);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_216M_CLK, 0);
-	BDEV_WR_F_RB(CLK_SATA_CLK_PM_CTRL, DIS_SATA_PCI_CLK, 0);
-	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, sata_ana_pwrdn, 0);
-}
-
-
-static void bcm7342_pm_enet_disable(u32 flags)
-{
-	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_1);
-	BDEV_SET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x0000076f);
-}
-
-static void bcm7342_pm_enet_enable(u32 flags)
-{
-	BDEV_UNSET_RB(BCHP_CLK_GENET_CLK_PM_CTRL, 0x0000076f);
-	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_1);
-}
-
-static void bcm7342_pm_moca_disable(u32 flags)
-{
-	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_3);
-	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_4);
-	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_5);
-	PLL_DIS(VCXO_CTL_MISC_MOCA_PLL_CHL_6);
-	BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
-}
-
-static void bcm7342_pm_moca_enable(u32 flags)
-{
-	BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x7bf);
-	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_6);
-	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_5);
-	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_4);
-	PLL_ENA(VCXO_CTL_MISC_MOCA_PLL_CHL_3);
-}
-
-static void bcm7342_pm_usb_disable(u32 flags)
-{
-	/* reset and power down all 4 ports */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
-	/* disable the clocks */
-	BDEV_SET_RB(BCHP_CLK_USB_PM_CTRL,
-		BCHP_CLK_USB_PM_CTRL_DIS_54M_CLK_MASK|
-		BCHP_CLK_USB_PM_CTRL_DIS_108M_CLK_MASK|
-		BCHP_CLK_USB_PM_CTRL_DIS_216M_CLK_MASK);
-	/* disable PLL */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, EN_CMLBUF, 0);
-}
-
-static void bcm7342_pm_usb_enable(u32 flags)
-{
-	/* enable PLL */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_3, DIS_CH, 0);
-	/* enable the clocks */
-	BDEV_UNSET_RB(BCHP_CLK_USB_PM_CTRL,
-		BCHP_CLK_USB_PM_CTRL_DIS_54M_CLK_MASK|
-		BCHP_CLK_USB_PM_CTRL_DIS_108M_CLK_MASK|
-		BCHP_CLK_USB_PM_CTRL_DIS_216M_CLK_MASK);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
-	/* power up all 4 ports */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
-}
-
-static void bcm7342_pm_suspend(void)
-{
-	/* PCI/EBI */
-	BDEV_WR_F_RB(CLK_PCI_OUT_CLK_PM_CTRL, DIS_PCI_OUT_CLK, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, EN_CMLBUF, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, EN_CMLBUF, 0);
-
-	/* system PLLs */
-	/* RMY: powering down 3OT oscillator kills UART */
-	if (brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE) {
-		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-			FREQ_DOUBLER_POWER_DOWN, 0);
-		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-			CML_2_N_P_EN, 0);
-	} else {
-		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-			FREQ_DOUBLER_POWER_DOWN, 1);
-		BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-			CML_2_N_P_EN, 1);
-	}
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, RESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, EN_CMLBUF, 0);
-
-	/* disable self-refresh since it interferes with suspend */
-	brcm_pm_set_ddr_timeout(0);
-}
-
-static void bcm7342_pm_resume(void)
-{
-	/* system PLLs */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_5, DIS_CH, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, POWERDOWN, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_MOCA_PLL_CTRL, RESET, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, RESET, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, CML_2_N_P_EN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1, FREQ_DOUBLER_POWER_DOWN, 0);
-
-	/* PCI/EBI */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_1, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_PLL_6, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_PCI_OUT_CLK_PM_CTRL, DIS_PCI_OUT_CLK, 0);
-
-	brcm_ddr_aphy_initialize();
-}
-
-#define PM_OPS_DEFINED
-static struct brcm_chip_pm_ops chip_pm_ops = {
-	.sata.enable		= bcm7342_pm_sata_enable,
-	.sata.disable		= bcm7342_pm_sata_disable,
-	.genet.enable		= bcm7342_pm_enet_enable,
-	.genet.disable		= bcm7342_pm_enet_disable,
-	.moca.enable		= bcm7342_pm_moca_enable,
-	.moca.disable		= bcm7342_pm_moca_disable,
-	.usb.enable		= bcm7342_pm_usb_enable,
-	.usb.disable		= bcm7342_pm_usb_disable,
-	.suspend		= bcm7342_pm_suspend,
-	.resume			= bcm7342_pm_resume,
-	.clk_get		= brcm_pm_clk_get,
-	.initialize		= brcm_ddr_aphy_initialize,
-};
-#endif
-
-#if defined(CONFIG_BCM7408)
-static void bcm7408_pm_network_disable(u32 flags)
-{
-	BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_ENET_HFB_27_108M_CLK, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, EN_CMLBUF, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, EN_CMLBUF, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, EN_CMLBUF, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_6, DIS_CH, 1);
-	BDEV_SET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x6ab);
-}
-
-static void bcm7408_pm_network_enable(u32 flags)
-{
-	BDEV_UNSET_RB(BCHP_CLK_MOCA_CLK_PM_CTRL, 0x6ab);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_6, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_5, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_4, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_3, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_MOCA_CLK_PM_CTRL, DIS_MOCA_ENET_HFB_27_108M_CLK, 0);
-}
-
-static void bcm7408_pm_usb_disable(u32 flags)
-{
-	/* reset and power down all 4 ports */
-/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0); */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
-	/* disable the clocks */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
-	BDEV_SET_RB(BCHP_CLK_USB_CLK_PM_CTRL,
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_54M_CLK_MASK|
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_108M_CLK_MASK|
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
-	/* disable PLL */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, DIS_CH, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, EN_CMLBUF, 0);
-}
-
-static void bcm7408_pm_usb_enable(u32 flags)
-{
-	/* enable PLL */
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, EN_CMLBUF, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, DIS_CH, 0);
-	/* enable the clocks */
-	BDEV_UNSET_RB(BCHP_CLK_USB_CLK_PM_CTRL,
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_54M_CLK_MASK|
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_108M_CLK_MASK|
-		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
-	/* power up all 4 ports */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xE); */
-}
-
-static void bcm7408_pm_suspend(void)
-{
-	/* UART */
-	if (!(brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE)) {
-		BDEV_WR_F_RB(CLK_SUN_27M_CLK_PM_CTRL,
-			DIS_SUN_27M_CLK, 1);
-		BDEV_WR_F_RB(CLK_SUN_UART_CLK_PM_CTRL,
-			DIS_SUN_UART_108M_CLK, 1);
-	}
-	/* PAD clocks */
-	BDEV_WR_F_RB(CLK_MISC, VCXOA_OUTCLK_ENABLE, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_PM_DIS_CHL_1, DIS_CH, 1);
-
-	/* system PLLs */
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 1);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-		CML_2_N_P_EN, 1);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-		FREQ_DOUBLER_POWER_DOWN, 1);
-
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, DRESET, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, ARESET, 1);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 1);
-
-	/* MEMC0 */
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
-		IDDQ_MODE_ON_SELFREF, 0);
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
-		HIZ_ON_SELFREF, 1);
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_DDR_PAD_CNTRL,
-		DEVCLK_OFF_ON_SELFREF, 1);
-	BDEV_WR_RB(BCHP_DDR23_PHY_CONTROL_REGS_0_IDLE_PAD_CONTROL, 0x132);
-	BDEV_SET_RB(BCHP_DDR23_PHY_BYTE_LANE_0_0_IDLE_PAD_CONTROL, 0xfffff);
-	BDEV_SET_RB(BCHP_DDR23_PHY_BYTE_LANE_1_0_IDLE_PAD_CONTROL, 0xfffff);
-
-}
-
-static void bcm7408_pm_resume(void)
-{
-	/* system PLLs */
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, DRESET, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(CLK_SYS_PLL_1_CTRL, POWERDOWN, 0);
-
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-		CML_2_N_P_EN, 0);
-	BDEV_WR_F_RB(CLK_THIRD_OT_CONTROL_1,
-		FREQ_DOUBLER_POWER_DOWN, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, DRESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, ARESET, 0);
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_CTRL, POWERDOWN, 0);
-
-	/* PAD clocks */
-	BDEV_WR_F_RB(VCXO_CTL_MISC_VC0_PM_DIS_CHL_1, DIS_CH, 0);
-	BDEV_WR_F_RB(CLK_MISC, VCXOA_OUTCLK_ENABLE, 1);
-
-	/* UART */
-	if (!(brcm_pm_standby_flags & BRCM_STANDBY_VERBOSE)) {
-		BDEV_WR_F_RB(CLK_SUN_UART_CLK_PM_CTRL,
-			DIS_SUN_UART_108M_CLK, 0);
-		BDEV_WR_F_RB(CLK_SUN_27M_CLK_PM_CTRL,
-			DIS_SUN_27M_CLK, 0);
-	}
-}
-
-#define PM_OPS_DEFINED
-static struct brcm_chip_pm_ops chip_pm_ops = {
-	.network.enable		= bcm7408_pm_network_enable,
-	.network.disable	= bcm7408_pm_network_disable,
-	.usb.enable		= bcm7408_pm_usb_enable,
-	.usb.disable		= bcm7408_pm_usb_disable,
-	.suspend		= bcm7408_pm_suspend,
-	.resume			= bcm7408_pm_resume,
-};
-#endif
-
-#if defined(CONFIG_BCM7425)
-
-static int mem_power_down;
 /* IMPORTANT: must be done in TWO steps per RDB note */
-#define POWER_UP_MEMORY(core) \
+#define POWER_UP_MEMORY_3(core, mask, inst) \
 do { \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-		core ## _POWER_SWITCH_MEMORY, 2); \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _POWER_SWITCH_MEMORY ## inst,\
+		mask ## _POWER_SWITCH_MEMORY ## inst, 2); \
 	udelay(10); \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-		core ## _POWER_SWITCH_MEMORY, 0); \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _POWER_SWITCH_MEMORY ## inst,\
+		mask ## _POWER_SWITCH_MEMORY ## inst, 0); \
 } while (0)
 
-#define POWER_UP_MEMORY_A(core, mask, suffix) \
+#define POWER_UP_MEMORY_1(core) POWER_UP_MEMORY_3(core, core, \
+	)
+#define POWER_UP_MEMORY_1ii(core) \
+	POWER_UP_MEMORY_2(core ## _INST, core ## _INST)
+#define POWER_UP_MEMORY_2(core, mask) POWER_UP_MEMORY_3(core, mask, \
+	)
+#define POWER_UP_MEMORY_2i(core, mask) POWER_UP_MEMORY_3(core ## _INST, mask, \
+	)
+#define POWER_UP_MEMORY_3i(core, mask, inst) \
+	POWER_UP_MEMORY_3(core ## _INST, mask, inst)
+
+#define SRAM_OFF_3(core, mask, inst) \
 do { \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY_ ## suffix,\
-		mask ## _POWER_SWITCH_MEMORY_ ## suffix, 2); \
-	udelay(10); \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY_ ## suffix,\
-		mask ## _POWER_SWITCH_MEMORY_ ## suffix, 0); \
+	if (mem_power_down) \
+		BDEV_WR_F_RB( \
+			CLKGEN_ ## core ## _POWER_SWITCH_MEMORY ## inst, \
+			mask ## _POWER_SWITCH_MEMORY ## inst, 3); \
+	else \
+		BDEV_WR_F_RB( \
+			CLKGEN_ ## core ## _MEMORY_STANDBY_ENABLE ## inst, \
+			mask ## _MEMORY_STANDBY_ENABLE ## inst, 1); \
 } while (0)
 
-#define POWER_UP_MEMORY2(core, mask) \
+#define SRAM_OFF_1i(core) SRAM_OFF_3(core ## _INST, core, \
+	)
+#define SRAM_OFF_1(core) SRAM_OFF_3(core, core, \
+	)
+#define SRAM_OFF_2i(core, mask) SRAM_OFF_3(core ## _INST, mask, \
+	)
+#define SRAM_OFF_3i(core, mask, inst) SRAM_OFF_3(core ## _INST, mask, inst)
+#define SRAM_OFF_2(core, mask) SRAM_OFF_3(core, mask, \
+	)
+
+#define SRAM_ON_3(core, mask, inst) \
 do { \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-		mask ## _POWER_SWITCH_MEMORY, 2); \
-	udelay(10); \
-	BDEV_WR_F_RB(CLKGEN_ ## core ## _INST_POWER_SWITCH_MEMORY, \
-		mask ## _POWER_SWITCH_MEMORY, 0); \
+	if (mem_power_down) \
+		POWER_UP_MEMORY_3(core, mask, inst); \
+	else \
+	BDEV_WR_F_RB(CLKGEN_ ## core ## _MEMORY_STANDBY_ENABLE ## inst, \
+		mask ## _MEMORY_STANDBY_ENABLE ## inst, 0); \
 } while (0)
 
-static void bcm7425_pm_usb_disable(u32 flags)
+#define SRAM_ON_1i(core) SRAM_ON_3(core ## _INST, core, \
+	)
+#define SRAM_ON_1(core) SRAM_ON_3(core, core, \
+	)
+#define SRAM_ON_2i(core, mask) SRAM_ON_3(core ## _INST, mask, \
+	)
+#define SRAM_ON_2(core, mask) SRAM_ON_3(core, mask, \
+	)
+#define SRAM_ON_3i(core, mask, inst) SRAM_ON_3(core ## _INST, mask, inst)
+#endif
+
+#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346)
+
+static void bcm40nm_pm_usb_disable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
 	/* USB0 */
 	/* power down USB PHY */
 	BDEV_SET(BCHP_USB_CTRL_PLL_CTL,
@@ -1803,20 +2294,19 @@ static void bcm7425_pm_usb_disable(u32 flags)
 	/* power down USB PLL */
 	BDEV_UNSET(BCHP_USB_CTRL_PLL_CTL,
 		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
-	if (mem_power_down)
-		/* power down USB0 memory */
-		BDEV_WR_F_RB(CLKGEN_USB0_INST_POWER_SWITCH_MEMORY,
-			USB0_POWER_SWITCH_MEMORY, 3);
-	else
-		/* USB0 memory to standby */
-		BDEV_WR_F_RB(CLKGEN_USB0_INST_MEMORY_STANDBY_ENABLE,
-			USB0_MEMORY_STANDBY_ENABLE, 1);
+
+	SRAM_OFF_1i(USB0);
 
 	/* disable the clocks */
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_DISABLE,
 		DISABLE_USB0_54_MDIO_CLOCK, 1);
+#if defined(CONFIG_BCM7346)
+	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB0_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB0_108_CLOCK_ENABLE, 0);
+#else
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB_SCB_CLOCK_ENABLE, 0);
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB_108_CLOCK_ENABLE, 0);
+#endif
 
 	/* USB1 */
 	/* power down USB PHY */
@@ -1824,15 +2314,9 @@ static void bcm7425_pm_usb_disable(u32 flags)
 		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
 	/* power down USB PLL */
 	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
-		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
-	if (mem_power_down)
-		/* power down USB1 memory */
-		BDEV_WR_F_RB(CLKGEN_USB1_INST_POWER_SWITCH_MEMORY,
-			USB1_POWER_SWITCH_MEMORY, 3);
-	else
-		/* USB1 memory to standby */
-		BDEV_WR_F_RB(CLKGEN_USB1_INST_MEMORY_STANDBY_ENABLE,
-			USB1_MEMORY_STANDBY_ENABLE, 1);
+		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
+
+	SRAM_OFF_1i(USB1);
 
 	/* disable the clocks */
 	BDEV_WR_F_RB(CLKGEN_USB1_INST_CLOCK_DISABLE,
@@ -1845,8 +2329,9 @@ static void bcm7425_pm_usb_disable(u32 flags)
 		CLOCK_DIS_CH4, 1);
 }
 
-static void bcm7425_pm_usb_enable(u32 flags)
+static void bcm40nm_pm_usb_enable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
 	/* power up PLL */
 	BDEV_WR_F_RB(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL_CH_4,
 		CLOCK_DIS_CH4, 0);
@@ -1855,16 +2340,15 @@ static void bcm7425_pm_usb_enable(u32 flags)
 	/* enable the clocks */
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_DISABLE,
 		DISABLE_USB0_54_MDIO_CLOCK, 0);
+#if defined(CONFIG_BCM7346)
+	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB0_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB0_108_CLOCK_ENABLE, 1);
+#else
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB_SCB_CLOCK_ENABLE, 1);
 	BDEV_WR_F_RB(CLKGEN_USB0_INST_CLOCK_ENABLE, USB_108_CLOCK_ENABLE, 1);
+#endif
 
-	if (mem_power_down)
-		/* power up USB0 memory */
-		POWER_UP_MEMORY(USB0);
-	else
-		/* USB0 memory from standby */
-		BDEV_WR_F_RB(CLKGEN_USB0_INST_MEMORY_STANDBY_ENABLE,
-			USB0_MEMORY_STANDBY_ENABLE, 0);
+	SRAM_ON_1i(USB0);
 
 	/* power up USB PLL */
 	BDEV_SET(BCHP_USB_CTRL_PLL_CTL,
@@ -1880,13 +2364,7 @@ static void bcm7425_pm_usb_enable(u32 flags)
 	BDEV_WR_F_RB(CLKGEN_USB1_INST_CLOCK_ENABLE, USB1_SCB_CLOCK_ENABLE, 1);
 	BDEV_WR_F_RB(CLKGEN_USB1_INST_CLOCK_ENABLE, USB1_108_CLOCK_ENABLE, 1);
 
-	if (mem_power_down)
-		/* power up USB1 memory */
-		POWER_UP_MEMORY(USB1);
-	else
-		/* USB1 memory from standby */
-		BDEV_WR_F_RB(CLKGEN_USB1_INST_MEMORY_STANDBY_ENABLE,
-			USB1_MEMORY_STANDBY_ENABLE, 0);
+	SRAM_ON_1i(USB1);
 
 	/* power up USB PLL */
 	BDEV_SET(BCHP_USB1_CTRL_PLL_CTL,
@@ -1896,24 +2374,12 @@ static void bcm7425_pm_usb_enable(u32 flags)
 		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
 }
 
-static void bcm7425_pm_sata_disable(u32 flags)
+static void bcm40nm_pm_sata_disable(u32 flags)
 {
-	/*
-	 * TODO: need to find out how to reverse this
-	 */
-	/*
-	BDEV_WR_RB(BCHP_SATA_TOP_CTRL_PHY_CTRL_1, 0x100);
-	BDEV_WR_RB(BCHP_SATA_TOP_CTRL_PHY_CTRL_2, 0x1000);
-	BDEV_WR_RB(BCHP_SATA_TOP_CTRL_PHY_CTRL_3, 0x1000);
-	*/
-	if (mem_power_down)
-		/* power down memory */
-		BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_POWER_SWITCH_MEMORY,
-			SATA3_POWER_SWITCH_MEMORY, 3);
-	else
-		/* memory to standby */
-		BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_MEMORY_STANDBY_ENABLE,
-			SATA3_MEMORY_STANDBY_ENABLE, 1);
+	PRINT_PM_CALLBACK;
+
+	SRAM_OFF_2i(SATA3_TOP, SATA3);
+
 	/* gate the clocks */
 	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_CLOCK_ENABLE,
 		SATA3_SCB_CLOCK_ENABLE, 0);
@@ -1921,24 +2387,507 @@ static void bcm7425_pm_sata_disable(u32 flags)
 		SATA3_108_CLOCK_ENABLE, 0);
 }
 
-static void bcm7425_pm_sata_enable(u32 flags)
+static void bcm40nm_pm_sata_enable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
 	/* reenable the clocks */
 	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_CLOCK_ENABLE,
 		SATA3_SCB_CLOCK_ENABLE, 1);
 	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_CLOCK_ENABLE,
 		SATA3_108_CLOCK_ENABLE, 1);
+
+	SRAM_ON_2i(SATA3_TOP, SATA3);
+
+}
+
+static void bcm40nm_pm_genet_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	SRAM_OFF_3i(DUAL_GENET_TOP_DUAL_RGMII, GENET0, _A);
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		/* switch to slow clock */
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET0_CLOCK_SELECT, 1);
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET0_GMII_CLOCK_SELECT, 1);
+
+		/*
+		 * Do not clear GENET0_L2INTR_CLOCK_ENABLE - it screws up
+		 * receiver after resume !!!
+		 */
+		BDEV_UNSET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x43); /* used to be 0x53 */
+	} else {
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
+		    3);
+
+		BDEV_UNSET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x7F);
+	}
+}
+
+static void bcm40nm_pm_genet_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	SRAM_ON_3i(DUAL_GENET_TOP_DUAL_RGMII, GENET0, _A);
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		/* switch to fast clock */
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET0_CLOCK_SELECT, 0);
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET0_GMII_CLOCK_SELECT, 0);
+
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x43);
+	} else {
+		BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_\
+DUAL_RGMII_INST_CLOCK_DISABLE, 3);
+
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x7F);
+	}
+
+}
+
+static void bcm40nm_pm_genet1_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+#if defined(CONFIG_BCM7425)
 	if (mem_power_down)
 		/* power down memory */
-		POWER_UP_MEMORY2(SATA3_TOP, SATA3);
+BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_POWER_SWITCH_MEMORY_B,
+		GENET1_POWER_SWITCH_MEMORY_B, 3);
 	else
 		/* memory to standby */
-		BDEV_WR_F_RB(CLKGEN_SATA3_TOP_INST_MEMORY_STANDBY_ENABLE,
-			SATA3_MEMORY_STANDBY_ENABLE, 0);
+BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
+		GENET1_MEMORY_STANDBY_ENABLE_A, 1);
+#endif
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		/* switch to slow clock */
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET1_CLOCK_SELECT, 1);
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET1_GMII_CLOCK_SELECT, 1);
+
+		/*
+		 * Do not clear GENET1_L2INTR_CLOCK_ENABLE - it screws up
+		 * receiver after resume !!!
+		 */
+		BDEV_UNSET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x2180); /* 0x2980 */
+	} else {
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
+		    0xC);
+
+		BDEV_UNSET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x3F80);
+	}
 }
+
+static void bcm40nm_pm_genet1_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+#if defined(CONFIG_BCM7425)
+	if (mem_power_down)
+		/* power up memory */
+		POWER_UP_MEMORY_3i(DUAL_GENET_TOP_DUAL_RGMII, GENET1, _B);
+	else
+		/* memory from standby */
+BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
+		GENET1_MEMORY_STANDBY_ENABLE_A, 0);
+#endif
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
+		0xC);
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		/* switch to fast clock */
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET1_CLOCK_SELECT, 0);
+		BDEV_WR_F_RB(
+		    CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_SELECT,
+		    GENET1_GMII_CLOCK_SELECT, 0);
+
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x2180);
+	} else {
+		BDEV_SET(
+		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		    0x3F80);
+	}
+
+}
+
+static void bcm40nm_pm_moca_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	SRAM_OFF_2i(MOCA_TOP, MOCA);
+
+	BDEV_WR_F_RB(CLKGEN_MOCA_TOP_INST_CLOCK_ENABLE,
+		MOCA_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_MOCA_TOP_INST_CLOCK_ENABLE,
+		MOCA_108_CLOCK_ENABLE, 0);
+
+	if (!(flags & BRCM_PM_FLAG_MOCA_WOL)) {
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_0,
+			CLOCK_DIS_CH0, 1);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_1,
+			CLOCK_DIS_CH1, 1);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_2,
+			CLOCK_DIS_CH2, 1);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_3,
+			CLOCK_DIS_CH3, 1);
+	}
+}
+
+static void bcm40nm_pm_moca_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (!(flags & BRCM_PM_FLAG_MOCA_WOL)) {
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_0,
+			CLOCK_DIS_CH0, 0);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_1,
+			CLOCK_DIS_CH1, 0);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_2,
+			CLOCK_DIS_CH2, 0);
+		BDEV_WR_F_RB(CLKGEN_PLL_MOCA_PLL_CHANNEL_CTRL_CH_3,
+			CLOCK_DIS_CH3, 0);
+	}
+
+	BDEV_WR_F_RB(CLKGEN_MOCA_TOP_INST_CLOCK_ENABLE,
+		MOCA_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_MOCA_TOP_INST_CLOCK_ENABLE,
+		MOCA_108_CLOCK_ENABLE, 1);
+
+	SRAM_ON_2i(MOCA_TOP, MOCA);
+}
+
+static void bcm40nm_pm_suspend(u32 flags)
+{
+#ifdef CONFIG_BCM7425A0
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 1);
+#endif
+}
+
+static void bcm40nm_pm_resume(u32 flags)
+{
+#ifdef CONFIG_BCM7425A0
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 0);
+#endif
+}
+
+#endif
+
+#if defined(CONFIG_BCM7231)
+
+static void bcm7231_pm_usb_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+	/* USB0 */
+	/* power down USB PHY */
+	BDEV_SET(BCHP_USB_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
+	/* power down USB PLL */
+	BDEV_UNSET(BCHP_USB_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
+
+	SRAM_OFF_1(USB0);
+
+	/* disable the clocks */
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_DISABLE,
+		DISABLE_USB_54_MDIO_CLOCK, 1);
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_ENABLE, USB0_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_ENABLE, USB0_108_CLOCK_ENABLE, 0);
+
+	/* USB1 */
+	/* power down USB PHY */
+	BDEV_SET(BCHP_USB1_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
+	/* power down USB PLL */
+	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
+
+	SRAM_OFF_1(USB1);
+
+	/* disable the clocks */
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_DISABLE,
+		DISABLE_USB_54_MDIO_CLOCK, 1);
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_ENABLE, USB1_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_ENABLE, USB1_108_CLOCK_ENABLE, 0);
+
+	/* power down PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL_CH_4,
+		CLOCK_DIS_CH4, 1);
+}
+
+static void bcm7231_pm_usb_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+	/* power up PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL_CH_4,
+		CLOCK_DIS_CH4, 0);
+
+	/* USB0 */
+	/* enable the clocks */
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_DISABLE,
+		DISABLE_USB_54_MDIO_CLOCK, 0);
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_ENABLE, USB0_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_USB0_CLOCK_ENABLE, USB0_108_CLOCK_ENABLE, 1);
+
+	SRAM_ON_1(USB0);
+
+	/* power up USB PLL */
+	BDEV_SET(BCHP_USB_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
+	/* power up USB PHY */
+	BDEV_UNSET(BCHP_USB_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
+
+	/* USB1 */
+	/* enable the clocks */
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_DISABLE,
+		DISABLE_USB_54_MDIO_CLOCK, 0);
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_ENABLE, USB1_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_USB1_CLOCK_ENABLE, USB1_108_CLOCK_ENABLE, 1);
+
+	SRAM_ON_1(USB1);
+
+	/* power up USB PLL */
+	BDEV_SET(BCHP_USB1_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_PWRDWNB_MASK);
+	/* power up USB PHY */
+	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
+		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
+}
+
+#define BCHP_CLKGEN_SATA3_TOP_POWER_SWITCH_\
+MEMORY_SATA3_POWER_SWITCH_MEMORY_MASK \
+BCHP_CLKGEN_SATA3_TOP_POWER_SWITCH_MEMORY_RAAGA_POWER_SWITCH_MEMORY_MASK
+#define BCHP_CLKGEN_SATA3_TOP_POWER_SWITCH_\
+MEMORY_SATA3_POWER_SWITCH_MEMORY_SHIFT \
+BCHP_CLKGEN_SATA3_TOP_POWER_SWITCH_MEMORY_RAAGA_POWER_SWITCH_MEMORY_SHIFT
+static void bcm7231_pm_sata_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	SRAM_OFF_2(SATA3_TOP, SATA3);
+
+	/* gate the clocks */
+	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_CLOCK_ENABLE,
+		SATA3_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_CLOCK_ENABLE,
+		SATA3_108_CLOCK_ENABLE, 0);
+}
+
+static void bcm7231_pm_sata_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	/* reenable the clocks */
+	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_CLOCK_ENABLE,
+		SATA3_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_SATA3_TOP_CLOCK_ENABLE,
+		SATA3_108_CLOCK_ENABLE, 1);
+
+	SRAM_ON_2(SATA3_TOP, SATA3);
+
+}
+
+static void bcm7231_pm_genet_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET0_CLOCK_SELECT, 1);
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET0_GMII_CLOCK_SELECT, 1);
+		/* Disabling L2_INTR clock breaks HFB pattern matching ??? */
+		BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE,
+			   0x43); /* used to be 0x53 */
+		return;
+	}
+
+	SRAM_OFF_3(DUAL_GENET_TOP_DUAL_RGMII, GENET0, _A);
+
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_DISABLE, 3);
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE, 0x7F);
+}
+
+static void bcm7231_pm_genet_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_ENET_WOL) {
+		BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE,
+			   0x43); /* used to be 0x53 */
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET0_CLOCK_SELECT, 0);
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET0_GMII_CLOCK_SELECT, 0);
+		return;
+	}
+
+	SRAM_ON_3(DUAL_GENET_TOP_DUAL_RGMII, GENET0, _A);
+
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_DISABLE, 3);
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE, 0x7F);
+}
+
+static void bcm7231_pm_genet1_disable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET1_CLOCK_SELECT, 1);
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET1_GMII_CLOCK_SELECT, 1);
+		BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE,
+			   0x1980);
+		return;
+	}
+
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_DISABLE, 0xC);
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE, 0x3F80);
+}
+
+static void bcm7231_pm_genet1_enable(u32 flags)
+{
+	PRINT_PM_CALLBACK;
+
+	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+		BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE,
+			   0x1980);
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET1_CLOCK_SELECT, 0);
+		BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_SELECT,
+			GENET1_GMII_CLOCK_SELECT, 0);
+		return;
+	}
+
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_DISABLE, 0xC);
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_ENABLE, 0x3F80);
+}
+
+static void bcm7231_pm_suspend(u32 flags)
+{
+}
+
+static void bcm7231_pm_resume(u32 flags)
+{
+}
+
+static void bcm7231_pm_initialize(void)
+{
+	/* test scan clocks */
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_CLOCK_DISABLE, 0xC0);
+	brcm_ddr_phy_initialize();
+}
+
+#define PM_OPS_DEFINED
+static struct brcm_chip_pm_ops chip_pm_ops = {
+	DEF_BLOCK_PM_OP(usb, 7231),
+	DEF_BLOCK_PM_OP(sata, 7231),
+	DEF_BLOCK_PM_OP(genet, 7231),
+	DEF_BLOCK_PM_OP(genet1, 7231),
+	DEF_SYSTEM_PM_OP(7231),
+	.clk_get		= brcm_pm_clk_get,
+	.initialize		= bcm7231_pm_initialize,
+};
+#endif
+
+#if defined(CONFIG_BCM7346)
+
+static void bcm7346_pm_network_disable(u32 flags)
+{
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_0,
+		CLOCK_DIS_CH0, 1);
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_1,
+		CLOCK_DIS_CH1, 1);
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_3,
+		CLOCK_DIS_CH3, 1);
+
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		GENET_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		GENET_108_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
+		DISABLE_GENET_ALWAYSON_CLOCK, 1);
+}
+
+static void bcm7346_pm_network_enable(u32 flags)
+{
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_0,
+		CLOCK_DIS_CH0, 0);
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_1,
+		CLOCK_DIS_CH1, 0);
+	BDEV_WR_F_RB(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL_CH_3,
+		CLOCK_DIS_CH3, 0);
+
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
+		DISABLE_GENET_ALWAYSON_CLOCK, 0);
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		GENET_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
+		GENET_108_CLOCK_ENABLE, 1);
+
+}
+
+#define PM_OPS_DEFINED
+static struct brcm_chip_pm_ops chip_pm_ops = {
+	DEF_BLOCK_PM_OP(usb, 40nm),
+	DEF_BLOCK_PM_OP(sata, 40nm),
+	DEF_BLOCK_PM_OP(network, 7346),
+	DEF_BLOCK_PM_OP(moca, 40nm),
+	DEF_BLOCK_PM_OP(genet, 40nm),
+	DEF_BLOCK_PM_OP(genet1, 40nm),
+	DEF_SYSTEM_PM_OP(40nm),
+	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_phy_initialize,
+};
+
+#endif
+
+#if defined(CONFIG_BCM7425)
 
 static void bcm7425_pm_network_disable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
 	BDEV_WR_F_RB(CLKGEN_PLL_NETWORK_PLL_CHANNEL_CTRL_CH_0,
 		CLOCK_DIS_CH0, 1);
 	BDEV_WR_F_RB(CLKGEN_PLL_NETWORK_PLL_CHANNEL_CTRL_CH_1,
@@ -1960,6 +2909,11 @@ static void bcm7425_pm_network_disable(u32 flags)
 
 static void bcm7425_pm_network_enable(u32 flags)
 {
+	PRINT_PM_CALLBACK;
+
+	if (flags & (BRCM_PM_FLAG_ENET_WOL|BRCM_PM_FLAG_MOCA_WOL))
+		return;
+
 	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
 		DISABLE_GENET_ALWAYSON_CLOCK, 0);
 	BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
@@ -1980,101 +2934,45 @@ static void bcm7425_pm_network_enable(u32 flags)
 
 }
 
-static void bcm7425_pm_enet_disable(u32 flags)
+static void bcm7425_pm_late_suspend(void)
 {
-	if (mem_power_down)
-		/* power down memory */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_POWER_SWITCH_MEMORY_A,
-		GENET0_POWER_SWITCH_MEMORY_A, 3);
-	else
-		/* memory to standby */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
-		GENET0_MEMORY_STANDBY_ENABLE_A, 1);
-
-	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
-		3);
-	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
-		0x7F);
+	/*
+	 * 7425 will not go to S2/S3 standby unless both memory controllers
+	 * are in SSPD mode. MEMC0 is handled by AON/BSP, but MEMC1 must
+	 * be put to SSPD by the software.
+	 * So, if MEMC1 was previously powered down, power it up and then
+	 * suspend
+	 */
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_OFF) {
+		brcm_pm_memc1_powerup();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
+	}
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON) {
+		brcm_pm_memc1_suspend();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_SSPD;
+	}
 }
 
-static void bcm7425_pm_enet_enable(u32 flags)
+static void bcm7425_pm_early_resume(void)
 {
-	if (mem_power_down)
-		/* power up memory */
-		POWER_UP_MEMORY_A(DUAL_GENET_TOP_DUAL_RGMII, GENET0, A);
-	else
-		/* memory from standby */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
-		GENET0_MEMORY_STANDBY_ENABLE_A, 0);
-
-	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
-		3);
-	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
-		0x7F);
-}
-
-static void bcm7425_pm_moca_disable(u32 flags)
-{
-	if (mem_power_down)
-		/* power down memory */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_POWER_SWITCH_MEMORY_B,
-		GENET1_POWER_SWITCH_MEMORY_B, 3);
-	else
-		/* memory to standby */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
-		GENET1_MEMORY_STANDBY_ENABLE_A, 1);
-
-	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
-		0xC);
-	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
-		0x3F80);
-}
-
-static void bcm7425_pm_moca_enable(u32 flags)
-{
-	if (mem_power_down)
-		/* power up memory */
-		POWER_UP_MEMORY_A(DUAL_GENET_TOP_DUAL_RGMII, GENET1, B);
-	else
-		/* memory from standby */
-BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
-		GENET1_MEMORY_STANDBY_ENABLE_A, 0);
-
-	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
-		0xC);
-	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
-		0x3F80);
-}
-
-static void bcm7425_pm_suspend(void)
-{
-#ifdef CONFIG_BCM7425A0
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 1);
-#endif
-}
-
-static void bcm7425_pm_resume(void)
-{
-#ifdef CONFIG_BCM7425A0
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_PWRDN, PWRDN_PLL, 0);
-#endif
+	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_SSPD) {
+		brcm_pm_memc1_resume();
+		brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
+	}
 }
 
 #define PM_OPS_DEFINED
 static struct brcm_chip_pm_ops chip_pm_ops = {
-		.usb.enable		= bcm7425_pm_usb_enable,
-		.usb.disable		= bcm7425_pm_usb_disable,
-		.sata.enable		= bcm7425_pm_sata_enable,
-		.sata.disable		= bcm7425_pm_sata_disable,
-		.genet.enable		= bcm7425_pm_enet_enable,
-		.genet.disable		= bcm7425_pm_enet_disable,
-		.moca.enable		= bcm7425_pm_moca_enable,
-		.moca.disable		= bcm7425_pm_moca_disable,
-		.network.enable		= bcm7425_pm_network_enable,
-		.network.disable	= bcm7425_pm_network_disable,
-		.suspend		= bcm7425_pm_suspend,
-		.resume			= bcm7425_pm_resume,
-		.clk_get		= brcm_pm_clk_get,
+	DEF_BLOCK_PM_OP(usb, 40nm),
+	DEF_BLOCK_PM_OP(sata, 40nm),
+	DEF_BLOCK_PM_OP(network, 7425),
+	DEF_BLOCK_PM_OP(moca, 40nm),
+	DEF_BLOCK_PM_OP(genet, 40nm),
+	DEF_BLOCK_PM_OP(genet1, 40nm),
+	DEF_SYSTEM_PM_OP(40nm),
+	DEF_SYSTEM_LATE_PM_OP(7425),
+	.clk_get		= brcm_pm_clk_get,
+	.initialize		= brcm_ddr_phy_initialize,
 };
 #endif
 
@@ -2083,7 +2981,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 static struct brcm_chip_pm_ops chip_pm_ops;
 #endif
 
-static __maybe_unused void brcm_ddr_aphy_initialize(void)
+static __maybe_unused void brcm_ddr_phy_initialize(void)
 {
 #ifdef BCHP_MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL
 	/* MEMC0 */
@@ -2129,76 +3027,96 @@ struct clk *clk_get(struct device *dev, const char *id)
 }
 EXPORT_SYMBOL(clk_get);
 
-static void brcm_pm_sata_disable(void)
+static void brcm_pm_sata_disable(u32 flags)
 {
 	if (chip_pm_ops.sata.disable)
-		chip_pm_ops.sata.disable(0);
+		chip_pm_ops.sata.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_sata_enable(void)
+static void brcm_pm_sata_enable(u32 flags)
 {
 	if (chip_pm_ops.sata.enable)
-		chip_pm_ops.sata.enable(0);
+		chip_pm_ops.sata.enable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_moca_genet_disable(void)
+static void brcm_pm_genet1_disable(u32 flags)
 {
-	if (chip_pm_ops.moca_genet.disable)
-		chip_pm_ops.moca_genet.disable(0);
+	if (chip_pm_ops.genet1.disable)
+		chip_pm_ops.genet1.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_moca_genet_enable(void)
+static void brcm_pm_genet1_enable(u32 flags)
 {
-	if (chip_pm_ops.moca_genet.enable)
-		chip_pm_ops.moca_genet.enable(0);
+	if (chip_pm_ops.genet1.enable)
+		chip_pm_ops.genet1.enable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_network_disable(void)
+static void brcm_pm_network_disable(u32 flags)
 {
 	if (chip_pm_ops.network.disable)
-		chip_pm_ops.network.disable(0);
+		chip_pm_ops.network.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_network_enable(void)
+static void brcm_pm_network_enable(u32 flags)
 {
 	if (chip_pm_ops.network.enable)
-		chip_pm_ops.network.enable(0);
+		chip_pm_ops.network.enable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_enet_disable(void)
+static void brcm_pm_genet_disable(u32 flags)
 {
 	if (chip_pm_ops.genet.disable)
-		chip_pm_ops.genet.disable(0);
+		chip_pm_ops.genet.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_enet_enable(void)
+static void brcm_pm_genet_enable(u32 flags)
 {
 	if (chip_pm_ops.genet.enable)
-		chip_pm_ops.genet.enable(0);
+		chip_pm_ops.genet.enable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_moca_disable(void)
+static void brcm_pm_genet_disable_wol(u32 flags)
+{
+	brcm_pm_flags &= ~BRCM_PM_FLAG_ENET_WOL;
+}
+
+static void brcm_pm_genet_enable_wol(u32 flags)
+{
+	brcm_pm_flags |= BRCM_PM_FLAG_ENET_WOL;
+}
+
+static void brcm_pm_moca_disable(u32 flags)
 {
 	if (chip_pm_ops.moca.disable)
-		chip_pm_ops.moca.disable(0);
+		chip_pm_ops.moca.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_moca_enable(void)
+static void brcm_pm_moca_enable(u32 flags)
 {
 	if (chip_pm_ops.moca.enable)
-		chip_pm_ops.moca.enable(0);
+		chip_pm_ops.moca.enable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_usb_disable(void)
+static void brcm_pm_moca_disable_wol(u32 flags)
+{
+	brcm_pm_flags &= ~BRCM_PM_FLAG_MOCA_WOL;
+}
+
+static void brcm_pm_moca_enable_wol(u32 flags)
+{
+	brcm_pm_flags |= BRCM_PM_FLAG_MOCA_WOL;
+}
+
+static void brcm_pm_usb_disable(u32 flags)
 {
 	if (chip_pm_ops.usb.disable)
-		chip_pm_ops.usb.disable(0);
+		chip_pm_ops.usb.disable(brcm_pm_flags | flags);
 }
 
-static void brcm_pm_usb_enable(void)
+static void brcm_pm_usb_enable(u32 flags)
 {
 	if (chip_pm_ops.usb.enable)
-		chip_pm_ops.usb.enable(0);
+		chip_pm_ops.usb.enable(brcm_pm_flags | flags);
 }
 
 static void brcm_pm_initialize(void)
@@ -2209,8 +3127,9 @@ static void brcm_pm_initialize(void)
 
 static void brcm_pm_set_ddr_timeout(int val)
 {
-#if defined(BCHP_MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL)
+#if defined(BCHP_MEMC_DDR_0_SRPD_CONFIG)
 	if (val) {
+#if defined(BCHP_MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL)
 		BDEV_WR_F(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
 			IDDQ_MODE_ON_SELFREF, 1);
 		BDEV_WR_F(MEMC_DDR23_APHY_AC_0_DDR_PAD_CNTRL,
@@ -2223,7 +3142,7 @@ static void brcm_pm_set_ddr_timeout(int val)
 			IDDQ_MODE_ON_SELFREF, 1);
 		BDEV_WR_F(MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL,
 			IDDQ_MODE_ON_SELFREF, 1);
-
+#endif
 		BDEV_WR_F_RB(MEMC_DDR_0_SRPD_CONFIG, INACT_COUNT, 0xdff);
 		BDEV_WR_F(MEMC_DDR_0_SRPD_CONFIG, SRPD_EN, 1);
 	} else {
@@ -2247,24 +3166,26 @@ static void brcm_pm_set_ddr_timeout(int val)
  ***********************************************************************/
 static void brcm_system_standby(void)
 {
-	/* if MEMC1 is powered down/suspended, do not touch it */
-	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_ON) {
-		brcm_pm_memc1_suspend();
-		brcm_pm_memc1_power = BRCM_PM_MEMC1_SSPD;
-	}
 	if (chip_pm_ops.suspend)
-		chip_pm_ops.suspend();
+		chip_pm_ops.suspend(brcm_pm_flags);
 }
 
 static void brcm_system_resume(void)
 {
 	if (chip_pm_ops.resume)
-		chip_pm_ops.resume();
-	/* if MEMC1 was powered down before standby, do not power it up */
-	if (brcm_pm_memc1_power == BRCM_PM_MEMC1_SSPD) {
-		brcm_pm_memc1_resume();
-		brcm_pm_memc1_power = BRCM_PM_MEMC1_ON;
-	}
+		chip_pm_ops.resume(brcm_pm_flags);
+}
+
+static void brcm_system_late_standby(void)
+{
+	if (chip_pm_ops.late_suspend)
+		chip_pm_ops.late_suspend();
+}
+
+static void brcm_system_early_resume(void)
+{
+	if (chip_pm_ops.early_resume)
+		chip_pm_ops.early_resume();
 }
 
 /***********************************************************************
@@ -2349,31 +3270,86 @@ static void brcm_pm_set_pll_on(void)
 #elif defined(BCHP_CLKGEN_PM_PLL_ALIVE_SEL_PLL_DDR0_MASK)
 	BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, PLL_DDR0, ddr_pll_on);
 	BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, PLL_DDR1, ddr_pll_on);
+#elif defined(BCHP_CLKGEN_PM_PLL_ALIVE_SEL_PLL_DDR_MASK)
+	BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, PLL_DDR, ddr_pll_on);
+#elif defined(BCHP_CLKGEN_PM_PLL_ALIVE_SEL_memsys_PLL_MASK)
+	BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, memsys_PLL, ddr_pll_on);
 #endif
 }
 
-static void brcm_pm_set_alarm(int timeout)
+void brcm_pm_wakeup_source_enable(u32 mask, int enable)
 {
 #ifdef BCHP_PM_L2_CPU_MASK_SET
-	BDEV_WR_RB(BCHP_PM_L2_CPU_MASK_SET, 0xffffffff);
-	BDEV_WR_RB(BCHP_PM_L2_CPU_CLEAR, 0xffffffff);
-	BDEV_WR_F_RB(PM_L2_CPU_MASK_CLEAR, TIMER_INTR, 1);
+	BDEV_WR_RB(BCHP_PM_L2_CPU_CLEAR, mask);
+	BDEV_WR_RB(BCHP_PM_L2_PCI_CLEAR, mask);
+	if (enable) {
+		BDEV_WR_RB(BCHP_PM_L2_CPU_MASK_CLEAR, mask);
+		BDEV_WR_RB(BCHP_PM_L2_PCI_MASK_CLEAR, mask);
+	} else {
+		BDEV_WR_RB(BCHP_PM_L2_CPU_MASK_SET, mask);
+		BDEV_WR_RB(BCHP_PM_L2_PCI_MASK_SET, mask);
+	}
 #else
-	BDEV_WR_RB(BCHP_AON_PM_L2_CPU_MASK_SET, 0xffffffff);
-	BDEV_WR_RB(BCHP_AON_PM_L2_CPU_CLEAR, 0xffffffff);
-	BDEV_WR_F_RB(AON_PM_L2_CPU_MASK_CLEAR, TIMER_INTR, 1);
+	BDEV_WR_RB(BCHP_AON_PM_L2_CPU_CLEAR, mask);
+	BDEV_WR_RB(BCHP_AON_PM_L2_PCI_CLEAR, mask);
+	if (enable) {
+		BDEV_WR_RB(BCHP_AON_PM_L2_CPU_MASK_CLEAR, mask);
+		BDEV_WR_RB(BCHP_AON_PM_L2_PCI_MASK_CLEAR, mask);
+	} else {
+		BDEV_WR_RB(BCHP_AON_PM_L2_CPU_MASK_SET, mask);
+		BDEV_WR_RB(BCHP_AON_PM_L2_PCI_MASK_SET, mask);
+	}
 #endif
+}
+
+int brcm_pm_wakeup_get_status(u32 mask)
+{
+#ifdef BCHP_PM_L2_CPU_STATUS
+	return !!(BDEV_RD(BCHP_PM_L2_CPU_STATUS) & mask);
+#else
+	return !!(BDEV_RD(BCHP_AON_PM_L2_CPU_STATUS) &
+		   ~BDEV_RD(BCHP_AON_PM_L2_CPU_MASK_STATUS)
+		   & mask);
+#endif
+}
+
+static int brcm_pm_timer_wakeup_enable(void *ref)
+{
+#if !WATCHDOG_TIMER_WAKEUP_ALWAYS
+	if (brcm_pm_standby_flags & BRCM_STANDBY_TEST)
+#endif
+		brcm_pm_wakeup_source_enable(TIMER_INTR_MASK, 1);
+	return 0;
+}
+
+static int brcm_pm_timer_wakeup_disable(void *ref)
+{
+	brcm_pm_wakeup_source_enable(TIMER_INTR_MASK, 0);
+	return 0;
+}
+
+static int brcm_pm_timer_wakeup_poll(void *ref)
+{
+	int retval = brcm_pm_wakeup_get_status(TIMER_INTR_MASK);
+	printk(KERN_DEBUG "%s:  %d\n", __func__, retval);
+	return retval;
+}
+
+static struct brcm_wakeup_ops brcm_timer_wakeup_ops = {
+	.enable = brcm_pm_timer_wakeup_enable,
+	.disable = brcm_pm_timer_wakeup_disable,
+	.poll = brcm_pm_timer_wakeup_poll,
+};
+
+static void brcm_pm_set_alarm(int timeout)
+{
 	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
 	BDEV_WR_RB(BCHP_WKTMR_ALARM, BDEV_RD(BCHP_WKTMR_COUNTER) + timeout);
 }
 
 static void brcm_pm_clear_alarm(void)
 {
-#ifdef BCHP_PM_L2_CPU_MASK_SET
-	BDEV_WR_F_RB(PM_L2_CPU_MASK_SET, TIMER_INTR, 1);
-#else
-	BDEV_WR_F_RB(AON_PM_L2_CPU_MASK_SET, TIMER_INTR, 1);
-#endif
+	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
 }
 
 static int brcm_pm_standby(int mode)
@@ -2404,6 +3380,7 @@ static int brcm_pm_standby(int mode)
 #endif
 
 	brcm_system_standby();
+	brcm_pm_wakeup_source_enable(0xFFFFFFFF, 0);
 	brcm_pm_wakeup_enable();
 
 #ifdef DEBUG_M2M_DMA
@@ -2514,8 +3491,13 @@ static int brcm_pm_standby(int mode)
 		do {
 			if (brcm_pm_standby_flags & BRCM_STANDBY_TEST)
 				brcm_pm_set_alarm(1);
+#if WATCHDOG_TIMER_WAKEUP_ALWAYS
+			else
+				brcm_pm_set_alarm(20);
+#endif
 			brcm_pm_set_pll_on();
 			brcm_pm_handshake();
+			brcm_system_late_standby();
 #ifdef CONFIG_BRCM_HAS_AON
 			if (mode)
 				ret = brcm_pm_s3_standby(
@@ -2525,9 +3507,9 @@ static int brcm_pm_standby(int mode)
 				ret = brcm_pm_standby_asm(
 					current_cpu_data.icache.linesz,
 					restart_vec, brcm_pm_standby_flags);
-			if (brcm_pm_standby_flags & BRCM_STANDBY_TEST)
-				brcm_pm_clear_alarm();
-		} while (!brcm_pm_wakeup_poll());
+			brcm_system_early_resume();
+			brcm_pm_clear_alarm();
+		} while (!ret && !brcm_pm_wakeup_poll());
 	}
 	brcm_pm_wakeup_disable();
 	brcm_system_resume();
@@ -2581,11 +3563,14 @@ static void brcm_pm_finish(void)
 #endif
 }
 
-/* Hooks to enable / disable UART interrupts during suspend */
 static int brcm_pm_begin(suspend_state_t state)
 {
 	DBG("%s:%d\n", __func__, __LINE__);
 	suspend_state = state;
+	if (state == PM_SUSPEND_MEM)
+		brcm_pm_flags |= BRCM_PM_FLAG_S3;
+	else
+		brcm_pm_flags &= ~BRCM_PM_FLAG_S3;
 	return 0;
 }
 
@@ -2618,6 +3603,7 @@ static int brcm_suspend_init(void)
 {
 	DBG("%s:%d\n", __func__, __LINE__);
 	suspend_set_ops(&brcm_pm_ops);
+	brcm_pm_wakeup_register(&brcm_timer_wakeup_ops, NULL, "WKTMR");
 	return 0;
 }
 late_initcall(brcm_suspend_init);
@@ -2633,3 +3619,10 @@ int brcm_pm_deep_sleep(void)
 #endif
 }
 EXPORT_SYMBOL(brcm_pm_deep_sleep);
+
+void brcm_pm_sata3(int enable)
+{
+	struct clk *clk = brcm_pm_clk_find("sata");
+	if (clk)
+		enable ? clk_enable(clk) : clk_disable(clk);
+}

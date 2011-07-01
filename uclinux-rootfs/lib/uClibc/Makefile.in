@@ -161,7 +161,7 @@ headers-y += $(target-headers-sysdep)
 headers: $(top_builddir)include/bits/uClibc_config.h | subdirs
 subdirs: $(addprefix $(top_builddir),$(subdirs))
 pregen-headers: $(top_builddir)include/bits/sysnum.h $(pregen-headers-y)
-pregen: pregen-headers
+pregen: headers pregen-headers
 	$(Q)$(if $(UCLIBC_HAS_LOCALE),$(MAKE) -C extra/locale locale_headers)
 
 $(top_builddir)include/bits/sysnum.h: $(top_srcdir)extra/scripts/gen_bits_syscall_h.sh | $(top_builddir)include/bits
@@ -185,6 +185,7 @@ $(top_builddir)include/bits/sysnum.h: $(top_srcdir)extra/scripts/gen_bits_syscal
 		exit 1; \
 	fi
 
+.PHONY: $(LOCAL_INSTALL_PATH)
 $(LOCAL_INSTALL_PATH):
 	$(Q)$(MAKE) PREFIX=$(shell pwd)/$(LOCAL_INSTALL_PATH) RUNTIME_PREFIX=/ \
 	DEVEL_PREFIX=/usr/ \
@@ -239,6 +240,7 @@ HEADERS_RM-$(UCLIBC_HAS_FLOATS)              += complex.h fpu_control.h ieee754.
 	tgmath.h \
 	bits/math*.h
 HEADERS_RM-$(findstring y,$(UCLIBC_HAS_FTW)$(UCLIBC_HAS_NFTW))  += ftw.h
+HEADERS_RM-$(UCLIBC_HAS_FTS)                 += fts.h
 HEADERS_RM-$(UCLIBC_HAS_GETTEXT_AWARENESS)   += libintl.h
 HEADERS_RM-$(UCLIBC_HAS_GLIBC_CUSTOM_PRINTF) += printf.h
 HEADERS_RM-$(UCLIBC_HAS_GLOB)                += glob.h
@@ -336,7 +338,7 @@ else
 endif
 ifeq ($(UCLIBC_HAS_BACKTRACE),y)
 # Add the AS_NEEDED entry for libubacktrace.so
-	if [ -f $(top_builddir)lib/libc.so -a -f $(PREFIX)$(RUNTIME_PREFIX)$(MULTILIB_DIR)/$(SHARED_MAJORNAME) ] ; then \
+	if [ -f $(top_builddir)lib/libc.so -a -f $(PREFIX)$(RUNTIME_PREFIX)$(MULTILIB_DIR)/$(SHARED_LIBNAME) ] ; then \
 		echo "GROUP ( $(UBACKTRACE_ASNEEDED) )" >> $(PREFIX)$(DEVEL_PREFIX)$(MULTILIB_DIR)/libc.so; \
 	fi
 endif

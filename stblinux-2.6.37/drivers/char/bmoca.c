@@ -186,6 +186,7 @@ struct moca_priv_data {
 
 	int			enabled;
 	int			running;
+	int			wol_enabled;
 	struct clk		*clk;
 
 	int			refcount;
@@ -1399,6 +1400,12 @@ static long moca_file_ioctl(struct file *file, unsigned int cmd,
 		else
 			ret = -EIO;
 		break;
+	case MOCA_IOCTL_WOL:
+		priv->wol_enabled = (int)arg;
+		dev_info(priv->dev, "WOL is %s\n",
+			priv->wol_enabled ? "enabled" : "disabled");
+		ret = 0;
+		break;
 	}
 	mutex_unlock(&priv->dev_mutex);
 
@@ -1736,15 +1743,21 @@ static int moca_suspend(struct device *dev)
 	struct moca_priv_data *priv = dev_get_drvdata(dev);
 
 	/* make sure all pending work is complete */
+	priv->running = 0;
+	disable_irq(priv->irq);
 	cancel_work_sync(&priv->work);
 
 	/* full reset */
 	mutex_lock(&priv->dev_mutex);
-	moca_msg_reset(priv);
-	moca_3450_init(priv, MOCA_DISABLE);
-	moca_hw_init(priv, MOCA_DISABLE);
-	priv->running = 0;
-	clk_disable(priv->clk);
+	if (!priv->wol_enabled) {
+		moca_msg_reset(priv);
+		moca_3450_init(priv, MOCA_DISABLE);
+		moca_hw_init(priv, MOCA_DISABLE);
+	}
+	if (priv->enabled) {
+		clk_disable(priv->clk);
+		priv->enabled = 0;
+	}
 	mutex_unlock(&priv->dev_mutex);
 
 	return 0;
@@ -1756,7 +1769,16 @@ static int moca_resume(struct device *dev)
 	/* We assume moca daemon will reload the firmware
 	 * when it realizes the h/w has been reset
 	 */
+	mutex_lock(&priv->dev_mutex);
 	clk_enable(priv->clk);
+	priv->enabled = 1;
+	if (priv->wol_enabled) {
+		moca_msg_reset(priv);
+		moca_3450_init(priv, MOCA_DISABLE);
+		moca_hw_init(priv, MOCA_DISABLE);
+	}
+	enable_irq(priv->irq);
+	mutex_unlock(&priv->dev_mutex);
 	return 0;
 }
 

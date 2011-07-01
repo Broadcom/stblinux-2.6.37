@@ -297,7 +297,9 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 
 		if(defined($linux{"CONFIG_BRCM_HAS_MOCA_11"})) {
 			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN1"} = "y";
-		} else {
+		} elsif(defined($linux{"CONFIG_BRCM_HAS_MOCA_11_LITE"})) {
+			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN1"} = "y";
+		} elsif(defined($linux{"CONFIG_BRCM_HAS_MOCA_11_PLUS"})) {
 			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN2"} = "y";
 		}
 	}
@@ -503,6 +505,19 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 			# UBI/UBIFS backport from the mainline MTD tree
 
 			$use_patch{'newubi'} = 1;
+		} elsif($mod eq "lxc") {
+
+			# Enable LXC containers
+
+			read_cfg("defaults/override.linux-lxc", \%linux_o);
+			override_cfg(\%linux, \%linux_o);
+
+			$vendor{"CONFIG_USER_LXC_LXC"} = "y";
+			$vendor{"CONFIG_LIB_LIBCAP"} = "y";
+
+			$busybox{"CONFIG_GETOPT"} = "y";
+			$busybox{"CONFIG_FEATURE_GETOPT_LONG"} = "y";
+			$busybox{"CONFIG_ID"} = "y";
 		} else {
 			print "\n";
 			print "ERROR: Unrecognized suffix '$mod' in '$tgt'\n";
@@ -646,8 +661,12 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 		"$topdir/misc/initramfs.dev\"";
 	$linux{"CONFIG_INITRAMFS_ROOT_UID"} = getuid();
 	$linux{"CONFIG_INITRAMFS_ROOT_GID"} = getgid();
+
 	$linux{"CONFIG_INITRAMFS_COMPRESSION_NONE"} = "y";
 	$linux{"CONFIG_INITRAMFS_COMPRESSION_GZIP"} = "n";
+	$linux{"CONFIG_INITRAMFS_COMPRESSION_BZIP2"} = "n";
+	$linux{"CONFIG_INITRAMFS_COMPRESSION_LZMA"} = "n";
+	$linux{"CONFIG_INITRAMFS_COMPRESSION_LZO"} = "n";
 
 	write_cfg($linux_config, $linux_config, \%linux);
 } elsif($cmd eq "noinitramfs") {

@@ -26,7 +26,7 @@
 #define DBG(...)		do { } while (0)
 #endif
 
-#ifdef CONFIG_BRCM_HAS_STANDBY
+#if defined(CONFIG_BRCM_HAS_STANDBY) && defined(BCHP_MEMC_DDR_1_SSPD_CMD)
 
 #define MAX_CLIENT_INFO_NUM		128
 #define MAX_DDR_PARAMS_NUM		16
@@ -49,9 +49,7 @@ struct memc_config {
 
 static struct memc_config __maybe_unused memc1_config;
 
-#if defined(CONFIG_BCM7420)
-
-static void bcm7420_memc1_sspd_control(int enable)
+static void brcm_memc1_sspd_control(int enable)
 {
 	if (enable) {
 		BDEV_WR_F_RB(MEMC_DDR_1_SSPD_CMD, SSPD, 1);
@@ -63,6 +61,104 @@ static void bcm7420_memc1_sspd_control(int enable)
 			udelay(1);
 	}
 }
+
+static void brcm_memc1_ddr_params(int restore)
+{
+	int ii = 0;
+
+	if (restore) {
+		/* program ddr iobuf registers */
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_2,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_3,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_5,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_0,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_1,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_0,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_1,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_2,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_3,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_4,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_CNTRLR_CONFIG,
+			memc1_config.ddr_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_INIT_CNTRL,
+			memc1_config.ddr_params[ii++]);
+	} else {
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_2);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_3);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_5);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_0);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_1);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_0);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_1);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_2);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_3);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_4);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_CNTRLR_CONFIG);
+		memc1_config.ddr_params[ii++] =
+			BDEV_RD(BCHP_MEMC_DDR_1_DRAM_INIT_CNTRL);
+	}
+	BUG_ON(ii > MAX_DDR_PARAMS_NUM);
+}
+
+static void brcm_memc1_arb_params(int restore)
+{
+	int ii = 0;
+
+	if (restore) {
+		BDEV_WR_RB(BCHP_MEMC_ARB_1_FULLNESS_THRESHOLD,
+			memc1_config.arb_params[ii++]);
+		BDEV_WR_RB(BCHP_MEMC_ARB_1_MINIMUM_COMMAND_SIZE,
+			memc1_config.arb_params[ii++]);
+	} else {
+		memc1_config.arb_params[ii++] =
+			BDEV_RD(BCHP_MEMC_ARB_1_FULLNESS_THRESHOLD);
+		memc1_config.arb_params[ii++] =
+			BDEV_RD(BCHP_MEMC_ARB_1_MINIMUM_COMMAND_SIZE);
+	}
+
+	BUG_ON(ii > MAX_ARB_PARAMS_NUM);
+}
+
+static void brcm_memc1_client_info(int restore)
+{
+	int ii = 0;
+	u32 addr = BCHP_MEMC_ARB_1_REG_START + 4;
+
+	if (restore)
+		for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
+			BDEV_WR_RB(addr, memc1_config.client_info[ii]);
+			addr += 4;
+		}
+	else
+		/* Save MEMC1 configuration */
+		for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
+			memc1_config.client_info[ii] = BDEV_RD(addr);
+			addr += 4;
+		}
+}
+
+#if defined(CONFIG_BCM7420)
 
 static void bcm7420_memc1_suspend(int mode)
 {
@@ -119,7 +215,7 @@ static void bcm7420_memc1_suspend(int mode)
 	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_WORDSLICE_CNTRL_1,
 		PWRDN_DLL_ON_SELFREF, 1);
 
-	bcm7420_memc1_sspd_control(1);
+	brcm_memc1_sspd_control(1);
 
 	if (mode) {
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
@@ -378,49 +474,18 @@ void brcm_pm_memc1_suspend(void)
 void brcm_pm_memc1_resume(void)
 {
 	bcm7420_memc1_resume(0);
-	bcm7420_memc1_sspd_control(0);
+	brcm_memc1_sspd_control(0);
 }
 
 void brcm_pm_memc1_powerdown(void)
 {
 	int ii;
-	u32 addr = BCHP_MEMC_ARB_1_REG_START + 4;
 
 	DBG("%s\n", __func__);
 
-	/* Save MEMC1 configuration */
-	for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
-		memc1_config.client_info[ii] = BDEV_RD(addr);
-		addr += 4;
-	}
+	brcm_memc1_client_info(0);
 
-	ii = 0;
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_2);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_3);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_5);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_0);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_MODE_1);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_0);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_1);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_2);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_3);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_TIMING_4);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_CNTRLR_CONFIG);
-	memc1_config.ddr_params[ii++] =
-		BDEV_RD(BCHP_MEMC_DDR_1_DRAM_INIT_CNTRL);
-
-	BUG_ON(ii > MAX_DDR_PARAMS_NUM);
+	brcm_memc1_ddr_params(0);
 
 	ii = 0;
 	memc1_config.ddr23_aphy_params[ii++] =
@@ -440,13 +505,7 @@ void brcm_pm_memc1_powerdown(void)
 
 	BUG_ON(ii > MAX_DDR_APHY_PARAMS_NUM);
 
-	ii = 0;
-	memc1_config.arb_params[ii++] =
-		BDEV_RD(BCHP_MEMC_ARB_1_FULLNESS_THRESHOLD);
-	memc1_config.arb_params[ii++] =
-		BDEV_RD(BCHP_MEMC_ARB_1_MINIMUM_COMMAND_SIZE);
-
-	BUG_ON(ii > MAX_ARB_PARAMS_NUM);
+	brcm_memc1_arb_params(0);
 
 	/* CKE_IDDQ */
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
@@ -460,8 +519,7 @@ void brcm_pm_memc1_powerdown(void)
 
 int brcm_pm_memc1_powerup(void)
 {
-	int ii;
-	u32 addr = BCHP_MEMC_ARB_1_REG_START + 4;
+	int ii = 0;
 
 	DBG("%s\n", __func__);
 	/* Restore MEMC1 configuration */
@@ -477,34 +535,8 @@ int brcm_pm_memc1_powerup(void)
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
 		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) & ~4);
 
-	/* program ddr iobuf registers */
-	ii = 0;
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_2,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_3,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_5,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_0,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_MODE_1,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_0,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_1,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_2,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_3,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_TIMING_4,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_CNTRLR_CONFIG,
-		memc1_config.ddr_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_DDR_1_DRAM_INIT_CNTRL,
-		memc1_config.ddr_params[ii++]);
+	brcm_memc1_ddr_params(1);
 
-	ii = 0;
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_PLL_CTRL1_REG,
 		memc1_config.ddr23_aphy_params[ii++]);
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_PLL_FREQ_CNTL,
@@ -520,18 +552,11 @@ int brcm_pm_memc1_powerup(void)
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_ODT_CONFIG,
 		memc1_config.ddr23_aphy_params[ii++]);
 
-	ii = 0;
-	BDEV_WR_RB(BCHP_MEMC_ARB_1_FULLNESS_THRESHOLD,
-		memc1_config.arb_params[ii++]);
-	BDEV_WR_RB(BCHP_MEMC_ARB_1_MINIMUM_COMMAND_SIZE,
-		memc1_config.arb_params[ii++]);
+	brcm_memc1_arb_params(1);
 
-	for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
-		BDEV_WR_RB(addr, memc1_config.client_info[ii]);
-		addr += 4;
-	}
+	brcm_memc1_client_info(1);
 
-	bcm7420_memc1_sspd_control(0);
+	brcm_memc1_sspd_control(0);
 
 	return 0;
 }
@@ -539,10 +564,8 @@ int brcm_pm_memc1_powerup(void)
 
 #if defined(CONFIG_BCM7425)
 
-void brcm_pm_memc1_suspend(void)
+static void bcm7425_memc1_suspend(int mode)
 {
-	u32 result;
-
 	DBG("%s\n", __func__);
 
 	/* power down the pads */
@@ -562,10 +585,7 @@ void brcm_pm_memc1_suspend(void)
 			0xFFFFF);
 
 	/* enter SSPD */
-	BDEV_WR_F_RB(MEMC_DDR_1_SSPD_CMD, SSPD, 1);
-	do {
-		result = BDEV_RD_F(MEMC_DDR_1_POWER_DOWN_STATUS, SSPD);
-	} while (!result);
+	brcm_memc1_sspd_control(1);
 
 	/* power down the PLLs */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_SYS_PLL_PWRDN_ref_clk_sel,
@@ -580,18 +600,43 @@ void brcm_pm_memc1_suspend(void)
 	BDEV_WR_F_RB(CLKGEN_MEMSYS_1_32_POWER_MANAGEMENT,
 		MEMSYS_PLL_PWRDN_POWER_MANAGEMENT, 1);
 
+	if (mode) {
+		DBG("%s reset\n", __func__);
+		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_DRAM_INIT, 1);
+		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_CORE, 1);
+		BDEV_WR_F_RB(MEMC_DDR_1_DRAM_INIT_CNTRL, DDR3_INIT_MODE, 1);
+		mdelay(1);
+	}
+
 	/* stop the clocks to MEMSYS1 */
 	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
 		DDR1_SCB_CLOCK_ENABLE, 0);
 	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
 		DDR1_108_CLOCK_ENABLE, 0);
 
+	memc1_config.valid = 1;
 }
 
-void brcm_pm_memc1_resume(void)
+void brcm_pm_memc1_suspend(void)
 {
-	u32 result;
+	bcm7425_memc1_suspend(0);
+}
 
+void brcm_pm_memc1_powerdown(void)
+{
+	DBG("%s\n", __func__);
+
+	brcm_memc1_client_info(0);
+
+	brcm_memc1_ddr_params(0);
+
+	brcm_memc1_arb_params(0);
+
+	bcm7425_memc1_suspend(1);
+}
+
+static void bcm7425_memc1_resume(int mode)
+{
 	DBG("%s\n", __func__);
 
 	/* re-enable the clocks */
@@ -618,8 +663,8 @@ void brcm_pm_memc1_resume(void)
 	/* power up the pads */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
 		IDDQ_MODE_ON_SELFREF, 0);
-	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
-		PHY_IDLE_ENABLE, 0);
+/*	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
+		PHY_IDLE_ENABLE, 0); */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
 		HIZ_ON_SELFREF, 0);
 	BDEV_WR_RB(BCHP_DDR40_PHY_CONTROL_REGS_1_IDLE_PAD_CONTROL,
@@ -631,13 +676,45 @@ void brcm_pm_memc1_resume(void)
 		BDEV_RD(BCHP_DDR40_PHY_WORD_LANE_1_1_IDLE_PAD_CONTROL) |
 			0);
 
-	/* leave SSPD */
-	BDEV_WR_F_RB(MEMC_DDR_1_SSPD_CMD, SSPD, 0);
-	do {
-		result = BDEV_RD_F(MEMC_DDR_1_POWER_DOWN_STATUS, SSPD);
-	} while (result);
+	brcm_memc1_sspd_control(0);
 
+	if (mode) {
+		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_DRAM_INIT, 0);
+		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_CORE, 0);
+		mdelay(1);
+		printk(KERN_DEBUG "memc1: powered up\n");
+	} else
+		printk(KERN_DEBUG "memc1: resumed\n");
 }
+
+void brcm_pm_memc1_resume(void)
+{
+	bcm7425_memc1_resume(0);
+}
+
+int brcm_pm_memc1_powerup(void)
+{
+	DBG("%s\n", __func__);
+
+	/* Restore MEMC1 configuration */
+	if (!memc1_config.valid) {
+		printk(KERN_ERR "%s: no valid saved configuration\n", __func__);
+		return -1;
+	}
+
+	bcm7425_memc1_resume(1);
+
+	brcm_memc1_ddr_params(1);
+
+	brcm_memc1_arb_params(1);
+
+	brcm_memc1_client_info(1);
+
+	brcm_memc1_sspd_control(0);
+
+	return 0;
+}
+
 #endif
 
 #endif

@@ -506,6 +506,9 @@ static inline void brcm_setup_pcie_bridge(void)
 	/* set pri/sec bus numbers */
 	BDEV_WR(BCHP_PCIE_RC_CFG_TYPE1_PRI_SEC_BUS_NO, 0x00010100);
 
+	/* enable configuration request retry (see pci_scan_device()) */
+	BDEV_WR_F(PCIE_RC_CFG_PCIE_ROOT_CAP_CONTROL, RC_CRS_EN, 1);
+
 	/* PCIE->SCB endian mode for BAR2 */
 	BDEV_WR_F_RB(PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1, ENDIAN_MODE_BAR2,
 		DATA_ENDIAN);
@@ -721,8 +724,21 @@ int __devinit pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 /* Do platform specific device initialization at pci_enable_device() time */
 int pcibios_plat_dev_init(struct pci_dev *dev)
 {
+#if defined(CONFIG_BRCM_HAS_SATA3)
+	if (dev->bus->number == BRCM_BUSNO_SATA)
+		brcm_pm_sata3(1);
+#endif
 	return 0;
 }
+
+void pcibios_disable_device(struct pci_dev *dev)
+{
+#if defined(CONFIG_BRCM_HAS_SATA3)
+	if (dev->bus->number == BRCM_BUSNO_SATA)
+		brcm_pm_sata3(0);
+#endif
+}
+
 
 /***********************************************************************
  * Per-device initialization

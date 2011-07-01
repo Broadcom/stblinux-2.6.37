@@ -32,6 +32,8 @@ endif
 #
 # and build these if someone needs them
 #
+dir_$(CONFIG_LIB_LIBCAP)         += libcap
+dir_$(CONFIG_LIB_LIBCAP_FORCE)   += libcap
 dir_$(CONFIG_LIB_LIBDES)         += libdes
 dir_$(CONFIG_LIB_LIBDES_FORCE)   += libdes
 dir_$(CONFIG_LIB_LIBSSL)         += openssl
@@ -113,7 +115,7 @@ ifeq ($(findstring y,$(CONFIG_LIB_LIBGCC_FORCE)$(CONFIG_LIB_LIBGCC)),y)
 	-$(RM) -f $(ROMFSDIR)/lib/libgcc_s.so*
 	cp -af $(GCCLIB)/libgcc_s.so $(GCCLIB)/libgcc_s.so*[0-9] \
 		$(ROMFSDIR)/lib/
-	$(STRIP) $(ROMFSDIR)/lib/libgcc_s.so
+	$(STRIP) $(ROMFSDIR)/lib/libgcc_s.so.1
 endif
 ifeq ($(findstring y,$(CONFIG_LIB_LIBUTIL_FORCE)$(CONFIG_LIB_LIBUTIL)),y)
 	-$(RM) -f $(ROMFSDIR)/lib/libutil.so*

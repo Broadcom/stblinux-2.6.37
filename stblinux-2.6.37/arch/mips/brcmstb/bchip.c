@@ -486,6 +486,18 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 	BDEV_WR(SDIO_REG(cfg_base, OP_DLY), 0);
 #endif
 
+#if defined(CONFIG_BCM7552A0)
+
+	/* Disable SDHCI capabilities that are broken in A0 silicon */
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(24));	/* 1.8V=0 */
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG1), BIT(7));	/* Tuning=0 */
+	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
+
+	/* Use better defaults for timing */
+	BDEV_WR(SDIO_REG(cfg_base, IP_DLY), 0);
+	BDEV_WR(SDIO_REG(cfg_base, OP_DLY), 0);
+#endif
+
 	return 0;
 }
 #endif

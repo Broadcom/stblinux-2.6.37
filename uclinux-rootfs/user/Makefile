@@ -157,6 +157,7 @@ dir_$(CONFIG_USER_LOATTACH_LOATTACH)        += loattach
 dir_$(CONFIG_USER_LOGIN_LOGIN)              += login
 dir_$(CONFIG_USER_LOGIN_PASSWD)             += login
 dir_$(CONFIG_USER_LTT_CONTROL)              += lttcontrol
+dir_$(CONFIG_USER_LXC_LXC)                  += lxc
 dir_$(CONFIG_USER_MAIL_MAIL_IP)             += mail
 dir_$(CONFIG_USER_MATH_TEST)                += mathtest
 dir_$(CONFIG_USER_MAWK_AWK)                 += mawk

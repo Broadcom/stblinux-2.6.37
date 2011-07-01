@@ -78,7 +78,6 @@ struct brcm_pm_priv
 #define MAX_ARGS	16
 
 #define SYS_MEMC1_STAT	"/sys/devices/platform/brcmstb/memc1_power"
-#define SYS_MOCA_STAT	"/sys/devices/platform/brcmstb/moca_power"
 #define SYS_SATA_STAT	"/sys/devices/platform/brcmstb/sata_power"
 #define SYS_DDR_STAT	"/sys/devices/platform/brcmstb/ddr_timeout"
 #define SYS_STANDBY_FLAGS "/sys/devices/platform/brcmstb/standby_flags"
@@ -480,9 +479,6 @@ int brcm_pm_get_status(void *vctx, struct brcm_pm_state *st)
 	st->usb_status = brcm_pm_usb_get_status();
 
 	/* read status from /proc */
-	if(sysfs_get(SYS_MOCA_STAT, (unsigned int *)&st->moca_status) != 0) {
-		st->moca_status = BRCM_PM_UNDEF;
-	}
 	if(sysfs_get(SYS_SATA_STAT, (unsigned int *)&st->sata_status) != 0) {
 		st->sata_status = BRCM_PM_UNDEF;
 	}

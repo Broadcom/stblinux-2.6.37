@@ -78,6 +78,7 @@ comment 'Library Configuration'
 comment 'Force build (Normally built when required)'
 bool 'Build DirectFB'		CONFIG_LIB_DIRECTFB_FORCE
 bool 'Build freetype'		CONFIG_LIB_FREETYPE_FORCE
+bool 'Build libCAP'		CONFIG_LIB_LIBCAP_FORCE
 bool 'Build libDES'		CONFIG_LIB_LIBDES_FORCE
 bool 'Build libSSL'		CONFIG_LIB_LIBSSL_FORCE
 bool 'Build libGMP'		CONFIG_LIB_LIBGMP_FORCE
@@ -537,6 +538,10 @@ bool 'lcd'			CONFIG_USER_LCD_LCD
 bool 'ledcon'			CONFIG_USER_LEDCON_LEDCON
 bool 'lilo'			CONFIG_USER_LILO_LILO
 bool 'lissa'			CONFIG_USER_LISSA_LISSA
+bool 'lxc'			CONFIG_USER_LXC_LXC
+if [ "$CONFIG_USER_LXC_LXC" = "y" ]; then
+	define_bool	CONFIG_LIB_LIBCAP y
+fi
 bool 'mathstests'		CONFIG_USER_MATH_TEST
 bool 'mawk'			CONFIG_USER_MAWK_AWK
 bool 'null'			CONFIG_USER_NULL_NULL

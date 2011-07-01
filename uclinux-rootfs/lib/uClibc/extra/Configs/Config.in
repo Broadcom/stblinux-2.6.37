@@ -914,8 +914,10 @@ config UCLIBC_LINUX_SPECIFIC
 	bool "Linux specific functions"
 	default y
 	help
+	  accept4(),
 	  capget(), capset(), fstatfs(), inotify_*(), ioperm(), iopl(),
-	  madvise(), modify_ldt(), personality(), prctl()/arch_prctl(),
+	  madvise(), modify_ldt(), pipe2(), personality(),
+	  prctl()/arch_prctl(),
 	  ppoll(), readahead(), reboot(), remap_file_pages(),
 	  sched_getaffinity(), sched_setaffinity(), sendfile(),
 	  setfsgid(), setfsuid(), setresuid(),
@@ -1898,6 +1900,18 @@ config UCLIBC_HAS_FTW
 	  This interface is rarely used, and adds around 4.5k.  Unless you have
 	  a pressing need for ftw(), you should probably answer N.
 
+config UCLIBC_HAS_FTS
+	bool "Support the fts() interface (bsd-compat)"
+	default n
+	help
+	  The fts functions are provided for traversing UNIX file hierarchies.
+
+	  This interface is currently used by the elfutils and adds
+	  around 7.5k.
+	  You should port your application to use the POSIX nftw()
+	  interface.
+
+	  Unless you need to build/use elfutils, you should prolly answer N.
 
 config UCLIBC_HAS_GLOB
 	bool "Support the glob() interface"
@@ -2322,7 +2336,7 @@ config UCLIBC_MALLOC_DEBUGGING
 
 config UCLIBC_HAS_BACKTRACE
 	bool "Add support for application self-debugging"
-	depends on HAVE_SHARED && TARGET_sh
+	depends on HAVE_SHARED
 	default n
 	help
 	  Answer Y here to compile support for application self-debugging, by adding
