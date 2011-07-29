@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2007 Denys Vlasenko.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /* Based on ipsvd-0.12.1. This tcpsvd accepts all options
@@ -30,9 +30,12 @@
  */
 
 #include "libbb.h"
+
 /* Wants <limits.h> etc, thus included after libbb.h: */
+#ifdef __linux__
 #include <linux/types.h> /* for __be32 etc */
 #include <linux/netfilter_ipv4.h>
+#endif
 
 // TODO: move into this file:
 #include "tcpudp_perhost.h"
@@ -50,7 +53,7 @@ struct globals {
 	unsigned cmax;
 	char **env_cur;
 	char *env_var[1]; /* actually bigger */
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define verbose      (G.verbose     )
 #define max_per_host (G.max_per_host)
@@ -85,8 +88,7 @@ static void undo_xsetenv(void)
 	char **pp = env_cur = &env_var[0];
 	while (*pp) {
 		char *var = *pp;
-		bb_unsetenv(var);
-		free(var);
+		bb_unsetenv_and_free(var);
 		*pp++ = NULL;
 	}
 }
@@ -465,6 +467,7 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
 			/* setup ucspi env */
 			const char *proto = tcp ? "TCP" : "UDP";
 
+#ifdef SO_ORIGINAL_DST
 			/* Extract "original" destination addr:port
 			 * from Linux firewall. Useful when you redirect
 			 * an outbond connection to local handler, and it needs
@@ -474,6 +477,7 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
 				xsetenv_plain("TCPORIGDSTADDR", addr);
 				free(addr);
 			}
+#endif
 			xsetenv_plain("PROTO", proto);
 			xsetenv_proto(proto, "LOCALADDR", local_addr);
 			xsetenv_proto(proto, "REMOTEADDR", remote_addr);
@@ -502,10 +506,10 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
 #ifdef SSLSVD
 	strcpy(id, utoa(pid));
 	ssl_io(0, argv);
+	bb_perror_msg_and_die("can't execute '%s'", argv[0]);
 #else
-	BB_EXECVP(argv[0], argv);
+	BB_EXECVP_or_die(argv);
 #endif
-	bb_perror_msg_and_die("exec '%s'", argv[0]);
 }
 
 /*

@@ -7,7 +7,7 @@
  *			Glenn McGrath
  * Extended matching support 2008 by Nico Erfurth <masta@perlgolf.de>
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -21,10 +21,10 @@
 #endif
 
 /* Taken from linux/sockios.h */
-#define SIOCSIFNAME	0x8923	/* set interface name */
+#define SIOCSIFNAME  0x8923  /* set interface name */
 
 /* Octets in one Ethernet addr, from <linux/if_ether.h> */
-#define ETH_ALEN	6
+#define ETH_ALEN     6
 
 #ifndef ifr_newname
 #define ifr_newname ifr_ifru.ifru_slave
@@ -90,7 +90,7 @@ static void nameif_parse_selector(ethtable_t *ch, char *selector)
 		} else {
 #endif
 			lmac = xmalloc(ETH_ALEN);
-			ch->mac = ether_aton_r(selector + (strncmp(selector, "mac=", 4) ? 0 : 4), lmac);
+			ch->mac = ether_aton_r(selector + (strncmp(selector, "mac=", 4) != 0 ? 0 : 4), lmac);
 			if (ch->mac == NULL)
 				bb_error_msg_and_die("can't parse %s", selector);
 #if  ENABLE_FEATURE_NAMEIF_EXTENDED

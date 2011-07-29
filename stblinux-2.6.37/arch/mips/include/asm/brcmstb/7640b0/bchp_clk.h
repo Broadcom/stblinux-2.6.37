@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Mar 16 05:26:57 2011
- *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
+ * Date:           Generated on         Tue Apr 12 13:43:08 2011
+ *                 MD5 Checksum         161bc6c4c68f438ad316017c113c5764
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7640/rdb/c0/bchp_clk.h $
+ * 
+ * Hydra_Software_Devel/1   4/13/11 4:05p albertl
+ * SWBLURAY-25497: Initial revision.
  *
  ***************************************************************************/
 
@@ -70,6 +73,7 @@
 #define BCHP_CLK_SYS0_216_DIV                    0x00070220 /* SYS0 PLL channel 0 (216 MHz) clock divider settings */
 #define BCHP_CLK_SYS0_162_DIV                    0x00070224 /* SYS0 PLL channel 1 (162/81 MHz) clock divider settings */
 #define BCHP_CLK_SYS0_48_DIV                     0x00070228 /* SYS0 PLL channel 2 (48 MHz) clock divider settings */
+#define BCHP_CLK_SYS0_324_DIV                    0x0007022c /* SYS0 PLL channel 3 (324 MHz) clock divider settings */
 #define BCHP_CLK_SYS0_259P2_DIV                  0x00070230 /* SYS0 PLL channel 4 (259.2 MHz) clock divider settings */
 #define BCHP_CLK_SYS0_9_DIV                      0x00070234 /* SYS0 PLL channel 5 (9/4.5 MHz) clock divider settings */
 #define BCHP_CLK_SYS0_SSC_MODE_LIMIT             0x00070238 /* SYS0 PLL SSC Mode and Limit */
@@ -146,86 +150,100 @@
 /***************************************************************************
  *PM_CTRL - Software power management control to turn off 108 MHz clocks
  ***************************************************************************/
-/* CLK :: PM_CTRL :: reserved0 [31:22] */
-#define BCHP_CLK_PM_CTRL_reserved0_MASK                            0xffc00000
-#define BCHP_CLK_PM_CTRL_reserved0_SHIFT                           22
+/* CLK :: PM_CTRL :: reserved0 [31:24] */
+#define BCHP_CLK_PM_CTRL_reserved0_MASK                            0xff000000
+#define BCHP_CLK_PM_CTRL_reserved0_SHIFT                           24
 
-/* CLK :: PM_CTRL :: DIS_XPT_108M_CLK [21:21] */
-#define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_MASK                     0x00200000
-#define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_SHIFT                    21
+/* CLK :: PM_CTRL :: DIS_M2MC_ALT2_108_CLK [23:23] */
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT2_108_CLK_MASK                0x00800000
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT2_108_CLK_SHIFT               23
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT2_108_CLK_DEFAULT             0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT2_108_CLK_Enable              0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT2_108_CLK_Disable             1
+
+/* CLK :: PM_CTRL :: DIS_M2MC_ALT1_108_CLK [22:22] */
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT1_108_CLK_MASK                0x00400000
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT1_108_CLK_SHIFT               22
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT1_108_CLK_DEFAULT             0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT1_108_CLK_Enable              0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT1_108_CLK_Disable             1
+
+/* CLK :: PM_CTRL :: DIS_M2MC_ALT_108_CLK [21:21] */
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT_108_CLK_MASK                 0x00200000
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT_108_CLK_SHIFT                21
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT_108_CLK_DEFAULT              0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT_108_CLK_Enable               0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_ALT_108_CLK_Disable              1
+
+/* CLK :: PM_CTRL :: DIS_M2MC_108_CLK [20:20] */
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_108_CLK_MASK                     0x00100000
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_108_CLK_SHIFT                    20
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_108_CLK_DEFAULT                  0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_108_CLK_Enable                   0
+#define BCHP_CLK_PM_CTRL_DIS_M2MC_108_CLK_Disable                  1
+
+/* CLK :: PM_CTRL :: DIS_XPT_108M_CLK [19:19] */
+#define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_MASK                     0x00080000
+#define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_SHIFT                    19
 #define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_DEFAULT                  0
 #define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_Enable                   0
 #define BCHP_CLK_PM_CTRL_DIS_XPT_108M_CLK_Disable                  1
 
-/* CLK :: PM_CTRL :: DIS_VEC_108M_CLK [20:20] */
-#define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_MASK                     0x00100000
-#define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_SHIFT                    20
+/* CLK :: PM_CTRL :: DIS_VEC_108M_CLK [18:18] */
+#define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_MASK                     0x00040000
+#define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_SHIFT                    18
 #define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_DEFAULT                  0
 #define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_Enable                   0
 #define BCHP_CLK_PM_CTRL_DIS_VEC_108M_CLK_Disable                  1
 
-/* CLK :: PM_CTRL :: DIS_USB_108M_CLK [19:19] */
-#define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_MASK                     0x00080000
-#define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_SHIFT                    19
+/* CLK :: PM_CTRL :: DIS_USB_108M_CLK [17:17] */
+#define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_MASK                     0x00020000
+#define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_SHIFT                    17
 #define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_DEFAULT                  0
 #define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_Enable                   0
 #define BCHP_CLK_PM_CTRL_DIS_USB_108M_CLK_Disable                  1
 
-/* CLK :: PM_CTRL :: DIS_RPTD1_108M_CLK [18:18] */
-#define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_MASK                   0x00040000
-#define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_SHIFT                  18
+/* CLK :: PM_CTRL :: DIS_RPTD1_108M_CLK [16:16] */
+#define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_MASK                   0x00010000
+#define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_SHIFT                  16
 #define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_DEFAULT                0
 #define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_Enable                 0
 #define BCHP_CLK_PM_CTRL_DIS_RPTD1_108M_CLK_Disable                1
 
-/* CLK :: PM_CTRL :: DIS_RPTD0_108M_CLK [17:17] */
-#define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_MASK                   0x00020000
-#define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_SHIFT                  17
+/* CLK :: PM_CTRL :: DIS_RPTD0_108M_CLK [15:15] */
+#define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_MASK                   0x00008000
+#define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_SHIFT                  15
 #define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_DEFAULT                0
 #define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_Enable                 0
 #define BCHP_CLK_PM_CTRL_DIS_RPTD0_108M_CLK_Disable                1
 
-/* CLK :: PM_CTRL :: DIS_PINMUX_108M_CLK [16:16] */
-#define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_MASK                  0x00010000
-#define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_SHIFT                 16
+/* CLK :: PM_CTRL :: DIS_PINMUX_108M_CLK [14:14] */
+#define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_MASK                  0x00004000
+#define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_SHIFT                 14
 #define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_DIS_PINMUX_108M_CLK_Disable               1
 
-/* CLK :: PM_CTRL :: DIS_OFE_DISCCTRL_108M_CLK [15:15] */
-#define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_MASK            0x00008000
-#define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_SHIFT           15
+/* CLK :: PM_CTRL :: DIS_OFE_DISCCTRL_108M_CLK [13:13] */
+#define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_MASK            0x00002000
+#define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_SHIFT           13
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_DEFAULT         0
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_Enable          0
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DISCCTRL_108M_CLK_Disable         1
 
-/* CLK :: PM_CTRL :: DIS_OFE_DATAPATH_108M_CLK [14:14] */
-#define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_MASK            0x00004000
-#define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_SHIFT           14
+/* CLK :: PM_CTRL :: DIS_OFE_DATAPATH_108M_CLK [12:12] */
+#define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_MASK            0x00001000
+#define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_SHIFT           12
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_DEFAULT         0
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_Enable          0
 #define BCHP_CLK_PM_CTRL_DIS_OFE_DATAPATH_108M_CLK_Disable         1
 
-/* CLK :: PM_CTRL :: DIS_HIF_108M_CLK [13:13] */
-#define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_MASK                     0x00002000
-#define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_SHIFT                    13
+/* CLK :: PM_CTRL :: DIS_HIF_108M_CLK [11:11] */
+#define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_MASK                     0x00000800
+#define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_SHIFT                    11
 #define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_DEFAULT                  0
 #define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_Enable                   0
 #define BCHP_CLK_PM_CTRL_DIS_HIF_108M_CLK_Disable                  1
-
-/* CLK :: PM_CTRL :: DIS_HD_DVI_108M_CLK [12:12] */
-#define BCHP_CLK_PM_CTRL_DIS_HD_DVI_108M_CLK_MASK                  0x00001000
-#define BCHP_CLK_PM_CTRL_DIS_HD_DVI_108M_CLK_SHIFT                 12
-#define BCHP_CLK_PM_CTRL_DIS_HD_DVI_108M_CLK_DEFAULT               0
-#define BCHP_CLK_PM_CTRL_DIS_HD_DVI_108M_CLK_Enable                0
-#define BCHP_CLK_PM_CTRL_DIS_HD_DVI_108M_CLK_Disable               1
-
-/* CLK :: PM_CTRL :: DIS_HDMI_108M_CLK [11:11] */
-#define BCHP_CLK_PM_CTRL_DIS_HDMI_108M_CLK_MASK                    0x00000800
-#define BCHP_CLK_PM_CTRL_DIS_HDMI_108M_CLK_SHIFT                   11
-#define BCHP_CLK_PM_CTRL_DIS_HDMI_108M_CLK_DEFAULT                 0
-#define BCHP_CLK_PM_CTRL_DIS_HDMI_108M_CLK_Enable                  0
-#define BCHP_CLK_PM_CTRL_DIS_HDMI_108M_CLK_Disable                 1
 
 /* CLK :: PM_CTRL :: DIS_GFX_108M_CLK [10:10] */
 #define BCHP_CLK_PM_CTRL_DIS_GFX_108M_CLK_MASK                     0x00000400
@@ -307,126 +325,133 @@
 /***************************************************************************
  *PM_CTRL_1 - Software power management control to turn off various clocks
  ***************************************************************************/
-/* CLK :: PM_CTRL_1 :: reserved0 [31:22] */
-#define BCHP_CLK_PM_CTRL_1_reserved0_MASK                          0xffc00000
-#define BCHP_CLK_PM_CTRL_1_reserved0_SHIFT                         22
+/* CLK :: PM_CTRL_1 :: reserved0 [31:23] */
+#define BCHP_CLK_PM_CTRL_1_reserved0_MASK                          0xff800000
+#define BCHP_CLK_PM_CTRL_1_reserved0_SHIFT                         23
 
-/* CLK :: PM_CTRL_1 :: DIS_XPT_81M_CLK [21:21] */
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_MASK                    0x00200000
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_SHIFT                   21
+/* CLK :: PM_CTRL_1 :: DIS_XPT_81M_CLK [22:22] */
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_MASK                    0x00400000
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_SHIFT                   22
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_DEFAULT                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_Enable                  0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_81M_CLK_Disable                 1
 
-/* CLK :: PM_CTRL_1 :: DIS_XPT_54M_CLK [20:20] */
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_MASK                    0x00100000
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_SHIFT                   20
+/* CLK :: PM_CTRL_1 :: DIS_XPT_54M_CLK [21:21] */
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_MASK                    0x00200000
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_SHIFT                   21
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_DEFAULT                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_Enable                  0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_54M_CLK_Disable                 1
 
-/* CLK :: PM_CTRL_1 :: DIS_XPT_27M_CLK [19:19] */
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_MASK                    0x00080000
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_SHIFT                   19
+/* CLK :: PM_CTRL_1 :: DIS_XPT_27M_CLK [20:20] */
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_MASK                    0x00100000
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_SHIFT                   20
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_DEFAULT                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_Enable                  0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_27M_CLK_Disable                 1
 
-/* CLK :: PM_CTRL_1 :: DIS_XPT_40P5M_CLK [18:18] */
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_MASK                  0x00040000
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_SHIFT                 18
+/* CLK :: PM_CTRL_1 :: DIS_XPT_40P5M_CLK [19:19] */
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_MASK                  0x00080000
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_SHIFT                 19
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_40P5M_CLK_Disable               1
 
-/* CLK :: PM_CTRL_1 :: DIS_XPT_20P25M_CLK [17:17] */
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_MASK                 0x00020000
-#define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_SHIFT                17
+/* CLK :: PM_CTRL_1 :: DIS_XPT_20P25M_CLK [18:18] */
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_MASK                 0x00040000
+#define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_SHIFT                18
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_DEFAULT              0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_Enable               0
 #define BCHP_CLK_PM_CTRL_1_DIS_XPT_20P25M_CLK_Disable              1
 
-/* CLK :: PM_CTRL_1 :: DIS_VEC_4P5M_CLK [16:16] */
-#define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_MASK                   0x00010000
-#define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_SHIFT                  16
+/* CLK :: PM_CTRL_1 :: DIS_BVN_324M_CLK [17:17] */
+#define BCHP_CLK_PM_CTRL_1_DIS_BVN_324M_CLK_MASK                   0x00020000
+#define BCHP_CLK_PM_CTRL_1_DIS_BVN_324M_CLK_SHIFT                  17
+#define BCHP_CLK_PM_CTRL_1_DIS_BVN_324M_CLK_DEFAULT                0
+#define BCHP_CLK_PM_CTRL_1_DIS_BVN_324M_CLK_Enable                 0
+#define BCHP_CLK_PM_CTRL_1_DIS_BVN_324M_CLK_Disable                1
+
+/* CLK :: PM_CTRL_1 :: DIS_VEC_324M_CLK [16:16] */
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_324M_CLK_MASK                   0x00010000
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_324M_CLK_SHIFT                  16
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_324M_CLK_DEFAULT                0
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_324M_CLK_Enable                 0
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_324M_CLK_Disable                1
+
+/* CLK :: PM_CTRL_1 :: DIS_VEC_4P5M_CLK [15:15] */
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_MASK                   0x00008000
+#define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_SHIFT                  15
 #define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_DEFAULT                0
 #define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_Enable                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_VEC_4P5M_CLK_Disable                1
 
-/* CLK :: PM_CTRL_1 :: DIS_USB_MDIO_54M_CLK [15:15] */
-#define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_MASK               0x00008000
-#define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_SHIFT              15
+/* CLK :: PM_CTRL_1 :: DIS_USB_MDIO_54M_CLK [14:14] */
+#define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_MASK               0x00004000
+#define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_SHIFT              14
 #define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_DEFAULT            0
 #define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_Enable             0
 #define BCHP_CLK_PM_CTRL_1_DIS_USB_MDIO_54M_CLK_Disable            1
 
-/* CLK :: PM_CTRL_1 :: DIS_SUN_27M_CLK [14:14] */
-#define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_MASK                    0x00004000
-#define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_SHIFT                   14
+/* CLK :: PM_CTRL_1 :: DIS_SUN_27M_CLK [13:13] */
+#define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_MASK                    0x00002000
+#define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_SHIFT                   13
 #define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_DEFAULT                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_Enable                  0
 #define BCHP_CLK_PM_CTRL_1_DIS_SUN_27M_CLK_Disable                 1
 
-/* CLK :: PM_CTRL_1 :: DIS_JTAG_9M_CLK [13:13] */
-#define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_MASK                    0x00002000
-#define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_SHIFT                   13
+/* CLK :: PM_CTRL_1 :: DIS_JTAG_9M_CLK [12:12] */
+#define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_MASK                    0x00001000
+#define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_SHIFT                   12
 #define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_DEFAULT                 0
 #define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_Enable                  0
 #define BCHP_CLK_PM_CTRL_1_DIS_JTAG_9M_CLK_Disable                 1
 
-/* CLK :: PM_CTRL_1 :: ENA_HDMI_LOW_PWR [12:12] */
-#define BCHP_CLK_PM_CTRL_1_ENA_HDMI_LOW_PWR_MASK                   0x00001000
-#define BCHP_CLK_PM_CTRL_1_ENA_HDMI_LOW_PWR_SHIFT                  12
+/* CLK :: PM_CTRL_1 :: ENA_HDMI_LOW_PWR [11:11] */
+#define BCHP_CLK_PM_CTRL_1_ENA_HDMI_LOW_PWR_MASK                   0x00000800
+#define BCHP_CLK_PM_CTRL_1_ENA_HDMI_LOW_PWR_SHIFT                  11
 #define BCHP_CLK_PM_CTRL_1_ENA_HDMI_LOW_PWR_DEFAULT                0
 
-/* CLK :: PM_CTRL_1 :: DIS_DVP_HT_IIC_27M_CLK [11:11] */
-#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_MASK             0x00000800
-#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_SHIFT            11
+/* CLK :: PM_CTRL_1 :: DIS_DVP_HT_IIC_27M_CLK [10:10] */
+#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_MASK             0x00000400
+#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_SHIFT            10
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_DEFAULT          0
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_Enable           0
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HT_IIC_27M_CLK_Disable          1
 
-/* CLK :: PM_CTRL_1 :: DIS_DVP_HR_27M_CLK [10:10] */
-#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_MASK                 0x00000400
-#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_SHIFT                10
+/* CLK :: PM_CTRL_1 :: DIS_DVP_HR_27M_CLK [09:09] */
+#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_MASK                 0x00000200
+#define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_SHIFT                9
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_DEFAULT              0
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_Enable               0
 #define BCHP_CLK_PM_CTRL_1_DIS_DVP_HR_27M_CLK_Disable              1
 
-/* CLK :: PM_CTRL_1 :: DIS_ENET_FAST_54M_CLK [09:09] */
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_MASK              0x00000200
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_SHIFT             9
+/* CLK :: PM_CTRL_1 :: DIS_ENET_FAST_54M_CLK [08:08] */
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_MASK              0x00000100
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_SHIFT             8
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_DEFAULT           0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_Enable            0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_FAST_54M_CLK_Disable           1
 
-/* CLK :: PM_CTRL_1 :: DIS_ENET_PM_27M_CLK [08:08] */
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_MASK                0x00000100
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_SHIFT               8
+/* CLK :: PM_CTRL_1 :: DIS_ENET_PM_27M_CLK [07:07] */
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_MASK                0x00000080
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_SHIFT               7
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_DEFAULT             0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_Enable              0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_PM_27M_CLK_Disable             1
 
-/* CLK :: PM_CTRL_1 :: DIS_ENET_ALWAYSON_27M_CLK [07:07] */
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_MASK          0x00000080
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_SHIFT         7
+/* CLK :: PM_CTRL_1 :: DIS_ENET_ALWAYSON_27M_CLK [06:06] */
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_MASK          0x00000040
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_SHIFT         6
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_DEFAULT       0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_Enable        0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_ALWAYSON_27M_CLK_Disable       1
 
-/* CLK :: PM_CTRL_1 :: DIS_ENET_SLOW_27M_CLK [06:06] */
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_MASK              0x00000040
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_SHIFT             6
+/* CLK :: PM_CTRL_1 :: DIS_ENET_SLOW_27M_CLK [05:05] */
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_MASK              0x00000020
+#define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_SHIFT             5
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_DEFAULT           0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_Enable            0
 #define BCHP_CLK_PM_CTRL_1_DIS_ENET_SLOW_27M_CLK_Disable           1
-
-/* CLK :: PM_CTRL_1 :: DIS_ENET_25M_CLK [05:05] */
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_25M_CLK_MASK                   0x00000020
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_25M_CLK_SHIFT                  5
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_25M_CLK_DEFAULT                0
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_25M_CLK_Enable                 0
-#define BCHP_CLK_PM_CTRL_1_DIS_ENET_25M_CLK_Disable                1
 
 /* CLK :: PM_CTRL_1 :: DIS_EBI_54M_CLK [04:04] */
 #define BCHP_CLK_PM_CTRL_1_DIS_EBI_54M_CLK_MASK                    0x00000010
@@ -466,77 +491,91 @@
 /***************************************************************************
  *PM_CTRL_2 - Software power management control to turn off or select various clocks
  ***************************************************************************/
-/* CLK :: PM_CTRL_2 :: reserved0 [31:13] */
-#define BCHP_CLK_PM_CTRL_2_reserved0_MASK                          0xffffe000
-#define BCHP_CLK_PM_CTRL_2_reserved0_SHIFT                         13
+/* CLK :: PM_CTRL_2 :: reserved0 [31:15] */
+#define BCHP_CLK_PM_CTRL_2_reserved0_MASK                          0xffff8000
+#define BCHP_CLK_PM_CTRL_2_reserved0_SHIFT                         15
 
-/* CLK :: PM_CTRL_2 :: DIS_VC4_CLK [12:12] */
-#define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_MASK                        0x00001000
-#define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_SHIFT                       12
+/* CLK :: PM_CTRL_2 :: DIS_VC4_CLK [14:14] */
+#define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_MASK                        0x00004000
+#define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_SHIFT                       14
 #define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_DEFAULT                     0
 #define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_Enable                      0
 #define BCHP_CLK_PM_CTRL_2_DIS_VC4_CLK_Disable                     1
 
-/* CLK :: PM_CTRL_2 :: DIS_SDIO_CLK [11:11] */
-#define BCHP_CLK_PM_CTRL_2_DIS_SDIO_CLK_MASK                       0x00000800
-#define BCHP_CLK_PM_CTRL_2_DIS_SDIO_CLK_SHIFT                      11
-#define BCHP_CLK_PM_CTRL_2_DIS_SDIO_CLK_DEFAULT                    0
-#define BCHP_CLK_PM_CTRL_2_DIS_SDIO_CLK_Enable                     0
-#define BCHP_CLK_PM_CTRL_2_DIS_SDIO_CLK_Disable                    1
+/* CLK :: PM_CTRL_2 :: DIS_SDIO1_CLK [13:13] */
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO1_CLK_MASK                      0x00002000
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO1_CLK_SHIFT                     13
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO1_CLK_DEFAULT                   0
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO1_CLK_Enable                    0
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO1_CLK_Disable                   1
 
-/* CLK :: PM_CTRL_2 :: FORCE_NO_RAP_PLL_BYPASS [10:10] */
-#define BCHP_CLK_PM_CTRL_2_FORCE_NO_RAP_PLL_BYPASS_MASK            0x00000400
-#define BCHP_CLK_PM_CTRL_2_FORCE_NO_RAP_PLL_BYPASS_SHIFT           10
+/* CLK :: PM_CTRL_2 :: DIS_SDIO0_CLK [12:12] */
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO0_CLK_MASK                      0x00001000
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO0_CLK_SHIFT                     12
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO0_CLK_DEFAULT                   0
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO0_CLK_Enable                    0
+#define BCHP_CLK_PM_CTRL_2_DIS_SDIO0_CLK_Disable                   1
+
+/* CLK :: PM_CTRL_2 :: FORCE_NO_RAP_PLL_BYPASS [11:11] */
+#define BCHP_CLK_PM_CTRL_2_FORCE_NO_RAP_PLL_BYPASS_MASK            0x00000800
+#define BCHP_CLK_PM_CTRL_2_FORCE_NO_RAP_PLL_BYPASS_SHIFT           11
 #define BCHP_CLK_PM_CTRL_2_FORCE_NO_RAP_PLL_BYPASS_DEFAULT         0
 
-/* CLK :: PM_CTRL_2 :: DIS_RAP1_DSP_PROG_CLK [09:09] */
-#define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_MASK              0x00000200
-#define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_SHIFT             9
+/* CLK :: PM_CTRL_2 :: DIS_RAP1_DSP_PROG_CLK [10:10] */
+#define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_MASK              0x00000400
+#define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_SHIFT             10
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_DEFAULT           0
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_Enable            0
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP1_DSP_PROG_CLK_Disable           1
 
-/* CLK :: PM_CTRL_2 :: DIS_RAP0_DSP_PROG_CLK [08:08] */
-#define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_MASK              0x00000100
-#define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_SHIFT             8
+/* CLK :: PM_CTRL_2 :: DIS_RAP0_DSP_PROG_CLK [09:09] */
+#define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_MASK              0x00000200
+#define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_SHIFT             9
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_DEFAULT           0
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_Enable            0
 #define BCHP_CLK_PM_CTRL_2_DIS_RAP0_DSP_PROG_CLK_Disable           1
 
-/* CLK :: PM_CTRL_2 :: DIS_OFE_DISCCTRL_67M_CLK [07:07] */
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_MASK           0x00000080
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_SHIFT          7
+/* CLK :: PM_CTRL_2 :: DIS_OFE_DISCCTRL_67M_CLK [08:08] */
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_MASK           0x00000100
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_SHIFT          8
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_DEFAULT        0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_Enable         0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_67M_CLK_Disable        1
 
-/* CLK :: PM_CTRL_2 :: DIS_OFE_DISCCTRL_27M_CLK [06:06] */
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_MASK           0x00000040
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_SHIFT          6
+/* CLK :: PM_CTRL_2 :: DIS_OFE_DISCCTRL_27M_CLK [07:07] */
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_MASK           0x00000080
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_SHIFT          7
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_DEFAULT        0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_Enable         0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DISCCTRL_27M_CLK_Disable        1
 
-/* CLK :: PM_CTRL_2 :: DIS_OFE_DATAPATH_67M_CLK [05:05] */
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_MASK           0x00000020
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_SHIFT          5
+/* CLK :: PM_CTRL_2 :: DIS_OFE_DATAPATH_67M_CLK [06:06] */
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_MASK           0x00000040
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_SHIFT          6
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_DEFAULT        0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_Enable         0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_67M_CLK_Disable        1
 
-/* CLK :: PM_CTRL_2 :: DIS_OFE_DATAPATH_27M_CLK [04:04] */
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_MASK           0x00000010
-#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_SHIFT          4
+/* CLK :: PM_CTRL_2 :: DIS_OFE_DATAPATH_27M_CLK [05:05] */
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_MASK           0x00000020
+#define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_SHIFT          5
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_DEFAULT        0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_Enable         0
 #define BCHP_CLK_PM_CTRL_2_DIS_OFE_DATAPATH_27M_CLK_Disable        1
 
-/* CLK :: PM_CTRL_2 :: DIS_HDMI_MAX_CLK [03:03] */
-#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_MAX_CLK_MASK                   0x00000008
-#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_MAX_CLK_SHIFT                  3
-#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_MAX_CLK_DEFAULT                0
-#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_MAX_CLK_Enable                 0
-#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_MAX_CLK_Disable                1
+/* CLK :: PM_CTRL_2 :: DIS_HDMI_TX_MAX_CLK [04:04] */
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_TX_MAX_CLK_MASK                0x00000010
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_TX_MAX_CLK_SHIFT               4
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_TX_MAX_CLK_DEFAULT             0
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_TX_MAX_CLK_Enable              0
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_TX_MAX_CLK_Disable             1
+
+/* CLK :: PM_CTRL_2 :: DIS_HDMI_RX_MAX_CLK [03:03] */
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_RX_MAX_CLK_MASK                0x00000008
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_RX_MAX_CLK_SHIFT               3
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_RX_MAX_CLK_DEFAULT             0
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_RX_MAX_CLK_Enable              0
+#define BCHP_CLK_PM_CTRL_2_DIS_HDMI_RX_MAX_CLK_Disable             1
 
 /* CLK :: PM_CTRL_2 :: DIS_CPU0_CLK [02:02] */
 #define BCHP_CLK_PM_CTRL_2_DIS_CPU0_CLK_MASK                       0x00000004
@@ -562,93 +601,107 @@
 /***************************************************************************
  *PM_CTRL_216 - Software power management control to turn off 216 MHz clocks
  ***************************************************************************/
-/* CLK :: PM_CTRL_216 :: reserved0 [31:26] */
-#define BCHP_CLK_PM_CTRL_216_reserved0_MASK                        0xfc000000
-#define BCHP_CLK_PM_CTRL_216_reserved0_SHIFT                       26
+/* CLK :: PM_CTRL_216 :: reserved0 [31:28] */
+#define BCHP_CLK_PM_CTRL_216_reserved0_MASK                        0xf0000000
+#define BCHP_CLK_PM_CTRL_216_reserved0_SHIFT                       28
 
-/* CLK :: PM_CTRL_216 :: DIS_XPT_216_CLK [25:25] */
-#define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_MASK                  0x02000000
-#define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_SHIFT                 25
+/* CLK :: PM_CTRL_216 :: DIS_M2MC_ALT2_216_CLK [27:27] */
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT2_216_CLK_MASK            0x08000000
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT2_216_CLK_SHIFT           27
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT2_216_CLK_DEFAULT         0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT2_216_CLK_Enable          0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT2_216_CLK_Disable         1
+
+/* CLK :: PM_CTRL_216 :: DIS_M2MC_ALT1_216_CLK [26:26] */
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT1_216_CLK_MASK            0x04000000
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT1_216_CLK_SHIFT           26
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT1_216_CLK_DEFAULT         0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT1_216_CLK_Enable          0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT1_216_CLK_Disable         1
+
+/* CLK :: PM_CTRL_216 :: DIS_M2MC_ALT_216_CLK [25:25] */
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT_216_CLK_MASK             0x02000000
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT_216_CLK_SHIFT            25
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT_216_CLK_DEFAULT          0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT_216_CLK_Enable           0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_ALT_216_CLK_Disable          1
+
+/* CLK :: PM_CTRL_216 :: DIS_M2MC_216_CLK [24:24] */
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_216_CLK_MASK                 0x01000000
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_216_CLK_SHIFT                24
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_216_CLK_DEFAULT              0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_216_CLK_Enable               0
+#define BCHP_CLK_PM_CTRL_216_DIS_M2MC_216_CLK_Disable              1
+
+/* CLK :: PM_CTRL_216 :: DIS_XPT_216_CLK [23:23] */
+#define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_MASK                  0x00800000
+#define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_SHIFT                 23
 #define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_216_DIS_XPT_216_CLK_Disable               1
 
-/* CLK :: PM_CTRL_216 :: DIS_VEC_ALT_216_CLK [24:24] */
-#define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_MASK              0x01000000
-#define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_SHIFT             24
+/* CLK :: PM_CTRL_216 :: DIS_VEC_ALT_216_CLK [22:22] */
+#define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_MASK              0x00400000
+#define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_SHIFT             22
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_DEFAULT           0
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_Enable            0
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_ALT_216_CLK_Disable           1
 
-/* CLK :: PM_CTRL_216 :: DIS_VEC_216_CLK [23:23] */
-#define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_MASK                  0x00800000
-#define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_SHIFT                 23
+/* CLK :: PM_CTRL_216 :: DIS_VEC_216_CLK [21:21] */
+#define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_MASK                  0x00200000
+#define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_SHIFT                 21
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_216_DIS_VEC_216_CLK_Disable               1
 
-/* CLK :: PM_CTRL_216 :: DIS_USB_216_CLK [22:22] */
-#define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_MASK                  0x00400000
-#define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_SHIFT                 22
+/* CLK :: PM_CTRL_216 :: DIS_USB_216_CLK [20:20] */
+#define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_MASK                  0x00100000
+#define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_SHIFT                 20
 #define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_216_DIS_USB_216_CLK_Disable               1
 
-/* CLK :: PM_CTRL_216 :: DIS_SUN_216_CLK [21:21] */
-#define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_MASK                  0x00200000
-#define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_SHIFT                 21
+/* CLK :: PM_CTRL_216 :: DIS_SUN_216_CLK [19:19] */
+#define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_MASK                  0x00080000
+#define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_SHIFT                 19
 #define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_216_DIS_SUN_216_CLK_Disable               1
 
-/* CLK :: PM_CTRL_216 :: DIS_RPTD1_216_CLK [20:20] */
-#define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_MASK                0x00100000
-#define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_SHIFT               20
+/* CLK :: PM_CTRL_216 :: DIS_RPTD1_216_CLK [18:18] */
+#define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_MASK                0x00040000
+#define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_SHIFT               18
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_DEFAULT             0
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_Enable              0
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD1_216_CLK_Disable             1
 
-/* CLK :: PM_CTRL_216 :: DIS_RPTD0_216_CLK [19:19] */
-#define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_MASK                0x00080000
-#define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_SHIFT               19
+/* CLK :: PM_CTRL_216 :: DIS_RPTD0_216_CLK [17:17] */
+#define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_MASK                0x00020000
+#define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_SHIFT               17
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_DEFAULT             0
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_Enable              0
 #define BCHP_CLK_PM_CTRL_216_DIS_RPTD0_216_CLK_Disable             1
 
-/* CLK :: PM_CTRL_216 :: DIS_OFE_DISCCTRL_216_CLK [18:18] */
-#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_MASK         0x00040000
-#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_SHIFT        18
+/* CLK :: PM_CTRL_216 :: DIS_OFE_DISCCTRL_216_CLK [16:16] */
+#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_MASK         0x00010000
+#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_SHIFT        16
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_DEFAULT      0
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_Enable       0
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DISCCTRL_216_CLK_Disable      1
 
-/* CLK :: PM_CTRL_216 :: DIS_OFE_DATAPATH_216_CLK [17:17] */
-#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_MASK         0x00020000
-#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_SHIFT        17
+/* CLK :: PM_CTRL_216 :: DIS_OFE_DATAPATH_216_CLK [15:15] */
+#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_MASK         0x00008000
+#define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_SHIFT        15
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_DEFAULT      0
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_Enable       0
 #define BCHP_CLK_PM_CTRL_216_DIS_OFE_DATAPATH_216_CLK_Disable      1
 
-/* CLK :: PM_CTRL_216 :: DIS_HIF_216_CLK [16:16] */
-#define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_MASK                  0x00010000
-#define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_SHIFT                 16
+/* CLK :: PM_CTRL_216 :: DIS_HIF_216_CLK [14:14] */
+#define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_MASK                  0x00004000
+#define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_SHIFT                 14
 #define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_DEFAULT               0
 #define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_Enable                0
 #define BCHP_CLK_PM_CTRL_216_DIS_HIF_216_CLK_Disable               1
-
-/* CLK :: PM_CTRL_216 :: DIS_HD_DVI_216_CLK [15:15] */
-#define BCHP_CLK_PM_CTRL_216_DIS_HD_DVI_216_CLK_MASK               0x00008000
-#define BCHP_CLK_PM_CTRL_216_DIS_HD_DVI_216_CLK_SHIFT              15
-#define BCHP_CLK_PM_CTRL_216_DIS_HD_DVI_216_CLK_DEFAULT            0
-#define BCHP_CLK_PM_CTRL_216_DIS_HD_DVI_216_CLK_Enable             0
-#define BCHP_CLK_PM_CTRL_216_DIS_HD_DVI_216_CLK_Disable            1
-
-/* CLK :: PM_CTRL_216 :: DIS_HDMI_216_CLK [14:14] */
-#define BCHP_CLK_PM_CTRL_216_DIS_HDMI_216_CLK_MASK                 0x00004000
-#define BCHP_CLK_PM_CTRL_216_DIS_HDMI_216_CLK_SHIFT                14
-#define BCHP_CLK_PM_CTRL_216_DIS_HDMI_216_CLK_DEFAULT              0
-#define BCHP_CLK_PM_CTRL_216_DIS_HDMI_216_CLK_Enable               0
-#define BCHP_CLK_PM_CTRL_216_DIS_HDMI_216_CLK_Disable              1
 
 /* CLK :: PM_CTRL_216 :: DIS_GFX_216_CLK [13:13] */
 #define BCHP_CLK_PM_CTRL_216_DIS_GFX_216_CLK_MASK                  0x00002000
@@ -1504,6 +1557,33 @@
 #define BCHP_CLK_SYS0_48_DIV_ch2_mdiv_Divide_by_255                255
 
 /***************************************************************************
+ *SYS0_324_DIV - SYS0 PLL channel 3 (324 MHz) clock divider settings
+ ***************************************************************************/
+/* CLK :: SYS0_324_DIV :: enableb_ch3 [31:31] */
+#define BCHP_CLK_SYS0_324_DIV_enableb_ch3_MASK                     0x80000000
+#define BCHP_CLK_SYS0_324_DIV_enableb_ch3_SHIFT                    31
+#define BCHP_CLK_SYS0_324_DIV_enableb_ch3_DEFAULT                  0
+#define BCHP_CLK_SYS0_324_DIV_enableb_ch3_Enable                   0
+#define BCHP_CLK_SYS0_324_DIV_enableb_ch3_Disable                  1
+
+/* CLK :: SYS0_324_DIV :: reserved0 [30:08] */
+#define BCHP_CLK_SYS0_324_DIV_reserved0_MASK                       0x7fffff00
+#define BCHP_CLK_SYS0_324_DIV_reserved0_SHIFT                      8
+
+/* CLK :: SYS0_324_DIV :: ch3_mdiv [07:00] */
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_MASK                        0x000000ff
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_SHIFT                       0
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_DEFAULT                     4
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_256               0
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_1                 1
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_2                 2
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_3                 3
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_4                 4
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_253               253
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_254               254
+#define BCHP_CLK_SYS0_324_DIV_ch3_mdiv_Divide_by_255               255
+
+/***************************************************************************
  *SYS0_259P2_DIV - SYS0 PLL channel 4 (259.2 MHz) clock divider settings
  ***************************************************************************/
 /* CLK :: SYS0_259P2_DIV :: enableb_ch4 [31:31] */
@@ -1823,7 +1903,7 @@
 /* CLK :: SYS1_VC4_DIV :: ch0_mdiv [07:00] */
 #define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_MASK                        0x000000ff
 #define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_SHIFT                       0
-#define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_DEFAULT                     8
+#define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_DEFAULT                     7
 #define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_Divide_by_256               0
 #define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_Divide_by_1                 1
 #define BCHP_CLK_SYS1_VC4_DIV_ch0_mdiv_Divide_by_2                 2

@@ -7,7 +7,7 @@
  * Adjusted by Erik Andersen <andersen@codepoet.org> to remove
  * use of long options and GNU getopt.  Improved the usage info.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 
@@ -132,10 +132,14 @@ int hostname_main(int argc UNUSED_PARAM, char **argv)
 			if (*p)
 				puts(p + 1);
 		} else /*if (opts & OPT_i)*/ {
-			while (hp->h_addr_list[0]) {
-				printf("%s ", inet_ntoa(*(struct in_addr *) (*hp->h_addr_list++)));
+			if (hp->h_length == sizeof(struct in_addr)) {
+				struct in_addr **h_addr_list = (struct in_addr **)hp->h_addr_list;
+				while (*h_addr_list) {
+					printf("%s ", inet_ntoa(**h_addr_list));
+					h_addr_list++;
+				}
+				bb_putchar('\n');
 			}
-			bb_putchar('\n');
 		}
 	} else if (opts & OPT_F) {
 		/* Set the hostname */

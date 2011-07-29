@@ -1,18 +1,15 @@
 /* vi: set sw=4 ts=4: */
 /*
- * iprule.c		"ip rule".
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
  *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
- *
- * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
- *
+ * Authors: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
  * Changes:
  *
- * Rani Assaf <rani@magic.metawire.com> 980929:	resolve addresses
+ * Rani Assaf <rani@magic.metawire.com> 980929: resolve addresses
  * initially integrated into busybox by Bernhard Reutner-Fischer
  */
 
@@ -69,11 +66,9 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	else if (r->rtm_family == AF_IPX)
 		host_len = 80;
 */
-	if (tb[RTA_PRIORITY])
-		printf("%u:\t", *(unsigned*)RTA_DATA(tb[RTA_PRIORITY]));
-	else
-		printf("0:\t");
-
+	printf("%u:\t", tb[RTA_PRIORITY] ?
+					*(unsigned*)RTA_DATA(tb[RTA_PRIORITY])
+					: 0);
 	printf("from ");
 	if (tb[RTA_SRC]) {
 		if (r->rtm_src_len != host_len) {
@@ -193,9 +188,9 @@ static int iprule_modify(int cmd, char **argv)
 	bool table_ok = 0;
 	struct rtnl_handle rth;
 	struct {
-		struct nlmsghdr	n;
-		struct rtmsg	r;
-		char		buf[1024];
+		struct nlmsghdr n;
+		struct rtmsg    r;
+		char            buf[1024];
 	} req;
 	smalluint key;
 
@@ -233,7 +228,8 @@ static int iprule_modify(int cmd, char **argv)
 			addattr_l(&req.n, sizeof(req), RTA_DST, &dst.data, dst.bytelen);
 		} else if (key == ARG_preference ||
 			   key == ARG_order ||
-			   key == ARG_priority) {
+			   key == ARG_priority
+		) {
 			uint32_t pref;
 			NEXT_ARG();
 			pref = get_u32(*argv, "preference");
@@ -256,7 +252,8 @@ static int iprule_modify(int cmd, char **argv)
 				invarg(*argv, "realms");
 			addattr32(&req.n, sizeof(req), RTA_FLOW, realm);
 		} else if (key == ARG_table ||
-			   key == ARG_lookup) {
+			   key == ARG_lookup
+		) {
 			uint32_t tid;
 			NEXT_ARG();
 			if (rtnl_rttable_a2n(&tid, *argv))
@@ -264,11 +261,13 @@ static int iprule_modify(int cmd, char **argv)
 			req.r.rtm_table = tid;
 			table_ok = 1;
 		} else if (key == ARG_dev ||
-			   key == ARG_iif) {
+			   key == ARG_iif
+		) {
 			NEXT_ARG();
 			addattr_l(&req.n, sizeof(req), RTA_IIF, *argv, strlen(*argv)+1);
 		} else if (key == ARG_nat ||
-			   key == ARG_map_to) {
+			   key == ARG_map_to
+		) {
 			NEXT_ARG();
 			addattr32(&req.n, sizeof(req), RTA_GATEWAY, get_addr32(*argv));
 			req.r.rtm_type = RTN_NAT;
@@ -302,29 +301,17 @@ static int iprule_modify(int cmd, char **argv)
 }
 
 /* Return value becomes exitcode. It's okay to not return at all */
-int do_iprule(char **argv)
+int FAST_FUNC do_iprule(char **argv)
 {
 	static const char ip_rule_commands[] ALIGN1 =
 		"add\0""delete\0""list\0""show\0";
-	int cmd = 2; /* list */
-
-	if (!*argv)
-		return iprule_list(argv);
-
-	cmd = index_in_substrings(ip_rule_commands, *argv);
-	switch (cmd) {
-		case 0: /* add */
-			cmd = RTM_NEWRULE;
-			break;
-		case 1: /* delete */
-			cmd = RTM_DELRULE;
-			break;
-		case 2: /* list */
-		case 3: /* show */
-			return iprule_list(argv+1);
-			break;
-		default:
-			bb_error_msg_and_die("unknown command %s", *argv);
+	if (*argv) {
+		smalluint cmd = index_in_substrings(ip_rule_commands, *argv);
+		if (cmd > 3)
+			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+		argv++;
+		if (cmd < 2)
+			return iprule_modify((cmd == 0) ? RTM_NEWRULE : RTM_DELRULE, argv);
 	}
-	return iprule_modify(cmd, argv+1);
+	return iprule_list(argv);
 }

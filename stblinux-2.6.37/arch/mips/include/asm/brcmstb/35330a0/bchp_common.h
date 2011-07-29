@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jan 24 16:03:49 2011
- *                 MD5 Checksum         58cf64531fe9360f10d28bf0f34f4c73
+ * Date:           Generated on         Wed Apr 20 09:51:49 2011
+ *                 MD5 Checksum         f8b208c9aa3ad321e844687836b90339
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/35330/rdb/a0/bchp_common.h $
  * 
- * Hydra_Software_Devel/2   1/26/11 6:16p albertl
- * SW35330-6: Updated to match RDB.
+ * Hydra_Software_Devel/5   4/21/11 10:30a yuxiaz
+ * SWDTV-6742: Updated RDB files.
  *
  ***************************************************************************/
 
@@ -465,8 +465,8 @@
 #define BCHP_DVP_HR_REG_END                                0x005001bc
 #define BCHP_DVP_HR_INTR2_REG_START                        0x005001c0
 #define BCHP_DVP_HR_INTR2_REG_END                          0x005001ec
-#define BCHP_DVP_HR_OTP_REG_START                          0x00500200
-#define BCHP_DVP_HR_OTP_REG_END                            0x00500240
+#define BCHP_DVP_HR_DVP_OTP_REG_START                      0x00500200
+#define BCHP_DVP_HR_DVP_OTP_REG_END                        0x00500240
 #define BCHP_DVP_HR_KEY_RAM_REG_START                      0x00500300
 #define BCHP_DVP_HR_KEY_RAM_REG_END                        0x00500314
 #define BCHP_HDMI_RX_FE_0_REG_START                        0x00500400

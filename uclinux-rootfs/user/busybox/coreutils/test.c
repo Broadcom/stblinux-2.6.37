@@ -14,11 +14,31 @@
  *     in busybox.
  *     modified by Bernhard Reutner-Fischer to be useable (i.e. a bit less bloaty).
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  * Original copyright notice states:
  *     "This program is in the Public Domain."
  */
+
+//kbuild:lib-$(CONFIG_TEST)      += test.o test_ptr_hack.o
+//kbuild:lib-$(CONFIG_ASH)       += test.o test_ptr_hack.o
+//kbuild:lib-$(CONFIG_HUSH)      += test.o test_ptr_hack.o
+
+//config:config TEST
+//config:	bool "test"
+//config:	default y
+//config:	help
+//config:	  test is used to check file types and compare values,
+//config:	  returning an appropriate exit code. The bash shell
+//config:	  has test built in, ash can build it in optionally.
+//config:
+//config:config FEATURE_TEST_64
+//config:	bool "Extend test to 64 bit"
+//config:	default y
+//config:	depends on TEST || ASH_BUILTIN_TEST || HUSH
+//config:	help
+//config:	  Enable 64-bit support in test.
+
 #include "libbb.h"
 #include <setjmp.h>
 
@@ -29,9 +49,9 @@
  * state. */
 
 /* test(1) accepts the following grammar:
-	oexpr	::= aexpr | aexpr "-o" oexpr ;
-	aexpr	::= nexpr | nexpr "-a" aexpr ;
-	nexpr	::= primary | "!" primary
+	oexpr   ::= aexpr | aexpr "-o" oexpr ;
+	aexpr   ::= nexpr | nexpr "-a" aexpr ;
+	nexpr   ::= primary | "!" primary
 	primary ::= unary-operator operand
 		| operand binary-operator operand
 		| operand
@@ -393,7 +413,7 @@ static number_t getn(const char *s)
 	if (errno != 0)
 		syntax(s, "out of range");
 
-	if (*(skip_whitespace(p)))
+	if (p == s || *(skip_whitespace(p)) != '\0')
 		syntax(s, "bad number");
 
 	return r;

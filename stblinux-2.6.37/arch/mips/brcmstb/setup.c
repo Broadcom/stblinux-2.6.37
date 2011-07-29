@@ -63,15 +63,14 @@
  * Platform device setup
  ***********************************************************************/
 
-#ifdef CONFIG_BRCM_HAS_16550
 #define BRCM_16550_PLAT_DEVICE(uart_addr, uart_irq) \
 	{ \
 		.mapbase = BPHYSADDR(uart_addr), \
 		.irq = (uart_irq), \
-		.uartclk = BRCM_BASE_BAUD * 16, \
 		.regshift = 2, \
 		.iotype = UPIO_MEM32, \
-		.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP, \
+		.flags = UPF_IOREMAP | UPF_SKIP_TEST | UPF_FIXED_TYPE, \
+		.type = PORT_16550A, \
 	},
 
 #ifdef CONFIG_BRCM_HAS_PCU_UARTS
@@ -100,41 +99,6 @@ static struct platform_device brcm_16550_uarts = {
 		.platform_data = &brcm_16550_ports,
 	},
 };
-#endif
-
-#ifdef CONFIG_BRCM_HAS_3250
-
-#define BRCM_3250_PLAT_DEVICE(uart, i) \
-	static struct resource bcm3250_##uart##_resources[] = { \
-		[0] = { \
-			.start = BPHYSADDR(BCHP_##uart##_REG_START), \
-			.end = BPHYSADDR(BCHP_##uart##_REG_END) + 3, \
-			.flags = IORESOURCE_MEM, \
-		}, \
-		[1] = { \
-			.start = BRCM_IRQ_##uart, \
-			.end = BRCM_IRQ_##uart, \
-			.flags = IORESOURCE_IRQ, \
-		}, \
-	}; \
-	static struct platform_device bcm3250_##uart##_device = { \
-		.name = "bcm3250_serial", \
-		.num_resources = ARRAY_SIZE(bcm3250_##uart##_resources), \
-		.resource = bcm3250_##uart##_resources, \
-		.id = i, \
-	};
-
-#ifdef CONFIG_BRCM_UARTA_IS_3250
-BRCM_3250_PLAT_DEVICE(UARTA, 0)
-#endif
-#ifdef CONFIG_BRCM_UARTB_IS_3250
-BRCM_3250_PLAT_DEVICE(UARTB, 1)
-#endif
-#ifdef CONFIG_BRCM_UARTC_IS_3250
-BRCM_3250_PLAT_DEVICE(UARTC, 2)
-#endif
-
-#endif
 
 static inline void brcm_bogus_release(struct device *dev)
 {
@@ -388,20 +352,14 @@ static void __init brcm_register_moca(int enet_id)
 
 static int __init platform_devices_setup(void)
 {
+	int i;
+
 	/* UARTs */
 
-#ifdef CONFIG_BRCM_HAS_16550
+	brcm_16550_ports[0].uartclk = brcm_base_baud0 * 16;
+	for (i = 1; i < ARRAY_SIZE(brcm_16550_ports) - 1; i++)
+		brcm_16550_ports[i].uartclk = brcm_base_baud * 16;
 	platform_device_register(&brcm_16550_uarts);
-#endif
-#ifdef CONFIG_BRCM_UARTA_IS_3250
-	platform_device_register(&bcm3250_UARTA_device);
-#endif
-#ifdef CONFIG_BRCM_UARTB_IS_3250
-	platform_device_register(&bcm3250_UARTB_device);
-#endif
-#ifdef CONFIG_BRCM_UARTC_IS_3250
-	platform_device_register(&bcm3250_UARTC_device);
-#endif
 
 #if defined(CONFIG_BRCM_IKOS)
 	/* the remaining devices do not exist in emulation */
@@ -412,8 +370,9 @@ static int __init platform_devices_setup(void)
 
 #define ADD_USB(type, reg, irq) do { \
 	if (!(usb_disable_mask & (1 << type##_id))) \
-		pdevs[devno++] = brcm_new_usb_host(#type "-brcm", type##_id++, \
+		pdevs[devno++] = brcm_new_usb_host(#type "-brcm", type##_id, \
 			BCHP_##reg##_REG_START, BRCM_IRQ_##irq); \
+	type##_id++; \
 	} while (0)
 
 	if (brcm_usb_enabled) {
@@ -993,9 +952,5 @@ void __init plat_mem_setup(void)
 	pcibios_plat_setup = brcmstb_pcibios_setup;
 #endif
 
-#if defined(CONFIG_BRCM_HAS_16550) || defined(CONFIG_SERIAL_BCM3250_TTYS)
 	add_preferred_console("ttyS", CONFIG_BRCM_CONSOLE_DEVICE, "115200");
-#else
-	add_preferred_console("ttyBCM", CONFIG_BRCM_CONSOLE_DEVICE, "115200");
-#endif
 }

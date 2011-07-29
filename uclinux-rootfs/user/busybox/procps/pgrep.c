@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2007 Loic Grenie <loic.grenie@gmail.com>
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 #include "xregex.h"
@@ -129,9 +129,10 @@ int pgrep_main(int argc UNUSED_PARAM, char **argv)
 			continue;
 
 		/* NB: OPT_INVERT is always 0 or 1 */
-		if (!argv[0] ||
-		    (regexec(&re_buffer, cmd, 1, re_match, 0) == 0 /* match found */
-		     && (!OPT_ANCHOR || (re_match[0].rm_so == 0 && re_match[0].rm_eo == (regoff_t)strlen(cmd)))) ^ OPT_INVERT
+		if (!argv[0]
+		 || (regexec(&re_buffer, cmd, 1, re_match, 0) == 0 /* match found */
+		    && (!OPT_ANCHOR || (re_match[0].rm_so == 0 && re_match[0].rm_eo == (regoff_t)strlen(cmd)))
+		    ) ^ OPT_INVERT
 		) {
 			matched_pid = proc->pid;
 			if (OPT_LAST) {

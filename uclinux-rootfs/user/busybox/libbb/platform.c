@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2009 by Dan Fandrich <dan@coneharvesters.com>, et. al.
  *
- * Licensed under the GPL version 2, see the file LICENSE in this tarball.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 
@@ -105,5 +105,32 @@ char* FAST_FUNC strcasestr(const char *s, const char *pattern)
 		s++;
 	}
 	return 0;
+}
+#endif
+
+#ifndef HAVE_STRSEP
+/* Copyright (C) 2004 Free Software Foundation, Inc. */
+char* FAST_FUNC strsep(char **stringp, const char *delim)
+{
+	char *start = *stringp;
+	char *ptr;
+
+	if (!start)
+		return NULL;
+
+	if (!*delim)
+		ptr = start + strlen(start);
+	else {
+		ptr = strpbrk(start, delim);
+		if (!ptr) {
+			*stringp = NULL;
+			return start;
+		}
+	}
+
+	*ptr = '\0';
+	*stringp = ptr + 1;
+
+	return start;
 }
 #endif

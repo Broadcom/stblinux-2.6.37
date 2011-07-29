@@ -6,7 +6,7 @@
  * Copyright (C) 2006 Rob Landley
  * Copyright (C) 2006 Denys Vlasenko
  *
- * Licensed under GPL version 2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /* We need to have separate xfuncs.c and xfuncs_printf.c because
@@ -134,7 +134,7 @@ int FAST_FUNC xopen3(const char *pathname, int flags, int mode)
 	return ret;
 }
 
-// Die if we can't open an existing file and return a fd.
+// Die if we can't open a file and return a fd.
 int FAST_FUNC xopen(const char *pathname, int flags)
 {
 	return xopen3(pathname, flags, 0666);
@@ -240,6 +240,14 @@ off_t FAST_FUNC xlseek(int fd, off_t offset, int whence)
 	return off;
 }
 
+int FAST_FUNC xmkstemp(char *template)
+{
+	int fd = mkstemp(template);
+	if (fd < 0)
+		bb_perror_msg_and_die("can't create temp file '%s'", template);
+	return fd;
+}
+
 // Die with supplied filename if this FILE* has ferror set.
 void FAST_FUNC die_if_ferror(FILE *fp, const char *fn)
 {
@@ -323,6 +331,11 @@ void FAST_FUNC bb_unsetenv(const char *var)
 	free(tp);
 }
 
+void FAST_FUNC bb_unsetenv_and_free(char *var)
+{
+	bb_unsetenv(var);
+	free(var);
+}
 
 // Die with an error message if we can't set gid.  (Because resource limits may
 // limit this user to a given number of processes, and if that fills up the
@@ -382,8 +395,12 @@ int FAST_FUNC xsocket(int domain, int type, int protocol)
 		/* Hijack vaguely related config option */
 #if ENABLE_VERBOSE_RESOLUTION_ERRORS
 		const char *s = "INET";
+# ifdef AF_PACKET
 		if (domain == AF_PACKET) s = "PACKET";
+# endif
+# ifdef AF_NETLINK
 		if (domain == AF_NETLINK) s = "NETLINK";
+# endif
 IF_FEATURE_IPV6(if (domain == AF_INET6) s = "INET6";)
 		bb_perror_msg_and_die("socket(AF_%s,%d,%d)", s, type, protocol);
 #else
@@ -425,6 +442,16 @@ void FAST_FUNC xstat(const char *name, struct stat *stat_buf)
 {
 	if (stat(name, stat_buf))
 		bb_perror_msg_and_die("can't stat '%s'", name);
+}
+
+void FAST_FUNC xfstat(int fd, struct stat *stat_buf, const char *errmsg)
+{
+	/* errmsg is usually a file name, but not always:
+	 * xfstat may be called in a spot where file name is no longer
+	 * available, and caller may give e.g. "can't stat input file" string.
+	 */
+	if (fstat(fd, stat_buf))
+		bb_simple_perror_msg_and_die(errmsg);
 }
 
 // selinux_or_die() - die if SELinux is disabled.
@@ -508,5 +535,90 @@ int FAST_FUNC bb_xioctl(int fd, unsigned request, void *argp)
 	if (ret < 0)
 		bb_perror_msg_and_die("ioctl %#x failed", request);
 	return ret;
+}
+#endif
+
+char* FAST_FUNC xmalloc_ttyname(int fd)
+{
+	char *buf = xzalloc(128);
+	int r = ttyname_r(fd, buf, 127);
+	if (r) {
+		free(buf);
+		buf = NULL;
+	}
+	return buf;
+}
+
+void FAST_FUNC generate_uuid(uint8_t *buf)
+{
+	/* http://www.ietf.org/rfc/rfc4122.txt
+	 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |                          time_low                             |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |       time_mid                |         time_hi_and_version   |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |clk_seq_and_variant            |         node (0-1)            |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |                         node (2-5)                            |
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * IOW, uuid has this layout:
+	 * uint32_t time_low (big endian)
+	 * uint16_t time_mid (big endian)
+	 * uint16_t time_hi_and_version (big endian)
+	 *  version is a 4-bit field:
+	 *   1 Time-based
+	 *   2 DCE Security, with embedded POSIX UIDs
+	 *   3 Name-based (MD5)
+	 *   4 Randomly generated
+	 *   5 Name-based (SHA-1)
+	 * uint16_t clk_seq_and_variant (big endian)
+	 *  variant is a 3-bit field:
+	 *   0xx Reserved, NCS backward compatibility
+	 *   10x The variant specified in rfc4122
+	 *   110 Reserved, Microsoft backward compatibility
+	 *   111 Reserved for future definition
+	 * uint8_t node[6]
+	 *
+	 * For version 4, these bits are set/cleared:
+	 * time_hi_and_version & 0x0fff | 0x4000
+	 * clk_seq_and_variant & 0x3fff | 0x8000
+	 */
+	pid_t pid;
+	int i;
+
+	i = open("/dev/urandom", O_RDONLY);
+	if (i >= 0) {
+		read(i, buf, 16);
+		close(i);
+	}
+	/* Paranoia. /dev/urandom may be missing.
+	 * rand() is guaranteed to generate at least [0, 2^15) range,
+	 * but lowest bits in some libc are not so "random".  */
+	srand(monotonic_us()); /* pulls in printf */
+	pid = getpid();
+	while (1) {
+		for (i = 0; i < 16; i++)
+			buf[i] ^= rand() >> 5;
+		if (pid == 0)
+			break;
+		srand(pid);
+		pid = 0;
+	}
+
+	/* version = 4 */
+	buf[4 + 2    ] = (buf[4 + 2    ] & 0x0f) | 0x40;
+	/* variant = 10x */
+	buf[4 + 2 + 2] = (buf[4 + 2 + 2] & 0x3f) | 0x80;
+}
+
+#if BB_MMU
+pid_t FAST_FUNC xfork(void)
+{
+	pid_t pid;
+	pid = fork();
+	if (pid < 0) /* wtf? */
+		bb_perror_msg_and_die("vfork"+1);
+	return pid;
 }
 #endif

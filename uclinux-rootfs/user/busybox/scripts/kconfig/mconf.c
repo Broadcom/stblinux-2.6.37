@@ -256,9 +256,9 @@ search_help[] = N_(
 	"          USB$ => find all CONFIG_ symbols ending with USB\n"
 	"\n");
 
-static char buf[4096], *bufptr = buf;
+static char buf[4096*10], *bufptr = buf;
 static char input_buf[4096];
-static char filename[PATH_MAX+1] = ".config";
+static const char filename[] = ".config";
 static char *args[1024], **argptr = args;
 static int indent;
 static struct termios ios_org;

@@ -35,7 +35,7 @@ fi
 # -small configuration: do not start any other services automatically
 if [ ! -e /bin/login ]; then
 	[ -f /root/rc.user ] && sh /root/rc.user
-	exec /bin/sh
+	exit 0
 fi
 
 # Set up MoCA link, if present

@@ -5,7 +5,7 @@
  *  busyboxed by Quy Tonthat <quy@signal3.com>
  *  hacked by Tito <farmatito@tiscali.it>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include <linux/vt.h>
@@ -97,8 +97,7 @@ static NOINLINE void vfork_child(char **argv)
 		//bb_error_msg("our pgrp %d", getpgrp());
 		//bb_error_msg("VT's sid %d", tcgetsid(0));
 		//bb_error_msg("VT's pgrp %d", tcgetpgrp(0));
-		BB_EXECVP(argv[0], argv);
-		bb_perror_msg_and_die("exec %s", argv[0]);
+		BB_EXECVP_or_die(argv);
 	}
 }
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Sep 16 18:38:57 2010
- *                 MD5 Checksum         78a4a459fd732ceb52f2e8d7d8bfb842
+ * Date:           Generated on         Fri May  6 10:35:09 2011
+ *                 MD5 Checksum         fe612bbfa36f70660b1c9bdf3073e170
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7550/rdb/b0/bchp_vcxo_ctl_config_fsm.h $
  * 
- * Hydra_Software_Devel/1   9/17/10 3:07p albertl
- * SW7550-568: Initial revision.
+ * Hydra_Software_Devel/2   5/6/11 12:52p tdo
+ * SW7550-740: Sync up RDB
  *
  ***************************************************************************/
 
@@ -82,10 +82,12 @@
 /* VCXO_CTL_CONFIG_FSM :: REVISION_ID :: MAJOR [15:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MAJOR_MASK            0x0000ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MAJOR_SHIFT           8
+#define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MAJOR_DEFAULT         0
 
 /* VCXO_CTL_CONFIG_FSM :: REVISION_ID :: MINOR [07:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MINOR_MASK            0x000000ff
 #define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MINOR_SHIFT           0
+#define BCHP_VCXO_CTL_CONFIG_FSM_REVISION_ID_MINOR_DEFAULT         0
 
 /***************************************************************************
  *SCRATCH - Scratch register
@@ -93,6 +95,7 @@
 /* VCXO_CTL_CONFIG_FSM :: SCRATCH :: SCRATCH [31:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_SCRATCH_SCRATCH_MASK              0xffffffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_SCRATCH_SCRATCH_SHIFT             0
+#define BCHP_VCXO_CTL_CONFIG_FSM_SCRATCH_SCRATCH_DEFAULT           0
 
 /***************************************************************************
  *PLL_LOCK - PLL Lock Status
@@ -104,10 +107,12 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: drive_lock_from_register [05:05] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_drive_lock_from_register_MASK 0x00000020
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_drive_lock_from_register_SHIFT 5
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_drive_lock_from_register_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: lock_driven_value [04:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_driven_value_MASK   0x00000010
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_driven_value_SHIFT  4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_driven_value_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: reserved1 [03:03] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_reserved1_MASK           0x00000008
@@ -116,14 +121,17 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: reset_lock_neg_edge [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_reset_lock_neg_edge_MASK 0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_reset_lock_neg_edge_SHIFT 2
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_reset_lock_neg_edge_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: lock_neg_edge [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_neg_edge_MASK       0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_neg_edge_SHIFT      1
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_neg_edge_DEFAULT    0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_LOCK :: lock [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_MASK                0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_SHIFT               0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_LOCK_lock_DEFAULT             0
 
 /***************************************************************************
  *PLL_UPDATE - PLL Configuration Update
@@ -135,14 +143,17 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_UPDATE :: update_seq_options [03:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_seq_options_MASK 0x0000000c
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_seq_options_SHIFT 2
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_seq_options_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_UPDATE :: broadcast_update_enable [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_broadcast_update_enable_MASK 0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_broadcast_update_enable_SHIFT 1
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_broadcast_update_enable_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_UPDATE :: update [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_MASK            0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_SHIFT           0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_UPDATE_update_DEFAULT         0
 
 /***************************************************************************
  *PLL_CURR_CFG_0 - Current Configuration 0 - Resets & Powerdowns
@@ -150,10 +161,12 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_reg_ctrl_cfg_0 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_cfg_0_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_cfg_0_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_cfg_0_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_reg_ctrl_straps [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_straps_MASK 0x40000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_straps_SHIFT 30
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_reg_ctrl_straps_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: reserved0 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_reserved0_MASK     0x30000000
@@ -162,14 +175,17 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: bypass_MIPS_CML_clock [27:27] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_MIPS_CML_clock_MASK 0x08000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_MIPS_CML_clock_SHIFT 27
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_MIPS_CML_clock_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: bypass_DDR_CML_clock [26:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_DDR_CML_clock_MASK 0x04000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_DDR_CML_clock_SHIFT 26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_bypass_DDR_CML_clock_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: cpu_speed [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_cpu_speed_MASK     0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_cpu_speed_SHIFT    24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_cpu_speed_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: reserved1 [23:22] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_reserved1_MASK     0x00c00000
@@ -178,26 +194,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf6 [21:21] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf6_MASK    0x00200000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf6_SHIFT   21
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf6_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf5 [20:20] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf5_MASK    0x00100000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf5_SHIFT   20
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf5_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf4 [19:19] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf4_MASK    0x00080000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf4_SHIFT   19
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf4_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf3 [18:18] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf3_MASK    0x00040000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf3_SHIFT   18
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf3_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf2 [17:17] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf2_MASK    0x00020000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf2_SHIFT   17
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: en_cmlbuf1 [16:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf1_MASK    0x00010000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf1_SHIFT   16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_en_cmlbuf1_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: reserved2 [15:15] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_reserved2_MASK     0x00008000
@@ -206,26 +228,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: enable_clocks [14:14] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enable_clocks_MASK 0x00004000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enable_clocks_SHIFT 14
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enable_clocks_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: enb_clkout [13:13] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enb_clkout_MASK    0x00002000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enb_clkout_SHIFT   13
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_enb_clkout_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: dreset [12:12] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_dreset_MASK        0x00001000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_dreset_SHIFT       12
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_dreset_DEFAULT     0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: areset [11:11] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_areset_MASK        0x00000800
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_areset_SHIFT       11
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_areset_DEFAULT     0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn [10:10] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_MASK         0x00000400
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_SHIFT        10
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_DEFAULT      0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: clock_bypass [09:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_clock_bypass_MASK  0x00000300
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_clock_bypass_SHIFT 8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_clock_bypass_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: reserved3 [07:06] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_reserved3_MASK     0x000000c0
@@ -234,26 +262,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch6 [05:05] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch6_MASK     0x00000020
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch6_SHIFT    5
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch6_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch5 [04:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch5_MASK     0x00000010
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch5_SHIFT    4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch5_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch4 [03:03] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch4_MASK     0x00000008
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch4_SHIFT    3
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch4_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch3 [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch3_MASK     0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch3_SHIFT    2
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch3_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch2 [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch2_MASK     0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch2_SHIFT    1
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch2_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_0 :: pwrdn_ch1 [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch1_MASK     0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch1_SHIFT    0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_0_pwrdn_ch1_DEFAULT  0
 
 /***************************************************************************
  *PLL_CURR_CFG_1 - Current Configuration 1 - VCO settings
@@ -261,6 +295,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: en_reg_ctrl_cfg_1 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_en_reg_ctrl_cfg_1_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_en_reg_ctrl_cfg_1_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_en_reg_ctrl_cfg_1_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: reserved0 [30:22] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_reserved0_MASK     0x7fc00000
@@ -269,22 +304,27 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: pll_ctr_29_27 [21:19] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_pll_ctr_29_27_MASK 0x00380000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_pll_ctr_29_27_SHIFT 19
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_pll_ctr_29_27_DEFAULT 4
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: vco_rng [18:17] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_vco_rng_MASK       0x00060000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_vco_rng_SHIFT      17
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_vco_rng_DEFAULT    0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: ndiv_int [16:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_ndiv_int_MASK      0x0001ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_ndiv_int_SHIFT     8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_ndiv_int_DEFAULT   48
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: p2div [07:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p2div_MASK         0x000000f0
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p2div_SHIFT        4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p2div_DEFAULT      1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_1 :: p1div [03:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p1div_MASK         0x0000000f
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p1div_SHIFT        0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_1_p1div_DEFAULT      2
 
 /***************************************************************************
  *PLL_CURR_CFG_2 - Current Configuration 2 - Fractional settings
@@ -292,6 +332,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: en_reg_ctrl_cfg_2 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_en_reg_ctrl_cfg_2_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_en_reg_ctrl_cfg_2_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_en_reg_ctrl_cfg_2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: reserved0 [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_reserved0_MASK     0x40000000
@@ -300,22 +341,27 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: ndiv_dither_mfb [29:29] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_dither_mfb_MASK 0x20000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_dither_mfb_SHIFT 29
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_dither_mfb_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: ndiv_pwrdn [28:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_pwrdn_MASK    0x10000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_pwrdn_SHIFT   28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_pwrdn_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: ndiv_mode [27:25] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_mode_MASK     0x0e000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_mode_SHIFT    25
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_mode_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: bypass_sdmod [24:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_bypass_sdmod_MASK  0x01000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_bypass_sdmod_SHIFT 24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_bypass_sdmod_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_2 :: ndiv_frac [23:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_frac_MASK     0x00ffffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_frac_SHIFT    0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_2_ndiv_frac_DEFAULT  0
 
 /***************************************************************************
  *PLL_CURR_CFG_3A - Current Configuration 3A - Post-divider settings
@@ -323,6 +369,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: en_reg_ctrl_cfg_3 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_en_reg_ctrl_cfg_3_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_en_reg_ctrl_cfg_3_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_en_reg_ctrl_cfg_3_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: reserved0 [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_reserved0_MASK    0x40000000
@@ -331,26 +378,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: dly_ch3 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch3_MASK      0x30000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch3_SHIFT     28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch3_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: dly_ch2 [27:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch2_MASK      0x0c000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch2_SHIFT     26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch2_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: dly_ch1 [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch1_MASK      0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch1_SHIFT     24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_dly_ch1_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: m3div [23:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m3div_MASK        0x00ff0000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m3div_SHIFT       16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m3div_DEFAULT     27
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: m2div [15:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m2div_MASK        0x0000ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m2div_SHIFT       8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m2div_DEFAULT     40
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3A :: m1div [07:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m1div_MASK        0x000000ff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m1div_SHIFT       0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3A_m1div_DEFAULT     6
 
 /***************************************************************************
  *PLL_CURR_CFG_3B - Current Configuration 3B - Post-divider settings
@@ -362,26 +415,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: dly_ch6 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch6_MASK      0x30000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch6_SHIFT     28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch6_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: dly_ch5 [27:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch5_MASK      0x0c000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch5_SHIFT     26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch5_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: dly_ch4 [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch4_MASK      0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch4_SHIFT     24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_dly_ch4_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: m6div [23:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m6div_MASK        0x00ff0000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m6div_SHIFT       16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m6div_DEFAULT     54
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: m5div [15:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m5div_MASK        0x0000ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m5div_SHIFT       8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m5div_DEFAULT     4
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_3B :: m4div [07:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m4div_MASK        0x000000ff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m4div_SHIFT       0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_3B_m4div_DEFAULT     12
 
 /***************************************************************************
  *PLL_CURR_CFG_4 - Current Configuration 4 - Test settings
@@ -389,6 +448,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: en_reg_ctrl_cfg_4 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_en_reg_ctrl_cfg_4_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_en_reg_ctrl_cfg_4_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_en_reg_ctrl_cfg_4_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: reserved0 [30:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_reserved0_MASK     0x7fffff00
@@ -397,14 +457,17 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: test_sel [07:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_sel_MASK      0x000000f0
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_sel_SHIFT     4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_sel_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: testa_sel [03:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_testa_sel_MASK     0x0000000c
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_testa_sel_SHIFT    2
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_testa_sel_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: test_en [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_en_MASK       0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_en_SHIFT      1
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_test_en_DEFAULT    0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_4 :: reserved1 [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_4_reserved1_MASK     0x00000001
@@ -416,6 +479,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_5A :: en_reg_ctrl_cfg_5 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_en_reg_ctrl_cfg_5_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_en_reg_ctrl_cfg_5_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_en_reg_ctrl_cfg_5_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_5A :: reserved0 [30:27] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_reserved0_MASK    0x78000000
@@ -424,6 +488,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_5A :: pll_ctrl_26_0 [26:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_pll_ctrl_26_0_MASK 0x07ffffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_pll_ctrl_26_0_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5A_pll_ctrl_26_0_DEFAULT 0
 
 /***************************************************************************
  *PLL_CURR_CFG_5B - Current Configuration 5B - Analog settings
@@ -435,6 +500,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_CURR_CFG_5B :: pll_ctrl_37_32 [05:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5B_pll_ctrl_37_32_MASK 0x0000003f
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5B_pll_ctrl_37_32_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_CURR_CFG_5B_pll_ctrl_37_32_DEFAULT 0
 
 /***************************************************************************
  *PLL_NEXT_CFG_0 - Next Configuration 0 - Resets & Powerdowns
@@ -442,10 +508,12 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_reg_ctrl_cfg_0 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_cfg_0_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_cfg_0_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_cfg_0_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_reg_ctrl_straps [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_straps_MASK 0x40000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_straps_SHIFT 30
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_reg_ctrl_straps_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: reserved0 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_reserved0_MASK     0x30000000
@@ -454,14 +522,17 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: bypass_MIPS_CML_clock [27:27] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_MIPS_CML_clock_MASK 0x08000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_MIPS_CML_clock_SHIFT 27
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_MIPS_CML_clock_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: bypass_DDR_CML_clock [26:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_DDR_CML_clock_MASK 0x04000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_DDR_CML_clock_SHIFT 26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_bypass_DDR_CML_clock_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: cpu_speed [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_cpu_speed_MASK     0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_cpu_speed_SHIFT    24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_cpu_speed_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: reserved1 [23:22] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_reserved1_MASK     0x00c00000
@@ -470,26 +541,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf6 [21:21] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf6_MASK    0x00200000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf6_SHIFT   21
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf6_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf5 [20:20] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf5_MASK    0x00100000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf5_SHIFT   20
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf5_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf4 [19:19] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf4_MASK    0x00080000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf4_SHIFT   19
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf4_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf3 [18:18] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf3_MASK    0x00040000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf3_SHIFT   18
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf3_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf2 [17:17] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf2_MASK    0x00020000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf2_SHIFT   17
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: en_cmlbuf1 [16:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf1_MASK    0x00010000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf1_SHIFT   16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_en_cmlbuf1_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: reserved2 [15:15] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_reserved2_MASK     0x00008000
@@ -498,26 +575,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: enable_clocks [14:14] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enable_clocks_MASK 0x00004000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enable_clocks_SHIFT 14
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enable_clocks_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: enb_clkout [13:13] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enb_clkout_MASK    0x00002000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enb_clkout_SHIFT   13
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_enb_clkout_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: dreset [12:12] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_dreset_MASK        0x00001000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_dreset_SHIFT       12
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_dreset_DEFAULT     0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: areset [11:11] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_areset_MASK        0x00000800
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_areset_SHIFT       11
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_areset_DEFAULT     0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn [10:10] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_MASK         0x00000400
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_SHIFT        10
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_DEFAULT      0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: clock_bypass [09:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_clock_bypass_MASK  0x00000300
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_clock_bypass_SHIFT 8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_clock_bypass_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: reserved3 [07:06] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_reserved3_MASK     0x000000c0
@@ -526,26 +609,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch6 [05:05] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch6_MASK     0x00000020
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch6_SHIFT    5
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch6_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch5 [04:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch5_MASK     0x00000010
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch5_SHIFT    4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch5_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch4 [03:03] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch4_MASK     0x00000008
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch4_SHIFT    3
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch4_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch3 [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch3_MASK     0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch3_SHIFT    2
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch3_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch2 [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch2_MASK     0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch2_SHIFT    1
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch2_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_0 :: pwrdn_ch1 [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch1_MASK     0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch1_SHIFT    0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_0_pwrdn_ch1_DEFAULT  0
 
 /***************************************************************************
  *PLL_NEXT_CFG_1 - Next Configuration 1 - VCO settings
@@ -553,6 +642,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: en_reg_ctrl_cfg_1 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_en_reg_ctrl_cfg_1_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_en_reg_ctrl_cfg_1_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_en_reg_ctrl_cfg_1_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: reserved0 [30:22] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_reserved0_MASK     0x7fc00000
@@ -561,22 +651,27 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: pll_ctr_29_27 [21:19] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_pll_ctr_29_27_MASK 0x00380000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_pll_ctr_29_27_SHIFT 19
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_pll_ctr_29_27_DEFAULT 4
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: vco_rng [18:17] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_vco_rng_MASK       0x00060000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_vco_rng_SHIFT      17
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_vco_rng_DEFAULT    0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: ndiv_int [16:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_ndiv_int_MASK      0x0001ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_ndiv_int_SHIFT     8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_ndiv_int_DEFAULT   48
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: p2div [07:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p2div_MASK         0x000000f0
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p2div_SHIFT        4
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p2div_DEFAULT      1
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_1 :: p1div [03:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p1div_MASK         0x0000000f
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p1div_SHIFT        0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_1_p1div_DEFAULT      2
 
 /***************************************************************************
  *PLL_NEXT_CFG_2 - Next Configuration 2 - Fractional settings
@@ -584,6 +679,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: en_reg_ctrl_cfg_2 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_en_reg_ctrl_cfg_2_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_en_reg_ctrl_cfg_2_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_en_reg_ctrl_cfg_2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: reserved0 [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_reserved0_MASK     0x40000000
@@ -592,22 +688,27 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: ndiv_dither_mfb [29:29] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_dither_mfb_MASK 0x20000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_dither_mfb_SHIFT 29
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_dither_mfb_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: ndiv_pwrdn [28:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_pwrdn_MASK    0x10000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_pwrdn_SHIFT   28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_pwrdn_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: ndiv_mode [27:25] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_mode_MASK     0x0e000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_mode_SHIFT    25
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_mode_DEFAULT  0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: bypass_sdmod [24:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_bypass_sdmod_MASK  0x01000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_bypass_sdmod_SHIFT 24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_bypass_sdmod_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_2 :: ndiv_frac [23:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_frac_MASK     0x00ffffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_frac_SHIFT    0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_2_ndiv_frac_DEFAULT  0
 
 /***************************************************************************
  *PLL_NEXT_CFG_3A - Next Configuration 3A - Post-divider settings
@@ -615,6 +716,7 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: en_reg_ctrl_cfg_3 [31:31] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_en_reg_ctrl_cfg_3_MASK 0x80000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_en_reg_ctrl_cfg_3_SHIFT 31
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_en_reg_ctrl_cfg_3_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: reserved0 [30:30] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_reserved0_MASK    0x40000000
@@ -623,26 +725,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: dly_ch3 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch3_MASK      0x30000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch3_SHIFT     28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch3_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: dly_ch2 [27:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch2_MASK      0x0c000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch2_SHIFT     26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch2_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: dly_ch1 [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch1_MASK      0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch1_SHIFT     24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_dly_ch1_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: m3div [23:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m3div_MASK        0x00ff0000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m3div_SHIFT       16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m3div_DEFAULT     27
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: m2div [15:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m2div_MASK        0x0000ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m2div_SHIFT       8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m2div_DEFAULT     40
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3A :: m1div [07:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m1div_MASK        0x000000ff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m1div_SHIFT       0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3A_m1div_DEFAULT     6
 
 /***************************************************************************
  *PLL_NEXT_CFG_3B - Next Configuration 3B - Post-divider settings
@@ -654,26 +762,32 @@
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: dly_ch6 [29:28] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch6_MASK      0x30000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch6_SHIFT     28
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch6_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: dly_ch5 [27:26] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch5_MASK      0x0c000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch5_SHIFT     26
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch5_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: dly_ch4 [25:24] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch4_MASK      0x03000000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch4_SHIFT     24
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_dly_ch4_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: m6div [23:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m6div_MASK        0x00ff0000
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m6div_SHIFT       16
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m6div_DEFAULT     54
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: m5div [15:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m5div_MASK        0x0000ff00
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m5div_SHIFT       8
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m5div_DEFAULT     4
 
 /* VCXO_CTL_CONFIG_FSM :: PLL_NEXT_CFG_3B :: m4div [07:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m4div_MASK        0x000000ff
 #define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m4div_SHIFT       0
+#define BCHP_VCXO_CTL_CONFIG_FSM_PLL_NEXT_CFG_3B_m4div_DEFAULT     12
 
 /***************************************************************************
  *VIEW_CLOCK_SELECT - View clock counter clock/lock_bit selection
@@ -685,10 +799,12 @@
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: resync_lock_bit [16:16] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_resync_lock_bit_MASK 0x00010000
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_resync_lock_bit_SHIFT 16
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_resync_lock_bit_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: lock_bit_select [15:12] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_lock_bit_select_MASK 0x0000f000
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_lock_bit_select_SHIFT 12
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_lock_bit_select_DEFAULT 15
 
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: reserved1 [11:10] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_reserved1_MASK  0x00000c00
@@ -697,10 +813,12 @@
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: ena_divide_by_4 [09:09] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_4_MASK 0x00000200
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_4_SHIFT 9
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_4_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: ena_divide_by_2 [08:08] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_2_MASK 0x00000100
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_2_SHIFT 8
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_ena_divide_by_2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: reserved2 [07:05] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_reserved2_MASK  0x000000e0
@@ -709,6 +827,7 @@
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_SELECT :: view_clock_select [04:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_view_clock_select_MASK 0x0000001f
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_view_clock_select_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_SELECT_view_clock_select_DEFAULT 31
 
 /***************************************************************************
  *RING_OSC_ENABLE - Enable Ring Oscillators (not used)
@@ -720,30 +839,37 @@
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_6 [06:06] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_6_MASK 0x00000040
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_6_SHIFT 6
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_6_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_5 [05:05] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_5_MASK 0x00000020
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_5_SHIFT 5
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_5_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_4 [04:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_4_MASK 0x00000010
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_4_SHIFT 4
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_4_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_3 [03:03] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_3_MASK 0x00000008
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_3_SHIFT 3
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_3_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_2 [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_2_MASK 0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_2_SHIFT 2
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_2_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_1 [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_1_MASK 0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_1_SHIFT 1
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_1_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RING_OSC_ENABLE :: enable_ring_osc_0 [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_0_MASK 0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_0_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_RING_OSC_ENABLE_enable_ring_osc_0_DEFAULT 0
 
 /***************************************************************************
  *REF_CLOCK_COUNTER - Reference Clock Counter (not used)
@@ -755,6 +881,7 @@
 /* VCXO_CTL_CONFIG_FSM :: REF_CLOCK_COUNTER :: ref_clock_cntr [19:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_REF_CLOCK_COUNTER_ref_clock_cntr_MASK 0x000fffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_REF_CLOCK_COUNTER_ref_clock_cntr_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_REF_CLOCK_COUNTER_ref_clock_cntr_DEFAULT 0
 
 /***************************************************************************
  *VIEW_CLOCK_COUNTER - View Clock Counter (not used)
@@ -766,6 +893,7 @@
 /* VCXO_CTL_CONFIG_FSM :: VIEW_CLOCK_COUNTER :: view_clock_cntr [22:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_COUNTER_view_clock_cntr_MASK 0x007fffff
 #define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_COUNTER_view_clock_cntr_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_VIEW_CLOCK_COUNTER_view_clock_cntr_DEFAULT 0
 
 /***************************************************************************
  *RESET_COUNTER - Reset counters (not used)
@@ -777,10 +905,12 @@
 /* VCXO_CTL_CONFIG_FSM :: RESET_COUNTER :: reset_full_ref_count_done [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_full_ref_count_done_MASK 0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_full_ref_count_done_SHIFT 1
+#define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_full_ref_count_done_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: RESET_COUNTER :: reset_counter [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_counter_MASK  0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_counter_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_RESET_COUNTER_reset_counter_DEFAULT 0
 
 /***************************************************************************
  *STOP_COUNTER - Stop counters (not used)
@@ -792,14 +922,17 @@
 /* VCXO_CTL_CONFIG_FSM :: STOP_COUNTER :: launch_full_ref_count [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_launch_full_ref_count_MASK 0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_launch_full_ref_count_SHIFT 2
+#define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_launch_full_ref_count_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: STOP_COUNTER :: stop_ref_clock_cntr [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_ref_clock_cntr_MASK 0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_ref_clock_cntr_SHIFT 1
+#define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_ref_clock_cntr_DEFAULT 1
 
 /* VCXO_CTL_CONFIG_FSM :: STOP_COUNTER :: stop_view_clock_cntr [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_view_clock_cntr_MASK 0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_view_clock_cntr_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_STOP_COUNTER_stop_view_clock_cntr_DEFAULT 1
 
 /***************************************************************************
  *IN_RANGE - View clock counter is in range (not used)
@@ -811,10 +944,12 @@
 /* VCXO_CTL_CONFIG_FSM :: IN_RANGE :: full_ref_count_done [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_full_ref_count_done_MASK 0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_full_ref_count_done_SHIFT 1
+#define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_full_ref_count_done_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: IN_RANGE :: in_range [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_in_range_MASK            0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_in_range_SHIFT           0
+#define BCHP_VCXO_CTL_CONFIG_FSM_IN_RANGE_in_range_DEFAULT         0
 
 /***************************************************************************
  *MISC - Misc features (not used)
@@ -826,22 +961,27 @@
 /* VCXO_CTL_CONFIG_FSM :: MISC :: select_ddr_clk_src [04:04] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_ddr_clk_src_MASK      0x00000010
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_ddr_clk_src_SHIFT     4
+#define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_ddr_clk_src_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: MISC :: select_spdif_nco_clk [03:03] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_spdif_nco_clk_MASK    0x00000008
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_spdif_nco_clk_SHIFT   3
+#define BCHP_VCXO_CTL_CONFIG_FSM_MISC_select_spdif_nco_clk_DEFAULT 0
 
 /* VCXO_CTL_CONFIG_FSM :: MISC :: MIPS_D2CDIFF_no_AC [02:02] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_MIPS_D2CDIFF_no_AC_MASK      0x00000004
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_MIPS_D2CDIFF_no_AC_SHIFT     2
+#define BCHP_VCXO_CTL_CONFIG_FSM_MISC_MIPS_D2CDIFF_no_AC_DEFAULT   0
 
 /* VCXO_CTL_CONFIG_FSM :: MISC :: DDR_D2CDIFF_no_AC [01:01] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_DDR_D2CDIFF_no_AC_MASK       0x00000002
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_DDR_D2CDIFF_no_AC_SHIFT      1
+#define BCHP_VCXO_CTL_CONFIG_FSM_MISC_DDR_D2CDIFF_no_AC_DEFAULT    0
 
 /* VCXO_CTL_CONFIG_FSM :: MISC :: decouple_dreset_from_lock [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_decouple_dreset_from_lock_MASK 0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_MISC_decouple_dreset_from_lock_SHIFT 0
+#define BCHP_VCXO_CTL_CONFIG_FSM_MISC_decouple_dreset_from_lock_DEFAULT 0
 
 /***************************************************************************
  *DIFFOSC_CTRL - DIFFOSC Control bits (not used)
@@ -857,6 +997,7 @@
 /* VCXO_CTL_CONFIG_FSM :: DIFFOSC_CTRL :: freq_mon_ena [00:00] */
 #define BCHP_VCXO_CTL_CONFIG_FSM_DIFFOSC_CTRL_freq_mon_ena_MASK    0x00000001
 #define BCHP_VCXO_CTL_CONFIG_FSM_DIFFOSC_CTRL_freq_mon_ena_SHIFT   0
+#define BCHP_VCXO_CTL_CONFIG_FSM_DIFFOSC_CTRL_freq_mon_ena_DEFAULT 0
 
 #endif /* #ifndef BCHP_VCXO_CTL_CONFIG_FSM_H__ */
 

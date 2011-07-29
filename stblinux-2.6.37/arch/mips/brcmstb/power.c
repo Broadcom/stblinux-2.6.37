@@ -1131,15 +1131,16 @@ static void bcm7340_pm_genet_disable(u32 flags)
 		 * TODO: Stop HFB clock and switch to 27MHz if ACPI
 		 * detector is disabled
 		 */
-		if (0) {
-			/* switch to slower 27MHz clocks */
-			BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
-				CLOCK_SEL_CG_GENET, 1);
-			BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
-				CLOCK_SEL_GMII_CG_GENET, 1);
-			BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
-			    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_HFB_MASK);
-		}
+#if 0
+		/* TODO: on 1000Mbit link use 54MHz clock and MAIN PLL */
+		BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, MAIN_PLL, 1);
+		mdelay(1);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_CG_GENET, 1);
+#endif
+		/* switch to slower 27MHz clocks */
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
+			CLOCK_SEL_CG_GENET, 0);
 
 		BDEV_SET_RB(BCHP_CLKGEN_GENET_CLK_PM_CTRL,
 		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_GMII_MASK|
@@ -1177,9 +1178,8 @@ static void bcm7340_pm_genet_enable(u32 flags)
 		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_216_MASK|
 		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_UNIMAC_SYS_TX_MASK|
 		    BCHP_CLKGEN_GENET_CLK_PM_CTRL_DIS_CLK_L2_INTR_MASK);
-		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,	CLOCK_SEL_CG_GENET, 0);
-		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,
-			CLOCK_SEL_GMII_CG_GENET, 0);
+		/* switch to faster 54MHz clocks */
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS,	CLOCK_SEL_CG_GENET, 1);
 		return;
 	}
 
@@ -1205,10 +1205,20 @@ static void bcm7340_pm_moca_disable(u32 flags)
 	PRINT_PM_CALLBACK;
 
 	if (flags & BRCM_PM_FLAG_MOCA_WOL) {
+#if 0
+		/* TODO: on 1000Mbit link use 54MHz clock and MAIN PLL */
+		BDEV_WR_F_RB(CLKGEN_PM_PLL_ALIVE_SEL, MAIN_PLL, 1);
+		mdelay(1);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA,
+			1);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA,
+			0);
+#endif
 		/* switch to slower 27MHz clocks */
-	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 1);
-	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA, 1);
-
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA,
+			0);
+		BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA,
+			1);
 	    BDEV_SET_RB(BCHP_CLKGEN_MOCA_CLK_PM_CTRL,
 		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_250_GENET_RGMII_MOCA_MASK|
 		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_GENET_RGMII_CG_MASK|
@@ -1265,7 +1275,7 @@ static void bcm7340_pm_moca_enable(u32 flags)
 		BCHP_CLKGEN_MOCA_CLK_PM_CTRL_DIS_CLK_216_MASK);
 
 	    /* Restore fast clocks */
-	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 0);
+	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 1);
 	    BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA, 0);
 
 	    return;
@@ -1299,13 +1309,17 @@ static void bcm7340_pm_moca_enable(u32 flags)
 
 static void bcm7340_pm_usb_disable(u32 flags)
 {
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xC);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xC);
+	/* reset and power down all 4 ports */
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
+
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
+	/* disable the clocks */
 	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 1);
 	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_108, 1);
+	/* disable PLL */
 	BDEV_WR_F_RB(CLKGEN_PLLMAIN_CH4_PM_CTRL, PWRDN_CH4_PLLMAIN, 1);
 }
 
@@ -1316,9 +1330,10 @@ static void bcm7340_pm_usb_enable(u32 flags)
 	BDEV_WR_F_RB(CLKGEN_USB_CLK_PM_CTRL, DIS_CLK_216, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
+
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
 }
 
 static void bcm7340_pm_network_disable(u32 flags)
@@ -1554,9 +1569,10 @@ MOCA_ENET_L2_INTR_27_54M_CLK_MASK);
 static void bcm7342_pm_usb_disable(u32 flags)
 {
 	/* reset and power down all 4 ports */
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
+
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
 	/* disable the clocks */
@@ -1579,12 +1595,14 @@ static void bcm7342_pm_usb_enable(u32 flags)
 		BCHP_CLK_USB_PM_CTRL_DIS_54M_CLK_MASK|
 		BCHP_CLK_USB_PM_CTRL_DIS_108M_CLK_MASK|
 		BCHP_CLK_USB_PM_CTRL_DIS_216M_CLK_MASK);
+
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
+
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
 	/* power up all 4 ports */
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
 }
 
 static void bcm7342_pm_network_disable(u32 flags)
@@ -1743,16 +1761,18 @@ static void bcm7408_pm_network_enable(u32 flags)
 static void bcm7408_pm_usb_disable(u32 flags)
 {
 	/* reset and power down all 4 ports */
-/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0); */
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0);
-	/* disable the clocks */
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
+
+	/* disable the clocks */
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
 	BDEV_SET_RB(BCHP_CLK_USB_CLK_PM_CTRL,
 		BCHP_CLK_USB_CLK_PM_CTRL_DIS_54M_CLK_MASK|
 		BCHP_CLK_USB_CLK_PM_CTRL_DIS_108M_CLK_MASK|
 		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
+
 	/* disable PLL */
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, DIS_CH, 1);
 	BDEV_WR_F_RB(CLK_SYS_PLL_0_4, EN_CMLBUF, 0);
@@ -1770,10 +1790,11 @@ static void bcm7408_pm_usb_enable(u32 flags)
 		BCHP_CLK_USB_CLK_PM_CTRL_DIS_216M_CLK_MASK);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
+
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xE);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
 	/* power up all 4 ports */
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
-/*	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xE); */
 }
 
 static void bcm7408_pm_suspend(u32 flags)
@@ -2104,6 +2125,17 @@ static void bcm7420_pm_early_resume(void)
 	}
 }
 
+static void bcm7420_initialize(void)
+{
+	struct clk *nclk, *sclk;
+	brcm_ddr_phy_initialize();
+	/* extra clock dependency. See #SWLINUX-1913 */
+	nclk = clk_get(NULL, "network");
+	sclk = clk_get(NULL, "sata");
+	if (nclk && sclk)
+		clk_set_parent(sclk, nclk);
+}
+
 #define PM_OPS_DEFINED
 static struct brcm_chip_pm_ops chip_pm_ops = {
 	DEF_BLOCK_PM_OP(sata, 7420),
@@ -2114,7 +2146,7 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	DEF_SYSTEM_PM_OP(7420),
 	DEF_SYSTEM_LATE_PM_OP(7420),
 	.clk_get		= brcm_pm_clk_get,
-	.initialize		= brcm_ddr_phy_initialize,
+	.initialize		= bcm7420_initialize,
 };
 #endif
 
@@ -2151,9 +2183,10 @@ static void bcm7468_pm_genet_enable(u32 flags)
 
 static void bcm7468_pm_usb_disable(u32 flags)
 {
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x00);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 1);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x00);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x00);
+
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 0);
 	BDEV_SET_RB(BCHP_CLK_USB_CLK_PM_CTRL, 0x07);
@@ -2164,9 +2197,10 @@ static void bcm7468_pm_usb_enable(u32 flags)
 	BDEV_UNSET_RB(BCHP_CLK_USB_CLK_PM_CTRL, 0x07);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, XTAL_PWRDWNB, 1);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL_1, PLL_PWRDWNB, 1);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0x0f);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0f);
+
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0xF);
 	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_IDDQ, 0);
+	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, PHY_PWDNB, 0xF);
 }
 
 static void bcm7468_pm_suspend(u32 flags)

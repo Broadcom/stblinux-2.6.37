@@ -18,7 +18,7 @@
 
 # Put a shell on the serial port
 # ttyS0::respawn:/sbin/getty -L 115200 ttyS0 vt102
-ttyS0::respawn:/bin/login -f root
+::respawn:/bin/cttyhack /bin/sh -l
 
 # Stuff to do before rebooting
 null::shutdown:/bin/umount -a -r

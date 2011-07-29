@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Jul 14 20:27:43 2010
- *                 MD5 Checksum         a40261978067e5bee0552bb9d91e66cf
+ * Date:           Generated on         Tue May 31 13:14:08 2011
+ *                 MD5 Checksum         3d981376c3cc0d4c52a81813284994b8
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/a0/bchp_aon_pin_ctrl.h $
  * 
- * Hydra_Software_Devel/1   7/15/10 5:30p albertl
- * HW7344-97: Initial revision.
+ * Hydra_Software_Devel/2   5/31/11 2:36p albertl
+ * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
 
@@ -59,6 +59,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_14 [31:28] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_MASK          0xf0000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_SHIFT         28
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_AON_GPIO_14   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_SDS0_DSEC_VCTL 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_14_SDS0_IF_AGC   2
@@ -67,6 +68,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_13 [27:24] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_MASK          0x0f000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_SHIFT         24
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_AON_GPIO_13   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_SDS0_DSEC_SELVTOP 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_13_SDS0_RF_AGC   2
@@ -76,6 +78,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_12 [23:20] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_MASK          0x00f00000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_SHIFT         20
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_AON_GPIO_12   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_SDS0_DSEC_TXEN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_12_TP_OUT_25     2
@@ -84,6 +87,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_11 [19:16] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_MASK          0x000f0000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_SHIFT         16
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_AON_GPIO_11   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_SDS0_DSEC_TXOUT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_11_TP_OUT_24     2
@@ -92,6 +96,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_03 [15:12] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_MASK          0x0000f000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_SHIFT         12
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_DEFAULT       4
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_AON_GPIO_03   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_LED_KD_3      1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_03_EXT_IRQB_5    2
@@ -103,6 +108,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_02 [11:08] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_MASK          0x00000f00
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_SHIFT         8
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_AON_GPIO_02   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_LED_KD_2      1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_02_EXT_IRQB_4    2
@@ -114,6 +120,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_01 [07:04] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_MASK          0x000000f0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_SHIFT         4
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_AON_GPIO_01   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_LED_KD_1      1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_01_EXT_IRQB_3    2
@@ -125,6 +132,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_0 :: aon_gpio_00 [03:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_MASK          0x0000000f
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_SHIFT         0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_AON_GPIO_00   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_LED_KD_0      1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_EXT_IRQB_2    2
@@ -139,6 +147,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_09 [31:28] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_MASK          0xf0000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_SHIFT         28
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_AON_GPIO_09   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_IR_IN0        1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_09_UHF_LNA_PWRDN 2
@@ -148,6 +157,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_08 [27:24] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_MASK          0x0f000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_SHIFT         24
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_AON_GPIO_08   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_EXT_IRQB_10   1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_08_IR_INT        2
@@ -159,6 +169,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_07 [23:20] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_MASK          0x00f00000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_SHIFT         20
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_AON_GPIO_07   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_EXT_IRQB_9    1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_07_LED_LS_3      2
@@ -170,6 +181,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_06 [19:16] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_MASK          0x000f0000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_SHIFT         16
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_AON_GPIO_06   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_EXT_IRQB_8    1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_06_LED_LS_2      2
@@ -181,6 +193,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_05 [15:12] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_MASK          0x0000f000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_SHIFT         12
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_AON_GPIO_05   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_EXT_IRQB_7    1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_05_LED_LS_1      2
@@ -192,6 +205,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_04 [11:08] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_MASK          0x00000f00
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_SHIFT         8
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_AON_GPIO_04   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_EXT_IRQB_6    1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_04_LED_LS_0      2
@@ -203,6 +217,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_16 [07:04] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_MASK          0x000000f0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_SHIFT         4
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_AON_GPIO_16   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_AON_PM_LED_OUT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_16_PM_AON_GPIO_16 2
@@ -210,6 +225,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_1 :: aon_gpio_15 [03:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_MASK          0x0000000f
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_SHIFT         0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_AON_GPIO_15   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_EXT_IRQB_16   1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_1_aon_gpio_15_P1_INTR       2
@@ -221,48 +237,56 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_ss1b [31:28] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss1b_MASK       0xf0000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss1b_SHIFT      28
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss1b_DEFAULT    0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss1b_AON_SPI_M_SS1B 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss1b_ALT_TP_OUT_06 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_ss0b [27:24] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss0b_MASK       0x0f000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss0b_SHIFT      24
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss0b_DEFAULT    0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss0b_AON_SPI_M_SS0B 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_ss0b_ALT_TP_OUT_05 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_miso [23:20] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_miso_MASK       0x00f00000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_miso_SHIFT      20
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_miso_DEFAULT    0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_miso_AON_SPI_M_MISO 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_miso_ALT_TP_OUT_04 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_mosi [19:16] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_MASK       0x000f0000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_SHIFT      16
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_DEFAULT    0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_AON_SPI_M_MOSI 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_ALT_TP_OUT_03 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_sck [15:12] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_MASK        0x0000f000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_SHIFT       12
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_DEFAULT     0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_AON_SPI_M_SCK 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_ALT_TP_OUT_02 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_sgpio_01 [11:08] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_01_MASK         0x00000f00
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_01_SHIFT        8
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_01_DEFAULT      0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_01_AON_SGPIO_01 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_01_BSC_M2_SDA   1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_sgpio_00 [07:04] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_00_MASK         0x000000f0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_00_SHIFT        4
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_00_DEFAULT      0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_00_AON_SGPIO_00 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_sgpio_00_BSC_M2_SCL   1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_gpio_10 [03:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_MASK          0x0000000f
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_SHIFT         0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_AON_GPIO_10   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_IR_IN1        1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_gpio_10_UHF_LNA_PWRDN 2
@@ -278,12 +302,14 @@
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_3 :: aon_gpio_18 [07:04] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_18_MASK          0x000000f0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_18_SHIFT         4
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_18_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_18_AON_GPIO_18   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_18_AON_IRQB1     1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_3 :: aon_gpio_17 [03:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_17_MASK          0x0000000f
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_17_SHIFT         0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_17_DEFAULT       0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_17_AON_GPIO_17   0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_3_aon_gpio_17_AON_IRQB0     1
 
@@ -293,6 +319,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: spare_pad_ctrl_0 [31:30] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_MASK 0xc0000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_SHIFT 30
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_spare_pad_ctrl_0_PULL_UP 2
@@ -300,6 +327,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_08_pad_ctrl [29:28] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_MASK 0x30000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_SHIFT 28
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_08_pad_ctrl_PULL_UP 2
@@ -307,6 +335,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_07_pad_ctrl [27:26] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_MASK 0x0c000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_SHIFT 26
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_07_pad_ctrl_PULL_UP 2
@@ -314,6 +343,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_06_pad_ctrl [25:24] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_MASK 0x03000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_SHIFT 24
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_06_pad_ctrl_PULL_UP 2
@@ -321,6 +351,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_05_pad_ctrl [23:22] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_MASK 0x00c00000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_SHIFT 22
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_05_pad_ctrl_PULL_UP 2
@@ -328,6 +359,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_04_pad_ctrl [21:20] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_MASK 0x00300000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_SHIFT 20
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_04_pad_ctrl_PULL_UP 2
@@ -335,6 +367,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_16_pad_ctrl [19:18] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_MASK 0x000c0000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_SHIFT 18
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_16_pad_ctrl_PULL_UP 2
@@ -342,6 +375,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_15_pad_ctrl [17:16] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_MASK 0x00030000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_SHIFT 16
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_15_pad_ctrl_PULL_UP 2
@@ -349,6 +383,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_14_pad_ctrl [15:14] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_MASK 0x0000c000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_SHIFT 14
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_14_pad_ctrl_PULL_UP 2
@@ -356,6 +391,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_13_pad_ctrl [13:12] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_MASK 0x00003000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_SHIFT 12
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_13_pad_ctrl_PULL_UP 2
@@ -363,6 +399,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_12_pad_ctrl [11:10] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_MASK 0x00000c00
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_SHIFT 10
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_12_pad_ctrl_PULL_UP 2
@@ -370,6 +407,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_11_pad_ctrl [09:08] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_MASK 0x00000300
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_SHIFT 8
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_11_pad_ctrl_PULL_UP 2
@@ -377,6 +415,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_03_pad_ctrl [07:06] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_MASK 0x000000c0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_SHIFT 6
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_03_pad_ctrl_PULL_UP 2
@@ -384,6 +423,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_02_pad_ctrl [05:04] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_MASK 0x00000030
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_SHIFT 4
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_02_pad_ctrl_PULL_UP 2
@@ -391,6 +431,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_01_pad_ctrl [03:02] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_MASK 0x0000000c
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_SHIFT 2
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_01_pad_ctrl_PULL_UP 2
@@ -398,6 +439,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_0 :: aon_gpio_00_pad_ctrl [01:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_MASK 0x00000003
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_SHIFT 0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_0_aon_gpio_00_pad_ctrl_PULL_UP 2
@@ -412,6 +454,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_1 :: spare_pad_ctrl_1 [29:28] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_MASK 0x30000000
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_SHIFT 28
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_DEFAULT 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_spare_pad_ctrl_1_PULL_UP 2
@@ -423,6 +466,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_1 :: aon_gpio_10_pad_ctrl [03:02] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_MASK 0x0000000c
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_SHIFT 2
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_10_pad_ctrl_PULL_UP 2
@@ -430,6 +474,7 @@
 /* AON_PIN_CTRL :: PIN_MUX_PAD_CTRL_1 :: aon_gpio_09_pad_ctrl [01:00] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_MASK 0x00000003
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_SHIFT 0
+#define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_DEFAULT 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_PULL_NONE 0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_PULL_DOWN 1
 #define BCHP_AON_PIN_CTRL_PIN_MUX_PAD_CTRL_1_aon_gpio_09_pad_ctrl_PULL_UP 2
@@ -444,10 +489,12 @@
 /* AON_PIN_CTRL :: BYP_CLK_UNSELECT_0 :: unsel_byp_clk_on_aon_gpio_10 [01:01] */
 #define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_10_MASK 0x00000002
 #define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_10_SHIFT 1
+#define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_10_DEFAULT 0
 
 /* AON_PIN_CTRL :: BYP_CLK_UNSELECT_0 :: unsel_byp_clk_on_aon_gpio_14 [00:00] */
 #define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_14_MASK 0x00000001
 #define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_14_SHIFT 0
+#define BCHP_AON_PIN_CTRL_BYP_CLK_UNSELECT_0_unsel_byp_clk_on_aon_gpio_14_DEFAULT 0
 
 #endif /* #ifndef BCHP_AON_PIN_CTRL_H__ */
 

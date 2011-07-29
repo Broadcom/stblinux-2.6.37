@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Mar 16 05:19:07 2011
- *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
+ * Date:           Generated on         Tue Apr 12 13:32:45 2011
+ *                 MD5 Checksum         161bc6c4c68f438ad316017c113c5764
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7640/rdb/c0/bchp_usb_ctrl.h $
+ * 
+ * Hydra_Software_Devel/1   4/13/11 6:42p albertl
+ * SWBLURAY-25497: Initial revision.
  *
  ***************************************************************************/
 
@@ -42,22 +45,22 @@
 /***************************************************************************
  *USB_CTRL - USB Control Registers
  ***************************************************************************/
-#define BCHP_USB_CTRL_SETUP                      0x00480200 /* Setup Register */
-#define BCHP_USB_CTRL_PLL_CTL                    0x00480204 /* PLL Control Register */
-#define BCHP_USB_CTRL_FLADJ_VALUE                0x00480208 /* Frame Adjust Value */
-#define BCHP_USB_CTRL_EBRIDGE                    0x0048020c /* Control Register for EHCI Bridge */
-#define BCHP_USB_CTRL_OBRIDGE                    0x00480210 /* Control Register for OHCI Bridge */
-#define BCHP_USB_CTRL_MDIO                       0x00480214 /* MDIO Interface Programming Register */
-#define BCHP_USB_CTRL_MDIO2                      0x00480218 /* MDIO Interface Read Register */
-#define BCHP_USB_CTRL_TEST_PORT_CTL              0x0048021c /* Test Port Control Register */
-#define BCHP_USB_CTRL_USB_SIMCTL                 0x00480220 /* Simulation Register */
-#define BCHP_USB_CTRL_USB_TESTCTL                0x00480224 /* Throutput Test Control */
-#define BCHP_USB_CTRL_USB_TESTMON                0x00480228 /* Throughput Test Monitor */
-#define BCHP_USB_CTRL_UTMI_CTL_1                 0x0048022c /* UTMI Control Register */
-#define BCHP_USB_CTRL_UTMI_CTL_2                 0x00480230 /* UTMI Control 2 Register */
-#define BCHP_USB_CTRL_SPARE1                     0x00480234 /* Spare1 Register for future use */
-#define BCHP_USB_CTRL_MBIST_TM                   0x00480238 /* Spare1 Register for future use */
-#define BCHP_USB_CTRL_SPARE2                     0x0048023c /* Spare2 Register for future use */
+#define BCHP_USB_CTRL_SETUP                      0x00580200 /* Setup Register */
+#define BCHP_USB_CTRL_PLL_CTL                    0x00580204 /* PLL Control Register */
+#define BCHP_USB_CTRL_FLADJ_VALUE                0x00580208 /* Frame Adjust Value */
+#define BCHP_USB_CTRL_EBRIDGE                    0x0058020c /* Control Register for EHCI Bridge */
+#define BCHP_USB_CTRL_OBRIDGE                    0x00580210 /* Control Register for OHCI Bridge */
+#define BCHP_USB_CTRL_MDIO                       0x00580214 /* MDIO Interface Programming Register */
+#define BCHP_USB_CTRL_MDIO2                      0x00580218 /* MDIO Interface Read Register */
+#define BCHP_USB_CTRL_TEST_PORT_CTL              0x0058021c /* Test Port Control Register */
+#define BCHP_USB_CTRL_USB_SIMCTL                 0x00580220 /* Simulation Register */
+#define BCHP_USB_CTRL_USB_TESTCTL                0x00580224 /* Throutput Test Control */
+#define BCHP_USB_CTRL_USB_TESTMON                0x00580228 /* Throughput Test Monitor */
+#define BCHP_USB_CTRL_UTMI_CTL_1                 0x0058022c /* UTMI Control Register */
+#define BCHP_USB_CTRL_UTMI_CTL_2                 0x00580230 /* UTMI Control 2 Register */
+#define BCHP_USB_CTRL_SPARE1                     0x00580234 /* Spare1 Register for future use */
+#define BCHP_USB_CTRL_MBIST_TM                   0x00580238 /* Spare1 Register for future use */
+#define BCHP_USB_CTRL_SPARE2                     0x0058023c /* Spare2 Register for future use */
 
 /***************************************************************************
  *SETUP - Setup Register

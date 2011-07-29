@@ -1,10 +1,10 @@
 /* vi: set sw=4 ts=4: */
 /*
- * ifplugd for busybox
+ * ifplugd for busybox, based on ifplugd 0.28 (written by Lennart Poettering).
  *
  * Copyright (C) 2009 Maksym Kryzhanovskyy <xmaks@email.cz>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 
@@ -22,7 +22,11 @@
 #include <linux/wireless.h>
 
 /*
-TODO: describe compat status here.
+From initial port to busybox, removed most of the redundancy by
+converting implementation of a polymorphic interface to the strict
+functional style. The main role is run a script when link state
+changed, other activities like audio signal or detailed reports
+are on the script itself.
 
 One questionable point of the design is netlink usage:
 
@@ -67,15 +71,6 @@ enum {
 # define OPTION_STR "+ansfFi:r:It:u:d:m:pqlx:M"
 #endif
 
-enum { // api mode
-	API_AUTO	= 'a',
-	API_ETHTOOL	= 'e',
-	API_MII		= 'm',
-	API_PRIVATE	= 'p',
-	API_WLAN	= 'w',
-	API_IFF		= 'i',
-};
-
 enum { // interface status
 	IFSTATUS_ERR = -1,
 	IFSTATUS_DOWN = 0,
@@ -89,7 +84,9 @@ enum { // constant fds
 
 struct globals {
 	smallint iface_last_status;
+	smallint iface_prev_status;
 	smallint iface_exists;
+	smallint api_method_num;
 
 	/* Used in getopt32, must have sizeof == sizeof(int) */
 	unsigned poll_time;
@@ -100,9 +97,6 @@ struct globals {
 	const char *api_mode;
 	const char *script_name;
 	const char *extra_arg;
-
-	smallint (*detect_link_func)(void);
-	smallint (*cached_detect_link_func)(void);
 };
 #define G (*ptr_to_globals)
 #define INIT_G() do { \
@@ -117,106 +111,7 @@ struct globals {
 } while (0)
 
 
-static int run_script(const char *action)
-{
-	char *argv[5];
-	int r;
-
-	bb_error_msg("executing '%s %s %s'", G.script_name, G.iface, action);
-
-#if 1
-
-	argv[0] = (char*) G.script_name;
-	argv[1] = (char*) G.iface;
-	argv[2] = (char*) action;
-	argv[3] = (char*) G.extra_arg;
-	argv[4] = NULL;
-
-	/* r < 0 - can't exec, 0 <= r < 1000 - exited, >1000 - killed by sig (r-1000) */
-	r = wait4pid(spawn(argv));
-
-	bb_error_msg("exit code: %d", r);
-	return (option_mask32 & FLAG_IGNORE_RETVAL) ? 0 : r;
-
-#else /* insanity */
-
-	struct fd_pair pipe_pair;
-	char buf[256];
-	int i = 0;
-
-	xpiped_pair(pipe_pair);
-
-	pid = vfork();
-	if (pid < 0) {
-		bb_perror_msg("fork");
-		return -1;
-	}
-
-	/* child */
-	if (pid == 0) {
-		xmove_fd(pipe_pair.wr, 1);
-		xdup2(1, 2);
-		if (pipe_pair.rd > 2)
-			close(pipe_pair.rd);
-
-		// umask(0022); // Set up a sane umask
-
-		execlp(G.script_name, G.script_name, G.iface, action, G.extra_arg, NULL);
-		_exit(EXIT_FAILURE);
-	}
-
-	/* parent */
-	close(pipe_pair.wr);
-
-	while (1) {
-		if (bb_got_signal && bb_got_signal != SIGCHLD) {
-			bb_error_msg("killing child");
-			kill(pid, SIGTERM);
-			bb_got_signal = 0;
-			break;
-		}
-
-		r = read(pipe_pair.rd, &buf[i], 1);
-
-		if (buf[i] == '\n' || i == sizeof(buf)-2 || r != 1) {
-			if (r == 1 && buf[i] != '\n')
-				i++;
-
-			buf[i] = '\0';
-
-			if (i > 0)
-				bb_error_msg("client: %s", buf);
-
-			i = 0;
-		} else {
-			i++;
-		}
-
-		if (r != 1)
-			break;
-	}
-
-	close(pipe_pair.rd);
-
-	wait(&r);
-
-	if (!WIFEXITED(r) || WEXITSTATUS(r) != 0) {
-		bb_error_msg("program execution failed, return value is %i",
-			WEXITSTATUS(r));
-		return option_mask32 & FLAG_IGNORE_RETVAL ? 0 : WEXITSTATUS(r);
-	}
-	bb_error_msg("program executed successfully");
-	return 0;
-#endif
-}
-
-static int network_ioctl(int request, void* data, const char *errmsg)
-{
-	int r = ioctl(ioctl_fd, request, data);
-	if (r < 0 && errmsg)
-		bb_perror_msg(errmsg);
-	return r;
-}
+/* Utility routines */
 
 static void set_ifreq_to_ifname(struct ifreq *ifreq)
 {
@@ -224,11 +119,181 @@ static void set_ifreq_to_ifname(struct ifreq *ifreq)
 	strncpy_IFNAMSIZ(ifreq->ifr_name, G.iface);
 }
 
+static int network_ioctl(int request, void* data, const char *errmsg)
+{
+	int r = ioctl(ioctl_fd, request, data);
+	if (r < 0 && errmsg)
+		bb_perror_msg("%s failed", errmsg);
+	return r;
+}
+
+/* Link detection routines and table */
+
+static smallint detect_link_mii(void)
+{
+	struct ifreq ifreq;
+	struct mii_ioctl_data *mii = (void *)&ifreq.ifr_data;
+
+	set_ifreq_to_ifname(&ifreq);
+
+	if (network_ioctl(SIOCGMIIPHY, &ifreq, "SIOCGMIIPHY") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	mii->reg_num = 1;
+
+	if (network_ioctl(SIOCGMIIREG, &ifreq, "SIOCGMIIREG") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	return (mii->val_out & 0x0004) ? IFSTATUS_UP : IFSTATUS_DOWN;
+}
+
+static smallint detect_link_priv(void)
+{
+	struct ifreq ifreq;
+	struct mii_ioctl_data *mii = (void *)&ifreq.ifr_data;
+
+	set_ifreq_to_ifname(&ifreq);
+
+	if (network_ioctl(SIOCDEVPRIVATE, &ifreq, "SIOCDEVPRIVATE") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	mii->reg_num = 1;
+
+	if (network_ioctl(SIOCDEVPRIVATE+1, &ifreq, "SIOCDEVPRIVATE+1") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	return (mii->val_out & 0x0004) ? IFSTATUS_UP : IFSTATUS_DOWN;
+}
+
+static smallint detect_link_ethtool(void)
+{
+	struct ifreq ifreq;
+	struct ethtool_value edata;
+
+	set_ifreq_to_ifname(&ifreq);
+
+	edata.cmd = ETHTOOL_GLINK;
+	ifreq.ifr_data = (void*) &edata;
+
+	if (network_ioctl(SIOCETHTOOL, &ifreq, "ETHTOOL_GLINK") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	return edata.data ? IFSTATUS_UP : IFSTATUS_DOWN;
+}
+
+static smallint detect_link_iff(void)
+{
+	struct ifreq ifreq;
+
+	set_ifreq_to_ifname(&ifreq);
+
+	if (network_ioctl(SIOCGIFFLAGS, &ifreq, "SIOCGIFFLAGS") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	/* If IFF_UP is not set (interface is down), IFF_RUNNING is never set
+	 * regardless of link status. Simply continue to report last status -
+	 * no point in reporting spurious link downs if interface is disabled
+	 * by admin. When/if it will be brought up,
+	 * we'll report real link status.
+	 */
+	if (!(ifreq.ifr_flags & IFF_UP) && G.iface_last_status != IFSTATUS_ERR)
+		return G.iface_last_status;
+
+	return (ifreq.ifr_flags & IFF_RUNNING) ? IFSTATUS_UP : IFSTATUS_DOWN;
+}
+
+static smallint detect_link_wlan(void)
+{
+	int i;
+	struct iwreq iwrequest;
+	uint8_t mac[ETH_ALEN];
+
+	memset(&iwrequest, 0, sizeof(iwrequest));
+	strncpy_IFNAMSIZ(iwrequest.ifr_ifrn.ifrn_name, G.iface);
+
+	if (network_ioctl(SIOCGIWAP, &iwrequest, "SIOCGIWAP") < 0) {
+		return IFSTATUS_ERR;
+	}
+
+	memcpy(mac, &iwrequest.u.ap_addr.sa_data, ETH_ALEN);
+
+	if (mac[0] == 0xFF || mac[0] == 0x44 || mac[0] == 0x00) {
+		for (i = 1; i < ETH_ALEN; ++i) {
+			if (mac[i] != mac[0])
+				return IFSTATUS_UP;
+		}
+		return IFSTATUS_DOWN;
+	}
+
+	return IFSTATUS_UP;
+}
+
+enum { // api mode
+	API_ETHTOOL, // 'e'
+	API_MII,     // 'm'
+	API_PRIVATE, // 'p'
+	API_WLAN,    // 'w'
+	API_IFF,     // 'i'
+	API_AUTO,    // 'a'
+};
+
+static const char api_modes[] ALIGN1 = "empwia";
+
+static const struct {
+	const char *name;
+	smallint (*func)(void);
+} method_table[] = {
+	{ "SIOCETHTOOL"       , &detect_link_ethtool },
+	{ "SIOCGMIIPHY"       , &detect_link_mii     },
+	{ "SIOCDEVPRIVATE"    , &detect_link_priv    },
+	{ "wireless extension", &detect_link_wlan    },
+	{ "IFF_RUNNING"       , &detect_link_iff     },
+};
+
+
+
 static const char *strstatus(int status)
 {
 	if (status == IFSTATUS_ERR)
 		return "error";
 	return "down\0up" + (status * 5);
+}
+
+static int run_script(const char *action)
+{
+	char *env_PREVIOUS, *env_CURRENT;
+	char *argv[5];
+	int r;
+
+	bb_error_msg("executing '%s %s %s'", G.script_name, G.iface, action);
+
+	argv[0] = (char*) G.script_name;
+	argv[1] = (char*) G.iface;
+	argv[2] = (char*) action;
+	argv[3] = (char*) G.extra_arg;
+	argv[4] = NULL;
+
+	env_PREVIOUS = xasprintf("%s=%s", IFPLUGD_ENV_PREVIOUS, strstatus(G.iface_prev_status));
+	putenv(env_PREVIOUS);
+	env_CURRENT = xasprintf("%s=%s", IFPLUGD_ENV_CURRENT, strstatus(G.iface_last_status));
+	putenv(env_CURRENT);
+
+	/* r < 0 - can't exec, 0 <= r < 0x180 - exited, >=0x180 - killed by sig (r-0x180) */
+	r = spawn_and_wait(argv);
+
+	unsetenv(IFPLUGD_ENV_PREVIOUS);
+	unsetenv(IFPLUGD_ENV_CURRENT);
+	free(env_PREVIOUS);
+	free(env_CURRENT);
+
+	bb_error_msg("exit code: %d", r & 0xff);
+	return (option_mask32 & FLAG_IGNORE_RETVAL) ? 0 : r;
 }
 
 static void up_iface(void)
@@ -239,7 +304,7 @@ static void up_iface(void)
 		return;
 
 	set_ifreq_to_ifname(&ifrequest);
-	if (network_ioctl(SIOCGIFFLAGS, &ifrequest, "can't get interface flags") < 0) {
+	if (network_ioctl(SIOCGIFFLAGS, &ifrequest, "getting interface flags") < 0) {
 		G.iface_exists = 0;
 		return;
 	}
@@ -248,7 +313,7 @@ static void up_iface(void)
 		ifrequest.ifr_flags |= IFF_UP;
 		/* Let user know we mess up with interface */
 		bb_error_msg("upping interface");
-		if (network_ioctl(SIOCSIFFLAGS, &ifrequest, "can't set interface flags") < 0)
+		if (network_ioctl(SIOCSIFFLAGS, &ifrequest, "setting interface flags") < 0)
 			xfunc_die();
 	}
 
@@ -296,169 +361,8 @@ static void maybe_up_new_iface(void)
 			G.iface, buf, driver_info.driver, driver_info.version);
 	}
 #endif
-
-	G.cached_detect_link_func = NULL;
-}
-
-static smallint detect_link_mii(void)
-{
-	struct ifreq ifreq;
-	struct mii_ioctl_data *mii = (void *)&ifreq.ifr_data;
-
-	set_ifreq_to_ifname(&ifreq);
-
-	if (network_ioctl(SIOCGMIIPHY, &ifreq, "SIOCGMIIPHY failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	mii->reg_num = 1;
-
-	if (network_ioctl(SIOCGMIIREG, &ifreq, "SIOCGMIIREG failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	return (mii->val_out & 0x0004) ? IFSTATUS_UP : IFSTATUS_DOWN;
-}
-
-static smallint detect_link_priv(void)
-{
-	struct ifreq ifreq;
-	struct mii_ioctl_data *mii = (void *)&ifreq.ifr_data;
-
-	set_ifreq_to_ifname(&ifreq);
-
-	if (network_ioctl(SIOCDEVPRIVATE, &ifreq, "SIOCDEVPRIVATE failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	mii->reg_num = 1;
-
-	if (network_ioctl(SIOCDEVPRIVATE+1, &ifreq, "SIOCDEVPRIVATE+1 failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	return (mii->val_out & 0x0004) ? IFSTATUS_UP : IFSTATUS_DOWN;
-}
-
-static smallint detect_link_ethtool(void)
-{
-	struct ifreq ifreq;
-	struct ethtool_value edata;
-
-	set_ifreq_to_ifname(&ifreq);
-
-	edata.cmd = ETHTOOL_GLINK;
-	ifreq.ifr_data = (void*) &edata;
-
-	if (network_ioctl(SIOCETHTOOL, &ifreq, "ETHTOOL_GLINK failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	return edata.data ? IFSTATUS_UP : IFSTATUS_DOWN;
-}
-
-static smallint detect_link_iff(void)
-{
-	struct ifreq ifreq;
-
-	set_ifreq_to_ifname(&ifreq);
-
-	if (network_ioctl(SIOCGIFFLAGS, &ifreq, "SIOCGIFFLAGS failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	/* If IFF_UP is not set (interface is down), IFF_RUNNING is never set
-	 * regardless of link status. Simply continue to report last status -
-	 * no point in reporting spurious link downs if interface is disabled
-	 * by admin. When/if it will be brought up,
-	 * we'll report real link status.
-	 */
-	if (!(ifreq.ifr_flags & IFF_UP) && G.iface_last_status != IFSTATUS_ERR)
-		return G.iface_last_status;
-
-	return (ifreq.ifr_flags & IFF_RUNNING) ? IFSTATUS_UP : IFSTATUS_DOWN;
-}
-
-static smallint detect_link_wlan(void)
-{
-	struct iwreq iwrequest;
-	uint8_t mac[ETH_ALEN];
-
-	memset(&iwrequest, 0, sizeof(struct iwreq));
-	strncpy_IFNAMSIZ(iwrequest.ifr_ifrn.ifrn_name, G.iface);
-
-	if (network_ioctl(SIOCGIWAP, &iwrequest, "SIOCGIWAP failed") < 0) {
-		return IFSTATUS_ERR;
-	}
-
-	memcpy(mac, &(iwrequest.u.ap_addr.sa_data), ETH_ALEN);
-
-	if (mac[0] == 0xFF || mac[0] == 0x44 || mac[0] == 0x00) {
-		for (int i = 1; i < ETH_ALEN; ++i) {
-			if (mac[i] != mac[0])
-				return IFSTATUS_UP;
-		}
-		return IFSTATUS_DOWN;
-	}
-
-	return IFSTATUS_UP;
-}
-
-static smallint detect_link_auto(void)
-{
-	const char *method;
-	smallint iface_status;
-	smallint sv_logmode;
-
-	if (G.cached_detect_link_func) {
-		iface_status = G.cached_detect_link_func();
-		if (iface_status != IFSTATUS_ERR)
-			return iface_status;
-	}
-
-	sv_logmode = logmode;
-	logmode = LOGMODE_NONE;
-
-	iface_status = detect_link_ethtool();
-	if (iface_status != IFSTATUS_ERR) {
-		G.cached_detect_link_func = detect_link_ethtool;
-		method = "SIOCETHTOOL";
- found_method:
-		logmode = sv_logmode;
-		bb_error_msg("using %s detection mode", method);
-		return iface_status;
-	}
-
-	iface_status = detect_link_mii();
-	if (iface_status != IFSTATUS_ERR) {
-		G.cached_detect_link_func = detect_link_mii;
-		method = "SIOCGMIIPHY";
-		goto found_method;
-	}
-
-	iface_status = detect_link_priv();
-	if (iface_status != IFSTATUS_ERR) {
-		G.cached_detect_link_func = detect_link_priv;
-		method = "SIOCDEVPRIVATE";
-		goto found_method;
-	}
-
-	iface_status = detect_link_wlan();
-	if (iface_status != IFSTATUS_ERR) {
-		G.cached_detect_link_func = detect_link_wlan;
-		method = "wireless extension";
-		goto found_method;
-	}
-
-	iface_status = detect_link_iff();
-	if (iface_status != IFSTATUS_ERR) {
-		G.cached_detect_link_func = detect_link_iff;
-		method = "IFF_RUNNING";
-		goto found_method;
-	}
-
-	logmode = sv_logmode;
-	return iface_status; /* IFSTATUS_ERR */
+	if (G.api_mode[0] == 'a')
+		G.api_method_num = API_AUTO;
 }
 
 static smallint detect_link(void)
@@ -475,24 +379,36 @@ static smallint detect_link(void)
 	if (!(option_mask32 & FLAG_NO_AUTO))
 		up_iface();
 
-	status = G.detect_link_func();
+	if (G.api_method_num == API_AUTO) {
+		int i;
+		smallint sv_logmode;
+
+		sv_logmode = logmode;
+		for (i = 0; i < ARRAY_SIZE(method_table); i++) {
+			logmode = LOGMODE_NONE;
+			status = method_table[i].func();
+			logmode = sv_logmode;
+			if (status != IFSTATUS_ERR) {
+				G.api_method_num = i;
+				bb_error_msg("using %s detection mode", method_table[i].name);
+				break;
+			}
+		}
+	} else {
+		status = method_table[G.api_method_num].func();
+	}
+
 	if (status == IFSTATUS_ERR) {
 		if (option_mask32 & FLAG_IGNORE_FAIL)
 			status = IFSTATUS_DOWN;
-		if (option_mask32 & FLAG_IGNORE_FAIL_POSITIVE)
+		else if (option_mask32 & FLAG_IGNORE_FAIL_POSITIVE)
 			status = IFSTATUS_UP;
-	}
-
-	if (status == IFSTATUS_ERR
-	 && G.detect_link_func == detect_link_auto
-	) {
-		bb_error_msg("failed to detect link status");
+		else if (G.api_mode[0] == 'a')
+			bb_error_msg("can't detect link status");
 	}
 
 	if (status != G.iface_last_status) {
-//TODO: is it safe to repeatedly do this?
-		setenv(IFPLUGD_ENV_PREVIOUS, strstatus(G.iface_last_status), 1);
-		setenv(IFPLUGD_ENV_CURRENT, strstatus(status), 1);
+		G.iface_prev_status = G.iface_last_status;
 		G.iface_last_status = status;
 	}
 
@@ -501,8 +417,10 @@ static smallint detect_link(void)
 
 static NOINLINE int check_existence_through_netlink(void)
 {
+	int iface_len;
 	char replybuf[1024];
 
+	iface_len = strlen(G.iface);
 	while (1) {
 		struct nlmsghdr *mhdr;
 		ssize_t bytes;
@@ -520,38 +438,31 @@ static NOINLINE int check_existence_through_netlink(void)
 
 		mhdr = (struct nlmsghdr*)replybuf;
 		while (bytes > 0) {
-			if (!NLMSG_OK(mhdr, bytes)
-			 || bytes < sizeof(struct nlmsghdr)
-			 || bytes < mhdr->nlmsg_len
-			) {
+			if (!NLMSG_OK(mhdr, bytes)) {
 				bb_error_msg("netlink packet too small or truncated");
 				return -1;
 			}
 
 			if (mhdr->nlmsg_type == RTM_NEWLINK || mhdr->nlmsg_type == RTM_DELLINK) {
 				struct rtattr *attr;
-				struct ifinfomsg *imsg;
 				int attr_len;
-
-				imsg = NLMSG_DATA(mhdr);
 
 				if (mhdr->nlmsg_len < NLMSG_LENGTH(sizeof(struct ifinfomsg))) {
 					bb_error_msg("netlink packet too small or truncated");
 					return -1;
 				}
 
-				attr = (struct rtattr*)((char*)imsg + NLMSG_ALIGN(sizeof(struct ifinfomsg)));
-				attr_len = NLMSG_PAYLOAD(mhdr, sizeof(struct ifinfomsg));
+				attr = IFLA_RTA(NLMSG_DATA(mhdr));
+				attr_len = IFLA_PAYLOAD(mhdr);
 
 				while (RTA_OK(attr, attr_len)) {
 					if (attr->rta_type == IFLA_IFNAME) {
-						char ifname[IFNAMSIZ + 1];
 						int len = RTA_PAYLOAD(attr);
-
 						if (len > IFNAMSIZ)
 							len = IFNAMSIZ;
-						memcpy(ifname, RTA_DATA(attr), len);
-						if (strcmp(G.iface, ifname) == 0) {
+						if (iface_len <= len
+						 && strncmp(G.iface, RTA_DATA(attr), len) == 0
+						) {
 							G.iface_exists = (mhdr->nlmsg_type == RTM_NEWLINK);
 						}
 					}
@@ -564,23 +475,6 @@ static NOINLINE int check_existence_through_netlink(void)
 	}
 
 	return G.iface_exists;
-}
-
-static NOINLINE int netlink_open(void)
-{
-	int fd;
-	struct sockaddr_nl addr;
-
-	fd = xsocket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
-
-	memset(&addr, 0, sizeof(addr));
-	addr.nl_family = AF_NETLINK;
-	addr.nl_groups = RTMGRP_LINK;
-	addr.nl_pid = getpid();
-
-	xbind(fd, (struct sockaddr*)&addr, sizeof(addr));
-
-	return fd;
 }
 
 #if ENABLE_FEATURE_PIDFILE
@@ -607,6 +501,7 @@ int ifplugd_main(int argc UNUSED_PARAM, char **argv)
 	const char *iface_status_str;
 	struct pollfd netlink_pollfd[1];
 	unsigned opts;
+	const char *api_mode_found;
 #if ENABLE_FEATURE_PIDFILE
 	char *pidfile_name;
 	pid_t pid_from_pidfile;
@@ -636,35 +531,26 @@ int ifplugd_main(int argc UNUSED_PARAM, char **argv)
 		bb_error_msg_and_die("daemon already running");
 #endif
 
-	switch (G.api_mode[0]) {
-	case API_AUTO:
-		G.detect_link_func = detect_link_auto;
-		break;
-	case API_ETHTOOL:
-		G.detect_link_func = detect_link_ethtool;
-		break;
-	case API_MII:
-		G.detect_link_func = detect_link_mii;
-		break;
-	case API_PRIVATE:
-		G.detect_link_func = detect_link_priv;
-		break;
-	case API_WLAN:
-		G.detect_link_func = detect_link_wlan;
-		break;
-	case API_IFF:
-		G.detect_link_func = detect_link_iff;
-		break;
-	default:
+	api_mode_found = strchr(api_modes, G.api_mode[0]);
+	if (!api_mode_found)
 		bb_error_msg_and_die("unknown API mode '%s'", G.api_mode);
-	}
+	G.api_method_num = api_mode_found - api_modes;
 
 	if (!(opts & FLAG_NO_DAEMON))
 		bb_daemonize_or_rexec(DAEMON_CHDIR_ROOT, argv);
 
 	xmove_fd(xsocket(AF_INET, SOCK_DGRAM, 0), ioctl_fd);
 	if (opts & FLAG_MONITOR) {
-		xmove_fd(netlink_open(), netlink_fd);
+		struct sockaddr_nl addr;
+		int fd = xsocket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
+
+		memset(&addr, 0, sizeof(addr));
+		addr.nl_family = AF_NETLINK;
+		addr.nl_groups = RTMGRP_LINK;
+		addr.nl_pid = getpid();
+
+		xbind(fd, (struct sockaddr*)&addr, sizeof(addr));
+		xmove_fd(fd, netlink_fd);
 	}
 
 	write_pidfile(pidfile_name);

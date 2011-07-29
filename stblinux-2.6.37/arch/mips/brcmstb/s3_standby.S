@@ -111,7 +111,7 @@ skip_dram_encode:
 	aon_write_data  4, t0
 	aon_write_data	8, sp
 
-#if 0
+#if 1
 # deep power down request
 pd_request:
 	li	t0, REG(BCHP_AON_CTRL_PM_CTRL)

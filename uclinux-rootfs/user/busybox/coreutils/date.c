@@ -7,7 +7,7 @@
  * iso-format handling added by Robert Griebl <griebl@gmx.de>
  * bugfixes and cleanup by Bernhard Reutner-Fischer
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
 */
 
 /* This 'date' command supports only 2 time setting formats,
@@ -19,7 +19,48 @@
 /* Input parsing code is always bulky - used heavy duty libc stuff as
    much as possible, missed out a lot of bounds checking */
 
-/* Default input handling to save surprising some people */
+//applet:IF_DATE(APPLET(date, _BB_DIR_BIN, _BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_DATE) += date.o
+
+//config:config DATE
+//config:	bool "date"
+//config:	default y
+//config:	help
+//config:	  date is used to set the system date or display the
+//config:	  current time in the given format.
+//config:
+//config:config FEATURE_DATE_ISOFMT
+//config:	bool "Enable ISO date format output (-I)"
+//config:	default y
+//config:	depends on DATE
+//config:	help
+//config:	  Enable option (-I) to output an ISO-8601 compliant
+//config:	  date/time string.
+//config:
+//config:# defaults to "no": stat's nanosecond field is a bit non-portable
+//config:config FEATURE_DATE_NANO
+//config:	bool "Support %[num]N nanosecond format specifier"
+//config:	default n
+//config:	depends on DATE && PLATFORM_LINUX # syscall(__NR_clock_gettime)
+//config:	help
+//config:	  Support %[num]N format specifier. Adds ~250 bytes of code.
+//config:
+//config:config FEATURE_DATE_COMPAT
+//config:	bool "Support weird 'date MMDDhhmm[[YY]YY][.ss]' format"
+//config:	default y
+//config:	depends on DATE
+//config:	help
+//config:	  System time can be set by 'date -s DATE' and simply 'date DATE',
+//config:	  but formats of DATE string are different. 'date DATE' accepts
+//config:	  a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
+//config:	  unnatural placement of year between minutes and seconds.
+//config:	  date -s (and other commands like touch -d) use more sensible
+//config:	  formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
+//config:
+//config:	  With this option off, 'date DATE' is 'date -s DATE' support
+//config:	  the same format. With it on, 'date DATE' additionally supports
+//config:	  MMDDhhmm[[YY]YY][.ss] format.
 
 /* GNU coreutils 6.9 man page:
  * date [OPTION]... [+FORMAT]
@@ -51,7 +92,52 @@
  *    and does not support -Ins
  * -D FMT is a bbox extension for _input_ conversion of -d DATE
  */
+
+//usage:#define date_trivial_usage
+//usage:       "[OPTIONS] [+FMT] [TIME]"
+//usage:#define date_full_usage "\n\n"
+//usage:       "Display time (using +FMT), or set time\n"
+//usage:     "\nOptions:"
+//usage:	IF_NOT_LONG_OPTS(
+//usage:     "\n	[-s] TIME	Set time to TIME"
+//usage:     "\n	-u		Work in UTC (don't convert to local time)"
+//usage:     "\n	-R		Output RFC-2822 compliant date string"
+//usage:	) IF_LONG_OPTS(
+//usage:     "\n	[-s,--set] TIME	Set time to TIME"
+//usage:     "\n	-u,--utc	Work in UTC (don't convert to local time)"
+//usage:     "\n	-R,--rfc-2822	Output RFC-2822 compliant date string"
+//usage:	)
+//usage:	IF_FEATURE_DATE_ISOFMT(
+//usage:     "\n	-I[SPEC]	Output ISO-8601 compliant date string"
+//usage:     "\n			SPEC='date' (default) for date only,"
+//usage:     "\n			'hours', 'minutes', or 'seconds' for date and"
+//usage:     "\n			time to the indicated precision"
+//usage:	)
+//usage:	IF_NOT_LONG_OPTS(
+//usage:     "\n	-r FILE		Display last modification time of FILE"
+//usage:     "\n	-d TIME		Display TIME, not 'now'"
+//usage:	) IF_LONG_OPTS(
+//usage:     "\n	-r,--reference FILE	Display last modification time of FILE"
+//usage:     "\n	-d,--date TIME	Display TIME, not 'now'"
+//usage:	)
+//usage:	IF_FEATURE_DATE_ISOFMT(
+//usage:     "\n	-D FMT		Use FMT for -d TIME conversion"
+//usage:	)
+//usage:     "\n"
+//usage:     "\nRecognized TIME formats:"
+//usage:     "\n	hh:mm[:ss]"
+//usage:     "\n	[YYYY.]MM.DD-hh:mm[:ss]"
+//usage:     "\n	YYYY-MM-DD hh:mm[:ss]"
+//usage:     "\n	[[[[[YY]YY]MM]DD]hh]mm[.ss]"
+//usage:
+//usage:#define date_example_usage
+//usage:       "$ date\n"
+//usage:       "Wed Apr 12 18:52:41 MDT 2000\n"
+
 #include "libbb.h"
+#if ENABLE_FEATURE_DATE_NANO
+# include <sys/syscall.h>
+#endif
 
 enum {
 	OPT_RFC2822   = (1 << 0), /* R */
@@ -84,9 +170,9 @@ static const char date_longopts[] ALIGN1 =
 int date_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int date_main(int argc UNUSED_PARAM, char **argv)
 {
+	struct timespec ts;
 	struct tm tm_time;
 	char buf_fmt_dt2str[64];
-	time_t tm;
 	unsigned opt;
 	int ifmt = -1;
 	char *date_str;
@@ -161,11 +247,21 @@ int date_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_REFERENCE) {
 		struct stat statbuf;
 		xstat(filename, &statbuf);
-		tm = statbuf.st_mtime;
+		ts.tv_sec = statbuf.st_mtime;
+#if ENABLE_FEATURE_DATE_NANO
+		ts.tv_nsec = statbuf.st_mtim.tv_nsec;
+		/* some toolchains use .st_mtimensec instead of st_mtim.tv_nsec */
+#endif
 	} else {
-		time(&tm);
+#if ENABLE_FEATURE_DATE_NANO
+		/* libc has incredibly messy way of doing this,
+		 * typically requiring -lrt. We just skip all this mess */
+		syscall(__NR_clock_gettime, CLOCK_REALTIME, &ts);
+#else
+		time(&ts.tv_sec);
+#endif
 	}
-	localtime_r(&tm, &tm_time);
+	localtime_r(&ts.tv_sec, &tm_time);
 
 	/* If date string is given, update tm_time, and maybe set date */
 	if (date_str != NULL) {
@@ -183,13 +279,13 @@ int date_main(int argc UNUSED_PARAM, char **argv)
 		}
 
 		/* Correct any day of week and day of year etc. fields */
-		tm_time.tm_isdst = -1;	/* Be sure to recheck dst */
-		tm = validate_tm_time(date_str, &tm_time);
+		tm_time.tm_isdst = -1;  /* Be sure to recheck dst */
+		ts.tv_sec = validate_tm_time(date_str, &tm_time);
 
 		maybe_set_utc(opt);
 
 		/* if setting time, set it */
-		if ((opt & OPT_SET) && stime(&tm) < 0) {
+		if ((opt & OPT_SET) && stime(&ts.tv_sec) < 0) {
 			bb_perror_msg("can't set date");
 		}
 	}
@@ -222,6 +318,46 @@ int date_main(int argc UNUSED_PARAM, char **argv)
 			fmt_dt2str = (char*)"%a %b %e %H:%M:%S %Z %Y";
 		}
 	}
+#if ENABLE_FEATURE_DATE_NANO
+	else {
+		/* User-specified fmt_dt2str */
+		/* Search for and process "%N" */
+		char *p = fmt_dt2str;
+		while ((p = strchr(p, '%')) != NULL) {
+			int n, m;
+			unsigned pres, scale;
+
+			p++;
+			if (*p == '%') {
+				p++;
+				continue;
+			}
+			n = strspn(p, "0123456789");
+			if (p[n] != 'N') {
+				p += n;
+				continue;
+			}
+			/* We have "%[nnn]N" */
+			p[-1] = '\0';
+			p[n] = '\0';
+			scale = 1;
+			pres = 9;
+			if (n) {
+				pres = xatoi_positive(p);
+				if (pres == 0)
+					pres = 9;
+				m = 9 - pres;
+				while (--m >= 0)
+					scale *= 10;
+			}
+
+			m = p - fmt_dt2str;
+			p += n + 1;
+			fmt_dt2str = xasprintf("%s%0*u%s", fmt_dt2str, pres, (unsigned)ts.tv_nsec / scale, p);
+			p = fmt_dt2str + m;
+		}
+	}
+#endif
 
 #define date_buf bb_common_bufsiz1
 	if (*fmt_dt2str == '\0') {

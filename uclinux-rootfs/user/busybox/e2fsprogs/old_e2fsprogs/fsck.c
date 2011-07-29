@@ -20,7 +20,7 @@
  * Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
  *      2001, 2002, 2003, 2004, 2005 by  Theodore Ts'o.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include <sys/types.h>
@@ -349,15 +349,7 @@ static void parse_escape(char *word)
 	if (!word)
 		return;
 
-	for (p = q = word; *p; q++) {
-		c = *p++;
-		if (c != '\\') {
-			*q = c;
-		} else {
-			*q = bb_process_escape_sequence(&p);
-		}
-	}
-	*q = 0;
+	strcpy_and_process_escape_sequences(word, word);
 }
 
 static void free_instance(struct fsck_instance *i)
@@ -612,7 +604,7 @@ static int execute(const char *type, const char *device, const char *mntpt,
 	if (noexecute)
 		pid = -1;
 	else if ((pid = fork()) < 0) {
-		perror("fork");
+		perror("vfork"+1);
 		return errno;
 	} else if (pid == 0) {
 		if (!interactive)
@@ -1166,7 +1158,7 @@ static void signal_cancel(int sig FSCK_ATTR((unused)))
 static void PRS(int argc, char **argv)
 {
 	int     i, j;
-	char    *arg, *dev, *tmp = 0;
+	char    *arg, *dev, *tmp = NULL;
 	char    options[128];
 	int     opt = 0;
 	int     opts_for_fsck = 0;

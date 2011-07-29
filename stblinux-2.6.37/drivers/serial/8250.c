@@ -579,10 +579,8 @@ static inline int _serial_dl_read(struct uart_8250_port *up)
 /* Uart divisor latch write */
 static inline void _serial_dl_write(struct uart_8250_port *up, int value)
 {
-#if !defined(CONFIG_BRCM_IKOS) && !defined(CONFIG_BRCM_HAS_PCU_UARTS)
 	serial_outp(up, UART_DLL, value & 0xff);
 	serial_outp(up, UART_DLM, value >> 8 & 0xff);
-#endif
 }
 
 #if defined(CONFIG_MIPS_ALCHEMY)
@@ -2411,6 +2409,11 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
 
 	serial_outp(up, UART_LCR, cval);		/* reset DLAB */
 	up->lcr = cval;					/* Save LCR */
+#ifdef CONFIG_BRCM_HAS_PCU_UARTS
+	/* HW35330-373: TX lockups on 35330 during init */
+	serial_outp(up, UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_XMIT);
+#endif
+
 	if (up->port.type != PORT_16750) {
 		if (fcr & UART_FCR_ENABLE_FIFO) {
 			/* emulated UARTs (Lucent Venus 167x) need two steps */

@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2008 Tito Ragusa <farmatito@tiscali.it>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -18,16 +18,20 @@
 
 void FAST_FUNC die_if_bad_username(const char *name)
 {
-	goto skip; /* 1st char being dash isn't valid */
+	/* 1st char being dash or dot isn't valid: */
+	goto skip;
+	/* For example, name like ".." can make adduser
+	 * chown "/home/.." recursively - NOT GOOD
+	 */
+
 	do {
-		if (*name == '-')
+		if (*name == '-' || *name == '.')
 			continue;
  skip:
 		if (isalnum(*name)
 		 || *name == '_'
-		 || *name == '.'
 		 || *name == '@'
-		 || (*name == '$' && !*(name + 1))
+		 || (*name == '$' && !name[1])
 		) {
 			continue;
 		}

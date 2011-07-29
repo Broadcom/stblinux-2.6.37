@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2003  Manuel Novoa III  <mjn3@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 compliant */
@@ -13,6 +13,8 @@
 
 #include "libbb.h"
 
+/* This is a NOEXEC applet. Be very careful! */
+
 static const char head_opts[] ALIGN1 =
 	"n:"
 #if ENABLE_FEATURE_FANCY_HEAD
@@ -20,16 +22,14 @@ static const char head_opts[] ALIGN1 =
 #endif
 	;
 
-#if ENABLE_FEATURE_FANCY_HEAD
 static const struct suffix_mult head_suffixes[] = {
 	{ "b", 512 },
 	{ "k", 1024 },
 	{ "m", 1024*1024 },
 	{ "", 0 }
 };
-#endif
 
-static const char header_fmt_str[] ALIGN1 = "\n==> %s <==\n";
+#define header_fmt_str "\n==> %s <==\n"
 
 int head_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int head_main(int argc, char **argv)
@@ -78,11 +78,7 @@ int head_main(int argc, char **argv)
 #if ENABLE_INCLUDE_SUSv2 || ENABLE_FEATURE_FANCY_HEAD
  GET_COUNT:
 #endif
-#if !ENABLE_FEATURE_FANCY_HEAD
-			count = xatoul(p);
-#else
 			count = xatoul_sfx(p, head_suffixes);
-#endif
 			break;
 		default:
 			bb_show_usage();

@@ -1,4 +1,4 @@
-# Simple test harness infrastructurei for BusyBox
+# Simple test harness infrastructure for BusyBox
 #
 # Copyright 2005 by Rob Landley
 #
@@ -26,7 +26,7 @@
 # number of failed tests.
 
 # The "optional" function is used to skip certain tests, ala:
-#   optional CONFIG_FEATURE_THINGY
+#   optional FEATURE_THINGY
 #
 # The "optional" function checks the environment variable "OPTIONFLAGS",
 # which is either empty (in which case it always clears SKIP) or
@@ -54,14 +54,14 @@ test x"$ECHO" != x"" || {
 
 optional()
 {
-  option=`echo ":$OPTIONFLAGS:" | grep ":$1:"`
-  # Not set?
-  if [ -z "$1" ] || [ -z "$OPTIONFLAGS" ] || [ ${#option} -ne 0 ]
-  then
-    SKIP=
-    return
-  fi
-  SKIP=1
+	SKIP=
+	while test "$1"; do
+		if test x"${OPTIONFLAGS/*:$1:*/y}" != x"y"; then
+			SKIP=1
+			return
+		fi
+		shift
+	done
 }
 
 # The testing function
@@ -73,7 +73,7 @@ testing()
 
   if [ $# -ne 5 ]
   then
-    echo "Test $NAME has wrong number of arguments (must be 5) ($# $*)" >&2
+    echo "Test $NAME has wrong number of arguments: $# (must be 5)" >&2
     exit 1
   fi
 
@@ -87,6 +87,7 @@ testing()
 
   $ECHO -ne "$3" > expected
   $ECHO -ne "$4" > input
+  [ -z "$VERBOSE" ] || echo "echo -ne '$4' >input"
   [ -z "$VERBOSE" ] || echo "echo -ne '$5' | $2"
   $ECHO -ne "$5" | eval "$2" > actual
   RETVAL=$?

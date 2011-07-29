@@ -1165,8 +1165,8 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		if (!(hpriv->flags & AHCI_HFLAG_NO_FPDMA_AA))
 			pi.flags |= ATA_FLAG_FPDMA_AA;
 	}
-#if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
-	defined(CONFIG_BCM7346A0) || defined(CONFIG_BCM7231A0)
+#if defined(CONFIG_BCM7425A0) || defined(CONFIG_BCM7346A0) || \
+	defined(CONFIG_BCM7231A0)
 	/* HW7425-442: NCQ broken on A0 silicon; fixed on A1 */
 	if (BRCM_CHIP_REV() == 0x00)
 		pi.flags &= ~ATA_FLAG_NCQ;
@@ -1226,8 +1226,8 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		if (ap->flags & ATA_FLAG_EM)
 			ap->em_message_type = hpriv->em_msg_type;
 
-#if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
-	defined(CONFIG_BCM7346A0) || defined(CONFIG_BCM7231A0)
+#if defined(CONFIG_BCM7425A0) || defined(CONFIG_BCM7346A0) || \
+	defined(CONFIG_BCM7231A0)
 		/* HW7422-797: default to 3.0Gbps on A0; fixed on A1 */
 		if (BRCM_CHIP_REV() == 0x00)
 			ap->link.hw_sata_spd_limit = 0x03;

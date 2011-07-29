@@ -7,7 +7,7 @@
  * Copyright 2006 Rob Landley <rob@landley.net>
  * Copyright 2006 Bernhard Reutner-Fischer
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -75,6 +75,6 @@ int nohup_main(int argc UNUSED_PARAM, char **argv)
 
 	signal(SIGHUP, SIG_IGN);
 
-	BB_EXECVP(argv[1], argv+1);
-	bb_simple_perror_msg_and_die(argv[1]);
+	argv++;
+	BB_EXECVP_or_die(argv);
 }

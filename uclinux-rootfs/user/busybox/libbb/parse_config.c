@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2008 by Vladimir Dronnikov <dronnikov@gmail.com>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  * Also for use in uClibc (http://uclibc.org/) licensed under LGPLv2.1 or later.
  */
 
@@ -45,7 +45,7 @@ int parse_main(int argc UNUSED_PARAM, char **argv)
 Typical usage:
 
 ----- CUT -----
-	char *t[3];	// tokens placeholder
+	char *t[3];  // tokens placeholder
 	parser_t *p = config_open(filename);
 	if (p) {
 		// parse line-by-line
@@ -128,8 +128,8 @@ int FAST_FUNC config_read(parser_t *parser, char **tokens, unsigned flags, const
 	int ntokens, mintokens;
 	int t, len;
 
-	ntokens = flags & 0xFF;
-	mintokens = (flags & 0xFF00) >> 8;
+	ntokens = (uint8_t)flags;
+	mintokens = (uint8_t)(flags >> 8);
 
 	if (parser == NULL)
 		return 0;
@@ -159,7 +159,8 @@ again:
 		parser->data = xstrdup(line);
 
 	/* Tokenize the line */
-	for (t = 0; *line && *line != delims[0] && t < ntokens; t++) {
+	t = 0;
+	do {
 		/* Pin token */
 		tokens[t] = line;
 
@@ -179,39 +180,30 @@ again:
 		}
 
 		/* Token not terminated? */
-		if (line[0] == delims[0])
+		if (*line == delims[0])
 			*line = '\0';
-		else if (line[0] != '\0')
-			*(line++) = '\0';
+		else if (*line != '\0')
+			*line++ = '\0';
 
 #if 0 /* unused so far */
 		if (flags & PARSE_ESCAPE) {
-			const char *from;
-			char *to;
-
-			from = to = tokens[t];
-			while (*from) {
-				if (*from == '\\') {
-					from++;
-					*to++ = bb_process_escape_sequence(&from);
-				} else {
-					*to++ = *from++;
-				}
-			}
-			*to = '\0';
+			strcpy_and_process_escape_sequences(tokens[t], tokens[t]);
 		}
 #endif
-
 		/* Skip possible delimiters */
 		if (flags & PARSE_COLLAPSE)
 			line += strspn(line, delims + 1);
-	}
+
+		t++;
+	} while (*line && *line != delims[0] && t < ntokens);
 
 	if (t < mintokens) {
 		bb_error_msg("bad line %u: %d tokens found, %d needed",
 				parser->lineno, t, mintokens);
 		if (flags & PARSE_MIN_DIE)
 			xfunc_die();
+		if (flags & PARSE_KEEP_COPY)
+			free(parser->data);
 		goto again;
 	}
 

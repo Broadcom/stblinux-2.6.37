@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2008 by Vladimir Dronnikov <dronnikov@gmail.com>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /*
@@ -155,7 +155,7 @@ int inotifyd_main(int argc, char **argv)
 				args[1] = events;
 				args[2] = watches[ie->wd];
 				args[3] = ie->len ? ie->name : NULL;
-				wait4pid(xspawn((char **)args));
+				spawn_and_wait((char **)args);
 				// we are done if all files got final x event
 				if (ie->mask & 0x8000) {
 					if (--argc <= 0)

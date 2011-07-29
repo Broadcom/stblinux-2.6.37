@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Fri Apr  1 16:33:52 2011
- *                 MD5 Checksum         d03d08c4839c3311c9d35c4cd5e10373
+ * Date:           Generated on         Tue May 31 13:55:25 2011
+ *                 MD5 Checksum         b0a0062767e487fe78d25d07b5b21b78
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/b0/bchp_aon_pin_ctrl.h $
  * 
- * Hydra_Software_Devel/1   4/4/11 12:42p albertl
- * SW7344-40: Initial revision.
+ * Hydra_Software_Devel/2   5/31/11 3:29p albertl
+ * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
 
@@ -146,7 +146,7 @@
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_EXT_IRQB_2    2
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_UART_RXDC     3
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_SC0_IO_ALT    4
-#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_TP_IN_00      5
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_ALT_TP_IN_00  5
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_TP_OUT_00     6
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_0_aon_gpio_00_PM_AON_GPIO_00 7
 
@@ -256,8 +256,7 @@
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_SHIFT      24
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_DEFAULT    0
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_AON_SPI_M_MOSI 0
-#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_SPI_M_MOSI 1
-#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_ALT_TP_OUT_03 2
+#define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_mosi_ALT_TP_OUT_03 1
 
 /* AON_PIN_CTRL :: PIN_MUX_CTRL_2 :: aon_spi_m_sck [23:20] */
 #define BCHP_AON_PIN_CTRL_PIN_MUX_CTRL_2_aon_spi_m_sck_MASK        0x00f00000

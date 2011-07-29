@@ -71,3 +71,7 @@ config CONFIG_MIPS_ISA_MIPS64
 	bool "MIPS64"
 
 endchoice
+
+config ARCH_HAS_BWD_MEMCPY
+       bool
+       default y

@@ -20,7 +20,7 @@
 
 #include <asm/brcmstb/brcmstb.h>
 
-#if 0
+#if 1
 #define DBG	printk
 #else
 #define DBG(...)		do { } while (0)
@@ -162,7 +162,7 @@ static void brcm_memc1_client_info(int restore)
 
 static void bcm7420_memc1_suspend(int mode)
 {
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	if (!memc1_config.shmoo_valid) {
 		memc1_config.shmoo_value[0] =
@@ -182,7 +182,7 @@ static void bcm7420_memc1_suspend(int mode)
 		memc1_config.shmoo_value[7] =
 			BDEV_RD(BCHP_MEMC_MISC_1_SCRATCH_0);
 		memc1_config.shmoo_valid = 1;
-		DBG("%s: SHMOO values saved\n", __func__);
+		DBG(KERN_DEBUG "%s: SHMOO values saved\n", __func__);
 	}
 
 	/* save VCDL values */
@@ -250,7 +250,7 @@ static void bcm7420_memc1_resume(int mode)
 	u32 val, cur_val;
 	s32 sval, scur_val, inc_val;
 
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 	/* Restart the clocks */
 	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK, 0);
 	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK, 0);
@@ -481,7 +481,7 @@ void brcm_pm_memc1_powerdown(void)
 {
 	int ii;
 
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	brcm_memc1_client_info(0);
 
@@ -521,7 +521,7 @@ int brcm_pm_memc1_powerup(void)
 {
 	int ii = 0;
 
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 	/* Restore MEMC1 configuration */
 
 	if (!memc1_config.valid || !memc1_config.shmoo_valid) {
@@ -566,7 +566,7 @@ int brcm_pm_memc1_powerup(void)
 
 static void bcm7425_memc1_suspend(int mode)
 {
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	/* power down the pads */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
@@ -601,7 +601,7 @@ static void bcm7425_memc1_suspend(int mode)
 		MEMSYS_PLL_PWRDN_POWER_MANAGEMENT, 1);
 
 	if (mode) {
-		DBG("%s reset\n", __func__);
+		DBG(KERN_DEBUG "%s reset\n", __func__);
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_DRAM_INIT, 1);
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_CORE, 1);
 		BDEV_WR_F_RB(MEMC_DDR_1_DRAM_INIT_CNTRL, DDR3_INIT_MODE, 1);
@@ -624,7 +624,7 @@ void brcm_pm_memc1_suspend(void)
 
 void brcm_pm_memc1_powerdown(void)
 {
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	brcm_memc1_client_info(0);
 
@@ -637,7 +637,7 @@ void brcm_pm_memc1_powerdown(void)
 
 static void bcm7425_memc1_resume(int mode)
 {
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	/* re-enable the clocks */
 	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
@@ -694,7 +694,7 @@ void brcm_pm_memc1_resume(void)
 
 int brcm_pm_memc1_powerup(void)
 {
-	DBG("%s\n", __func__);
+	DBG(KERN_DEBUG "%s\n", __func__);
 
 	/* Restore MEMC1 configuration */
 	if (!memc1_config.valid) {

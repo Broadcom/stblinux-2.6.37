@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2003-2005  Vladimir Oleynik  <dzo@simtreas.ru>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include <getopt.h>
@@ -115,7 +115,7 @@ const char *opt_complementary
         found.
 
  "ww"   Adjacent double options have a counter associated which indicates
-        the number of occurences of the option.
+        the number of occurrences of the option.
         For example the ps applet needs:
         if w is given once, GNU ps sets the width to 132,
         if w is given more than once, it is "unlimited"
@@ -233,7 +233,7 @@ Special characters:
 
  "a+"   A plus after a char in opt_complementary means that the parameter
         for this option is a nonnegative integer. It will be processed
-        with xatoi_u() - allowed range is 0..INT_MAX.
+        with xatoi_positive() - allowed range is 0..INT_MAX.
 
         int param;  // "unsigned param;" will also work
         opt_complementary = "p+";
@@ -423,6 +423,10 @@ getopt32(char **argv, const char *applet_opts, ...)
 			c++;
  next_long: ;
 		}
+		/* Make it unnecessary to clear applet_long_options
+		 * by hand after each call to getopt32
+		 */
+		applet_long_options = NULL;
 	}
 #endif /* ENABLE_LONG_OPTS || ENABLE_FEATURE_GETOPT_LONG */
 	for (s = (const unsigned char *)opt_complementary; s && *s; s++) {
@@ -485,15 +489,15 @@ getopt32(char **argv, const char *applet_opts, ...)
 			s++;
 		}
 		pair = on_off;
-		pair_switch = &(pair->switch_on);
+		pair_switch = &pair->switch_on;
 		for (s++; *s && *s != ':'; s++) {
 			if (*s == '?') {
-				pair_switch = &(pair->requires);
+				pair_switch = &pair->requires;
 			} else if (*s == '-') {
-				if (pair_switch == &(pair->switch_off))
-					pair_switch = &(pair->incongruously);
+				if (pair_switch == &pair->switch_off)
+					pair_switch = &pair->incongruously;
 				else
-					pair_switch = &(pair->switch_off);
+					pair_switch = &pair->switch_off;
 			} else {
 				for (on_off = complementary; on_off->opt_char; on_off++)
 					if (on_off->opt_char == *s) {
@@ -504,6 +508,7 @@ getopt32(char **argv, const char *applet_opts, ...)
 		}
 		s--;
 	}
+	opt_complementary = NULL;
 	va_end(p);
 
 	if (spec_flgs & (FIRST_ARGV_IS_OPT | ALL_ARGV_IS_OPTS)) {
@@ -574,8 +579,8 @@ getopt32(char **argv, const char *applet_opts, ...)
 				llist_add_to_end((llist_t **)(on_off->optarg), optarg);
 		} else if (on_off->param_type == PARAM_INT) {
 			if (optarg)
-//TODO: xatoi_u indirectly pulls in printf machinery
-				*(unsigned*)(on_off->optarg) = xatoi_u(optarg);
+//TODO: xatoi_positive indirectly pulls in printf machinery
+				*(unsigned*)(on_off->optarg) = xatoi_positive(optarg);
 		} else if (on_off->optarg) {
 			if (optarg)
 				*(char **)(on_off->optarg) = optarg;

@@ -1137,7 +1137,9 @@ static int k2_sata_resume(struct device *dev)
 		ap = host->ports[i];
 
 		ata_for_each_link(link, ap, EDGE) {
+			spin_unlock_irqrestore(&hp->lock, flags);
 			sata_std_hardreset(link, NULL, 1000);
+			spin_lock_irqsave(&hp->lock, flags);
 		}
 	}
 

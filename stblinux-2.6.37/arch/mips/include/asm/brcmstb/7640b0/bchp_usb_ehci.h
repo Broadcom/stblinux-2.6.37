@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Mar 16 05:24:56 2011
- *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
+ * Date:           Generated on         Tue Apr 12 13:40:24 2011
+ *                 MD5 Checksum         161bc6c4c68f438ad316017c113c5764
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7640/rdb/c0/bchp_usb_ehci.h $
+ * 
+ * Hydra_Software_Devel/1   4/13/11 6:43p albertl
+ * SWBLURAY-25497: Initial revision.
  *
  ***************************************************************************/
 
@@ -40,26 +43,26 @@
 #define BCHP_USB_EHCI_H__
 
 /***************************************************************************
- *USB_EHCI - USB EHCI   Control Registers
+ *USB_EHCI - USB EHCI  Control Registers
  ***************************************************************************/
-#define BCHP_USB_EHCI_HCCAPBASE                  0x00480300 /* EHCI Capability Register */
-#define BCHP_USB_EHCI_HCSPARAMS                  0x00480304 /* EHCI Structural Parameter */
-#define BCHP_USB_EHCI_HCCPARAMS                  0x00480308 /* EHCI Capability Parameter */
-#define BCHP_USB_EHCI_USBCMD                     0x00480310 /* USB Command Register */
-#define BCHP_USB_EHCI_USBSTS                     0x00480314 /* USB Status  Register */
-#define BCHP_USB_EHCI_USBINTR                    0x00480318 /* USB Interrupt Enable Register */
-#define BCHP_USB_EHCI_FRINDEX                    0x0048031c /* USB Frame Index Register */
-#define BCHP_USB_EHCI_PERIODICLISTBASE           0x00480324 /* Periodic Frame List Base Address Register */
-#define BCHP_USB_EHCI_ASYNCLISTADDR              0x00480328 /* Asynchronous List Address */
-#define BCHP_USB_EHCI_CONFIGFLAG                 0x00480350 /* Configured Flag Register */
-#define BCHP_USB_EHCI_PORTSC_0                   0x00480354 /* Port Status/Control Register for Port 0 */
-#define BCHP_USB_EHCI_PORTSC_1                   0x00480358 /* Port Status/Control Register for Port 1 */
-#define BCHP_USB_EHCI_INSNREG00                  0x00480390 /* Microframe Base Value Register */
-#define BCHP_USB_EHCI_INSNREG01                  0x00480394 /* Packet Buffer OUT/IN Threshold Register */
-#define BCHP_USB_EHCI_INSNREG02                  0x00480398 /* Packet Buffer Depth Register */
-#define BCHP_USB_EHCI_INSNREG03                  0x0048039c /* Break Memory Transfer Register */
-#define BCHP_USB_EHCI_INSNREG04                  0x004803a0 /* Debug Register */
-#define BCHP_USB_EHCI_INSNREG05                  0x004803a4 /* UTMI Control and Status Register */
+#define BCHP_USB_EHCI_HCCAPBASE                  0x00580300 /* EHCI Capability Register */
+#define BCHP_USB_EHCI_HCSPARAMS                  0x00580304 /* EHCI Structural Parameter */
+#define BCHP_USB_EHCI_HCCPARAMS                  0x00580308 /* EHCI Capability Parameter */
+#define BCHP_USB_EHCI_USBCMD                     0x00580310 /* USB Command Register */
+#define BCHP_USB_EHCI_USBSTS                     0x00580314 /* USB Status  Register */
+#define BCHP_USB_EHCI_USBINTR                    0x00580318 /* USB Interrupt Enable Register */
+#define BCHP_USB_EHCI_FRINDEX                    0x0058031c /* USB Frame Index Register */
+#define BCHP_USB_EHCI_PERIODICLISTBASE           0x00580324 /* Periodic Frame List Base Address Register */
+#define BCHP_USB_EHCI_ASYNCLISTADDR              0x00580328 /* Asynchronous List Address */
+#define BCHP_USB_EHCI_CONFIGFLAG                 0x00580350 /* Configured Flag Register */
+#define BCHP_USB_EHCI_PORTSC_0                   0x00580354 /* Port Status/Control Register for Port 0 */
+#define BCHP_USB_EHCI_PORTSC_1                   0x00580358 /* Port Status/Control Register for Port 1 */
+#define BCHP_USB_EHCI_INSNREG00                  0x00580390 /* Microframe Base Value Register */
+#define BCHP_USB_EHCI_INSNREG01                  0x00580394 /* Packet Buffer OUT/IN Threshold Register */
+#define BCHP_USB_EHCI_INSNREG02                  0x00580398 /* Packet Buffer Depth Register */
+#define BCHP_USB_EHCI_INSNREG03                  0x0058039c /* Break Memory Transfer Register */
+#define BCHP_USB_EHCI_INSNREG04                  0x005803a0 /* Debug Register */
+#define BCHP_USB_EHCI_INSNREG05                  0x005803a4 /* UTMI Control and Status Register */
 
 /***************************************************************************
  *HCCAPBASE - EHCI Capability Register

@@ -1,11 +1,9 @@
 /* vi: set sw=4 ts=4: */
 /*
- * arpping.c
- *
  * Mostly stolen from: dhcpcd - DHCP client daemon
  * by Yoichi Hariguchi <yoichi@fore.com>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #include <netinet/if_ether.h>
 #include <net/if_arp.h>
@@ -87,6 +85,7 @@ int FAST_FUNC arpping(uint32_t test_nip,
 	/* wait for arp reply, and check it */
 	timeout_ms = 2000;
 	do {
+		typedef uint32_t aliased_uint32_t FIX_ALIASING;
 		int r;
 		unsigned prevTime = monotonic_ms();
 
@@ -107,7 +106,7 @@ int FAST_FUNC arpping(uint32_t test_nip,
 			 && arp.operation == htons(ARPOP_REPLY)
 			 /* don't check it: Linux doesn't return proper tHaddr (fixed in 2.6.24?) */
 			 /* && memcmp(arp.tHaddr, from_mac, 6) == 0 */
-			 && *((uint32_t *) arp.sInaddr) == test_nip
+			 && *(aliased_uint32_t*)arp.sInaddr == test_nip
 			) {
 				/* if ARP source MAC matches safe_mac
 				 * (which is client's MAC), then it's not a conflict

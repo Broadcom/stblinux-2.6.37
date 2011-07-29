@@ -1599,10 +1599,7 @@ static int __devinit bcmemac_drv_probe(struct platform_device *pdev)
 	pDevCtrl->mii.dev = dev;
 	pDevCtrl->mii.mdio_read = bcmemac_mdio_read;
 	pDevCtrl->mii.mdio_write = bcmemac_mdio_write;
-
-#if ! defined(CONFIG_BCM7038)
 	pDevCtrl->bIPHdrOptimize = 1;
-#endif
 
 	pDevCtrl->mem_start = res->start;
 	pDevCtrl->mem_size = res_size;

@@ -6,7 +6,7 @@
  * Copyright (C) 2000 by Daniel Jacobowitz
  * Written by Daniel Jacobowitz <dan@debian.org>
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* Coreutils 6.12 man page says:
@@ -39,23 +39,21 @@ int mktemp_main(int argc UNUSED_PARAM, char **argv)
 {
 	const char *path;
 	char *chp;
-	unsigned opt;
+	unsigned opts;
 
+	path = getenv("TMPDIR");
+	if (!path || path[0] == '\0')
+		path = "/tmp";
+
+	/* -q and -t are ignored */
 	opt_complementary = "?1"; /* 1 argument max */
-	opt = getopt32(argv, "dqtp:", &path);
+	opts = getopt32(argv, "dqtp:", &path);
+
 	chp = argv[optind] ? argv[optind] : xstrdup("tmp.XXXXXX");
-
-	if (opt & (4|8)) { /* -t and/or -p */
-		const char *dir = getenv("TMPDIR");
-		if (dir && *dir != '\0')
-			path = dir;
-		else if (!(opt & 8)) /* no -p */
-			path = "/tmp/";
-		/* else path comes from -p DIR */
+	if (!strchr(chp, '/') || (opts & 8))
 		chp = concat_path_file(path, chp);
-	}
 
-	if (opt & 1) { /* -d */
+	if (opts & 1) { /* -d */
 		if (mkdtemp(chp) == NULL)
 			return EXIT_FAILURE;
 	} else {

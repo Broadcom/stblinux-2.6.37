@@ -2,7 +2,7 @@
 /* 'time' utility to display resource usage of processes.
    Copyright (C) 1990, 91, 92, 93, 96 Free Software Foundation, Inc.
 
-   Licensed under GPL version 2, see file LICENSE in this tarball for details.
+   Licensed under GPLv2, see file LICENSE in this source tree.
 */
 /* Originally written by David Keppel <pardo@cs.washington.edu>.
    Heavily modified by David MacKenzie <djm@gnu.ai.mit.edu>.
@@ -367,20 +367,15 @@ static void summarize(const char *fmt, char **command, resource_t *resp)
    Put the statistics in *RESP.  */
 static void run_command(char *const *cmd, resource_t *resp)
 {
-	pid_t pid;			/* Pid of child.  */
+	pid_t pid;
 	void (*interrupt_signal)(int);
 	void (*quit_signal)(int);
 
 	resp->elapsed_ms = monotonic_ms();
-	pid = vfork();		/* Run CMD as child process.  */
-	if (pid < 0)
-		bb_perror_msg_and_die("fork");
-	if (pid == 0) {	/* If child.  */
-		/* Don't cast execvp arguments; that causes errors on some systems,
-		   versus merely warnings if the cast is left off.  */
-		BB_EXECVP(cmd[0], cmd);
-		xfunc_error_retval = (errno == ENOENT ? 127 : 126);
-		bb_error_msg_and_die("can't run %s", cmd[0]);
+	pid = xvfork();
+	if (pid == 0) {
+		/* Child */
+		BB_EXECVP_or_die((char**)cmd);
 	}
 
 	/* Have signals kill the child but not self (if possible).  */

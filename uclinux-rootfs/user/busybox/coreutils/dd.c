@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2000,2001  Matt Kraai
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -24,7 +24,7 @@ static const struct suffix_mult dd_suffixes[] = {
 	{ "b", 512 },
 	{ "kD", 1000 },
 	{ "k", 1024 },
-	{ "K", 1024 },	/* compat with coreutils dd */
+	{ "K", 1024 },  /* compat with coreutils dd */
 	{ "MD", 1000000 },
 	{ "M", 1048576 },
 	{ "GD", 1000000000 },
@@ -38,7 +38,7 @@ struct globals {
 	unsigned long long total_bytes;
 	unsigned long long begin_time_us;
 #endif
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define INIT_G() do { \
 	/* we have to zero it out because of NOEXEC */ \
@@ -301,9 +301,12 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 			if (ftruncate(ofd, seek * obs) < 0) {
 				struct stat st;
 
-				if (fstat(ofd, &st) < 0 || S_ISREG(st.st_mode) ||
-						S_ISDIR(st.st_mode))
+				if (fstat(ofd, &st) < 0
+				 || S_ISREG(st.st_mode)
+				 || S_ISDIR(st.st_mode)
+				) {
 					goto die_outfile;
+				}
 			}
 		}
 	} else {

@@ -12,14 +12,14 @@
  * 1999-05-05 Thorsten Kranzkowski <dl8bcu@gmx.net>
  * - enable hardware flow control before displaying /etc/issue
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
 #include <syslog.h>
 
 #if ENABLE_FEATURE_UTMP
-#include <utmp.h> /* updwtmp() */
+# include <utmp.h> /* LOGIN_PROCESS */
 #endif
 
 #ifndef IUCLC
@@ -188,21 +188,9 @@ static void parse_args(char **argv, struct options *op, char **fakehost_p)
 		&(op->login), &op->timeout);
 	argv += optind;
 	if (op->flags & F_INITSTRING) {
-		const char *p = op->initstring;
-		char *q;
-
-		op->initstring = q = xstrdup(p);
-		/* copy optarg into op->initstring decoding \ddd
-		   octal codes into chars */
-		while (*p) {
-			if (*p == '\\') {
-				p++;
-				*q++ = bb_process_escape_sequence(&p);
-			} else {
-				*q++ = *p++;
-			}
-		}
-		*q = '\0';
+		op->initstring = xstrdup(op->initstring);
+		/* decode \ddd octal codes into chars */
+		strcpy_and_process_escape_sequences((char*)op->initstring, op->initstring);
 	}
 	op->flags ^= F_ISSUE;           /* invert flag "show /etc/issue" */
 	debug("after getopt\n");
@@ -216,9 +204,7 @@ static void parse_args(char **argv, struct options *op, char **fakehost_p)
 		ts = argv[0];   /* baud rate(s) */
 	}
 	parse_speeds(op, ts);
-
-// TODO: if applet_name is set to "getty: TTY", bb_error_msg's get simpler!
-// grep for "%s:"
+	applet_name = xasprintf("getty: %s", op->tty);
 
 	if (argv[2])
 		xsetenv("TERM", argv[2]);
@@ -240,7 +226,7 @@ static void open_tty(const char *tty)
 //		xchdir("/dev");
 //		xstat(tty, &st);
 //		if (!S_ISCHR(st.st_mode))
-//			bb_error_msg_and_die("%s: not a character device", tty);
+//			bb_error_msg_and_die("not a character device");
 
 		if (tty[0] != '/')
 			tty = xasprintf("/dev/%s", tty); /* will leak it */
@@ -282,10 +268,8 @@ static void termios_init(struct termios *tp, int speed, struct options *op)
 	 * reads will be done in raw mode anyway. Errors will be dealt with
 	 * later on.
 	 */
-#ifdef __linux__
 	/* flush input and output queues, important for modems! */
-	ioctl(0, TCFLSH, TCIOFLUSH); /* tcflush(0, TCIOFLUSH)? - same */
-#endif
+	tcflush(0, TCIOFLUSH);
 	ispeed = ospeed = speed;
 	if (speed == B0) {
 		/* Speed was specified as "0" on command line.
@@ -299,10 +283,13 @@ static void termios_init(struct termios *tp, int speed, struct options *op)
 	cfsetispeed(tp, ispeed);
 	cfsetospeed(tp, ospeed);
 
-	tp->c_iflag = tp->c_lflag = tp->c_line = 0;
+	tp->c_iflag = tp->c_lflag = 0;
 	tp->c_oflag = OPOST | ONLCR;
 	tp->c_cc[VMIN] = 1;
 	tp->c_cc[VTIME] = 0;
+#ifdef __linux__
+	tp->c_line = 0;
+#endif
 
 	/* Optionally enable hardware flow control */
 #ifdef CRTSCTS
@@ -360,10 +347,8 @@ static void auto_baud(char *buf, unsigned size_buf, struct termios *tp)
 		for (bp = buf; bp < buf + nread; bp++) {
 			if (isdigit(*bp)) {
 				speed = bcode(bp);
-				if (speed > 0) {
-					tp->c_cflag &= ~CBAUD;
-					tp->c_cflag |= speed;
-				}
+				if (speed > 0)
+					cfsetspeed(tp, speed);
 				break;
 			}
 		}
@@ -402,7 +387,7 @@ static char *get_logname(char *logname, unsigned size_logname,
 		struct options *op, struct chardata *cp)
 {
 	char *bp;
-	char c;				/* input character, full eight bits */
+	char c;                         /* input character, full eight bits */
 	char ascval;                    /* low 7 bits of input character */
 	int bits;                       /* # of "1" bits per character */
 	int mask;                       /* mask with 1 bit up */
@@ -417,7 +402,7 @@ static char *get_logname(char *logname, unsigned size_logname,
 
 	/* Flush pending input (esp. after parsing or switching the baud rate). */
 	sleep(1);
-	ioctl(0, TCFLSH, TCIFLUSH); /* tcflush(0, TCIOFLUSH)? - same */
+	tcflush(0, TCIOFLUSH);
 
 	/* Prompt for and read a login name. */
 	logname[0] = '\0';
@@ -431,10 +416,11 @@ static char *get_logname(char *logname, unsigned size_logname,
 		while (cp->eol == '\0') {
 
 			/* Do not report trivial EINTR/EIO errors. */
+			errno = EINTR; /* make read of 0 bytes be silent too */
 			if (read(STDIN_FILENO, &c, 1) < 1) {
 				if (errno == EINTR || errno == EIO)
 					exit(EXIT_SUCCESS);
-				bb_perror_msg_and_die("%s: read", op->tty);
+				bb_perror_msg_and_die(bb_msg_read_error);
 			}
 
 			/* BREAK. If we have speeds to try,
@@ -490,7 +476,7 @@ static char *get_logname(char *logname, unsigned size_logname,
 				if (ascval < ' ') {
 					/* ignore garbage characters */
 				} else if ((int)(bp - logname) >= size_logname - 1) {
-					bb_error_msg_and_die("%s: input overrun", op->tty);
+					bb_error_msg_and_die("input overrun");
 				} else {
 					full_write(STDOUT_FILENO, &c, 1); /* echo the character */
 					*bp++ = ascval; /* and store it */
@@ -525,7 +511,9 @@ static void termios_final(struct options *op, struct termios *tp, struct chardat
 	tp->c_cc[VQUIT] = DEF_QUIT;     /* default quit */
 	tp->c_cc[VEOF] = DEF_EOF;       /* default EOF character */
 	tp->c_cc[VEOL] = DEF_EOL;
+#ifdef VSWTC
 	tp->c_cc[VSWTC] = DEF_SWITCH;   /* default switch character */
+#endif
 
 	/* Account for special characters seen in input. */
 	if (cp->eol == CR) {
@@ -571,69 +559,15 @@ static void termios_final(struct options *op, struct termios *tp, struct chardat
 #endif
 
 	/* Finally, make the new settings effective */
-	/* It's tcsetattr_stdin_TCSANOW() + error check */
-	ioctl_or_perror_and_die(0, TCSETS, tp, "%s: TCSETS", op->tty);
+	if (tcsetattr_stdin_TCSANOW(tp) < 0)
+		bb_perror_msg_and_die("tcsetattr");
 }
-
-#if ENABLE_FEATURE_UTMP
-static void touch(const char *filename)
-{
-	if (access(filename, R_OK | W_OK) == -1)
-		close(open(filename, O_WRONLY | O_CREAT, 0664));
-}
-
-/* update_utmp - update our utmp entry */
-static NOINLINE void update_utmp(const char *line, char *fakehost)
-{
-	struct utmp ut;
-	struct utmp *utp;
-	int mypid = getpid();
-
-	/* In case we won't find an entry below... */
-	memset(&ut, 0, sizeof(ut));
-	safe_strncpy(ut.ut_id, line + 3, sizeof(ut.ut_id));
-
-	/*
-	 * The utmp file holds miscellaneous information about things started by
-	 * /sbin/init and other system-related events. Our purpose is to update
-	 * the utmp entry for the current process, in particular the process type
-	 * and the tty line we are listening to. Return successfully only if the
-	 * utmp file can be opened for update, and if we are able to find our
-	 * entry in the utmp file.
-	 */
-	touch(_PATH_UTMP);
-
-	utmpname(_PATH_UTMP);
-	setutent();
-	while ((utp = getutent()) != NULL) {
-		if (utp->ut_type == INIT_PROCESS && utp->ut_pid == mypid) {
-			memcpy(&ut, utp, sizeof(ut));
-			break;
-		}
-	}
-
-	strcpy(ut.ut_user, "LOGIN");
-	safe_strncpy(ut.ut_line, line, sizeof(ut.ut_line));
-	if (fakehost)
-		safe_strncpy(ut.ut_host, fakehost, sizeof(ut.ut_host));
-	ut.ut_tv.tv_sec = time(NULL);
-	ut.ut_type = LOGIN_PROCESS;
-	ut.ut_pid = mypid;
-
-	pututline(&ut);
-	endutent();
-
-#if ENABLE_FEATURE_WTMP
-	touch(bb_path_wtmp_file);
-	updwtmp(bb_path_wtmp_file, &ut);
-#endif
-}
-#endif /* CONFIG_FEATURE_UTMP */
 
 int getty_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int getty_main(int argc UNUSED_PARAM, char **argv)
 {
 	int n;
+	pid_t pid;
 	char *fakehost = NULL;          /* Fake hostname for ut_host */
 	char *logname;                  /* login name, given to /bin/login */
 	/* Merging these into "struct local" may _seem_ to reduce
@@ -646,7 +580,7 @@ int getty_main(int argc UNUSED_PARAM, char **argv)
 	chardata = init_chardata;
 
 	memset(&options, 0, sizeof(options));
-	options.login =	_PATH_LOGIN;    /* default login program */
+	options.login = _PATH_LOGIN;    /* default login program */
 	options.tty = "tty1";           /* default tty line */
 	options.initstring = "";        /* modem init string */
 #ifdef ISSUE
@@ -703,22 +637,21 @@ int getty_main(int argc UNUSED_PARAM, char **argv)
 	 * by patching the SunOS kernel variable "zsadtrlow" to a larger value;
 	 * 5 seconds seems to be a good value.
 	 */
-	/* tcgetattr() + error check */
-	ioctl_or_perror_and_die(0, TCGETS, &termios, "%s: TCGETS", options.tty);
+	if (tcgetattr(0, &termios) < 0)
+		bb_perror_msg_and_die("tcgetattr");
 
+	pid = getpid();
 #ifdef __linux__
 // FIXME: do we need this? Otherwise "-" case seems to be broken...
 	// /* Forcibly make fd 0 our controlling tty, even if another session
 	//  * has it as a ctty. (Another session loses ctty). */
 	// ioctl(0, TIOCSCTTY, (void*)1);
 	/* Make ourself a foreground process group within our session */
-	tcsetpgrp(0, getpid());
+	tcsetpgrp(0, pid);
 #endif
 
-#if ENABLE_FEATURE_UTMP
 	/* Update the utmp file. This tty is ours now! */
-	update_utmp(options.tty, fakehost);
-#endif
+	update_utmp(pid, LOGIN_PROCESS, options.tty, "LOGIN", fakehost);
 
 	/* Initialize the termios settings (raw mode, eight-bit, blocking i/o). */
 	debug("calling termios_init\n");
@@ -727,8 +660,7 @@ int getty_main(int argc UNUSED_PARAM, char **argv)
 	/* Write the modem init string and DON'T flush the buffers */
 	if (options.flags & F_INITSTRING) {
 		debug("writing init string\n");
-		/* todo: use xwrite_str? */
-		full_write(STDOUT_FILENO, options.initstring, strlen(options.initstring));
+		full_write1_str(options.initstring);
 	}
 
 	/* Optionally detect the baud rate from the modem status message */
@@ -787,5 +719,5 @@ int getty_main(int argc UNUSED_PARAM, char **argv)
 	 * and getty is not suid-root applet. */
 	/* With -n, logname == NULL, and login will ask for username instead */
 	BB_EXECLP(options.login, options.login, "--", logname, NULL);
-	bb_error_msg_and_die("%s: can't exec %s", options.tty, options.login);
+	bb_error_msg_and_die("can't execute '%s'", options.login);
 }

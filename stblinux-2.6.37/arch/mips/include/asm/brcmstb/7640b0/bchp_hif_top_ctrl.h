@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Mar 16 05:22:20 2011
- *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
+ * Date:           Generated on         Tue Apr 12 13:36:55 2011
+ *                 MD5 Checksum         161bc6c4c68f438ad316017c113c5764
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7640/rdb/c0/bchp_hif_top_ctrl.h $
+ * 
+ * Hydra_Software_Devel/1   4/13/11 5:03p albertl
+ * SWBLURAY-25497: Initial revision.
  *
  ***************************************************************************/
 
@@ -48,7 +51,7 @@
 #define BCHP_HIF_TOP_CTRL_PM_CTRL_0              0x0140240c /* HIF Power Management Control Register 0 */
 #define BCHP_HIF_TOP_CTRL_PM_CTRL_1              0x01402410 /* HIF Power Management Control Register 1 */
 #define BCHP_HIF_TOP_CTRL_STRAP_INTERCEPT        0x01402414 /* HIF Strap Intercept Register for Testing */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL              0x01402418 /* SDIO Control Register */
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE             0x01402418 /* HIF Decoded Flash Type */
 
 /***************************************************************************
  *EXT_IRQ_LEVEL - External IRQ Active Level Control Register
@@ -400,82 +403,21 @@
 #define BCHP_HIF_TOP_CTRL_STRAP_INTERCEPT_STRAP_CLIENT_MODE_DEFAULT 1
 
 /***************************************************************************
- *SDIO_CTRL - SDIO Control Register
+ *FLASH_TYPE - HIF Decoded Flash Type
  ***************************************************************************/
-/* HIF_TOP_CTRL :: SDIO_CTRL :: MEMORY_TM [31:24] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MEMORY_TM_MASK                 0xff000000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MEMORY_TM_SHIFT                24
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MEMORY_TM_DEFAULT              0
+/* HIF_TOP_CTRL :: FLASH_TYPE :: reserved0 [31:03] */
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_reserved0_MASK                0xfffffff8
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_reserved0_SHIFT               3
 
-/* HIF_TOP_CTRL :: SDIO_CTRL :: reserved_for_eco0 [23:19] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_reserved_for_eco0_MASK         0x00f80000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_reserved_for_eco0_SHIFT        19
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_reserved_for_eco0_DEFAULT      0
+/* HIF_TOP_CTRL :: FLASH_TYPE :: InvalidStrap [02:02] */
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_InvalidStrap_MASK             0x00000004
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_InvalidStrap_SHIFT            2
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_InvalidStrap_DEFAULT          0
 
-/* HIF_TOP_CTRL :: SDIO_CTRL :: HREADY_IDLE_ENA [18:18] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_ENA_MASK           0x00040000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_ENA_SHIFT          18
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_ENA_DEFAULT        1
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: HREADY_IDLE_PULSE [17:17] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_PULSE_MASK         0x00020000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_PULSE_SHIFT        17
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_HREADY_IDLE_PULSE_DEFAULT      0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: DATA_PENDING [16:16] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_DATA_PENDING_MASK              0x00010000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_DATA_PENDING_SHIFT             16
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_DATA_PENDING_DEFAULT           0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: WR_FLUSH [15:15] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WR_FLUSH_MASK                  0x00008000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WR_FLUSH_SHIFT                 15
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WR_FLUSH_DEFAULT               0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: MF_NUM_WR [14:14] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MF_NUM_WR_MASK                 0x00004000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MF_NUM_WR_SHIFT                14
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_MF_NUM_WR_DEFAULT              0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: WORD_ABO [13:13] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WORD_ABO_MASK                  0x00002000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WORD_ABO_SHIFT                 13
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_WORD_ABO_DEFAULT               0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: FRAME_NBO [12:12] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NBO_MASK                 0x00001000
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NBO_SHIFT                12
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NBO_DEFAULT              0
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: FRAME_NHW [11:11] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NHW_MASK                 0x00000800
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NHW_SHIFT                11
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_FRAME_NHW_DEFAULT              1
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: BUFFER_ABO [10:10] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_BUFFER_ABO_MASK                0x00000400
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_BUFFER_ABO_SHIFT               10
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_BUFFER_ABO_DEFAULT             1
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: SCB_BUF_ACC [09:09] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_BUF_ACC_MASK               0x00000200
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_BUF_ACC_SHIFT              9
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_BUF_ACC_DEFAULT            1
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: SCB_SEQ_EN [08:08] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SEQ_EN_MASK                0x00000100
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SEQ_EN_SHIFT               8
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SEQ_EN_DEFAULT             1
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: SCB_RD_THRESH [07:04] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_RD_THRESH_MASK             0x000000f0
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_RD_THRESH_SHIFT            4
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_RD_THRESH_DEFAULT          2
-
-/* HIF_TOP_CTRL :: SDIO_CTRL :: SCB_SIZE [03:00] */
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SIZE_MASK                  0x0000000f
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SIZE_SHIFT                 0
-#define BCHP_HIF_TOP_CTRL_SDIO_CTRL_SCB_SIZE_DEFAULT               4
+/* HIF_TOP_CTRL :: FLASH_TYPE :: FLASH_TYPE [01:00] */
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_MASK               0x00000003
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_SHIFT              0
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_DEFAULT            0
 
 #endif /* #ifndef BCHP_HIF_TOP_CTRL_H__ */
 

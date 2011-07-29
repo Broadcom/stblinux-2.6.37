@@ -16,7 +16,7 @@
  *
  * tftpd added by Denys Vlasenko & Vladimir Dronnikov
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 
@@ -24,7 +24,8 @@
 
 #define TFTP_BLKSIZE_DEFAULT       512  /* according to RFC 1350, don't change */
 #define TFTP_BLKSIZE_DEFAULT_STR "512"
-#define TFTP_TIMEOUT_MS             50
+/* Was 50 ms but users asked to bump it up a bit */
+#define TFTP_TIMEOUT_MS            100
 #define TFTP_MAXTIMEOUT_MS        2000
 #define TFTP_NUM_RETRIES            12  /* number of backed-off retries */
 
@@ -90,7 +91,7 @@ struct globals {
 	const char *file;
 	bb_progress_t pmt;
 #endif
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 struct BUG_G_too_big {
 	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
@@ -104,38 +105,22 @@ struct BUG_G_too_big {
 #define error_pkt_str    (error_pkt + 4)
 
 #if ENABLE_FEATURE_TFTP_PROGRESS_BAR
-/* SIGALRM logic nicked from the wget applet */
-static void progress_meter(int flag)
+static void tftp_progress_update(void)
 {
-	/* We can be called from signal handler */
-	int save_errno = errno;
-
-	if (flag == -1) { /* first call to progress_meter */
-		bb_progress_init(&G.pmt);
-	}
-
 	bb_progress_update(&G.pmt, G.file, 0, G.pos, G.size);
-
-	if (flag == 0) {
-		/* last call to progress_meter */
-		alarm(0);
-		fputc('\n', stderr);
-	} else {
-		if (flag == -1) { /* first call to progress_meter */
-			signal_SA_RESTART_empty_mask(SIGALRM, progress_meter);
-		}
-		alarm(1);
-	}
-
-	errno = save_errno;
 }
 static void tftp_progress_init(void)
 {
-	progress_meter(-1);
+	bb_progress_init(&G.pmt);
+	tftp_progress_update();
 }
 static void tftp_progress_done(void)
 {
-	progress_meter(0);
+	if (G.pmt.inited) {
+		tftp_progress_update();
+		bb_putchar_stderr('\n');
+		G.pmt.inited = 0;
+	}
 }
 #else
 # define tftp_progress_init() ((void)0)
@@ -445,7 +430,7 @@ static int tftp_protocol(
 		/* NB: send_len value is preserved in code below
 		 * for potential resend */
 
-		retries = TFTP_NUM_RETRIES;	/* re-initialize */
+		retries = TFTP_NUM_RETRIES;  /* re-initialize */
 		waittime_ms = TFTP_TIMEOUT_MS;
 
  send_again:
@@ -458,9 +443,10 @@ static int tftp_protocol(
 		xsendto(socket_fd, xbuf, send_len, &peer_lsa->u.sa, peer_lsa->len);
 
 #if ENABLE_FEATURE_TFTP_PROGRESS_BAR
-		if (ENABLE_TFTP && remote_file) { /* tftp */
+		if (ENABLE_TFTP && remote_file) /* tftp */
 			G.pos = (block_nr - 1) * (uoff_t)blksize;
-		}
+		if (G.pmt.inited)
+			tftp_progress_update();
 #endif
 		/* Was it final ACK? then exit */
 		if (finished && (opcode == TFTP_ACK))
@@ -477,6 +463,7 @@ static int tftp_protocol(
 		case 0:
 			retries--;
 			if (retries == 0) {
+				tftp_progress_done();
 				bb_error_msg("timeout");
 				goto ret; /* no err packet sent */
 			}
@@ -581,7 +568,8 @@ static int tftp_protocol(
 			 * "An option not acknowledged by the server
 			 * must be ignored by the client and server
 			 * as if it were never requested." */
-			bb_error_msg("server only supports blocksize of 512");
+			if (blksize != TFTP_BLKSIZE_DEFAULT)
+				bb_error_msg("falling back to blocksize "TFTP_BLKSIZE_DEFAULT_STR);
 			blksize = TFTP_BLKSIZE_DEFAULT;
 			io_bufsize = TFTP_BLKSIZE_DEFAULT + 4;
 		}

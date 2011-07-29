@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Mar 16 05:25:19 2011
- *                 MD5 Checksum         5f3fd1fee41756e88bc560cc5d641d73
+ * Date:           Generated on         Tue Apr 12 13:40:57 2011
+ *                 MD5 Checksum         161bc6c4c68f438ad316017c113c5764
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7640/rdb/c0/bchp_usb_ohci.h $
+ * 
+ * Hydra_Software_Devel/1   4/13/11 6:45p albertl
+ * SWBLURAY-25497: Initial revision.
  *
  ***************************************************************************/
 
@@ -40,31 +43,31 @@
 #define BCHP_USB_OHCI_H__
 
 /***************************************************************************
- *USB_OHCI - USB OHCI   Control Registers
+ *USB_OHCI - USB OHCI  Control Registers
  ***************************************************************************/
-#define BCHP_USB_OHCI_HcRevision                 0x00480400 /* Host Controller Revision Register */
-#define BCHP_USB_OHCI_HcControl                  0x00480404 /* Host Controller Control Register */
-#define BCHP_USB_OHCI_HcCommandStatus            0x00480408 /* Host Controller Command Status Register */
-#define BCHP_USB_OHCI_HcInterruptStatus          0x0048040c /* Host Controller Interrupt Status Register */
-#define BCHP_USB_OHCI_HcInterruptEnable          0x00480410 /* Host Controller Interrupt Enable Register */
-#define BCHP_USB_OHCI_HcInterruptDisable         0x00480414 /* Host Controller Interrupt Disable Register */
-#define BCHP_USB_OHCI_HcHCCA                     0x00480418 /* Host Controller Communication Area Register */
-#define BCHP_USB_OHCI_HcPeriodCurrentED          0x0048041c /* Current Isochronous or Interrupt Endpoint Descriptor Register */
-#define BCHP_USB_OHCI_HcControlHeadED            0x00480420 /* First Endpoint Descriptor of the Control List */
-#define BCHP_USB_OHCI_HcControlCurrentED         0x00480424 /* Current Endpoint Descriptor of the Control List */
-#define BCHP_USB_OHCI_HcBulkHeadED               0x00480428 /* First Endpoint Descriptor of the Bulk List */
-#define BCHP_USB_OHCI_HcBulkCurrentED            0x0048042c /* Current Endpoint Descriptor of the Bulk List */
-#define BCHP_USB_OHCI_HcDoneHead                 0x00480430 /* Last Completed Transfer Descriptor Added to the Done Queue */
-#define BCHP_USB_OHCI_HcFmInterval               0x00480434 /* Frame Bit Time Interval Register */
-#define BCHP_USB_OHCI_HcFmRemaining              0x00480438 /* Bit Time Remaining in the Current Frame */
-#define BCHP_USB_OHCI_HcFmNumber                 0x0048043c /* Frame Number Register */
-#define BCHP_USB_OHCI_HcPeriodicStart            0x00480440 /* Register to Start Processing the Periodic List */
-#define BCHP_USB_OHCI_HcLSThreshold              0x00480444 /* LS Packet Threshold Register */
-#define BCHP_USB_OHCI_HcRhDescriptorA            0x00480448 /* Root Hub Descriptor A Register */
-#define BCHP_USB_OHCI_HcRhDescriptorB            0x0048044c /* Root Hub Descriptor B Register */
-#define BCHP_USB_OHCI_HcRhStatus                 0x00480450 /* Root Hub Status Register */
-#define BCHP_USB_OHCI_HcRhPortStatus1            0x00480454 /* Root Hub Port Status Register for Port 1 */
-#define BCHP_USB_OHCI_HcRhPortStatus2            0x00480458 /* Root Hub Port Status Register for Port 2 */
+#define BCHP_USB_OHCI_HcRevision                 0x00580400 /* Host Controller Revision Register */
+#define BCHP_USB_OHCI_HcControl                  0x00580404 /* Host Controller Control Register */
+#define BCHP_USB_OHCI_HcCommandStatus            0x00580408 /* Host Controller Command Status Register */
+#define BCHP_USB_OHCI_HcInterruptStatus          0x0058040c /* Host Controller Interrupt Status Register */
+#define BCHP_USB_OHCI_HcInterruptEnable          0x00580410 /* Host Controller Interrupt Enable Register */
+#define BCHP_USB_OHCI_HcInterruptDisable         0x00580414 /* Host Controller Interrupt Disable Register */
+#define BCHP_USB_OHCI_HcHCCA                     0x00580418 /* Host Controller Communication Area Register */
+#define BCHP_USB_OHCI_HcPeriodCurrentED          0x0058041c /* Current Isochronous or Interrupt Endpoint Descriptor Register */
+#define BCHP_USB_OHCI_HcControlHeadED            0x00580420 /* First Endpoint Descriptor of the Control List */
+#define BCHP_USB_OHCI_HcControlCurrentED         0x00580424 /* Current Endpoint Descriptor of the Control List */
+#define BCHP_USB_OHCI_HcBulkHeadED               0x00580428 /* First Endpoint Descriptor of the Bulk List */
+#define BCHP_USB_OHCI_HcBulkCurrentED            0x0058042c /* Current Endpoint Descriptor of the Bulk List */
+#define BCHP_USB_OHCI_HcDoneHead                 0x00580430 /* Last Completed Transfer Descriptor Added to the Done Queue */
+#define BCHP_USB_OHCI_HcFmInterval               0x00580434 /* Frame Bit Time Interval Register */
+#define BCHP_USB_OHCI_HcFmRemaining              0x00580438 /* Bit Time Remaining in the Current Frame */
+#define BCHP_USB_OHCI_HcFmNumber                 0x0058043c /* Frame Number Register */
+#define BCHP_USB_OHCI_HcPeriodicStart            0x00580440 /* Register to Start Processing the Periodic List */
+#define BCHP_USB_OHCI_HcLSThreshold              0x00580444 /* LS Packet Threshold Register */
+#define BCHP_USB_OHCI_HcRhDescriptorA            0x00580448 /* Root Hub Descriptor A Register */
+#define BCHP_USB_OHCI_HcRhDescriptorB            0x0058044c /* Root Hub Descriptor B Register */
+#define BCHP_USB_OHCI_HcRhStatus                 0x00580450 /* Root Hub Status Register */
+#define BCHP_USB_OHCI_HcRhPortStatus1            0x00580454 /* Root Hub Port Status Register for Port 1 */
+#define BCHP_USB_OHCI_HcRhPortStatus2            0x00580458 /* Root Hub Port Status Register for Port 2 */
 
 /***************************************************************************
  *HcRevision - Host Controller Revision Register

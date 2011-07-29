@@ -6,7 +6,7 @@
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  * Copyright (C) 2005-2006 by Rob Landley <rob@landley.net>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 // Design notes: There is no spec for mount.  Remind me to write one.
 //
@@ -267,8 +267,7 @@ struct globals {
 #endif
 	llist_t *fslist;
 	char getmntent_buf[1];
-
-};
+} FIX_ALIASING;
 enum { GETMNTENT_BUFSIZE = COMMON_BUFSIZE - offsetof(struct globals, getmntent_buf) };
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define nfs_mount_version (G.nfs_mount_version)
@@ -333,7 +332,7 @@ static void append_mount_options(char **oldopts, const char *newopts)
 }
 
 // Use the mount_options list to parse options into flags.
-// Also return list of unrecognized options if unrecognized != NULL
+// Also update list of unrecognized options if unrecognized != NULL
 static long parse_mount_options(char *options, char **unrecognized)
 {
 	long flags = MS_SILENT;
@@ -349,25 +348,35 @@ static long parse_mount_options(char *options, char **unrecognized)
 // FIXME: use hasmntopt()
 		// Find this option in mount_options
 		for (i = 0; i < ARRAY_SIZE(mount_options); i++) {
-			if (!strcasecmp(option_str, options)) {
+			if (strcasecmp(option_str, options) == 0) {
 				long fl = mount_options[i];
-				if (fl < 0) flags &= fl;
-				else flags |= fl;
-				break;
+				if (fl < 0)
+					flags &= fl;
+				else
+					flags |= fl;
+				goto found;
 			}
 			option_str += strlen(option_str) + 1;
 		}
-		// If unrecognized not NULL, append unrecognized mount options
-		if (unrecognized && i == ARRAY_SIZE(mount_options)) {
+		// We did not recognize this option.
+		// If "unrecognized" is not NULL, append option there.
+		// Note that we should not append *empty* option -
+		// in this case we want to pass NULL, not "", to "data"
+		// parameter of mount(2) syscall.
+		// This is crucial for filesystems that don't accept
+		// any arbitrary mount options, like cgroup fs:
+		// "mount -t cgroup none /mnt"
+		if (options[0] && unrecognized) {
 			// Add it to strflags, to pass on to kernel
-			i = *unrecognized ? strlen(*unrecognized) : 0;
-			*unrecognized = xrealloc(*unrecognized, i + strlen(options) + 2);
+			char *p = *unrecognized;
+			unsigned len = p ? strlen(p) : 0;
+			*unrecognized = p = xrealloc(p, len + strlen(options) + 2);
 
 			// Comma separated if it's not the first one
-			if (i) (*unrecognized)[i++] = ',';
-			strcpy((*unrecognized)+i, options);
+			if (len) p[len++] = ',';
+			strcpy(p + len, options);
 		}
-
+ found:
 		if (!comma)
 			break;
 		// Advance to next option
@@ -457,7 +466,7 @@ static int mount_it_now(struct mntent *mp, long vfsflags, char *filteropts)
 				args[rc++] = filteropts;
 			}
 			args[rc] = NULL;
-			rc = wait4pid(spawn(args));
+			rc = spawn_and_wait(args);
 			free(args[0]);
 			if (!rc)
 				break;
@@ -533,7 +542,7 @@ static int mount_it_now(struct mntent *mp, long vfsflags, char *filteropts)
  * Linux NFS mount
  * Copyright (C) 1993 Rick Sladkey <jrs@world.std.com>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  *
  * Wed Feb  8 12:51:48 1995, biro@yggdrasil.com (Ross Biro): allow all port
  * numbers to be specified on the command line.
@@ -750,7 +759,15 @@ static const uint8_t nfs_err_stat[] = {
 	19, 20, 21, 22, 27, 28,
 	30, 63, 66, 69, 70, 71
 };
-static const uint8_t nfs_err_errnum[] = {
+#if ( \
+	EPERM | ENOENT      | EIO      | ENXIO | EACCES| EEXIST | \
+	ENODEV| ENOTDIR     | EISDIR   | EINVAL| EFBIG | ENOSPC | \
+	EROFS | ENAMETOOLONG| ENOTEMPTY| EDQUOT| ESTALE| EREMOTE) < 256
+typedef uint8_t nfs_err_type;
+#else
+typedef uint16_t nfs_err_type;
+#endif
+static const nfs_err_type nfs_err_errnum[] = {
 	EPERM , ENOENT      , EIO      , ENXIO , EACCES, EEXIST,
 	ENODEV, ENOTDIR     , EISDIR   , EINVAL, EFBIG , ENOSPC,
 	EROFS , ENAMETOOLONG, ENOTEMPTY, EDQUOT, ESTALE, EREMOTE
@@ -768,78 +785,52 @@ static char *nfs_strerror(int status)
 
 static bool_t xdr_fhandle(XDR *xdrs, fhandle objp)
 {
-	if (!xdr_opaque(xdrs, objp, FHSIZE))
-		 return FALSE;
-	return TRUE;
+	return xdr_opaque(xdrs, objp, FHSIZE);
 }
 
 static bool_t xdr_fhstatus(XDR *xdrs, fhstatus *objp)
 {
 	if (!xdr_u_int(xdrs, &objp->fhs_status))
 		 return FALSE;
-	switch (objp->fhs_status) {
-	case 0:
-		if (!xdr_fhandle(xdrs, objp->fhstatus_u.fhs_fhandle))
-			 return FALSE;
-		break;
-	default:
-		break;
-	}
+	if (objp->fhs_status == 0)
+		return xdr_fhandle(xdrs, objp->fhstatus_u.fhs_fhandle);
 	return TRUE;
 }
 
 static bool_t xdr_dirpath(XDR *xdrs, dirpath *objp)
 {
-	if (!xdr_string(xdrs, objp, MNTPATHLEN))
-		 return FALSE;
-	return TRUE;
+	return xdr_string(xdrs, objp, MNTPATHLEN);
 }
 
 static bool_t xdr_fhandle3(XDR *xdrs, fhandle3 *objp)
 {
-	if (!xdr_bytes(xdrs, (char **)&objp->fhandle3_val,
-				(unsigned int *) &objp->fhandle3_len,
-				FHSIZE3)
-	) {
-		 return FALSE;
-	}
-	return TRUE;
+	return xdr_bytes(xdrs, (char **)&objp->fhandle3_val,
+			   (unsigned int *) &objp->fhandle3_len,
+			   FHSIZE3);
 }
 
 static bool_t xdr_mountres3_ok(XDR *xdrs, mountres3_ok *objp)
 {
 	if (!xdr_fhandle3(xdrs, &objp->fhandle))
 		return FALSE;
-	if (!xdr_array(xdrs, &(objp->auth_flavours.auth_flavours_val),
-				&(objp->auth_flavours.auth_flavours_len),
-				~0,
-				sizeof(int),
-				(xdrproc_t) xdr_int)
-	) {
-		return FALSE;
-	}
-	return TRUE;
+	return xdr_array(xdrs, &(objp->auth_flavours.auth_flavours_val),
+			   &(objp->auth_flavours.auth_flavours_len),
+			   ~0,
+			   sizeof(int),
+			   (xdrproc_t) xdr_int);
 }
 
 static bool_t xdr_mountstat3(XDR *xdrs, mountstat3 *objp)
 {
-	if (!xdr_enum(xdrs, (enum_t *) objp))
-		 return FALSE;
-	return TRUE;
+	return xdr_enum(xdrs, (enum_t *) objp);
 }
 
 static bool_t xdr_mountres3(XDR *xdrs, mountres3 *objp)
 {
 	if (!xdr_mountstat3(xdrs, &objp->fhs_status))
 		return FALSE;
-	switch (objp->fhs_status) {
-	case MNT_OK:
-		if (!xdr_mountres3_ok(xdrs, &objp->mountres3_u.mountinfo))
-			 return FALSE;
-		break;
-	default:
-		break;
-	}
+	if (objp->fhs_status == MNT_OK)
+		return xdr_mountres3_ok(xdrs, &objp->mountres3_u.mountinfo);
 	return TRUE;
 }
 
@@ -907,10 +898,12 @@ get_mountport(struct pmap *pm_mnt,
 			goto next;
 		if (version && version <= 2 && pmap->pml_map.pm_vers > 2)
 			goto next;
-		if (pmap->pml_map.pm_vers > MAX_NFSPROT ||
-		    (proto && pm_mnt->pm_prot && pmap->pml_map.pm_prot != proto) ||
-		    (port && pmap->pml_map.pm_port != port))
+		if (pmap->pml_map.pm_vers > MAX_NFSPROT
+		 || (proto && pm_mnt->pm_prot && pmap->pml_map.pm_prot != proto)
+		 || (port && pmap->pml_map.pm_port != port)
+		) {
 			goto next;
+		}
 		memcpy(pm_mnt, &pmap->pml_map, sizeof(*pm_mnt));
  next:
 		pmap = pmap->pml_next;
@@ -1042,12 +1035,10 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 			bb_herror_msg("%s", hostname);
 			goto fail;
 		}
-		if ((size_t)hp->h_length > sizeof(struct in_addr)) {
-			bb_error_msg("got bad hp->h_length");
-			hp->h_length = sizeof(struct in_addr);
+		if (hp->h_length != (int)sizeof(struct in_addr)) {
+			bb_error_msg_and_die("only IPv4 is supported");
 		}
-		memcpy(&server_addr.sin_addr,
-				hp->h_addr, hp->h_length);
+		memcpy(&server_addr.sin_addr, hp->h_addr_list[0], sizeof(struct in_addr));
 	}
 
 	memcpy(&mount_server_addr, &server_addr, sizeof(mount_server_addr));
@@ -1140,7 +1131,7 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 				continue;
 			}
 
-			val = xatoi_u(opteq);
+			val = xatoi_positive(opteq);
 			switch (idx) {
 			case 0: // "rsize"
 				data.rsize = val;
@@ -1330,13 +1321,11 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 				bb_herror_msg("%s", mounthost);
 				goto fail;
 			}
-			if ((size_t)hp->h_length > sizeof(struct in_addr)) {
-				bb_error_msg("got bad hp->h_length");
-				hp->h_length = sizeof(struct in_addr);
+			if (hp->h_length != (int)sizeof(struct in_addr)) {
+				bb_error_msg_and_die("only IPv4 is supported");
 			}
 			mount_server_addr.sin_family = AF_INET;
-			memcpy(&mount_server_addr.sin_addr,
-						hp->h_addr, hp->h_length);
+			memcpy(&mount_server_addr.sin_addr, hp->h_addr_list[0], sizeof(struct in_addr));
 		}
 	}
 
@@ -1636,7 +1625,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		}
 		args[n++] = mp->mnt_dir;
 		args[n] = NULL;
-		rc = wait4pid(xspawn(args));
+		rc = spawn_and_wait(args);
 		goto report_error;
 	}
 
@@ -1713,9 +1702,9 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 
 	// If we know the fstype (or don't need to), jump straight
 	// to the actual mount.
-	if (mp->mnt_type || (vfsflags & (MS_REMOUNT | MS_BIND | MS_MOVE)))
+	if (mp->mnt_type || (vfsflags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
 		rc = mount_it_now(mp, vfsflags, filteropts);
-	else {
+	} else {
 		// Loop through filesystem types until mount succeeds
 		// or we run out
 
@@ -1751,7 +1740,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 
 	if (errno == EBUSY && ignore_busy)
 		return 0;
-	if (rc < 0)
+	if (rc != 0)
 		bb_perror_msg("mounting %s on %s failed", mp->mnt_fsname, mp->mnt_dir);
 	return rc;
 }
@@ -1924,7 +1913,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 	}
 	fstab = setmntent(fstabname, "r");
 	if (!fstab)
-		bb_perror_msg_and_die("can't read %s", fstabname);
+		bb_perror_msg_and_die("can't read '%s'", fstabname);
 
 	// Loop through entries until we find what we're looking for
 	memset(mtpair, 0, sizeof(mtpair));

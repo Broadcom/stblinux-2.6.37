@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2009, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May  4 16:33:03 2009
- *                 MD5 Checksum         41a22724f57416cfb69cc3f3286da43f
+ * Date:           Generated on         Fri May  6 10:35:47 2011
+ *                 MD5 Checksum         fe612bbfa36f70660b1c9bdf3073e170
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7550/rdb/a0/bchp_wktmr.h $
+ * $brcm_Log: /magnum/basemodules/chp/7550/rdb/b0/bchp_wktmr.h $
  * 
- * Hydra_Software_Devel/1   5/4/09 6:15p albertl
- * PR54730: Initial revision.
+ * Hydra_Software_Devel/2   5/6/11 12:56p tdo
+ * SW7550-740: Sync up RDB
  *
  ***************************************************************************/
 
@@ -61,6 +61,7 @@
 /* WKTMR :: EVENT :: wktmr_alarm_event [00:00] */
 #define BCHP_WKTMR_EVENT_wktmr_alarm_event_MASK                    0x00000001
 #define BCHP_WKTMR_EVENT_wktmr_alarm_event_SHIFT                   0
+#define BCHP_WKTMR_EVENT_wktmr_alarm_event_DEFAULT                 0
 
 /***************************************************************************
  *COUNTER - Wakeup Counter
@@ -68,6 +69,7 @@
 /* WKTMR :: COUNTER :: wktmr_counter [31:00] */
 #define BCHP_WKTMR_COUNTER_wktmr_counter_MASK                      0xffffffff
 #define BCHP_WKTMR_COUNTER_wktmr_counter_SHIFT                     0
+#define BCHP_WKTMR_COUNTER_wktmr_counter_DEFAULT                   0
 
 /***************************************************************************
  *ALARM - Wakeup Timer Alarm
@@ -75,6 +77,7 @@
 /* WKTMR :: ALARM :: wktmr_alarm [31:00] */
 #define BCHP_WKTMR_ALARM_wktmr_alarm_MASK                          0xffffffff
 #define BCHP_WKTMR_ALARM_wktmr_alarm_SHIFT                         0
+#define BCHP_WKTMR_ALARM_wktmr_alarm_DEFAULT                       0
 
 /***************************************************************************
  *PRESCALER - Wakeup Timer Prescaler
@@ -86,6 +89,7 @@
 /* WKTMR :: PRESCALER :: wktmr_prescaler [24:00] */
 #define BCHP_WKTMR_PRESCALER_wktmr_prescaler_MASK                  0x01ffffff
 #define BCHP_WKTMR_PRESCALER_wktmr_prescaler_SHIFT                 0
+#define BCHP_WKTMR_PRESCALER_wktmr_prescaler_DEFAULT               27000000
 
 /***************************************************************************
  *PRESCALER_VAL - Wakeup Timer Prescaler Value
@@ -97,6 +101,7 @@
 /* WKTMR :: PRESCALER_VAL :: wktmr_prescaler_val [24:00] */
 #define BCHP_WKTMR_PRESCALER_VAL_wktmr_prescaler_val_MASK          0x01ffffff
 #define BCHP_WKTMR_PRESCALER_VAL_wktmr_prescaler_val_SHIFT         0
+#define BCHP_WKTMR_PRESCALER_VAL_wktmr_prescaler_val_DEFAULT       0
 
 #endif /* #ifndef BCHP_WKTMR_H__ */
 

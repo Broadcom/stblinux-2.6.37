@@ -3,7 +3,7 @@
  * tiny-ls.c version 0.1.0: A minimalist 'ls'
  * Copyright (C) 1996 Brian Candler <B.Candler@pobox.com>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* [date unknown. Perhaps before year 2000]
@@ -52,7 +52,6 @@
 
 
 enum {
-
 TERMINAL_WIDTH  = 80,           /* use 79 if terminal has linefold bug */
 COLUMN_GAP      = 2,            /* includes the file type char */
 
@@ -120,7 +119,6 @@ LIST_LONG       = LIST_MODEBITS | LIST_NLINKS | LIST_ID_NAME | LIST_SIZE | \
 SPLIT_DIR       = 1,
 SPLIT_FILE      = 0,
 SPLIT_SUBDIR    = 2,
-
 };
 
 /* "[-]Cadil1", POSIX mandated options, busybox always supports */
@@ -184,7 +182,7 @@ static const unsigned opt_flags[] = {
 	LIST_INO,                   /* i */
 	LIST_LONG | STYLE_LONG,     /* l - remember LS_DISP_HR in mask! */
 	LIST_SHORT | STYLE_SINGLE,  /* 1 */
-	0,                          /* g (don't show group) - handled via OPT_g */
+	0,                          /* g (don't show owner) - handled via OPT_g */
 	LIST_ID_NUMERIC,            /* n */
 	LIST_BLOCKS,                /* s */
 	DISP_ROWS,                  /* x */
@@ -241,9 +239,6 @@ struct dnode {
 	IF_SELINUX(security_context_t sid;)
 };
 
-static struct dnode **list_dir(const char *, unsigned *);
-static unsigned list_single(const struct dnode *);
-
 struct globals {
 #if ENABLE_FEATURE_LS_COLOR
 	smallint show_color;
@@ -258,7 +253,7 @@ struct globals {
 	/* Do time() just once. Saves one syscall per file for "ls -l" */
 	time_t current_time_t;
 #endif
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #if ENABLE_FEATURE_LS_COLOR
 # define show_color     (G.show_color    )
@@ -528,31 +523,237 @@ static void dnsort(struct dnode **dn, int size)
 #endif
 
 
+static unsigned calc_name_len(const char *name)
+{
+	unsigned len;
+	uni_stat_t uni_stat;
+
+	// TODO: quote tab as \t, etc, if -Q
+	name = printable_string(&uni_stat, name);
+
+	if (!(option_mask32 & OPT_Q)) {
+		return uni_stat.unicode_width;
+	}
+
+	len = 2 + uni_stat.unicode_width;
+	while (*name) {
+		if (*name == '"' || *name == '\\') {
+			len++;
+		}
+		name++;
+	}
+	return len;
+}
+
+
+/* Return the number of used columns.
+ * Note that only STYLE_COLUMNS uses return value.
+ * STYLE_SINGLE and STYLE_LONG don't care.
+ * coreutils 7.2 also supports:
+ * ls -b (--escape) = octal escapes (although it doesn't look like working)
+ * ls -N (--literal) = not escape at all
+ */
+static unsigned print_name(const char *name)
+{
+	unsigned len;
+	uni_stat_t uni_stat;
+
+	// TODO: quote tab as \t, etc, if -Q
+	name = printable_string(&uni_stat, name);
+
+	if (!(option_mask32 & OPT_Q)) {
+		fputs(name, stdout);
+		return uni_stat.unicode_width;
+	}
+
+	len = 2 + uni_stat.unicode_width;
+	putchar('"');
+	while (*name) {
+		if (*name == '"' || *name == '\\') {
+			putchar('\\');
+			len++;
+		}
+		putchar(*name);
+		name++;
+	}
+	putchar('"');
+	return len;
+}
+
+/* Return the number of used columns.
+ * Note that only STYLE_COLUMNS uses return value,
+ * STYLE_SINGLE and STYLE_LONG don't care.
+ */
+static NOINLINE unsigned list_single(const struct dnode *dn)
+{
+	unsigned column = 0;
+	char *lpath = lpath; /* for compiler */
+#if ENABLE_FEATURE_LS_FILETYPES || ENABLE_FEATURE_LS_COLOR
+	struct stat info;
+	char append;
+#endif
+
+	/* Never happens:
+	if (dn->fullname == NULL)
+		return 0;
+	*/
+
+#if ENABLE_FEATURE_LS_FILETYPES
+	append = append_char(dn->dstat.st_mode);
+#endif
+
+	/* Do readlink early, so that if it fails, error message
+	 * does not appear *inside* the "ls -l" line */
+	if (all_fmt & LIST_SYMLINK)
+		if (S_ISLNK(dn->dstat.st_mode))
+			lpath = xmalloc_readlink_or_warn(dn->fullname);
+
+	if (all_fmt & LIST_INO)
+		column += printf("%7llu ", (long long) dn->dstat.st_ino);
+	if (all_fmt & LIST_BLOCKS)
+		column += printf("%4"OFF_FMT"u ", (off_t) (dn->dstat.st_blocks >> 1));
+	if (all_fmt & LIST_MODEBITS)
+		column += printf("%-10s ", (char *) bb_mode_string(dn->dstat.st_mode));
+	if (all_fmt & LIST_NLINKS)
+		column += printf("%4lu ", (long) dn->dstat.st_nlink);
+#if ENABLE_FEATURE_LS_USERNAME
+	if (all_fmt & LIST_ID_NAME) {
+		if (option_mask32 & OPT_g) {
+			column += printf("%-8.8s ",
+				get_cached_groupname(dn->dstat.st_gid));
+		} else {
+			column += printf("%-8.8s %-8.8s ",
+				get_cached_username(dn->dstat.st_uid),
+				get_cached_groupname(dn->dstat.st_gid));
+		}
+	}
+#endif
+	if (all_fmt & LIST_ID_NUMERIC) {
+		if (option_mask32 & OPT_g)
+			column += printf("%-8u ", (int) dn->dstat.st_gid);
+		else
+			column += printf("%-8u %-8u ",
+					(int) dn->dstat.st_uid,
+					(int) dn->dstat.st_gid);
+	}
+	if (all_fmt & (LIST_SIZE /*|LIST_DEV*/ )) {
+		if (S_ISBLK(dn->dstat.st_mode) || S_ISCHR(dn->dstat.st_mode)) {
+			column += printf("%4u, %3u ",
+					(int) major(dn->dstat.st_rdev),
+					(int) minor(dn->dstat.st_rdev));
+		} else {
+			if (all_fmt & LS_DISP_HR) {
+				column += printf("%"HUMAN_READABLE_MAX_WIDTH_STR"s ",
+					/* print st_size, show one fractional, use suffixes */
+					make_human_readable_str(dn->dstat.st_size, 1, 0)
+				);
+			} else {
+				column += printf("%9"OFF_FMT"u ", (off_t) dn->dstat.st_size);
+			}
+		}
+	}
+#if ENABLE_FEATURE_LS_TIMESTAMPS
+	if (all_fmt & (LIST_FULLTIME|LIST_DATE_TIME)) {
+		char *filetime;
+		time_t ttime = dn->dstat.st_mtime;
+		if (all_fmt & TIME_ACCESS)
+			ttime = dn->dstat.st_atime;
+		if (all_fmt & TIME_CHANGE)
+			ttime = dn->dstat.st_ctime;
+		filetime = ctime(&ttime);
+		/* filetime's format: "Wed Jun 30 21:49:08 1993\n" */
+		if (all_fmt & LIST_FULLTIME)
+			column += printf("%.24s ", filetime);
+		else { /* LIST_DATE_TIME */
+			/* current_time_t ~== time(NULL) */
+			time_t age = current_time_t - ttime;
+			printf("%.6s ", filetime + 4); /* "Jun 30" */
+			if (age < 3600L * 24 * 365 / 2 && age > -15 * 60) {
+				/* hh:mm if less than 6 months old */
+				printf("%.5s ", filetime + 11);
+			} else { /* year. buggy if year > 9999 ;) */
+				printf(" %.4s ", filetime + 20);
+			}
+			column += 13;
+		}
+	}
+#endif
+#if ENABLE_SELINUX
+	if (all_fmt & LIST_CONTEXT) {
+		column += printf("%-32s ", dn->sid ? dn->sid : "unknown");
+		freecon(dn->sid);
+	}
+#endif
+	if (all_fmt & LIST_FILENAME) {
+#if ENABLE_FEATURE_LS_COLOR
+		if (show_color) {
+			info.st_mode = 0; /* for fgcolor() */
+			lstat(dn->fullname, &info);
+			printf("\033[%u;%um", bold(info.st_mode),
+					fgcolor(info.st_mode));
+		}
+#endif
+		column += print_name(dn->name);
+		if (show_color) {
+			printf("\033[0m");
+		}
+	}
+	if (all_fmt & LIST_SYMLINK) {
+		if (S_ISLNK(dn->dstat.st_mode) && lpath) {
+			printf(" -> ");
+#if ENABLE_FEATURE_LS_FILETYPES || ENABLE_FEATURE_LS_COLOR
+#if ENABLE_FEATURE_LS_COLOR
+			info.st_mode = 0; /* for fgcolor() */
+#endif
+			if (stat(dn->fullname, &info) == 0) {
+				append = append_char(info.st_mode);
+			}
+#endif
+#if ENABLE_FEATURE_LS_COLOR
+			if (show_color) {
+				printf("\033[%u;%um", bold(info.st_mode),
+					   fgcolor(info.st_mode));
+			}
+#endif
+			column += print_name(lpath) + 4;
+			if (show_color) {
+				printf("\033[0m");
+			}
+			free(lpath);
+		}
+	}
+#if ENABLE_FEATURE_LS_FILETYPES
+	if (all_fmt & LIST_FILETYPE) {
+		if (append) {
+			putchar(append);
+			column++;
+		}
+	}
+#endif
+
+	return column;
+}
+
 static void showfiles(struct dnode **dn, unsigned nfiles)
 {
 	unsigned i, ncols, nrows, row, nc;
 	unsigned column = 0;
 	unsigned nexttab = 0;
-	unsigned column_width = 0; /* for STYLE_LONG and STYLE_SINGLE not used */
+	unsigned column_width = 0; /* used only by STYLE_COLUMNS */
 
-	/* Never happens:
-	if (dn == NULL || nfiles < 1)
-		return;
-	*/
-
-	if (all_fmt & STYLE_LONG) {
+	if (all_fmt & STYLE_LONG) { /* STYLE_LONG or STYLE_SINGLE */
 		ncols = 1;
 	} else {
 		/* find the longest file name, use that as the column width */
 		for (i = 0; dn[i]; i++) {
-			int len = unicode_strlen(dn[i]->name);
+			int len = calc_name_len(dn[i]->name);
 			if (column_width < len)
 				column_width = len;
 		}
 		column_width += tabstops +
 			IF_SELINUX( ((all_fmt & LIST_CONTEXT) ? 33 : 0) + )
-			             ((all_fmt & LIST_INO) ? 8 : 0) +
-			             ((all_fmt & LIST_BLOCKS) ? 5 : 0);
+				((all_fmt & LIST_INO) ? 8 : 0) +
+				((all_fmt & LIST_BLOCKS) ? 5 : 0);
 		ncols = (int) (terminal_width / column_width);
 	}
 
@@ -617,6 +818,8 @@ static off_t calculate_blocks(struct dnode **dn)
 }
 #endif
 
+
+static struct dnode **list_dir(const char *, unsigned *);
 
 static void showdirs(struct dnode **dn, int first)
 {
@@ -730,188 +933,6 @@ static struct dnode **list_dir(const char *path, unsigned *nfiles_p)
 	}
 
 	return dnp;
-}
-
-
-static int print_name(const char *name)
-{
-	if (option_mask32 & OPT_Q) {
-#if ENABLE_FEATURE_ASSUME_UNICODE
-		unsigned len = 2 + unicode_strlen(name);
-#else
-		unsigned len = 2;
-#endif
-		putchar('"');
-		while (*name) {
-			if (*name == '"') {
-				putchar('\\');
-				len++;
-			}
-			putchar(*name++);
-			if (!ENABLE_FEATURE_ASSUME_UNICODE)
-				len++;
-		}
-		putchar('"');
-		return len;
-	}
-	/* No -Q: */
-#if ENABLE_FEATURE_ASSUME_UNICODE
-	fputs(name, stdout);
-	return unicode_strlen(name);
-#else
-	return printf("%s", name);
-#endif
-}
-
-
-static NOINLINE unsigned list_single(const struct dnode *dn)
-{
-	unsigned column = 0;
-	char *lpath = lpath; /* for compiler */
-#if ENABLE_FEATURE_LS_FILETYPES || ENABLE_FEATURE_LS_COLOR
-	struct stat info;
-	char append;
-#endif
-
-	/* Never happens:
-	if (dn->fullname == NULL)
-		return 0;
-	*/
-
-#if ENABLE_FEATURE_LS_FILETYPES
-	append = append_char(dn->dstat.st_mode);
-#endif
-
-	/* Do readlink early, so that if it fails, error message
-	 * does not appear *inside* the "ls -l" line */
-	if (all_fmt & LIST_SYMLINK)
-		if (S_ISLNK(dn->dstat.st_mode))
-			lpath = xmalloc_readlink_or_warn(dn->fullname);
-
-	if (all_fmt & LIST_INO)
-		column += printf("%7llu ", (long long) dn->dstat.st_ino);
-	if (all_fmt & LIST_BLOCKS)
-		column += printf("%4"OFF_FMT"u ", (off_t) (dn->dstat.st_blocks >> 1));
-	if (all_fmt & LIST_MODEBITS)
-		column += printf("%-10s ", (char *) bb_mode_string(dn->dstat.st_mode));
-	if (all_fmt & LIST_NLINKS)
-		column += printf("%4lu ", (long) dn->dstat.st_nlink);
-#if ENABLE_FEATURE_LS_USERNAME
-	if (all_fmt & LIST_ID_NAME) {
-		if (option_mask32 & OPT_g) {
-			column += printf("%-8.8s ",
-				get_cached_username(dn->dstat.st_uid));
-		} else {
-			column += printf("%-8.8s %-8.8s ",
-				get_cached_username(dn->dstat.st_uid),
-				get_cached_groupname(dn->dstat.st_gid));
-		}
-	}
-#endif
-	if (all_fmt & LIST_ID_NUMERIC) {
-		if (option_mask32 & OPT_g)
-			column += printf("%-8u ", (int) dn->dstat.st_uid);
-		else
-			column += printf("%-8u %-8u ",
-					(int) dn->dstat.st_uid,
-					(int) dn->dstat.st_gid);
-	}
-	if (all_fmt & (LIST_SIZE /*|LIST_DEV*/ )) {
-		if (S_ISBLK(dn->dstat.st_mode) || S_ISCHR(dn->dstat.st_mode)) {
-			column += printf("%4u, %3u ",
-					(int) major(dn->dstat.st_rdev),
-					(int) minor(dn->dstat.st_rdev));
-		} else {
-			if (all_fmt & LS_DISP_HR) {
-				column += printf("%"HUMAN_READABLE_MAX_WIDTH_STR"s ",
-					/* print st_size, show one fractional, use suffixes */
-					make_human_readable_str(dn->dstat.st_size, 1, 0)
-				);
-			} else {
-				column += printf("%9"OFF_FMT"u ", (off_t) dn->dstat.st_size);
-			}
-		}
-	}
-#if ENABLE_FEATURE_LS_TIMESTAMPS
-	if (all_fmt & (LIST_FULLTIME|LIST_DATE_TIME)) {
-		char *filetime;
-		time_t ttime = dn->dstat.st_mtime;
-		if (all_fmt & TIME_ACCESS)
-			ttime = dn->dstat.st_atime;
-		if (all_fmt & TIME_CHANGE)
-			ttime = dn->dstat.st_ctime;
-		filetime = ctime(&ttime);
-		/* filetime's format: "Wed Jun 30 21:49:08 1993\n" */
-		if (all_fmt & LIST_FULLTIME)
-			column += printf("%.24s ", filetime);
-		else { /* LIST_DATE_TIME */
-			/* current_time_t ~== time(NULL) */
-			time_t age = current_time_t - ttime;
-			printf("%.6s ", filetime + 4); /* "Jun 30" */
-			if (age < 3600L * 24 * 365 / 2 && age > -15 * 60) {
-				/* hh:mm if less than 6 months old */
-				printf("%.5s ", filetime + 11);
-			} else { /* year. buggy if year > 9999 ;) */
-				printf(" %.4s ", filetime + 20);
-			}
-			column += 13;
-		}
-	}
-#endif
-#if ENABLE_SELINUX
-	if (all_fmt & LIST_CONTEXT) {
-		column += printf("%-32s ", dn->sid ? dn->sid : "unknown");
-		freecon(dn->sid);
-	}
-#endif
-	if (all_fmt & LIST_FILENAME) {
-#if ENABLE_FEATURE_LS_COLOR
-		if (show_color) {
-			info.st_mode = 0; /* for fgcolor() */
-			lstat(dn->fullname, &info);
-			printf("\033[%u;%um", bold(info.st_mode),
-					fgcolor(info.st_mode));
-		}
-#endif
-		column += print_name(dn->name);
-		if (show_color) {
-			printf("\033[0m");
-		}
-	}
-	if (all_fmt & LIST_SYMLINK) {
-		if (S_ISLNK(dn->dstat.st_mode) && lpath) {
-			printf(" -> ");
-#if ENABLE_FEATURE_LS_FILETYPES || ENABLE_FEATURE_LS_COLOR
-#if ENABLE_FEATURE_LS_COLOR
-			info.st_mode = 0; /* for fgcolor() */
-#endif
-			if (stat(dn->fullname, &info) == 0) {
-				append = append_char(info.st_mode);
-			}
-#endif
-#if ENABLE_FEATURE_LS_COLOR
-			if (show_color) {
-				printf("\033[%u;%um", bold(info.st_mode),
-					   fgcolor(info.st_mode));
-			}
-#endif
-			column += print_name(lpath) + 4;
-			if (show_color) {
-				printf("\033[0m");
-			}
-			free(lpath);
-		}
-	}
-#if ENABLE_FEATURE_LS_FILETYPES
-	if (all_fmt & LIST_FILETYPE) {
-		if (append) {
-			putchar(append);
-			column++;
-		}
-	}
-#endif
-
-	return column;
 }
 
 

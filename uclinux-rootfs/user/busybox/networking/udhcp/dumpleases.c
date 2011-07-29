@@ -1,22 +1,10 @@
 /* vi: set sw=4 ts=4: */
 /*
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 #include "common.h"
 #include "dhcpd.h"
 #include "unicode.h"
-
-#if BB_LITTLE_ENDIAN
-static inline uint64_t hton64(uint64_t v)
-{
-        return (((uint64_t)htonl(v)) << 32) | htonl(v >> 32);
-}
-#else
-#define hton64(v) (v)
-#endif
-#define ntoh64(v) hton64(v)
-
 
 int dumpleases_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int dumpleases_main(int argc UNUSED_PARAM, char **argv)
@@ -30,9 +18,9 @@ int dumpleases_main(int argc UNUSED_PARAM, char **argv)
 	struct in_addr addr;
 
 	enum {
-		OPT_a	= 0x1,	// -a
-		OPT_r	= 0x2,	// -r
-		OPT_f	= 0x4,	// -f
+		OPT_a = 0x1, // -a
+		OPT_r = 0x2, // -r
+		OPT_f = 0x4, // -f
 	};
 #if ENABLE_LONG_OPTS
 	static const char dumpleases_longopts[] ALIGN1 =
@@ -54,9 +42,8 @@ int dumpleases_main(int argc UNUSED_PARAM, char **argv)
 	/*     "00:00:00:00:00:00 255.255.255.255 ABCDEFGHIJKLMNOPQRS Wed Jun 30 21:49:08 1993" */
 	/*     "123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 */
 
-	if (full_read(fd, &written_at, sizeof(written_at)) != sizeof(written_at))
-		return 0;
-	written_at = ntoh64(written_at);
+	xread(fd, &written_at, sizeof(written_at));
+	written_at = SWAP_BE64(written_at);
 	curr = time(NULL);
 	if (curr < written_at)
 		written_at = curr; /* lease file from future! :) */
@@ -68,12 +55,15 @@ int dumpleases_main(int argc UNUSED_PARAM, char **argv)
 			fmt = ":%02x";
 		}
 		addr.s_addr = lease.lease_nip;
+#if ENABLE_UNICODE_SUPPORT
+		{
+			char *uni_name = unicode_conv_to_printable_fixedwidth(NULL, lease.hostname, 19);
+			printf(" %-16s%s ", inet_ntoa(addr), uni_name);
+			free(uni_name);
+		}
+#else
 		/* actually, 15+1 and 19+1, +1 is a space between columns */
 		/* lease.hostname is char[20] and is always NUL terminated */
-#if ENABLE_FEATURE_ASSUME_UNICODE
-		printf(" %-16s%s%*s", inet_ntoa(addr), lease.hostname,
-			20 - (int)unicode_strlen(lease.hostname), "");
-#else
 		printf(" %-16s%-20s", inet_ntoa(addr), lease.hostname);
 #endif
 		expires_abs = ntohl(lease.expires) + written_at;

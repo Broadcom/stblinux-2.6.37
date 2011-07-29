@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Fri Apr  1 16:35:03 2011
- *                 MD5 Checksum         d03d08c4839c3311c9d35c4cd5e10373
+ * Date:           Generated on         Tue May 31 13:56:38 2011
+ *                 MD5 Checksum         b0a0062767e487fe78d25d07b5b21b78
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/b0/bchp_ddr40_phy_control_regs_0.h $
  * 
- * Hydra_Software_Devel/1   4/4/11 1:08p albertl
- * SW7344-40: Initial revision.
+ * Hydra_Software_Devel/2   5/31/11 3:28p albertl
+ * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
 
@@ -85,6 +85,7 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_STRAP_STATUS 0x00a060b8 /* Strap Status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_STRAP_STATUS2 0x00a060bc /* Strap Status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE 0x00a060c0 /* Freeze-on-error enable register */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK 0x00a060c4 /* Datapth Loopback control register */
 
 /***************************************************************************
  *REVISION - Address & Control revision register
@@ -1484,6 +1485,28 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_MASK 0x00000001
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_SHIFT 0
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_DEFAULT 0
+
+/***************************************************************************
+ *DATAPATH_LOOPBACK - Datapth Loopback control register
+ ***************************************************************************/
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: reserved0 [31:03] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_reserved0_MASK 0xfffffff8
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_reserved0_SHIFT 3
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: xor_dm_rd_en [02:02] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_MASK 0x00000004
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_SHIFT 2
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: use_addr_ctl [01:01] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_MASK 0x00000002
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_SHIFT 1
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: enable [00:00] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_MASK 0x00000001
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_SHIFT 0
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_DEFAULT 0
 
 #endif /* #ifndef BCHP_DDR40_PHY_CONTROL_REGS_0_H__ */
 

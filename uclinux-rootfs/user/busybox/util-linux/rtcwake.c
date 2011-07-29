@@ -3,7 +3,7 @@
  *
  * This version was taken from util-linux and scrubbed down for busybox.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  *
  * This uses cross-platform Linux interfaces to enter a system sleep state,
  * and leave it no later than a specified time.  It uses any RTC framework
@@ -35,9 +35,8 @@ static NOINLINE bool may_wakeup(const char *rtcname)
 	ssize_t ret;
 	char buf[128];
 
-	/* strip the '/dev/' from the rtcname here */
-	if (!strncmp(rtcname, "/dev/", 5))
-		rtcname += 5;
+	/* strip "/dev/" from the rtcname here */
+	rtcname = skip_dev_pfx(rtcname);
 
 	snprintf(buf, sizeof(buf), SYS_RTC_PATH, rtcname);
 	ret = open_read_close(buf, buf, sizeof(buf));
@@ -51,7 +50,7 @@ static NOINLINE bool may_wakeup(const char *rtcname)
 static NOINLINE void setup_alarm(int fd, time_t *wakeup, time_t rtc_time)
 {
 	struct tm *ptm;
-	struct linux_rtc_wkalrm	wake;
+	struct linux_rtc_wkalrm wake;
 
 	/* The wakeup time is in POSIX time (more or less UTC).
 	 * Ideally RTCs use that same time; but PCs can't do that

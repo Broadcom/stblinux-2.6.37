@@ -1,3 +1,8 @@
+unset LANG
+unset LANGUAGE
+unset LC_TIME
+unset LC_ALL
+
 dt=`busybox date -d 1:2 +%T`
 test x"$dt" = x"01:02:00"
 

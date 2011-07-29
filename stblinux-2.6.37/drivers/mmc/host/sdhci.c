@@ -1831,6 +1831,11 @@ int sdhci_add_host(struct sdhci_host *host)
 		host->max_clk = (caps & SDHCI_CLOCK_BASE_MASK)
 			>> SDHCI_CLOCK_BASE_SHIFT;
 
+#ifdef CONFIG_BCM7552A0
+	/* SWLINUX-1912: caps register returns the wrong base clock on A0 */
+	host->max_clk = 50;
+#endif
+
 	host->max_clk *= 1000000;
 	if (host->max_clk == 0 || host->quirks &
 			SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN) {

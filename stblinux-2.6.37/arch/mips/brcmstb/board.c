@@ -75,26 +75,11 @@ unsigned long brcm_ext_mii_mode = BRCM_PHY_TYPE_EXT_RGMII;
 
 /* Note for supporting customized boards: slot_number = idsel_line - 16 */
 
-#if   defined(CONFIG_BCM7038)
-char irq_tab_brcmstb[NUM_SLOTS][4] __devinitdata = {
-	[1]  =	{  PCI_A1,	0,	0,	0	}, /* BCM325x */
-	[4]  =	{  PCI_A2,	0,	0,	0	}, /* 7042 */
-	[13] =	{  PCI_A1,	0,	0,	0	}, /* EXT PCI */
-	[14] =	{  PCI_A0,	0,	0,	0	}, /* 1394 */
-};
-#elif defined(CONFIG_BCM7401)
-char irq_tab_brcmstb[NUM_SLOTS][4] __devinitdata = {
-	[4]  =	{  PCI_A2, PCI_A0,	0,	0	}, /* mPCI */
-	[13] =	{  PCI_A0, PCI_A2,	0,	0	}, /* EXT PCI */
-	[14] =	{  PCI_A1,	0,	0,	0	}, /* 1394 */
-};
-#else
 char irq_tab_brcmstb[NUM_SLOTS][4] __devinitdata = {
 	[4]  =	{  PCI_A2, PCI_A0,	0,	0	}, /* mPCI */
 	[13] =	{  PCI_A0, PCI_A1,	0,	0	}, /* EXT PCI */
 	[14] =	{  PCI_A1,	0,	0,	0	}, /* 1394 */
 };
-#endif
 
 char irq_tab_brcmstb_docsis[NUM_SLOTS][4] __devinitdata = {
 	[4]  =	{  PCI_A2, PCI_A0,	0,	0	}, /* mPCI */
@@ -172,39 +157,6 @@ void board_pinmux_setup(void)
 
 	brcm_ext_mii_mode = BRCM_PHY_TYPE_EXT_MII;
 #endif
-
-#elif defined(CONFIG_BCM3548B0)
-
-	PINMUX(6, gpio_30, 2);		/* UARTB TX */
-	PINMUX(6, gpio_31, 2);		/* UARTB RX */
-	PINMUX(7, gpio_43, 2);		/* UARTC TX */
-	PINMUX(7, gpio_42, 2);		/* UARTC RX */
-
-	PINMUX(6, gpio_32, 2);		/* SPI */
-	PINMUX(6, gpio_33, 2);
-	PINMUX(6, gpio_34, 2);
-	PINMUX(6, gpio_35, 2);
-	PINMUX(6, gpio_36, 2);
-
-#elif defined(CONFIG_BCM3563C0)
-
-	/* UARTB RX requires board mod; UARTC is on RS232 daughtercard */
-	PINMUX(10, gpio_47, 1);		/* UARTB TX */
-	PINMUX(10, gpio_46, 2);		/* UARTB RX */
-	PINMUX(7, gpio_17, 1);		/* UARTC TX */
-	PINMUX(7, gpio_16, 1);		/* UARTC RX */
-
-#elif defined(CONFIG_BCM7038C0)
-
-	PINMUX(9, gpio_47, 2);		/* UARTB TX */
-	PINMUX(9, gpio_46, 2);		/* UARTB RX */
-
-#elif defined(CONFIG_BCM7118C0)
-
-	PINMUX(1, uart_txdb, 0);	/* UARTB TX */
-	PINMUX(1, uart_rxdb, 0);	/* UARTB RX */
-	PINMUX(11, gpio_54, 2);		/* UARTC TX */
-	PINMUX(11, gpio_55, 2);		/* UARTC RX */
 
 #elif defined(CONFIG_BCM7125)
 
@@ -325,58 +277,6 @@ void board_pinmux_setup(void)
 		PADCTRL(8, gpio_130_pad_ctrl, 0);
 		PADCTRL(8, gpio_131_pad_ctrl, 0);
 	}
-
-#elif defined(CONFIG_BCM7325B0)
-
-	PINMUX(11, uart_txdb, 0);	/* UARTB TX */
-	PINMUX(11, uart_rxdb, 0);	/* UARTB RX */
-
-#if defined(CONFIG_BCMEMAC_EXTMII)
-	PINMUX(5, gpio_32, 1);		/* MII */
-	PINMUX(5, gpio_33, 1);
-	PINMUX(5, gpio_34, 1);
-	PINMUX(5, gpio_35, 1);
-	PINMUX(5, gpio_36, 1);
-	PINMUX(5, gpio_37, 1);
-	PINMUX(6, gpio_38, 1);
-	PINMUX(6, gpio_39, 1);
-	PINMUX(6, gpio_40, 1);
-	PINMUX(6, gpio_41, 1);
-	PINMUX(6, gpio_42, 1);
-	PINMUX(6, gpio_43, 1);
-	PINMUX(6, gpio_44, 1);
-	PINMUX(6, gpio_45, 1);
-	PINMUX(6, gpio_46, 1);
-	PINMUX(6, gpio_47, 1);
-	PINMUX(7, gpio_48, 1);
-	PINMUX(7, gpio_49, 1);
-#endif
-
-#elif defined(CONFIG_BCM7335B0)
-
-	PINMUX(7, gpio_034, 1);		/* UARTB TX */
-	PINMUX(7, gpio_035, 1);		/* UARTB RX */
-	PINMUX(7, gpio_038, 1);		/* UARTC TX */
-	PINMUX(7, gpio_039, 1);		/* UARTC RX */
-
-	PINMUX(9, gpio_054, 3);		/* MII */
-	PINMUX(9, gpio_055, 3);
-	PINMUX(9, gpio_056, 3);
-	PINMUX(9, gpio_057, 3);
-	PINMUX(9, gpio_058, 3);
-	PINMUX(9, gpio_059, 3);
-	PINMUX(9, gpio_060, 3);
-	PINMUX(9, gpio_061, 3);
-	PINMUX(9, gpio_062, 3);
-	PINMUX(10, gpio_063, 3);
-	PINMUX(10, gpio_065, 3);
-	PINMUX(10, gpio_066, 3);
-	PINMUX(10, gpio_067, 3);
-	PINMUX(10, gpio_068, 3);
-	PINMUX(10, gpio_069, 3);
-	PINMUX(10, gpio_070, 3);
-	PINMUX(10, gpio_071, 3);
-	PINMUX(10, gpio_072, 3);
 
 #elif defined(CONFIG_BCM7340)
 
@@ -525,41 +425,6 @@ void board_pinmux_setup(void)
 
 #endif /* defined(CONFIG_BCMGENET_0_GPHY) */
 
-#elif defined(CONFIG_BCM7400D0)
-
-	PINMUX(3, gpio_008, 2);		/* UARTB TX */
-	PINMUX(3, gpio_007, 2);		/* UARTB RX */
-	PINMUX(3, gpio_012, 2);		/* UARTC TX */
-	PINMUX(3, gpio_011, 2);		/* UARTC RX */
-
-	/* CFE forgot to set these */
-	PINMUX(2, gpio_000, 1);		/* enet_activity */
-	PINMUX(2, gpio_001, 1);		/* enet_link */
-
-#elif defined(CONFIG_BCM7401C0)
-
-	PINMUX(11, gpio_49, 1);		/* UARTA TX */
-	PINMUX(11, gpio_50, 1);		/* UARTA RX */
-	/* default console is on UARTB */
-	PINMUX(10, gpio_42, 1);		/* UARTC TX */
-	PINMUX(10, gpio_39, 1);		/* UARTC RX */
-
-	/* CFE forgot to set these */
-	PINMUX(10, gpio_43, 1);		/* enet_link */
-	PINMUX(10, gpio_45, 1);		/* enet_activity */
-
-#elif defined(CONFIG_BCM7403A0)
-
-	PINMUX(11, gpio_49, 1);		/* UARTA TX */
-	PINMUX(11, gpio_50, 1);		/* UARTA RX */
-	/* default console is on UARTB */
-	PINMUX(10, gpio_42, 1);		/* UARTC TX */
-	PINMUX(10, gpio_39, 1);		/* UARTC RX */
-
-	/* CFE forgot to set these */
-	PINMUX(10, gpio_43, 1);		/* enet_link */
-	PINMUX(10, gpio_45, 1);		/* enet_activity */
-
 #elif defined(CONFIG_BCM7405B0)
 
 #if !defined(CONFIG_KGDB)
@@ -668,13 +533,8 @@ void board_pinmux_setup(void)
 		PINMUX(15, gpio_081, 2);
 
 		/* enable internal pullups */
-#ifdef CONFIG_BCM7425A0
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9,
 			gpio_072_pad_ctrl, 2);
-#else
-		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
-			gpio_072_pad_ctrl, 2);
-#endif
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
 			gpio_073_pad_ctrl, 2);
 		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10,
@@ -741,59 +601,33 @@ void board_pinmux_setup(void)
 	PINMUX(13, gpio_86, 1);		/* UARTC TX */
 	PINMUX(13, gpio_87, 1);		/* UARTC RX */
 
-#elif defined(CONFIG_BCM7630)
-
+#elif defined(CONFIG_BCM7640A0)
+	PINMUX(8, gpio_03, 1);		/* UARTB TX */
 	PINMUX(7, gpio_02, 1);		/* UARTB RX */
-	PINMUX(7, gpio_03, 1);		/* UARTB TX */
-	PINMUX(7, gpio_04, 1);		/* UARTC RX */
-	PINMUX(7, gpio_05, 1);		/* UARTC TX */
 
-	/* disable GPIO pulldowns, in order to get 3.3v on SDIO pins */
-	BDEV_WR_F_RB(CLK_SDIO_PAD_CTRL, SDIO_PDN, 0);
+	PINMUX(12, gpio_36, 1);		/* SDIO */
+	PINMUX(12, gpio_37, 1);
+	PINMUX(12, gpio_38, 1);
+	PINMUX(12, gpio_39, 1);
+	PINMUX(12, gpio_40, 1);
+	PINMUX(12, gpio_41, 1);
+	PINMUX(12, gpio_42, 1);
+	PINMUX(13, gpio_43, 1);
+	PINMUX(13, gpio_44, 1);
 
-	PINMUX(11, gpio_36, 1);		/* SDIO */
-	PINMUX(11, gpio_37, 1);
+#elif defined(CONFIG_BCM7640B0)
+	PINMUX(6, gpio_03, 1);		/* UARTB TX */
+	PINMUX(6, gpio_02, 1);		/* UARTB RX */
+
+	PINMUX(10, gpio_36, 1);		/* SDIO */
+	PINMUX(10, gpio_37, 1);
 	PINMUX(11, gpio_38, 1);
 	PINMUX(11, gpio_39, 1);
-	PINMUX(12, gpio_40, 1);
-	PINMUX(12, gpio_41, 1);
-	PINMUX(12, gpio_42, 1);
-	PINMUX(12, gpio_43, 1);
-	PINMUX(12, gpio_44, 1);
-
-#elif defined(CONFIG_BCM7635)
-
-	PINMUX(7, gpio_02, 1);		/* UARTB RX */
-	PINMUX(8, gpio_03, 1);		/* UARTB TX */
-	PINMUX(8, gpio_04, 1);		/* UARTC RX */
-	PINMUX(8, gpio_05, 1);		/* UARTC TX */
-
-	/* disable GPIO pulldowns, in order to get 3.3v on SDIO pins */
-	BDEV_WR_F_RB(VCXO_CTL_MISC_GPIO_PAD_CTRL, GPIO_PDN, 0);
-
-	PINMUX(12, gpio_36, 1);		/* SDIO */
-	PINMUX(12, gpio_37, 1);
-	PINMUX(12, gpio_38, 1);
-	PINMUX(12, gpio_39, 1);
-	PINMUX(12, gpio_40, 1);
-	PINMUX(12, gpio_41, 1);
-	PINMUX(12, gpio_42, 1);
-	PINMUX(13, gpio_43, 1);
-	PINMUX(13, gpio_44, 1);
-
-#elif defined(CONFIG_BCM7640)
-	PINMUX(8, gpio_03, 1);		/* UARTB TX */
-	PINMUX(7, gpio_02, 1);		/* UARTB RX */
-
-	PINMUX(12, gpio_36, 1);		/* SDIO */
-	PINMUX(12, gpio_37, 1);
-	PINMUX(12, gpio_38, 1);
-	PINMUX(12, gpio_39, 1);
-	PINMUX(12, gpio_40, 1);
-	PINMUX(12, gpio_41, 1);
-	PINMUX(12, gpio_42, 1);
-	PINMUX(13, gpio_43, 1);
-	PINMUX(13, gpio_44, 1);
+	PINMUX(11, gpio_40, 1);
+	PINMUX(11, gpio_41, 1);
+	PINMUX(11, gpio_42, 1);
+	PINMUX(11, gpio_43, 1);
+	PINMUX(11, gpio_44, 1);
 
 #endif /* chip type */
 #endif /* !defined(CONFIG_BRCM_IKOS) */

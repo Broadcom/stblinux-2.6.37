@@ -8,7 +8,7 @@
  * Created: Thu Apr  7 13:29:41 1994 too
  * Last modified: Fri Jun  9 14:34:24 2000 too
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  * HISTORY
  * Revision 3.1  1994/04/17  11:31:54  too
@@ -42,11 +42,13 @@ enum {
 	UF_ECHO = 0x01,
 	UF_SGA = 0x02,
 
-	TS_0 = 1,
+	TS_NORMAL = 0,
+	TS_COPY = 1,
 	TS_IAC = 2,
 	TS_OPT = 3,
 	TS_SUB1 = 4,
 	TS_SUB2 = 5,
+	TS_CR = 6,
 };
 
 typedef unsigned char byte;
@@ -75,7 +77,7 @@ struct globals {
 	char    iacbuf[IACBUFSIZE];
 	struct termios termios_def;
 	struct termios termios_raw;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define INIT_G() do { \
 	struct G_sizecheck { \
@@ -83,13 +85,13 @@ struct globals {
 	}; \
 } while (0)
 
-/* Function prototypes */
+
 static void rawmode(void);
 static void cookmode(void);
 static void do_linemode(void);
 static void will_charmode(void);
 static void telopt(byte c);
-static int subneg(byte c);
+static void subneg(byte c);
 
 static void iac_flush(void)
 {
@@ -150,7 +152,6 @@ static void con_escape(void)
 		cookmode();
  ret:
 	bb_got_signal = 0;
-
 }
 
 static void handle_net_output(int len)
@@ -171,24 +172,24 @@ static void handle_net_output(int len)
 	 * So I implemented it. It's really useful for me. I hope that
 	 * other people will find it interesting too.
 	 */
-
-	int i, j;
+	byte outbuf[2 * DATABUFSIZE];
 	byte *p = (byte*)G.buf;
-	byte outbuf[4*DATABUFSIZE];
+	int j = 0;
 
-	for (i = len, j = 0; i > 0; i--, p++) {
-		if (*p == 0x1d) {
+	for (; len > 0; len--, p++) {
+		byte c = *p;
+		if (c == 0x1d) {
 			con_escape();
 			return;
 		}
-		outbuf[j++] = *p;
-		if (*p == 0xff)
-			outbuf[j++] = 0xff;
-		else if (*p == 0x0d)
-			outbuf[j++] = 0x00;
+		outbuf[j++] = c;
+		if (c == IAC)
+			outbuf[j++] = c; /* IAC -> IAC IAC */
+		else if (c == '\r')
+			outbuf[j++] = '\0'; /* CR -> CR NUL */
 	}
 	if (j > 0)
-		write(netfd, outbuf, j);
+		full_write(netfd, outbuf, j);
 }
 
 static void handle_net_input(int len)
@@ -199,25 +200,44 @@ static void handle_net_input(int len)
 	for (i = 0; i < len; i++) {
 		byte c = G.buf[i];
 
-		if (G.telstate == 0) { /* most of the time state == 0 */
+		if (G.telstate == TS_NORMAL) { /* most typical state */
 			if (c == IAC) {
 				cstart = i;
 				G.telstate = TS_IAC;
 			}
+			else if (c == '\r') {
+				cstart = i + 1;
+				G.telstate = TS_CR;
+			}
+			/* No IACs were seen so far, no need to copy
+			 * bytes within G.buf: */
 			continue;
 		}
+
 		switch (G.telstate) {
-		case TS_0:
+		case TS_CR:
+			/* Prev char was CR. If cur one is NUL, ignore it.
+			 * See RFC 1123 section 3.3.1 for discussion of telnet EOL handling.
+			 */
+			G.telstate = TS_COPY;
+			if (c == '\0')
+				break;
+			/* else: fall through - need to handle CR IAC ... properly */
+
+		case TS_COPY: /* Prev char was ordinary */
+			/* Similar to NORMAL, but in TS_COPY we need to copy bytes */
 			if (c == IAC)
 				G.telstate = TS_IAC;
 			else
 				G.buf[cstart++] = c;
+			if (c == '\r')
+				G.telstate = TS_CR;
 			break;
 
-		case TS_IAC:
-			if (c == IAC) { /* IAC IAC -> 0xFF */
+		case TS_IAC: /* Prev char was IAC */
+			if (c == IAC) { /* IAC IAC -> one IAC */
 				G.buf[cstart++] = c;
-				G.telstate = TS_0;
+				G.telstate = TS_COPY;
 				break;
 			}
 			/* else */
@@ -229,34 +249,38 @@ static void handle_net_input(int len)
 			case DONT:
 			case WILL:
 			case WONT:
-				G.telwish =  c;
+				G.telwish = c;
 				G.telstate = TS_OPT;
 				break;
+			/* DATA MARK must be added later */
 			default:
-				G.telstate = TS_0;	/* DATA MARK must be added later */
+				G.telstate = TS_COPY;
 			}
 			break;
-		case TS_OPT: /* WILL, WONT, DO, DONT */
+
+		case TS_OPT: /* Prev chars were IAC WILL/WONT/DO/DONT */
 			telopt(c);
-			G.telstate = TS_0;
+			G.telstate = TS_COPY;
 			break;
+
 		case TS_SUB1: /* Subnegotiation */
 		case TS_SUB2: /* Subnegotiation */
-			if (subneg(c))
-				G.telstate = TS_0;
+			subneg(c); /* can change G.telstate */
 			break;
 		}
 	}
-	if (G.telstate) {
+
+	if (G.telstate != TS_NORMAL) {
+		/* We had some IACs, or CR */
 		if (G.iaclen)
 			iac_flush();
-		if (G.telstate == TS_0)
-			G.telstate = 0;
+		if (G.telstate == TS_COPY) /* we aren't in the middle of IAC */
+			G.telstate = TS_NORMAL;
 		len = cstart;
 	}
 
 	if (len)
-		write(STDOUT_FILENO, G.buf, len);
+		full_write(STDOUT_FILENO, G.buf, len);
 }
 
 static void put_iac(int c)
@@ -299,7 +323,7 @@ static void put_iac_subopt(byte c, char *str)
 static void put_iac_subopt_autologin(void)
 {
 	int len = strlen(G.autologin) + 6;	// (2 + 1 + 1 + strlen + 2)
-	const char *user = "USER";
+	const char *p = "USER";
 
 	if (G.iaclen + len > IACBUFSIZE)
 		iac_flush();
@@ -310,13 +334,14 @@ static void put_iac_subopt_autologin(void)
 	put_iac(TELQUAL_IS);
 	put_iac(NEW_ENV_VAR);
 
-	while (*user)
-		put_iac(*user++);
+	while (*p)
+		put_iac(*p++);
 
 	put_iac(NEW_ENV_VALUE);
 
-	while (*G.autologin)
-		put_iac(*G.autologin++);
+	p = G.autologin;
+	while (*p)
+		put_iac(*p++);
 
 	put_iac(IAC);
 	put_iac(SE);
@@ -417,7 +442,7 @@ static void to_echo(void)
 		put_iac2(DONT, TELOPT_ECHO);
 
 	setConMode();
-	write_str(1, "\r\n");  /* sudden modec */
+	full_write1_str("\r\n");  /* sudden modec */
 }
 
 static void to_sga(void)
@@ -441,7 +466,6 @@ static void to_sga(void)
 static void to_ttype(void)
 {
 	/* Tell server we will (or won't) do TTYPE */
-
 	if (G.ttype)
 		put_iac2(WILL, TELOPT_TTYPE);
 	else
@@ -453,7 +477,6 @@ static void to_ttype(void)
 static void to_new_environ(void)
 {
 	/* Tell server we will (or will not) do AUTOLOGIN */
-
 	if (G.autologin)
 		put_iac2(WILL, TELOPT_NEW_ENVIRON);
 	else
@@ -497,7 +520,7 @@ static void telopt(byte c)
 }
 
 /* subnegotiation -- ignore all (except TTYPE,NAWS) */
-static int subneg(byte c)
+static void subneg(byte c)
 {
 	switch (G.telstate) {
 	case TS_SUB1:
@@ -505,22 +528,23 @@ static int subneg(byte c)
 			G.telstate = TS_SUB2;
 #if ENABLE_FEATURE_TELNET_TTYPE
 		else
-		if (c == TELOPT_TTYPE)
+		if (c == TELOPT_TTYPE && G.ttype)
 			put_iac_subopt(TELOPT_TTYPE, G.ttype);
 #endif
 #if ENABLE_FEATURE_TELNET_AUTOLOGIN
 		else
-		if (c == TELOPT_NEW_ENVIRON)
+		if (c == TELOPT_NEW_ENVIRON && G.autologin)
 			put_iac_subopt_autologin();
 #endif
 		break;
 	case TS_SUB2:
-		if (c == SE)
-			return TRUE;
+		if (c == SE) {
+			G.telstate = TS_COPY;
+			return;
+		}
 		G.telstate = TS_SUB1;
-		/* break; */
+		break;
 	}
-	return FALSE;
 }
 
 static void rawmode(void)
@@ -535,21 +559,13 @@ static void cookmode(void)
 		tcsetattr(0, TCSADRAIN, &G.termios_def);
 }
 
-/* poll gives smaller (-70 bytes) code */
-#define USE_POLL 1
-
 int telnet_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int telnet_main(int argc UNUSED_PARAM, char **argv)
 {
 	char *host;
 	int port;
 	int len;
-#ifdef USE_POLL
 	struct pollfd ufds[2];
-#else
-	fd_set readfds;
-	int maxfd;
-#endif
 
 	INIT_G();
 
@@ -587,63 +603,39 @@ int telnet_main(int argc UNUSED_PARAM, char **argv)
 
 	signal(SIGINT, record_signo);
 
-#ifdef USE_POLL
-	ufds[0].fd = 0; ufds[1].fd = netfd;
-	ufds[0].events = ufds[1].events = POLLIN;
-#else
-	FD_ZERO(&readfds);
-	FD_SET(STDIN_FILENO, &readfds);
-	FD_SET(netfd, &readfds);
-	maxfd = netfd + 1;
-#endif
+	ufds[0].fd = STDIN_FILENO;
+	ufds[0].events = POLLIN;
+	ufds[1].fd = netfd;
+	ufds[1].events = POLLIN;
 
 	while (1) {
-#ifndef USE_POLL
-		fd_set rfds = readfds;
-
-		switch (select(maxfd, &rfds, NULL, NULL, NULL))
-#else
-		switch (poll(ufds, 2, -1))
-#endif
-		{
-		case 0:
-			/* timeout */
-		case -1:
+		if (poll(ufds, 2, -1) < 0) {
 			/* error, ignore and/or log something, bay go to loop */
 			if (bb_got_signal)
 				con_escape();
 			else
 				sleep(1);
-			break;
-		default:
+			continue;
+		}
 
-#ifdef USE_POLL
-			if (ufds[0].revents)
-#else
-			if (FD_ISSET(STDIN_FILENO, &rfds))
-#endif
-			{
-				len = safe_read(STDIN_FILENO, G.buf, DATABUFSIZE);
-				if (len <= 0)
-					doexit(EXIT_SUCCESS);
-				TRACE(0, ("Read con: %d\n", len));
-				handle_net_output(len);
-			}
+// FIXME: reads can block. Need full bidirectional buffering.
 
-#ifdef USE_POLL
-			if (ufds[1].revents)
-#else
-			if (FD_ISSET(netfd, &rfds))
-#endif
-			{
-				len = safe_read(netfd, G.buf, DATABUFSIZE);
-				if (len <= 0) {
-					write_str(1, "Connection closed by foreign host\r\n");
-					doexit(EXIT_FAILURE);
-				}
-				TRACE(0, ("Read netfd (%d): %d\n", netfd, len));
-				handle_net_input(len);
+		if (ufds[0].revents) {
+			len = safe_read(STDIN_FILENO, G.buf, DATABUFSIZE);
+			if (len <= 0)
+				doexit(EXIT_SUCCESS);
+			TRACE(0, ("Read con: %d\n", len));
+			handle_net_output(len);
+		}
+
+		if (ufds[1].revents) {
+			len = safe_read(netfd, G.buf, DATABUFSIZE);
+			if (len <= 0) {
+				full_write1_str("Connection closed by foreign host\r\n");
+				doexit(EXIT_FAILURE);
 			}
+			TRACE(0, ("Read netfd (%d): %d\n", netfd, len));
+			handle_net_input(len);
 		}
 	} /* while (1) */
 }

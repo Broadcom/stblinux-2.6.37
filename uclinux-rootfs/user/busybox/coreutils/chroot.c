@@ -4,7 +4,7 @@
  *
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 N/A -- Matches GNU behavior. */
@@ -30,6 +30,5 @@ int chroot_main(int argc UNUSED_PARAM, char **argv)
 		argv[1] = (char *) "-i";
 	}
 
-	BB_EXECVP(*argv, argv);
-	bb_perror_msg_and_die("can't execute '%s'", *argv);
+	BB_EXECVP_or_die(argv);
 }

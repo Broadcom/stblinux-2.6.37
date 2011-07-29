@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2001 by Matt Kraai <kraai@alumni.carnegiemellon.edu>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 compliant (need fancy for -c) */
@@ -35,7 +35,7 @@ static const struct suffix_mult tail_suffixes[] = {
 
 struct globals {
 	bool status;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 
 static void tail_xprint_header(const char *fmt, const char *filename)
@@ -66,7 +66,7 @@ static ssize_t tail_read(int fd, char *buf, size_t count)
 	return r;
 }
 
-static const char header_fmt[] ALIGN1 = "\n==> %s <==\n";
+#define header_fmt_str "\n==> %s <==\n"
 
 static unsigned eat_num(const char *p)
 {
@@ -166,7 +166,7 @@ int tail_main(int argc, char **argv)
 	tailbuf = xmalloc(tailbufsize);
 
 	/* tail the files */
-	fmt = header_fmt + 1; /* skip header leading newline on first output */
+	fmt = header_fmt_str + 1; /* skip header leading newline on first output */
 	i = 0;
 	do {
 		char *buf;
@@ -181,7 +181,7 @@ int tail_main(int argc, char **argv)
 
 		if (nfiles > header_threshhold) {
 			tail_xprint_header(fmt, argv[i]);
-			fmt = header_fmt;
+			fmt = header_fmt_str;
 		}
 
 		if (!from_top) {
@@ -333,7 +333,7 @@ int tail_main(int argc, char **argv)
 			if (ENABLE_FEATURE_FANCY_TAIL && fd < 0)
 				continue;
 			if (nfiles > header_threshhold) {
-				fmt = header_fmt;
+				fmt = header_fmt_str;
 			}
 			while ((nread = tail_read(fd, tailbuf, BUFSIZ)) > 0) {
 				if (fmt) {
@@ -346,6 +346,7 @@ int tail_main(int argc, char **argv)
 	}
 	if (ENABLE_FEATURE_CLEAN_UP) {
 		free(fds);
+		free(tailbuf);
 	}
 	return G.status;
 }

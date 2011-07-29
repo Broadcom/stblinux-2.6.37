@@ -11,7 +11,7 @@
  *  - reduced 464 bytes.
  *  - 64 math support
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* This program evaluates expressions.  Each token (operator, operand,
@@ -63,7 +63,7 @@ typedef struct valinfo VALUE;
 /* The arguments given to the program, minus the program name.  */
 struct globals {
 	char **args;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 
 /* forward declarations */
@@ -341,7 +341,6 @@ static VALUE *eval6(void)
 		freev(i2);
 	}
 	return v;
-
 }
 
 /* Handle : operator (pattern matching).

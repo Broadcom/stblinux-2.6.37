@@ -26,7 +26,7 @@
 */
 
 #include "libbb.h"
-#include "unarchive.h"
+#include "archive.h"
 #include "liblzo_interface.h"
 
 /* lzo-2.03/src/lzo_ptr.h */
@@ -166,9 +166,12 @@ static NOINLINE int lzo1x_optimize(uint8_t *in, unsigned in_len,
 					o_m1_a++;
 				}
 				/* test if a literal run follows */
-				else if (nl == 0 && ip[0] < 16 && ip[0] != 0 &&
-						 (lit + 2 + ip[0] < 16))
-				{
+				else
+				if (nl == 0
+				 && ip[0] < 16
+				 && ip[0] != 0
+				 && (lit + 2 + ip[0] < 16)
+				) {
 					t = *ip++;
 					/* remove short run */
 					*litp &= ~3;
@@ -390,10 +393,10 @@ typedef struct header_t {
 } header_t;
 
 struct globals {
-	const uint32_t *lzo_crc32_table;
+	/*const uint32_t *lzo_crc32_table;*/
 	chksum_t chksum_in;
 	chksum_t chksum_out;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define INIT_G() do { } while (0)
 //#define G (*ptr_to_globals)
@@ -465,19 +468,10 @@ lzo_adler32(uint32_t adler, const uint8_t* buf, unsigned len)
 static FAST_FUNC uint32_t
 lzo_crc32(uint32_t c, const uint8_t* buf, unsigned len)
 {
-	uint32_t crc;
+	//if (buf == NULL) - impossible
+	//	return 0;
 
-	if (buf == NULL)
-		return 0;
-
-	crc = ~c;
-	if (len != 0) do {
-	crc = G.lzo_crc32_table[((int)crc ^ *buf) & 0xff] ^ (crc >> 8);
-		buf += 1;
-		len -= 1;
-	} while (len > 0);
-
-	return ~crc;
+	return ~crc32_block_endian0(~c, buf, len, global_crc32_table);
 }
 
 /**********************************************************************/
@@ -676,8 +670,7 @@ static NOINLINE smallint lzo_compress(const header_t *h)
 		if (dst_len < src_len) {
 			/* write checksum of compressed block */
 			if (h->flags & F_ADLER32_C)
-				write32(lzo_adler32(ADLER32_INIT_VALUE, b2,
-							dst_len));
+				write32(lzo_adler32(ADLER32_INIT_VALUE, b2, dst_len));
 			if (h->flags & F_CRC32_C)
 				write32(lzo_crc32(CRC32_INIT_VALUE, b2, dst_len));
 			/* write compressed block data */
@@ -694,10 +687,16 @@ static NOINLINE smallint lzo_compress(const header_t *h)
 	return ok;
 }
 
-static void lzo_check(uint32_t FAST_FUNC (*fn)(uint32_t, const uint8_t*, unsigned),
-		uint32_t ref, uint32_t init,
-		uint8_t* buf, unsigned len)
+static FAST_FUNC void lzo_check(
+		uint32_t init,
+		uint8_t* buf, unsigned len,
+		uint32_t FAST_FUNC (*fn)(uint32_t, const uint8_t*, unsigned),
+		uint32_t ref)
 {
+	/* This function, by having the same order of parameters
+	 * as fn, and by being marked FAST_FUNC (same as fn),
+	 * saves a dozen bytes of code.
+	 */
 	uint32_t c = fn(init, buf, len);
 	if (c != ref)
 		bb_error_msg_and_die("checksum error");
@@ -735,18 +734,17 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 			bb_error_msg_and_die("this file is a split lzop file");
 
 		if (dst_len > MAX_BLOCK_SIZE)
-			bb_error_msg_and_die("lzop file corrupted");
+			bb_error_msg_and_die("corrupted data");
 
 		/* read compressed block size */
 		src_len = read32();
 		if (src_len <= 0 || src_len > dst_len)
-			bb_error_msg_and_die("lzop file corrupted");
+			bb_error_msg_and_die("corrupted data");
 
 		if (dst_len > block_size) {
 			if (b2) {
-//FIXME!
-				b2 = NULL;
 				free(b2);
+				b2 = NULL;
 			}
 			block_size = dst_len;
 			mcs_block_size = MAX_COMPRESSED_SIZE(block_size);
@@ -778,13 +776,13 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 			if (!(option_mask32 & OPT_F)) {
 				/* verify checksum of compressed block */
 				if (h->flags & F_ADLER32_C)
-					lzo_check(lzo_adler32, c_adler32,
-							ADLER32_INIT_VALUE,
-							b1, src_len);
+					lzo_check(ADLER32_INIT_VALUE,
+							b1, src_len,
+							lzo_adler32, c_adler32);
 				if (h->flags & F_CRC32_C)
-					lzo_check(lzo_crc32, c_crc32,
-							CRC32_INIT_VALUE,
-							b1, src_len);
+					lzo_check(CRC32_INIT_VALUE,
+							b1, src_len,
+							lzo_crc32, c_crc32);
 			}
 
 			/* decompress */
@@ -794,7 +792,7 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 				r = lzo1x_decompress_safe(b1, src_len, b2, &d, NULL);
 
 			if (r != 0 /*LZO_E_OK*/ || dst_len != d) {
-				bb_error_msg_and_die("corrupted compressed data");
+				bb_error_msg_and_die("corrupted data");
 			}
 			dst = b2;
 		} else {
@@ -805,11 +803,13 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 		if (!(option_mask32 & OPT_F)) {
 			/* verify checksum of uncompressed block */
 			if (h->flags & F_ADLER32_D)
-				lzo_check(lzo_adler32, d_adler32, ADLER32_INIT_VALUE,
-					  dst, dst_len);
+				lzo_check(ADLER32_INIT_VALUE,
+					dst, dst_len,
+					lzo_adler32, d_adler32);
 			if (h->flags & F_CRC32_D)
-				lzo_check(lzo_crc32, d_crc32, CRC32_INIT_VALUE,
-					  dst, dst_len);
+				lzo_check(CRC32_INIT_VALUE,
+					dst, dst_len,
+					lzo_crc32, d_crc32);
 		}
 
 		/* write uncompressed block data */
@@ -1039,7 +1039,7 @@ static smallint do_lzo_decompress(void)
 	return lzo_decompress(&header);
 }
 
-static char* make_new_name_lzop(char *filename)
+static char* FAST_FUNC make_new_name_lzop(char *filename, const char *expected_ext UNUSED_PARAM)
 {
 	if (option_mask32 & OPT_DECOMPRESS) {
 		char *extension = strrchr(filename, '.');
@@ -1051,7 +1051,7 @@ static char* make_new_name_lzop(char *filename)
 	return xasprintf("%s.lzo", filename);
 }
 
-static IF_DESKTOP(long long) int pack_lzop(unpack_info_t *info UNUSED_PARAM)
+static IF_DESKTOP(long long) int FAST_FUNC pack_lzop(unpack_info_t *info UNUSED_PARAM)
 {
 	if (option_mask32 & OPT_DECOMPRESS)
 		return do_lzo_decompress();
@@ -1070,6 +1070,6 @@ int lzop_main(int argc UNUSED_PARAM, char **argv)
 	if (applet_name[0] == 'u')
 		option_mask32 |= OPT_DECOMPRESS;
 
-	G.lzo_crc32_table = crc32_filltable(NULL, 0);
-	return bbunpack(argv, make_new_name_lzop, pack_lzop);
+	global_crc32_table = crc32_filltable(NULL, 0);
+	return bbunpack(argv, pack_lzop, make_new_name_lzop, /*unused:*/ NULL);
 }

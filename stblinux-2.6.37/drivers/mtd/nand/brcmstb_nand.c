@@ -562,33 +562,17 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	return ret;
 }
 
-static int brcmstb_nand_read(struct mtd_info *mtd,
+/*
+ * Assumes proper CS is already set
+ */
+static void brcmstb_nand_read_by_pio(struct mtd_info *mtd,
 	struct nand_chip *chip, u64 addr, unsigned int trans,
 	u32 *buf, u8 *oob)
 {
 	struct brcmstb_nand_host *host = chip->priv;
-	unsigned int i = 0, j;
-	u64 err_addr;
+	unsigned int i, j;
 
-	DBG("%s %llx -> %p\n", __func__, (unsigned long long)addr, buf);
-
-	BDEV_WR_RB(BCHP_NAND_ECC_UNC_ADDR, 0);
-	BDEV_WR_RB(BCHP_NAND_ECC_CORR_ADDR, 0);
-	BDEV_WR_RB(BCHP_NAND_CMD_EXT_ADDRESS,
-		(host->cs << 16) | ((addr >> 32) & 0xffff));
-
-	if (unlikely(oob))
-		memset(oob, 0x99, mtd->oobsize);
-
-	/* Don't use EDU if buffer is not 32-bit aligned */
-	if (buf && !oob && EDU_VA_OK(buf) && likely(!((u32)buf & 0x03))) {
-		if (brcmstb_nand_edu_trans(host, addr, buf, trans,
-				EDU_CMD_READ))
-			return -EIO;
-		i = trans;
-	}
-
-	for (; i < trans; i++, addr += FC_BYTES) {
+	for (i = 0; i < trans; i++, addr += FC_BYTES) {
 		BDEV_WR_RB(BCHP_NAND_CMD_ADDRESS, addr & 0xffffffff);
 		brcmstb_nand_send_cmd(
 			buf ? CMD_PAGE_READ : CMD_SPARE_AREA_READ);
@@ -619,6 +603,36 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 			oob += tbytes;
 		}
 	}
+}
+
+static int brcmstb_nand_read(struct mtd_info *mtd,
+	struct nand_chip *chip, u64 addr, unsigned int trans,
+	u32 *buf, u8 *oob)
+{
+	struct brcmstb_nand_host *host = chip->priv;
+	u64 err_addr;
+	bool use_edu;
+
+	DBG("%s %llx -> %p\n", __func__, (unsigned long long)addr, buf);
+
+	BDEV_WR_RB(BCHP_NAND_ECC_UNC_ADDR, 0);
+	BDEV_WR_RB(BCHP_NAND_ECC_CORR_ADDR, 0);
+	BDEV_WR_RB(BCHP_NAND_CMD_EXT_ADDRESS,
+		(host->cs << 16) | ((addr >> 32) & 0xffff));
+
+	if (unlikely(oob))
+		memset(oob, 0x99, mtd->oobsize);
+
+	/* Don't use EDU if buffer is not 32-bit aligned */
+	use_edu = buf && !oob && EDU_VA_OK(buf) && likely(!((u32)buf & 0x03));
+
+	if (use_edu) {
+		if (brcmstb_nand_edu_trans(host, addr, buf, trans,
+				EDU_CMD_READ))
+			return -EIO;
+	} else {
+		brcmstb_nand_read_by_pio(mtd, chip, addr, trans, buf, oob);
+	}
 
 	err_addr = BDEV_RD(BCHP_NAND_ECC_UNC_ADDR) |
 		((u64)(BDEV_RD(BCHP_NAND_ECC_UNC_EXT_ADDR) & 0xffff) << 32);
@@ -626,6 +640,9 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 		dev_warn(&host->pdev->dev, "uncorrectable error at 0x%llx\n",
 			(unsigned long long)err_addr);
 		mtd->ecc_stats.failed++;
+		if (use_edu)
+			brcmstb_nand_read_by_pio(mtd, chip, addr, trans, buf,
+					oob);
 		return -EIO;
 	}
 
@@ -635,6 +652,9 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 		dev_info(&host->pdev->dev, "corrected error at 0x%llx\n",
 			(unsigned long long)err_addr);
 		mtd->ecc_stats.corrected++;
+		if (use_edu)
+			brcmstb_nand_read_by_pio(mtd, chip, addr, trans, buf,
+					oob);
 		return -EUCLEAN;
 	}
 
@@ -666,9 +686,11 @@ static int brcmstb_nand_read_page_raw(struct mtd_info *mtd,
 {
 	struct brcmstb_nand_host *host = chip->priv;
 
+	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 0);
 	brcmstb_nand_read(mtd, chip, host->last_addr,
 		mtd->writesize >> FC_SHIFT,
-		(u32 *)buf, (u8 *)(buf + mtd->writesize));
+		(u32 *)buf, (u8 *)(chip->oob_poi));
+	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
 	return 0;
 }
 
@@ -819,8 +841,10 @@ static void brcmstb_nand_write_page_raw(struct mtd_info *mtd,
 {
 	struct brcmstb_nand_host *host = chip->priv;
 
+	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 0);
 	brcmstb_nand_write(mtd, chip, host->last_addr, (u32 *)buf,
-		(u8 *)(buf + mtd->writesize));
+		(u8 *)(chip->oob_poi));
+	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);
 }
 
 static int brcmstb_nand_write_oob(struct mtd_info *mtd,

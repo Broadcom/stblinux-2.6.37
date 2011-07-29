@@ -317,6 +317,7 @@ static int asix_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		if ((short)(header & 0x0000ffff) !=
 		    ~((short)((header & 0xffff0000) >> 16))) {
 			netdev_err(dev->net, "asix_rx_fixup() Bad Header Length\n");
+			return 0;
 		}
 		/* get the packet length */
 		size = (u16) (header & 0x0000ffff);

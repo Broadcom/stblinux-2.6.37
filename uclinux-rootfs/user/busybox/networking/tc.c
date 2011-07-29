@@ -1,10 +1,8 @@
 /* vi: set sw=4 ts=4: */
 /*
- * tc.c		"tc" utility frontend.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
- *
- * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+ * Authors: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
  * Bernhard Reutner-Fischer adjusted for busybox
  */
@@ -43,8 +41,7 @@ struct globals {
 	__u32 filter_parent;
 	__u32 filter_prio;
 	__u32 filter_proto;
-};
-
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define filter_ifindex (G.filter_ifindex)
 #define filter_qdisc (G.filter_qdisc)
@@ -470,17 +467,22 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			msg.tcm_ifindex = xll_name_to_index(dev);
 			if (cmd >= CMD_show)
 				filter_ifindex = msg.tcm_ifindex;
-		} else if ((arg == ARG_qdisc && obj == OBJ_class && cmd >= CMD_show)
-				   || (arg == ARG_handle && obj == OBJ_qdisc
-					   && cmd == CMD_change)) {
+		} else
+		if ((arg == ARG_qdisc && obj == OBJ_class && cmd >= CMD_show)
+		 || (arg == ARG_handle && obj == OBJ_qdisc && cmd == CMD_change)
+		) {
 			NEXT_ARG();
 			/* We don't care about duparg2("qdisc handle",*argv) for now */
 			if (get_qdisc_handle(&filter_qdisc, *argv))
 				invarg(*argv, "qdisc");
-		} else if (obj != OBJ_qdisc &&
-				   (arg == ARG_root
-					 || arg == ARG_parent
-					 || (obj == OBJ_filter && arg >= ARG_pref))) {
+		} else
+		if (obj != OBJ_qdisc
+		 && (arg == ARG_root
+		    || arg == ARG_parent
+		    || (obj == OBJ_filter && arg >= ARG_pref)
+		    )
+		) {
+			/* nothing */
 		} else {
 			invarg(*argv, "command");
 		}

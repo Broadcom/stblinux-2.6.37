@@ -8,7 +8,7 @@
  */
 
 #include "libbb.h"
-#include "unarchive.h"
+#include "archive.h"
 
 #define CONFIG_BZIP2_FEATURE_SPEED 1
 
@@ -33,14 +33,14 @@
 /* Takes ~300 bytes, detects corruption caused by bad RAM etc */
 #define BZ_LIGHT_DEBUG 0
 
-#include "bz/bzlib.h"
+#include "libarchive/bz/bzlib.h"
 
-#include "bz/bzlib_private.h"
+#include "libarchive/bz/bzlib_private.h"
 
-#include "bz/blocksort.c"
-#include "bz/bzlib.c"
-#include "bz/compress.c"
-#include "bz/huffman.c"
+#include "libarchive/bz/blocksort.c"
+#include "libarchive/bz/bzlib.c"
+#include "libarchive/bz/compress.c"
+#include "libarchive/bz/huffman.c"
 
 /* No point in being shy and having very small buffer here.
  * bzip2 internal buffers are much bigger anyway, hundreds of kbytes.
@@ -88,7 +88,7 @@ IF_DESKTOP(long long) int bz_write(bz_stream *strm, void* rbuf, ssize_t rlen, vo
 			if (n2 != n) {
 				if (n2 >= 0)
 					errno = 0; /* prevent bogus error message */
-				bb_perror_msg(n2 >= 0 ? "short write" : "write error");
+				bb_perror_msg(n2 >= 0 ? "short write" : bb_msg_write_error);
 				return -1;
 			}
 		}
@@ -102,7 +102,7 @@ IF_DESKTOP(long long) int bz_write(bz_stream *strm, void* rbuf, ssize_t rlen, vo
 }
 
 static
-IF_DESKTOP(long long) int compressStream(unpack_info_t *info UNUSED_PARAM)
+IF_DESKTOP(long long) int FAST_FUNC compressStream(unpack_info_t *info UNUSED_PARAM)
 {
 	IF_DESKTOP(long long) int total;
 	ssize_t count;
@@ -118,7 +118,7 @@ IF_DESKTOP(long long) int compressStream(unpack_info_t *info UNUSED_PARAM)
 	while (1) {
 		count = full_read(STDIN_FILENO, rbuf, IOBUF_SIZE);
 		if (count < 0) {
-			bb_perror_msg("read error");
+			bb_perror_msg(bb_msg_read_error);
 			total = -1;
 			break;
 		}
@@ -128,17 +128,13 @@ IF_DESKTOP(long long) int compressStream(unpack_info_t *info UNUSED_PARAM)
 			break;
 	}
 
-#if ENABLE_FEATURE_CLEAN_UP
+	/* Can't be conditional on ENABLE_FEATURE_CLEAN_UP -
+	 * we are called repeatedly
+	 */
 	BZ2_bzCompressEnd(strm);
 	free(iobuf);
-#endif
-	return total;
-}
 
-static
-char* make_new_name_bzip2(char *filename)
-{
-	return xasprintf("%s.bz2", filename);
+	return total;
 }
 
 int bzip2_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -181,5 +177,5 @@ int bzip2_main(int argc UNUSED_PARAM, char **argv)
 
 	argv += optind;
 	option_mask32 &= 0x7; /* ignore all except -cfv */
-	return bbunpack(argv, make_new_name_bzip2, compressStream);
+	return bbunpack(argv, compressStream, append_ext, "bz2");
 }

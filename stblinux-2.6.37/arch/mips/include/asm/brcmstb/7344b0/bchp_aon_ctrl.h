@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Fri Apr  1 16:51:56 2011
- *                 MD5 Checksum         d03d08c4839c3311c9d35c4cd5e10373
+ * Date:           Generated on         Tue May 31 14:13:45 2011
+ *                 MD5 Checksum         b0a0062767e487fe78d25d07b5b21b78
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/b0/bchp_aon_ctrl.h $
  * 
- * Hydra_Software_Devel/1   4/4/11 12:41p albertl
- * SW7344-40: Initial revision.
+ * Hydra_Software_Devel/2   5/31/11 3:29p albertl
+ * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
 
@@ -77,7 +77,8 @@
 #define BCHP_AON_CTRL_LATCHED_TEST_MODE          0x00408080 /* Final latched testmode value */
 #define BCHP_AON_CTRL_LATCHED_SUB_TEST_MODE      0x00408084 /* Final latched sub-testmode value */
 #define BCHP_AON_CTRL_PM_INITIATE                0x00408088 /* Power down initiate */
-#define BCHP_AON_CTRL_PM_RESTORE                 0x0040808c /* Power up restore */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS             0x0040808c /* Power up restore */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL   0x00408090 /* Ana xtal low cur 40g m7fc external CML control */
 
 /***************************************************************************
  *RESET_CTRL - Reset Control register for AON
@@ -1366,24 +1367,9 @@
 /***************************************************************************
  *ANA_XTAL_CONTROL - Ana xtal low cur 40g m7fc gisb control
  ***************************************************************************/
-/* AON_CTRL :: ANA_XTAL_CONTROL :: reserved0 [31:13] */
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_reserved0_MASK              0xffffe000
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_reserved0_SHIFT             13
-
-/* AON_CTRL :: ANA_XTAL_CONTROL :: osc_pd_buffer [12:12] */
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_pd_buffer_MASK          0x00001000
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_pd_buffer_SHIFT         12
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_pd_buffer_DEFAULT       1
-
-/* AON_CTRL :: ANA_XTAL_CONTROL :: osc_div2_sel [11:11] */
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_div2_sel_MASK           0x00000800
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_div2_sel_SHIFT          11
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_div2_sel_DEFAULT        0
-
-/* AON_CTRL :: ANA_XTAL_CONTROL :: osc_current_control [10:09] */
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_current_control_MASK    0x00000600
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_current_control_SHIFT   9
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_current_control_DEFAULT 1
+/* AON_CTRL :: ANA_XTAL_CONTROL :: reserved0 [31:09] */
+#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_reserved0_MASK              0xfffffe00
+#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_reserved0_SHIFT             9
 
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_test_select_gisb_control [08:08] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_test_select_gisb_control_MASK 0x00000100
@@ -1398,7 +1384,7 @@
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_cml_sel_pd [06:03] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_MASK         0x00000078
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_SHIFT        3
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      0
+#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      12
 
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_d2cbias_gisb_control [02:00] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_d2cbias_gisb_control_MASK 0x00000007
@@ -1420,24 +1406,19 @@
 /***************************************************************************
  *SUB_TEST_MODE - Register source for sub_test_mode
  ***************************************************************************/
-/* AON_CTRL :: SUB_TEST_MODE :: reserved0 [31:09] */
-#define BCHP_AON_CTRL_SUB_TEST_MODE_reserved0_MASK                 0xfffffe00
-#define BCHP_AON_CTRL_SUB_TEST_MODE_reserved0_SHIFT                9
+/* AON_CTRL :: SUB_TEST_MODE :: reserved0 [31:08] */
+#define BCHP_AON_CTRL_SUB_TEST_MODE_reserved0_MASK                 0xffffff00
+#define BCHP_AON_CTRL_SUB_TEST_MODE_reserved0_SHIFT                8
 
-/* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_spare_1 [08:08] */
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_1_MASK     0x00000100
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_1_SHIFT    8
+/* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_spare_1 [07:07] */
+#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_1_MASK     0x00000080
+#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_1_SHIFT    7
 #define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_1_DEFAULT  0
 
-/* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_spare_0 [07:07] */
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_0_MASK     0x00000080
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_0_SHIFT    7
+/* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_spare_0 [06:06] */
+#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_0_MASK     0x00000040
+#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_0_SHIFT    6
 #define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_spare_0_DEFAULT  0
-
-/* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_d2cdiff_ac [06:06] */
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_d2cdiff_ac_MASK  0x00000040
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_d2cdiff_ac_SHIFT 6
-#define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_d2cdiff_ac_DEFAULT 0
 
 /* AON_CTRL :: SUB_TEST_MODE :: sub_test_mode_fast_tspi [05:05] */
 #define BCHP_AON_CTRL_SUB_TEST_MODE_sub_test_mode_fast_tspi_MASK   0x00000020
@@ -1526,51 +1507,83 @@
 #define BCHP_AON_CTRL_PM_INITIATE_pm_initiate_0_DEFAULT            0
 
 /***************************************************************************
- *PM_RESTORE - Power up restore
+ *HOST_MISC_CMDS - Power up restore
  ***************************************************************************/
-/* AON_CTRL :: PM_RESTORE :: reserved0 [31:08] */
-#define BCHP_AON_CTRL_PM_RESTORE_reserved0_MASK                    0xffffff00
-#define BCHP_AON_CTRL_PM_RESTORE_reserved0_SHIFT                   8
+/* AON_CTRL :: HOST_MISC_CMDS :: reserved0 [31:08] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_reserved0_MASK                0xffffff00
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_reserved0_SHIFT               8
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_7 [07:07] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_MASK                 0x00000080
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_SHIFT                7
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_7 [07:07] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_MASK         0x00000080
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_SHIFT        7
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_6 [06:06] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_MASK                 0x00000040
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_SHIFT                6
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_6 [06:06] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_MASK         0x00000040
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_SHIFT        6
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_5 [05:05] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_MASK                 0x00000020
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_SHIFT                5
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_5 [05:05] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_MASK         0x00000020
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_SHIFT        5
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_4 [04:04] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_MASK                 0x00000010
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_SHIFT                4
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_4 [04:04] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_MASK         0x00000010
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_SHIFT        4
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_3 [03:03] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_MASK                 0x00000008
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_SHIFT                3
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_3 [03:03] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_MASK         0x00000008
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_SHIFT        3
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_2 [02:02] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_MASK                 0x00000004
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_SHIFT                2
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_2 [02:02] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_MASK         0x00000004
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_SHIFT        2
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: dram_scram_key_reuse_req [01:01] */
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_MASK     0x00000002
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_SHIFT    1
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_DEFAULT  0
+/* AON_CTRL :: HOST_MISC_CMDS :: dram_scram_key_reuse_req [01:01] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_MASK 0x00000002
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_SHIFT 1
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_DEFAULT 0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_0 [00:00] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_MASK                 0x00000001
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_SHIFT                0
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: pm_restore [00:00] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_MASK               0x00000001
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_SHIFT              0
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_DEFAULT            0
+
+/***************************************************************************
+ *ANA_XTAL_EXT_CML_CONTROL - Ana xtal low cur 40g m7fc external CML control
+ ***************************************************************************/
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: reserved0 [31:06] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_reserved0_MASK      0xffffffc0
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_reserved0_SHIFT     6
+
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: osc_PMSM_S3_pd_buffer [05:05] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_PMSM_S3_pd_buffer_MASK 0x00000020
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_PMSM_S3_pd_buffer_SHIFT 5
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_PMSM_S3_pd_buffer_DEFAULT 0
+
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: osc_override_strap [04:04] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_override_strap_MASK 0x00000010
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_override_strap_SHIFT 4
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_override_strap_DEFAULT 0
+
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: osc_pd_buffer [03:03] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_pd_buffer_MASK  0x00000008
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_pd_buffer_SHIFT 3
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_pd_buffer_DEFAULT 0
+
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: osc_div2_sel [02:02] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_div2_sel_MASK   0x00000004
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_div2_sel_SHIFT  2
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_div2_sel_DEFAULT 1
+
+/* AON_CTRL :: ANA_XTAL_EXT_CML_CONTROL :: osc_current [01:00] */
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_current_MASK    0x00000003
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_current_SHIFT   0
+#define BCHP_AON_CTRL_ANA_XTAL_EXT_CML_CONTROL_osc_current_DEFAULT 1
 
 /***************************************************************************
  *SYSTEM_DATA_RAM%i - System Data RAM Address 0..127

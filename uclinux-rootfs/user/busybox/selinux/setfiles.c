@@ -35,8 +35,7 @@ struct globals {
 	dev_t dev_id; /* Device id where target file exists */
 	int nerr;
 	struct edir excludeArray[MAX_EXCLUDES];
-};
-
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 void BUG_setfiles_globals_too_big(void);
 #define INIT_G() do { \
@@ -119,7 +118,6 @@ static void add_exclude(const char *directory)
 
 	if (directory == NULL || directory[0] != '/') {
 		bb_error_msg_and_die("full path required for exclude: %s", directory);
-
 	}
 	if (lstat(directory, &sb)) {
 		bb_error_msg("directory \"%s\" not found, ignoring", directory);

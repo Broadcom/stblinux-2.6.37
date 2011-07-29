@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2008 by Vladimir Dronnikov <dronnikov@gmail.com>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 #include "libbb.h"
 
@@ -64,7 +64,7 @@ int microcom_main(int argc UNUSED_PARAM, char **argv)
 	if (sfd < 0) {
 		// device already locked -> bail out
 		if (errno == EEXIST)
-			bb_perror_msg_and_die("can't create %s", device_lock_file);
+			bb_perror_msg_and_die("can't create '%s'", device_lock_file);
 		// can't create lock -> don't care
 		if (ENABLE_FEATURE_CLEAN_UP)
 			free(device_lock_file);

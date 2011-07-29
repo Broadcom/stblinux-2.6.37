@@ -1,5 +1,7 @@
 include $(ROOTDIR)/config.arch
 
+unexport MAKEFILE_LIST
+
 BOGUS_TARGETS		:= FORCE makefile $(ROOTDIR)/config.arch
 
 .PHONY: all

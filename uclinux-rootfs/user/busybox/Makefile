@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 16
-SUBLEVEL = 1
+PATCHLEVEL = 18
+SUBLEVEL = 5
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -358,11 +358,16 @@ scripts_basic:
 # To avoid any implicit rule to kick in, define an empty command.
 scripts/basic/%: scripts_basic ;
 
+# This target generates Kbuild's and Config.in's from *.c files
+PHONY += gen_build_files
+gen_build_files: $(wildcard $(srctree)/*/*.c) $(wildcard $(srctree)/*/*/*.c)
+	$(Q)$(srctree)/scripts/gen_build_files.sh $(srctree) $(objtree)
+
 # bbox: we have helpers in applets/
 # we depend on scripts_basic, since scripts/basic/fixdep
 # must be built before any other host prog
 PHONY += applets_dir
-applets_dir: scripts_basic
+applets_dir: scripts_basic gen_build_files
 	$(Q)$(MAKE) $(build)=applets
 
 applets/%: applets_dir ;
@@ -428,7 +433,12 @@ ifeq ($(config-targets),1)
 -include $(srctree)/arch/$(ARCH)/Makefile
 export KBUILD_DEFCONFIG
 
-config %config: scripts_basic outputmakefile FORCE
+config: scripts_basic outputmakefile gen_build_files FORCE
+	$(Q)mkdir -p include
+	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) -C $(srctree) KBUILD_SRC= .kernelrelease
+
+%config: scripts_basic outputmakefile gen_build_files FORCE
 	$(Q)mkdir -p include
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 	$(Q)$(MAKE) -C $(srctree) KBUILD_SRC= .kernelrelease
@@ -441,9 +451,9 @@ else
 ifeq ($(KBUILD_EXTMOD),)
 # Additional helpers built in scripts/
 # Carefully list dependencies so we do not try to build scripts twice
-# in parrallel
+# in parallel
 PHONY += scripts
-scripts: scripts_basic include/config/MARKER
+scripts: gen_build_files scripts_basic include/config/MARKER
 	$(Q)$(MAKE) $(build)=$(@)
 
 scripts_basic: include/autoconf.h
@@ -454,7 +464,7 @@ core-y		:= \
 
 libs-y		:= \
 		archival/ \
-		archival/libunarchive/ \
+		archival/libarchive/ \
 		console-tools/ \
 		coreutils/ \
 		coreutils/libcoreutils/ \
@@ -504,8 +514,10 @@ include $(srctree)/Makefile.flags
 # with it and forgot to run make oldconfig.
 # If kconfig.d is missing then we are probarly in a cleaned tree so
 # we execute the config step to be sure to catch updated Kconfig files
-include/autoconf.h: .kconfig.d .config
+include/autoconf.h: .kconfig.d .config $(wildcard $(srctree)/*/*.c) $(wildcard $(srctree)/*/*/*.c) | gen_build_files
 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
+
+include/usage.h: gen_build_files
 
 else
 # Dummy target needed, because used as prerequisite
@@ -830,7 +842,7 @@ export CPPFLAGS_busybox.lds += -P -C -U$(ARCH)
 
 # 	Split autoconf.h into include/linux/config/*
 quiet_cmd_gen_bbconfigopts = GEN     include/bbconfigopts.h
-      cmd_gen_bbconfigopts = $(srctree)/scripts/mkconfigs > include/bbconfigopts.h
+      cmd_gen_bbconfigopts = $(srctree)/scripts/mkconfigs include/bbconfigopts.h include/bbconfigopts_bz2.h
 quiet_cmd_split_autoconf   = SPLIT   include/autoconf.h -> include/config/*
       cmd_split_autoconf   = scripts/basic/split-include include/autoconf.h include/config
 #bbox# piggybacked generation of few .h files
@@ -979,7 +991,7 @@ clean: archclean $(clean-dirs)
 
 PHONY += doc-clean
 doc-clean: rm-files := docs/busybox.pod \
-		  docs/BusyBox.html docs/BusyBox.1 docs/BusyBox.txt
+		  docs/BusyBox.html docs/busybox.1 docs/BusyBox.txt
 doc-clean:
 	$(call cmd,rmfiles)
 
@@ -996,6 +1008,8 @@ $(mrproper-dirs):
 mrproper: clean archmrproper $(mrproper-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
+	@find -name Config.src | sed 's/.src$$/.in/' | xargs -r rm -f
+	@find -name Kbuild.src | sed 's/.src$$//' | xargs -r rm -f
 
 # distclean
 #
@@ -1276,9 +1290,13 @@ endif
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
 
 # Modules
-/ %/: prepare scripts FORCE
+%/: prepare scripts FORCE
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
 	$(build)=$(build-dir)
+/: prepare scripts FORCE
+	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
+	$(build)=$(build-dir)
+
 %.ko: prepare scripts FORCE
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1)   \
 	$(build)=$(build-dir) $(@:.ko=.o)

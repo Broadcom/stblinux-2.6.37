@@ -5,8 +5,18 @@
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  * Copyright (C) 2008 by Vladimir Dronnikov <dronnikov@gmail.com>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//applet:IF_LSMOD(APPLET(lsmod, _BB_DIR_SBIN, _BB_SUID_DROP))
+
+//usage:#if !ENABLE_MODPROBE_SMALL
+//usage:#define lsmod_trivial_usage
+//usage:       ""
+//usage:#define lsmod_full_usage "\n\n"
+//usage:       "List the currently loaded kernel modules"
+//usage:#endif
+
 #include "libbb.h"
 #include "unicode.h"
 
@@ -46,9 +56,6 @@ int lsmod_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 #if ENABLE_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
 	char *token[4];
 	parser_t *parser = config_open("/proc/modules");
-# if ENABLE_FEATURE_ASSUME_UNICODE
-	size_t name_len;
-# endif
 	init_unicode();
 
 	printf("%-24sSize  Used by", "Module");
@@ -63,10 +70,14 @@ int lsmod_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 				token[3][strlen(token[3])-1] = '\0';
 			} else
 				token[3] = (char *) "";
-# if ENABLE_FEATURE_ASSUME_UNICODE
-			name_len = unicode_strlen(token[0]);
-			name_len = (name_len > 19) ? 0 : 19 - name_len;
-			printf("%s%*s %8s %2s %s\n", token[0], name_len, "", token[1], token[2], token[3]);
+# if ENABLE_UNICODE_SUPPORT
+			{
+				uni_stat_t uni_stat;
+				char *uni_name = unicode_conv_to_printable(&uni_stat, token[0]);
+				unsigned pad_len = (uni_stat.unicode_width > 19) ? 0 : 19 - uni_stat.unicode_width;
+				printf("%s%*s %8s %2s %s\n", uni_name, pad_len, "", token[1], token[2], token[3]);
+				free(uni_name);
+			}
 # else
 			printf("%-19s %8s %2s %s\n", token[0], token[1], token[2], token[3]);
 # endif
@@ -77,10 +88,14 @@ int lsmod_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 			// or comma-separated list ended by comma
 			// so trimming the trailing char is just what we need!
 			token[3][strlen(token[3])-1] = '\0';
-# if ENABLE_FEATURE_ASSUME_UNICODE
-			name_len = unicode_strlen(token[0]);
-			name_len = (name_len > 19) ? 0 : 19 - name_len;
-			printf("%s%*s %8s %2s %s\n", token[0], name_len, "", token[1], token[2], token[3]);
+# if ENABLE_UNICODE_SUPPORT
+			{
+				uni_stat_t uni_stat;
+				char *uni_name = unicode_conv_to_printable(&uni_stat, token[0]);
+				unsigned pad_len = (uni_stat.unicode_width > 19) ? 0 : 19 - uni_stat.unicode_width;
+				printf("%s%*s %8s %2s %s\n", uni_name, pad_len, "", token[1], token[2], token[3]);
+				free(uni_name);
+			}
 # else
 			printf("%-19s %8s %2s %s\n", token[0], token[1], token[2], token[3]);
 # endif

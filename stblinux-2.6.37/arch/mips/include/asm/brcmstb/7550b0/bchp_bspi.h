@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2009, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Jun 11 14:51:09 2009
- *                 MD5 Checksum         9f84a209109c10bb3ab0ca7b8121b599
+ * Date:           Generated on         Fri May  6 10:36:54 2011
+ *                 MD5 Checksum         fe612bbfa36f70660b1c9bdf3073e170
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7550/rdb/a0/bchp_bspi.h $
+ * $brcm_Log: /magnum/basemodules/chp/7550/rdb/b0/bchp_bspi.h $
  * 
- * Hydra_Software_Devel/2   6/11/09 4:12p albertl
- * PR54730: Updated to match RDB.
+ * Hydra_Software_Devel/2   5/6/11 12:12p tdo
+ * SW7550-740: Sync up RDB
  *
  ***************************************************************************/
 
@@ -66,10 +66,12 @@
 /* BSPI :: REVISION_ID :: MAJOR [15:08] */
 #define BCHP_BSPI_REVISION_ID_MAJOR_MASK                           0x0000ff00
 #define BCHP_BSPI_REVISION_ID_MAJOR_SHIFT                          8
+#define BCHP_BSPI_REVISION_ID_MAJOR_DEFAULT                        2
 
 /* BSPI :: REVISION_ID :: MINOR [07:00] */
 #define BCHP_BSPI_REVISION_ID_MINOR_MASK                           0x000000ff
 #define BCHP_BSPI_REVISION_ID_MINOR_SHIFT                          0
+#define BCHP_BSPI_REVISION_ID_MINOR_DEFAULT                        0
 
 /***************************************************************************
  *SCRATCH - Revision ID
@@ -77,6 +79,7 @@
 /* BSPI :: SCRATCH :: SCRATCH [31:00] */
 #define BCHP_BSPI_SCRATCH_SCRATCH_MASK                             0xffffffff
 #define BCHP_BSPI_SCRATCH_SCRATCH_SHIFT                            0
+#define BCHP_BSPI_SCRATCH_SCRATCH_DEFAULT                          0
 
 /***************************************************************************
  *MAST_N_BOOT_CTRL - Master/Boot SPI Control Register
@@ -88,6 +91,7 @@
 /* BSPI :: MAST_N_BOOT_CTRL :: mast_n_boot [00:00] */
 #define BCHP_BSPI_MAST_N_BOOT_CTRL_mast_n_boot_MASK                0x00000001
 #define BCHP_BSPI_MAST_N_BOOT_CTRL_mast_n_boot_SHIFT               0
+#define BCHP_BSPI_MAST_N_BOOT_CTRL_mast_n_boot_DEFAULT             0
 
 /***************************************************************************
  *BUSY_STATUS - BSPI Busy Status Register
@@ -99,6 +103,7 @@
 /* BSPI :: BUSY_STATUS :: busy [00:00] */
 #define BCHP_BSPI_BUSY_STATUS_busy_MASK                            0x00000001
 #define BCHP_BSPI_BUSY_STATUS_busy_SHIFT                           0
+#define BCHP_BSPI_BUSY_STATUS_busy_DEFAULT                         0
 
 /***************************************************************************
  *INTR_STATUS - Interrupt Status Register
@@ -110,10 +115,12 @@
 /* BSPI :: INTR_STATUS :: intr_1 [01:01] */
 #define BCHP_BSPI_INTR_STATUS_intr_1_MASK                          0x00000002
 #define BCHP_BSPI_INTR_STATUS_intr_1_SHIFT                         1
+#define BCHP_BSPI_INTR_STATUS_intr_1_DEFAULT                       0
 
 /* BSPI :: INTR_STATUS :: intr_0 [00:00] */
 #define BCHP_BSPI_INTR_STATUS_intr_0_MASK                          0x00000001
 #define BCHP_BSPI_INTR_STATUS_intr_0_SHIFT                         0
+#define BCHP_BSPI_INTR_STATUS_intr_0_DEFAULT                       0
 
 /***************************************************************************
  *B0_STATUS - Prefetch Buffer 0 Status Register
@@ -125,26 +132,32 @@
 /* BSPI :: B0_STATUS :: b0_prefetch_active [30:30] */
 #define BCHP_BSPI_B0_STATUS_b0_prefetch_active_MASK                0x40000000
 #define BCHP_BSPI_B0_STATUS_b0_prefetch_active_SHIFT               30
+#define BCHP_BSPI_B0_STATUS_b0_prefetch_active_DEFAULT             0
 
 /* BSPI :: B0_STATUS :: b0_full [29:29] */
 #define BCHP_BSPI_B0_STATUS_b0_full_MASK                           0x20000000
 #define BCHP_BSPI_B0_STATUS_b0_full_SHIFT                          29
+#define BCHP_BSPI_B0_STATUS_b0_full_DEFAULT                        0
 
 /* BSPI :: B0_STATUS :: b0_empty [28:28] */
 #define BCHP_BSPI_B0_STATUS_b0_empty_MASK                          0x10000000
 #define BCHP_BSPI_B0_STATUS_b0_empty_SHIFT                         28
+#define BCHP_BSPI_B0_STATUS_b0_empty_DEFAULT                       1
 
 /* BSPI :: B0_STATUS :: b0_miss [27:27] */
 #define BCHP_BSPI_B0_STATUS_b0_miss_MASK                           0x08000000
 #define BCHP_BSPI_B0_STATUS_b0_miss_SHIFT                          27
+#define BCHP_BSPI_B0_STATUS_b0_miss_DEFAULT                        0
 
 /* BSPI :: B0_STATUS :: b0_hit [26:26] */
 #define BCHP_BSPI_B0_STATUS_b0_hit_MASK                            0x04000000
 #define BCHP_BSPI_B0_STATUS_b0_hit_SHIFT                           26
+#define BCHP_BSPI_B0_STATUS_b0_hit_DEFAULT                         0
 
 /* BSPI :: B0_STATUS :: b0_address [25:00] */
 #define BCHP_BSPI_B0_STATUS_b0_address_MASK                        0x03ffffff
 #define BCHP_BSPI_B0_STATUS_b0_address_SHIFT                       0
+#define BCHP_BSPI_B0_STATUS_b0_address_DEFAULT                     0
 
 /***************************************************************************
  *B0_CTRL - Prefetch Buffer 0 Control Register
@@ -156,6 +169,7 @@
 /* BSPI :: B0_CTRL :: b0_flush [00:00] */
 #define BCHP_BSPI_B0_CTRL_b0_flush_MASK                            0x00000001
 #define BCHP_BSPI_B0_CTRL_b0_flush_SHIFT                           0
+#define BCHP_BSPI_B0_CTRL_b0_flush_DEFAULT                         0
 
 /***************************************************************************
  *B1_STATUS - Prefetch Buffer 1 Status Register
@@ -167,26 +181,32 @@
 /* BSPI :: B1_STATUS :: b1_prefetch_active [30:30] */
 #define BCHP_BSPI_B1_STATUS_b1_prefetch_active_MASK                0x40000000
 #define BCHP_BSPI_B1_STATUS_b1_prefetch_active_SHIFT               30
+#define BCHP_BSPI_B1_STATUS_b1_prefetch_active_DEFAULT             0
 
 /* BSPI :: B1_STATUS :: b1_full [29:29] */
 #define BCHP_BSPI_B1_STATUS_b1_full_MASK                           0x20000000
 #define BCHP_BSPI_B1_STATUS_b1_full_SHIFT                          29
+#define BCHP_BSPI_B1_STATUS_b1_full_DEFAULT                        0
 
 /* BSPI :: B1_STATUS :: b1_empty [28:28] */
 #define BCHP_BSPI_B1_STATUS_b1_empty_MASK                          0x10000000
 #define BCHP_BSPI_B1_STATUS_b1_empty_SHIFT                         28
+#define BCHP_BSPI_B1_STATUS_b1_empty_DEFAULT                       1
 
 /* BSPI :: B1_STATUS :: b1_miss [27:27] */
 #define BCHP_BSPI_B1_STATUS_b1_miss_MASK                           0x08000000
 #define BCHP_BSPI_B1_STATUS_b1_miss_SHIFT                          27
+#define BCHP_BSPI_B1_STATUS_b1_miss_DEFAULT                        0
 
 /* BSPI :: B1_STATUS :: b1_hit [26:26] */
 #define BCHP_BSPI_B1_STATUS_b1_hit_MASK                            0x04000000
 #define BCHP_BSPI_B1_STATUS_b1_hit_SHIFT                           26
+#define BCHP_BSPI_B1_STATUS_b1_hit_DEFAULT                         0
 
 /* BSPI :: B1_STATUS :: b1_address [25:00] */
 #define BCHP_BSPI_B1_STATUS_b1_address_MASK                        0x03ffffff
 #define BCHP_BSPI_B1_STATUS_b1_address_SHIFT                       0
+#define BCHP_BSPI_B1_STATUS_b1_address_DEFAULT                     0
 
 /***************************************************************************
  *B1_CTRL - Prefetch Buffer 1 Control Register
@@ -198,6 +218,7 @@
 /* BSPI :: B1_CTRL :: b1_flush [00:00] */
 #define BCHP_BSPI_B1_CTRL_b1_flush_MASK                            0x00000001
 #define BCHP_BSPI_B1_CTRL_b1_flush_SHIFT                           0
+#define BCHP_BSPI_B1_CTRL_b1_flush_DEFAULT                         0
 
 /***************************************************************************
  *STRAP_OVERRIDE_CTRL - Dual/Single Receive Mode Control Register
@@ -209,18 +230,22 @@
 /* BSPI :: STRAP_OVERRIDE_CTRL :: data_quad [03:03] */
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_quad_MASK               0x00000008
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_quad_SHIFT              3
+#define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_quad_DEFAULT            0
 
 /* BSPI :: STRAP_OVERRIDE_CTRL :: addr_4byte_n_3byte [02:02] */
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_addr_4byte_n_3byte_MASK      0x00000004
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_addr_4byte_n_3byte_SHIFT     2
+#define BCHP_BSPI_STRAP_OVERRIDE_CTRL_addr_4byte_n_3byte_DEFAULT   0
 
 /* BSPI :: STRAP_OVERRIDE_CTRL :: data_dual_n_sgl [01:01] */
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_dual_n_sgl_MASK         0x00000002
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_dual_n_sgl_SHIFT        1
+#define BCHP_BSPI_STRAP_OVERRIDE_CTRL_data_dual_n_sgl_DEFAULT      0
 
 /* BSPI :: STRAP_OVERRIDE_CTRL :: override [00:00] */
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_override_MASK                0x00000001
 #define BCHP_BSPI_STRAP_OVERRIDE_CTRL_override_SHIFT               0
+#define BCHP_BSPI_STRAP_OVERRIDE_CTRL_override_DEFAULT             0
 
 #endif /* #ifndef BCHP_BSPI_H__ */
 

@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2008 by Vladimir Dronnikov <dronnikov@gmail.com>
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /*
@@ -135,7 +135,7 @@ int lpd_main(int argc UNUSED_PARAM, char *argv[])
 	while (1) {
 		char *fname;
 		int fd;
-		// int is easier than ssize_t: can use xatoi_u,
+		// int is easier than ssize_t: can use xatoi_positive,
 		// and can correctly display error returns (-1)
 		int expected_len, real_len;
 
@@ -181,8 +181,7 @@ int lpd_main(int argc UNUSED_PARAM, char *argv[])
 			// this call reopens stdio fds to "/dev/null"
 			// (no daemonization is done)
 			bb_daemonize_or_rexec(DAEMON_DEVNULL_STDIO | DAEMON_ONLY_SANITIZE, NULL);
-			BB_EXECVP(*argv, argv);
-			exit(127);
+			BB_EXECVP_or_die(argv);
 		}
 
 		// validate input.

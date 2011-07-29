@@ -28,7 +28,7 @@
  * Copyright (C) 1994-1996 Charles L. Blake.
  * Copyright (C) 1992-1998 Michael K. Johnson
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -100,16 +100,14 @@ struct globals {
 	int num_cpus;
 #endif
 	char line_buf[80];
-};
-
+}; //FIX_ALIASING; - large code growth
 enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
-
 #define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() do { \
-	struct G_sizecheck { \
-		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
-	}; \
-} while (0)
+struct BUG_bad_size {
+	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
+	char BUG_line_buf_too_small[LINE_BUF_SIZE > 80 ? 1 : -1];
+};
+#define INIT_G() do { } while (0)
 #define top              (G.top               )
 #define ntop             (G.ntop              )
 #define sort_field       (G.sort_field        )
@@ -480,8 +478,8 @@ static unsigned long display_header(int scr_width, int *lines_rem_p)
 	snprintf(scrbuf, scr_width,
 		"Mem: %luK used, %luK free, %luK shrd, %luK buff, %luK cached",
 		used, mfree, shared, buffers, cached);
-	/* clear screen & go to top */
-	printf(OPT_BATCH_MODE ? "%s\n" : "\e[H\e[J%s\n", scrbuf);
+	/* go to top & clear to the end of screen */
+	printf(OPT_BATCH_MODE ? "%s\n" : "\033[H\033[J%s\n", scrbuf);
 	(*lines_rem_p)--;
 
 	/* Display CPU time split as percentage of total time
@@ -520,7 +518,7 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 #endif
 
 	/* what info of the processes is shown */
-	printf(OPT_BATCH_MODE ? "%.*s" : "\e[7m%.*s\e[0m", scr_width,
+	printf(OPT_BATCH_MODE ? "%.*s" : "\033[7m%.*s\033[0m", scr_width,
 		"  PID  PPID USER     STAT   VSZ %MEM"
 		IF_FEATURE_TOP_SMP_PROCESS(" CPU")
 		IF_FEATURE_TOP_CPU_USAGE_PERCENTAGE(" %CPU")
@@ -651,8 +649,9 @@ static void reset_term(void)
 static void sig_catcher(int sig UNUSED_PARAM)
 {
 	reset_term();
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
+
 #endif /* FEATURE_USE_TERMIOS */
 
 /*
@@ -688,121 +687,80 @@ static int topmem_sort(char *a, char *b)
 	n = offsetof(topmem_status_t, vsz) + (sort_field * sizeof(mem_t));
 	l = *(mem_t*)(a + n);
 	r = *(mem_t*)(b + n);
-//	if (l == r) {
-//		l = a->mapped_rw;
-//		r = b->mapped_rw;
-//	}
+	if (l == r) {
+		l = ((topmem_status_t*)a)->dirty;
+		r = ((topmem_status_t*)b)->dirty;
+	}
 	/* We want to avoid unsigned->signed and truncation errors */
 	/* l>r: -1, l=r: 0, l<r: 1 */
 	n = (l > r) ? -1 : (l != r);
 	return inverted ? -n : n;
 }
 
-/* Cut "NNNN " out of "    NNNN kb" */
-static char *grab_number(char *str, const char *match, unsigned sz)
-{
-	if (strncmp(str, match, sz) == 0) {
-		str = skip_whitespace(str + sz);
-		(skip_non_whitespace(str))[1] = '\0';
-		return xstrdup(str);
-	}
-	return NULL;
-}
-
 /* display header info (meminfo / loadavg) */
 static void display_topmem_header(int scr_width, int *lines_rem_p)
 {
-	char linebuf[128];
+	enum {
+		TOTAL = 0, MFREE, BUF, CACHE,
+		SWAPTOTAL, SWAPFREE, DIRTY,
+		MWRITE, ANON, MAP, SLAB,
+		NUM_FIELDS
+	};
+	static const char match[NUM_FIELDS][12] = {
+		"\x09" "MemTotal:",  // TOTAL
+		"\x08" "MemFree:",   // MFREE
+		"\x08" "Buffers:",   // BUF
+		"\x07" "Cached:",    // CACHE
+		"\x0a" "SwapTotal:", // SWAPTOTAL
+		"\x09" "SwapFree:",  // SWAPFREE
+		"\x06" "Dirty:",     // DIRTY
+		"\x0a" "Writeback:", // MWRITE
+		"\x0a" "AnonPages:", // ANON
+		"\x07" "Mapped:",    // MAP
+		"\x05" "Slab:",      // SLAB
+	};
+	char meminfo_buf[4 * 1024];
+	const char *Z[NUM_FIELDS];
 	unsigned i;
-	FILE *fp;
-	union {
-		struct {
-			/*  1 */ char *total;
-			/*  2 */ char *mfree;
-			/*  3 */ char *buf;
-			/*  4 */ char *cache;
-			/*  5 */ char *swaptotal;
-			/*  6 */ char *swapfree;
-			/*  7 */ char *dirty;
-			/*  8 */ char *mwrite;
-			/*  9 */ char *anon;
-			/* 10 */ char *map;
-			/* 11 */ char *slab;
-		} u;
-		char *str[11];
-	} Z;
-#define total     Z.u.total
-#define mfree     Z.u.mfree
-#define buf       Z.u.buf
-#define cache     Z.u.cache
-#define swaptotal Z.u.swaptotal
-#define swapfree  Z.u.swapfree
-#define dirty     Z.u.dirty
-#define mwrite    Z.u.mwrite
-#define anon      Z.u.anon
-#define map       Z.u.map
-#define slab      Z.u.slab
-#define str       Z.str
+	int sz;
 
-	memset(&Z, 0, sizeof(Z));
+	for (i = 0; i < NUM_FIELDS; i++)
+		Z[i] = "?";
 
 	/* read memory info */
-	fp = xfopen_for_read("meminfo");
-	while (fgets(linebuf, sizeof(linebuf), fp)) {
-		char *p;
-
-#define SCAN(match, name) \
-		p = grab_number(linebuf, match, sizeof(match)-1); \
-		if (p) { name = p; continue; }
-
-		SCAN("MemTotal:", total);
-		SCAN("MemFree:", mfree);
-		SCAN("Buffers:", buf);
-		SCAN("Cached:", cache);
-		SCAN("SwapTotal:", swaptotal);
-		SCAN("SwapFree:", swapfree);
-		SCAN("Dirty:", dirty);
-		SCAN("Writeback:", mwrite);
-		SCAN("AnonPages:", anon);
-		SCAN("Mapped:", map);
-		SCAN("Slab:", slab);
-#undef SCAN
+	sz = open_read_close("meminfo", meminfo_buf, sizeof(meminfo_buf) - 1);
+	if (sz >= 0) {
+		char *p = meminfo_buf;
+		meminfo_buf[sz] = '\0';
+		/* Note that fields always appear in the match[] order */
+		for (i = 0; i < NUM_FIELDS; i++) {
+			char *found = strstr(p, match[i] + 1);
+			if (found) {
+				/* Cut "NNNN" out of "    NNNN kb" */
+				char *s = skip_whitespace(found + match[i][0]);
+				p = skip_non_whitespace(s);
+				*p++ = '\0';
+				Z[i] = s;
+			}
+		}
 	}
-	fclose(fp);
 
-#define S(s) (s ? s : "0 ")
-	snprintf(linebuf, sizeof(linebuf),
-		"Mem %stotal %sanon %smap %sfree",
-		S(total), S(anon), S(map), S(mfree));
-	printf(OPT_BATCH_MODE ? "%.*s\n" : "\e[H\e[J%.*s\n", scr_width, linebuf);
+	snprintf(line_buf, LINE_BUF_SIZE,
+		"Mem total:%s anon:%s map:%s free:%s",
+		Z[TOTAL], Z[ANON], Z[MAP], Z[MFREE]);
+	printf(OPT_BATCH_MODE ? "%.*s\n" : "\033[H\033[J%.*s\n", scr_width, line_buf);
 
-	snprintf(linebuf, sizeof(linebuf),
-		" %sslab %sbuf %scache %sdirty %swrite",
-		S(slab), S(buf), S(cache), S(dirty), S(mwrite));
-	printf("%.*s\n", scr_width, linebuf);
+	snprintf(line_buf, LINE_BUF_SIZE,
+		" slab:%s buf:%s cache:%s dirty:%s write:%s",
+		Z[SLAB], Z[BUF], Z[CACHE], Z[DIRTY], Z[MWRITE]);
+	printf("%.*s\n", scr_width, line_buf);
 
-	snprintf(linebuf, sizeof(linebuf),
-		"Swap %stotal %sfree", // TODO: % used?
-		S(swaptotal), S(swapfree));
-	printf("%.*s\n", scr_width, linebuf);
+	snprintf(line_buf, LINE_BUF_SIZE,
+		"Swap total:%s free:%s", // TODO: % used?
+		Z[SWAPTOTAL], Z[SWAPFREE]);
+	printf("%.*s\n", scr_width, line_buf);
 
 	(*lines_rem_p) -= 3;
-#undef S
-
-	for (i = 0; i < ARRAY_SIZE(str); i++)
-		free(str[i]);
-#undef total
-#undef free
-#undef buf
-#undef cache
-#undef swaptotal
-#undef swapfree
-#undef dirty
-#undef write
-#undef anon
-#undef map
-#undef slab
-#undef str
 }
 
 static void ulltoa6_and_space(unsigned long long ul, char buf[6])
@@ -985,20 +943,20 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 			}
 #if ENABLE_FEATURE_TOPMEM
 			else { /* TOPMEM */
-				if (!(p->mapped_ro | p->mapped_rw))
+				if (!(p->smaps.mapped_ro | p->smaps.mapped_rw))
 					continue; /* kernel threads are ignored */
 				n = ntop;
 				/* No bug here - top and topmem are the same */
 				top = xrealloc_vector(topmem, 6, ntop++);
 				strcpy(topmem[n].comm, p->comm);
 				topmem[n].pid      = p->pid;
-				topmem[n].vsz      = p->mapped_rw + p->mapped_ro;
-				topmem[n].vszrw    = p->mapped_rw;
-				topmem[n].rss_sh   = p->shared_clean + p->shared_dirty;
-				topmem[n].rss      = p->private_clean + p->private_dirty + topmem[n].rss_sh;
-				topmem[n].dirty    = p->private_dirty + p->shared_dirty;
-				topmem[n].dirty_sh = p->shared_dirty;
-				topmem[n].stack    = p->stack;
+				topmem[n].vsz      = p->smaps.mapped_rw + p->smaps.mapped_ro;
+				topmem[n].vszrw    = p->smaps.mapped_rw;
+				topmem[n].rss_sh   = p->smaps.shared_clean + p->smaps.shared_dirty;
+				topmem[n].rss      = p->smaps.private_clean + p->smaps.private_dirty + topmem[n].rss_sh;
+				topmem[n].dirty    = p->smaps.private_dirty + p->smaps.shared_dirty;
+				topmem[n].dirty_sh = p->smaps.shared_dirty;
+				topmem[n].stack    = p->smaps.stack;
 			}
 #endif
 		} /* end of "while we read /proc" */

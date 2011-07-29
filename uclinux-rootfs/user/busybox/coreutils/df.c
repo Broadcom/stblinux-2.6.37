@@ -5,7 +5,7 @@
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  * based on original code by (I think) Bruce Perens <bruce@pixar.com>.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 _NOT_ compliant -- option -t missing. */
@@ -114,9 +114,6 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 	while (1) {
 		const char *device;
 		const char *mount_point;
-#if ENABLE_FEATURE_ASSUME_UNICODE
-		size_t dev_len;
-#endif
 
 		if (mount_table) {
 			mount_entry = getmntent(mount_table);
@@ -177,12 +174,16 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 			}
 #endif
 
-#if ENABLE_FEATURE_ASSUME_UNICODE
-			dev_len = unicode_strlen(device);
-			if (dev_len > 20) {
-				printf("%s\n%20s", device, "");
-			} else {
-				printf("%s%*s", device, 20 - (int)dev_len, "");
+#if ENABLE_UNICODE_SUPPORT
+			{
+				uni_stat_t uni_stat;
+				char *uni_dev = unicode_conv_to_printable(&uni_stat, device);
+				if (uni_stat.unicode_width > 20) {
+					printf("%s\n%20s", uni_dev, "");
+				} else {
+					printf("%s%*s", uni_dev, 20 - (int)uni_stat.unicode_width, "");
+				}
+				free(uni_dev);
 			}
 #else
 			if (printf("\n%-20s" + 1, device) > 20)

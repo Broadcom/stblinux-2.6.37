@@ -295,7 +295,7 @@ struct globals {
 	struct rlimit rlim_ofile;
 	servtab_t *serv_list;
 	int global_queuelen;
-	int maxsock;		/* max fd# in allsock, -1: unknown */
+	int maxsock;         /* max fd# in allsock, -1: unknown */
 	/* whenever maxsock grows, prev_maxsock is set to new maxsock,
 	 * but if maxsock is set to -1, prev_maxsock is not changed */
 	int prev_maxsock;
@@ -313,7 +313,7 @@ struct globals {
 	fd_set allsock;
 	/* Used in next_line(), and as scratch read buffer */
 	char line[256];          /* _at least_ 256, see LINE_SIZE */
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 enum { LINE_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line) };
 struct BUG_G_too_big {
@@ -778,6 +778,12 @@ static servtab_t *parse_one_line(void)
 	argc = 0;
 	while ((arg = token[6+argc]) != NULL && argc < MAXARGV)
 		sep->se_argv[argc++] = xstrdup(arg);
+	/* Some inetd.conf files have no argv's, not even argv[0].
+	 * Fix them up.
+	 * (Technically, programs can be execed with argv[0] = NULL,
+	 * but many programs do not like that at all) */
+	if (argc == 0)
+		sep->se_argv[0] = xstrdup(sep->se_program);
 
 	/* catch mixups. "<service> stream udp ..." == wtf */
 	if (sep->se_socktype == SOCK_STREAM) {
@@ -1271,7 +1277,7 @@ int inetd_main(int argc UNUSED_PARAM, char **argv)
 					pid = vfork();
 
 				if (pid < 0) { /* fork error */
-					bb_perror_msg("fork");
+					bb_perror_msg("vfork"+1);
 					sleep(1);
 					restore_sigmask(&omask);
 					maybe_close(accepted_fd);
@@ -1380,7 +1386,7 @@ int inetd_main(int argc UNUSED_PARAM, char **argv)
 			sigaction_set(SIGPIPE, &saved_pipe_handler);
 			restore_sigmask(&omask);
 			BB_EXECVP(sep->se_program, sep->se_argv);
-			bb_perror_msg("exec %s", sep->se_program);
+			bb_perror_msg("can't execute '%s'", sep->se_program);
  do_exit1:
 			/* eat packet in udp case */
 			if (sep->se_socktype != SOCK_STREAM)

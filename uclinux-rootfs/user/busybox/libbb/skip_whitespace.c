@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2003  Manuel Novoa III  <mjn3@codepoet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -29,4 +29,11 @@ char* FAST_FUNC skip_non_whitespace(const char *s)
 		s++;
 
 	return (char *) s;
+}
+
+char* FAST_FUNC skip_dev_pfx(const char *tty_name)
+{
+	if (strncmp(tty_name, "/dev/", 5) == 0)
+		tty_name += 5;
+	return (char*)tty_name;
 }

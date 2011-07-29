@@ -49,6 +49,15 @@ unsigned long brcm_dram1_linux_mb;
 
 static u8 brcm_primary_macaddr[6] = { 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef };
 
+#if defined(CONFIG_BRCM_HAS_PCU_UARTS)
+/* DTV: early printk is limited to TVM UART1 */
+unsigned long brcm_base_baud0 = BRCM_BASE_BAUD_TVM;	/* TVM UART1 */
+unsigned long brcm_base_baud = BRCM_BASE_BAUD_PCU;	/* PCU UART[23] */
+#else
+unsigned long brcm_base_baud0 = BRCM_BASE_BAUD_STB;	/* UPG UARTA */
+unsigned long brcm_base_baud = BRCM_BASE_BAUD_STB;	/* UPG_UART[BC] */
+#endif
+
 unsigned long __initdata cfe_seal;
 unsigned long __initdata cfe_entry;
 unsigned long __initdata cfe_handle;
@@ -160,9 +169,8 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 {
 	int __maybe_unused len;
 
-#if defined(CONFIG_BCM7401) || defined(CONFIG_BCM7400) || \
-	defined(CONFIG_BCM7403) || defined(CONFIG_BCM7405)
-	/* autodetect 97455, 97456, 97458, 97459 DOCSIS boards */
+#if defined(CONFIG_BCM7405)
+	/* autodetect 97459 DOCSIS boards */
 	if (strncmp("BCM9745", buf, 7) == 0)
 		brcm_docsis_platform = 1;
 #endif
@@ -200,22 +208,6 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 #elif defined(CONFIG_BCM7408)
 	if (strncmp(buf, "BCM97408SAT", 11) == 0)
 		brcm_moca_rf_band = MOCA_BAND_MIDRF;
-#endif
-
-#if defined(CONFIG_BCM7401)
-	/*
-	 * 7402, 7453, 7454 - no SATA
-	 * 7453, 7454 disable the second USB PHY (no SW impact)
-	 * 7454 disables the ENET PHY (no SW impact)
-	 */
-	if (strcmp("BCM97402", buf) == 0)
-		brcm_sata_enabled = 0;
-#endif
-
-#if defined(CONFIG_BCM7403)
-	/* 7404, 7452 - no SATA */
-	if (strcmp("BCM97404", buf) == 0)
-		brcm_sata_enabled = 0;
 #endif
 
 #if defined(CONFIG_BCM7405)
@@ -300,12 +292,17 @@ static void __init init_port(void)
 	BDEV_WR(UART_REG(UART_FCR), 0);		/* no fifo */
 	BDEV_WR(UART_REG(UART_MCR), 0x3);	/* DTR + RTS */
 
-	divisor = BRCM_BASE_BAUD / 115200;
-#if !defined(CONFIG_BRCM_IKOS) && !defined(CONFIG_BRCM_HAS_PCU_UARTS)
 	BDEV_SET(UART_REG(UART_LCR), UART_LCR_DLAB);
+#if defined(CONFIG_BRCM_IKOS)
+	/* Reverse-engineer brcm_base_baud0 from the bootloader's setting */
+
+	divisor = (BDEV_RD(UART_REG(UART_DLM)) << 8) |
+		BDEV_RD(UART_REG(UART_DLL));
+	brcm_base_baud0 = divisor * 115200;
+#endif
+	divisor = brcm_base_baud0 / 115200;
 	BDEV_WR(UART_REG(UART_DLL), divisor & 0xff);
 	BDEV_WR(UART_REG(UART_DLM), (divisor >> 8) & 0xff);
-#endif
 	BDEV_UNSET(UART_REG(UART_LCR), UART_LCR_DLAB);
 }
 
@@ -417,7 +414,7 @@ void __init prom_init(void)
 			break;
 
 #ifdef CONFIG_BRCM_UPPER_MEMORY
-#if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0)
+#if defined(CONFIG_BCM7425A0)
 		/* HW7425-451: broken in A0, fixed in A1 */
 		if (BRCM_CHIP_REV() == 0x00) {
 			mb = min(dram0_mb, 512UL);

@@ -1,6 +1,6 @@
 /* vi: set sw=4 ts=4: */
 /*
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -75,7 +75,7 @@
 
 /* Various defines taken from linux/devfs_fs.h */
 #define DEVFSD_PROTOCOL_REVISION_KERNEL  5
-#define	DEVFSD_IOCTL_BASE	'd'
+#define DEVFSD_IOCTL_BASE	'd'
 /*  These are the various ioctls  */
 #define DEVFSDIOC_GET_PROTO_REV         _IOR(DEVFSD_IOCTL_BASE, 0, int)
 #define DEVFSDIOC_SET_EVENT_MASK        _IOW(DEVFSD_IOCTL_BASE, 2, int)
@@ -637,7 +637,7 @@ static int do_servicing(int fd, unsigned long event_mask)
 	xioctl(fd, DEVFSDIOC_SET_EVENT_MASK, (void*)event_mask);
 	while (!caught_signal) {
 		errno = 0;
-		bytes = read(fd,(char *) &info, sizeof info);
+		bytes = read(fd, (char *) &info, sizeof info);
 		if (caught_signal)
 			break;      /*  Must test for this first     */
 		if (errno == EINTR)
@@ -751,7 +751,7 @@ static void action_modload(const struct devfsd_notify_struct *info,
 	argv[4] = concat_path_file("/dev", info->devname); /* device */
 	argv[5] = NULL;
 
-	wait4pid(xspawn(argv));
+	spawn_and_wait(argv);
 	free(argv[4]);
 }  /*  End Function action_modload  */
 
@@ -783,7 +783,7 @@ static void action_execute(const struct devfsd_notify_struct *info,
 		argv[count] = largv[count];
 	}
 	argv[count] = NULL;
-	wait4pid(spawn(argv));
+	spawn_and_wait(argv);
 }   /*  End Function action_execute  */
 
 
@@ -941,10 +941,10 @@ static void restore(char *spath, struct stat source_stat, int rootlen)
 	lstat(dpath, &dest_stat);
 	free(dpath);
 	if (S_ISLNK(source_stat.st_mode) || (source_stat.st_mode & S_ISVTX))
-		copy_inode(dpath, &dest_stat,(source_stat.st_mode & ~S_ISVTX) , spath, &source_stat);
+		copy_inode(dpath, &dest_stat, (source_stat.st_mode & ~S_ISVTX), spath, &source_stat);
 
 	if (S_ISDIR(source_stat.st_mode))
-		dir_operation(RESTORE, spath, rootlen,NULL);
+		dir_operation(RESTORE, spath, rootlen, NULL);
 }
 
 
@@ -995,7 +995,7 @@ static int copy_inode(const char *destpath, const struct stat *dest_stat,
 				break;
 			un_addr.sun_family = AF_UNIX;
 			snprintf(un_addr.sun_path, sizeof(un_addr.sun_path), "%s", destpath);
-			val = bind(fd,(struct sockaddr *) &un_addr,(int) sizeof un_addr);
+			val = bind(fd, (struct sockaddr *) &un_addr, (int) sizeof un_addr);
 			close(fd);
 			if (val != 0 || chmod(destpath, new_mode & ~S_IFMT) != 0)
 				break;
@@ -1432,7 +1432,7 @@ const char *get_old_name(const char *devname, unsigned int namelen,
 
 	/* 2 ==scsi/disc, 4 == scsi/part */
 	if (i == 2 || i == 4)
-		compat_name = write_old_sd_name(buffer, major, minor,((i == 2) ? "" : (ptr + 4)));
+		compat_name = write_old_sd_name(buffer, major, minor, ((i == 2) ? "" : (ptr + 4)));
 
 	/* 5 == scsi/mt */
 	if (i == 5) {
@@ -1652,7 +1652,7 @@ static const char *expand_variable(char *buffer, unsigned int length,
 	ch = input[0];
 	if (ch == '$') {
 		/*  Special case for "$$": PID  */
-		sprintf(tmp, "%d",(int) getpid());
+		sprintf(tmp, "%d", (int) getpid());
 		len = strlen(tmp);
 		if (len + *out_pos >= length)
 			goto expand_variable_out;

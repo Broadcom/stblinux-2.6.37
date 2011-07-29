@@ -11,7 +11,7 @@
  *
  * Termios corrects by Vladimir Oleynik <dzo@simtreas.ru>
  *
- * Licensed under GPLv2 or later, see file License in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -22,23 +22,27 @@ struct globals {
 	int cin_fileno;
 	struct termios initial_settings;
 	struct termios new_settings;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() ((void)0)
 #define initial_settings (G.initial_settings)
 #define new_settings     (G.new_settings    )
 #define cin_fileno       (G.cin_fileno      )
 
-#define setTermSettings(fd, argp) do { \
-		if (ENABLE_FEATURE_USE_TERMIOS) tcsetattr(fd, TCSANOW, argp); \
-	} while(0)
+#define setTermSettings(fd, argp) \
+do { \
+	if (ENABLE_FEATURE_USE_TERMIOS) \
+		tcsetattr(fd, TCSANOW, argp); \
+} while (0)
 #define getTermSettings(fd, argp) tcgetattr(fd, argp)
 
 static void gotsig(int sig UNUSED_PARAM)
 {
-	bb_putchar('\n');
+	/* bb_putchar_stderr doesn't use stdio buffering,
+	 * therefore it is safe in signal handler */
+	bb_putchar_stderr('\n');
 	setTermSettings(cin_fileno, &initial_settings);
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 #define CONVERTED_TAB_SIZE 8
@@ -46,7 +50,7 @@ static void gotsig(int sig UNUSED_PARAM)
 int more_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int more_main(int argc UNUSED_PARAM, char **argv)
 {
-	int c = c; /* for gcc */
+	int c = c; /* for compiler */
 	int lines;
 	int input = 0;
 	int spaces = 0;

@@ -55,7 +55,7 @@
  *   Restructured (and partly rewritten) by:
  *   Björn Ekwall <bj0rn@blox.se> February 1999
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -88,6 +88,27 @@
 #define USE_GOT_ENTRIES
 #define GOT_ENTRY_SIZE 8
 #define USE_SINGLE
+#endif
+
+/* NDS32 support */
+#if defined(__nds32__) || defined(__NDS32__)
+#define CONFIG_USE_GOT_ENTRIES
+#define CONFIG_GOT_ENTRY_SIZE 4
+#define CONFIG_USE_SINGLE
+
+#if defined(__NDS32_EB__)
+#define MATCH_MACHINE(x) (x == EM_NDS32)
+#define SHT_RELM    SHT_RELA
+#define Elf32_RelM  Elf32_Rela
+#define ELFCLASSM   ELFCLASS32
+#endif
+
+#if defined(__NDS32_EL__)
+#define MATCH_MACHINE(x) (x == EM_NDS32)
+#define SHT_RELM    SHT_RELA
+#define Elf32_RelM  Elf32_Rela
+#define ELFCLASSM   ELFCLASS32
+#endif
 #endif
 
 /* blackfin */
@@ -865,19 +886,23 @@ arch_apply_relocation(struct obj_file *f,
 			break;
 		case R_H8_PCREL16:
 			v -= dot + 2;
-			if ((ElfW(Sword))v > 0x7fff ||
-			    (ElfW(Sword))v < -(ElfW(Sword))0x8000)
+			if ((ElfW(Sword))v > 0x7fff
+			 || (ElfW(Sword))v < -(ElfW(Sword))0x8000
+			) {
 				ret = obj_reloc_overflow;
-			else
+			} else {
 				*(unsigned short *)loc = v;
+			}
 			break;
 		case R_H8_PCREL8:
 			v -= dot + 1;
-			if ((ElfW(Sword))v > 0x7f ||
-			    (ElfW(Sword))v < -(ElfW(Sword))0x80)
+			if ((ElfW(Sword))v > 0x7f
+			 || (ElfW(Sword))v < -(ElfW(Sword))0x80
+			) {
 				ret = obj_reloc_overflow;
-			else
+			} else {
 				*(unsigned char *)loc = v;
+			}
 			break;
 
 #elif defined(__i386__)
@@ -1566,7 +1591,7 @@ arch_apply_relocation(struct obj_file *f,
 #endif
 
 		default:
-			printf("Warning: unhandled reloc %d\n",(int)ELF_R_TYPE(rel->r_info));
+			printf("Warning: unhandled reloc %d\n", (int)ELF_R_TYPE(rel->r_info));
 			ret = obj_reloc_unhandled;
 			break;
 
@@ -2449,6 +2474,7 @@ new_process_module_arguments(struct obj_file *f, const char *options)
 		n = 0;
 		p = val;
 		while (*p != 0) {
+			char sv_ch;
 			char *endp;
 
 			if (++n > max)
@@ -2457,14 +2483,17 @@ new_process_module_arguments(struct obj_file *f, const char *options)
 			switch (*pinfo) {
 			case 's':
 				len = strcspn(p, ",");
+				sv_ch = p[len];
 				p[len] = 0;
 				obj_string_patch(f, sym->secidx,
 						 loc - contents, p);
 				loc += tgt_sizeof_char_p;
 				p += len;
+				*p = sv_ch;
 				break;
 			case 'c':
 				len = strcspn(p, ",");
+				sv_ch = p[len];
 				p[len] = 0;
 				if (len >= charssize)
 					bb_error_msg_and_die("string too long for %s (max %ld)", param,
@@ -2472,6 +2501,7 @@ new_process_module_arguments(struct obj_file *f, const char *options)
 				strcpy((char *) loc, p);
 				loc += charssize;
 				p += len;
+				*p = sv_ch;
 				break;
 			case 'b':
 				*loc++ = strtoul(p, &endp, 0);
@@ -3199,6 +3229,7 @@ static int obj_create_image(struct obj_file *f, char *image)
 
 static struct obj_file *obj_load(char *image, size_t image_size, int loadprogbits)
 {
+	typedef uint32_t aliased_uint32_t FIX_ALIASING;
 #if BB_LITTLE_ENDIAN
 # define ELFMAG_U32 ((uint32_t)(ELFMAG0 + 0x100 * (ELFMAG1 + (0x100 * (ELFMAG2 + 0x100 * ELFMAG3)))))
 #else
@@ -3220,7 +3251,7 @@ static struct obj_file *obj_load(char *image, size_t image_size, int loadprogbit
 		bb_error_msg_and_die("error while loading ELF header");
 	memcpy(&f->header, image, sizeof(f->header));
 
-	if (*(uint32_t*)(&f->header.e_ident) != ELFMAG_U32) {
+	if (*(aliased_uint32_t*)(&f->header.e_ident) != ELFMAG_U32) {
 		bb_error_msg_and_die("not an ELF file");
 	}
 	if (f->header.e_ident[EI_CLASS] != ELFCLASSM
@@ -3280,6 +3311,9 @@ static struct obj_file *obj_load(char *image, size_t image_size, int loadprogbit
 			case SHT_SYMTAB:
 			case SHT_STRTAB:
 			case SHT_RELM:
+#if defined(__mips__)
+			case SHT_MIPS_DWARF:
+#endif
 				sec->contents = NULL;
 				if (sec->header.sh_size > 0) {
 					sec->contents = xmalloc(sec->header.sh_size);
@@ -3521,20 +3555,18 @@ static void set_tainted(int fd, const char *m_name,
 /* Check if loading this module will taint the kernel. */
 static void check_tainted_module(struct obj_file *f, const char *m_name)
 {
-	static const char tainted_file[] ALIGN1 = TAINT_FILENAME;
-
 	int fd, kernel_has_tainted;
 	const char *ptr;
 
 	kernel_has_tainted = 1;
-	fd = open(tainted_file, O_RDWR);
+	fd = open(TAINT_FILENAME, O_RDWR);
 	if (fd < 0) {
 		if (errno == ENOENT)
 			kernel_has_tainted = 0;
 		else if (errno == EACCES)
 			kernel_has_tainted = 1;
 		else {
-			perror(tainted_file);
+			bb_simple_perror_msg(TAINT_FILENAME);
 			kernel_has_tainted = 0;
 		}
 	}

@@ -59,27 +59,7 @@ EXPORT_SYMBOL(brcm_magnum_spinlock);
 int __init bchip_strap_ram_size(void)
 {
 	u32 reg;
-#if   defined(CONFIG_BCM3563)
-	const unsigned int mc[] = { 0, 16, 32, 64 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE_0, strap_ddr_mem0_config);
-	return mc[reg & 3] * ((reg >> 2) ? 2 : 4);
-#elif defined(CONFIG_BCM7038)
-	const unsigned int mc[] = { 0, 16, 32, 64 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE, strap_ddr_configuration);
-	return mc[reg & 3] * ((reg >> 2) ? 2 : 4);
-#elif defined(CONFIG_BCM7118)
-	const unsigned int mc[] = { 256, 32, 64, 128 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE, strap_ddr_configuration);
-	return mc[reg & 3];
-#elif defined(CONFIG_BCM7400)
-	const unsigned int mc[] = { 64, 128, 256, 512 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE_0, strap_ddr_configuration);
-	return mc[reg & 3];
-#elif defined(CONFIG_BCM7401) || defined(CONFIG_BCM7403)
-	const unsigned int mc[] = { 128, 16, 32, 64 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE, strap_ddr_configuration);
-	return mc[reg & 3] * ((reg >> 2) ? 2 : 4);
-#elif defined(CONFIG_BCM7405) || defined(CONFIG_BCM7335)
+#if defined(CONFIG_BCM7405)
 	const unsigned int mc[] = { 32, 64, 128, 256 };
 	const unsigned int mode[] = { 4, 2, 1, 0, 2, 1, 0, 0 };
 	unsigned int tmp;
@@ -87,10 +67,6 @@ int __init bchip_strap_ram_size(void)
 	tmp = mc[reg & 3];
 	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE_0, strap_ddr_configuration);
 	return tmp * mode[reg];
-#elif defined(CONFIG_BCM7325)
-	const unsigned int mc[] = { 32, 64, 128, 256 };
-	reg = BDEV_RD_F(SUN_TOP_CTRL_STRAP_VALUE_0, strap_ddr0_device_config);
-	return mc[reg] * 2;
 #else
 	reg = 0;
 	return reg;
@@ -130,16 +106,8 @@ void __init bchip_check_compat(void)
 	u32 chip_id = BRCM_CHIP_ID(), chip_rev = BRCM_CHIP_REV();
 	u32 kernel_chip_id = 0, kernel_chip_rev = 0;
 
-#if   defined(CONFIG_BCM3548)
-	ALT_CHIP_ID(3556, b0);
-	MAIN_CHIP_ID(3548, b0);
-#elif defined(CONFIG_BCM3563)
-	MAIN_CHIP_ID(3563, c0);
-#elif defined(CONFIG_BCM35230)
+#if defined(CONFIG_BCM35230)
 	MAIN_CHIP_ID(35230, a0);
-#elif defined(CONFIG_BCM7118)
-	ALT_CHIP_ID(7018, c0);
-	MAIN_CHIP_ID(7118, c0);
 #elif defined(CONFIG_BCM7125)
 	ALT_CHIP_ID(7019, c0);
 	ALT_CHIP_ID(7025, c0);
@@ -150,12 +118,6 @@ void __init bchip_check_compat(void)
 	MAIN_CHIP_ID(7125, c0);
 #elif defined(CONFIG_BCM7231)
 	MAIN_CHIP_ID(7231, a0);
-#elif defined(CONFIG_BCM7325)
-	ALT_CHIP_ID(7324, b0);
-	MAIN_CHIP_ID(7325, b0);
-#elif defined(CONFIG_BCM7335)
-	ALT_CHIP_ID(7336, a0);
-	MAIN_CHIP_ID(7335, b0);
 #elif defined(CONFIG_BCM7340)
 	ALT_CHIP_ID(7350, b0);
 	MAIN_CHIP_ID(7340, b0);
@@ -166,15 +128,12 @@ void __init bchip_check_compat(void)
 	MAIN_CHIP_ID(7344, a0);
 #elif defined(CONFIG_BCM7346)
 	MAIN_CHIP_ID(7346, a0);
-#elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
+#elif defined(CONFIG_BCM7358)
+	/* 7358 kernel can boot on 7552, but not vice-versa */
 	ALT_CHIP_ID(7552, a0);
 	MAIN_CHIP_ID(7358, a0);
-#elif defined(CONFIG_BCM7400)
-	MAIN_CHIP_ID(7400, d0);
-#elif defined(CONFIG_BCM7401)
-	MAIN_CHIP_ID(7401, c1);			/* for EBI bugfix */
-#elif defined(CONFIG_BCM7403)
-	MAIN_CHIP_ID(7403, a1);			/* for EBI bugfix */
+#elif defined(CONFIG_BCM7552)
+	MAIN_CHIP_ID(7552, a0);
 #elif defined(CONFIG_BCM7405)
 	ALT_CHIP_ID(7413, a0);
 	MAIN_CHIP_ID(7405, b0);
@@ -186,21 +145,14 @@ void __init bchip_check_compat(void)
 	ALT_CHIP_ID(7409, c1);
 	ALT_CHIP_ID(7410, c1);
 	MAIN_CHIP_ID(7420, c1);
-#elif defined(CONFIG_BCM7422) || defined(CONFIG_BCM7425)
-	ALT_CHIP_ID(7422, a0);
+#elif defined(CONFIG_BCM7425)
 	MAIN_CHIP_ID(7425, a0);
 #elif defined(CONFIG_BCM7468)
 	MAIN_CHIP_ID(7468, b0);
 #elif defined(CONFIG_BCM7550)
 	MAIN_CHIP_ID(7550, a0);
-#elif defined(CONFIG_BCM7601)
-	MAIN_CHIP_ID(7443, b0);
-#elif defined(CONFIG_BCM7630)
-	MAIN_CHIP_ID(7630, b0);
 #elif defined(CONFIG_BCM7631)
 	MAIN_CHIP_ID(7631, b0);
-#elif defined(CONFIG_BCM7635)
-	MAIN_CHIP_ID(7635, a0);
 #elif defined(CONFIG_BCM7640)
 	MAIN_CHIP_ID(7640, a0);
 #endif
@@ -418,8 +370,6 @@ void bchip_moca_init(void)
 #elif defined(CONFIG_BCM7342) || defined(CONFIG_BCM7408) || \
 	defined(CONFIG_BCM7420)
 	BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 0);
-#elif defined(CONFIG_BCM7422A0)
-	BDEV_WR_F(CLKGEN_PLL_NETWORK_PLL_CHANNEL_CTRL_CH_1, MDIV_CH1, 90);
 #endif
 }
 #endif
@@ -472,8 +422,7 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 #endif
 #endif /* CONFIG_BRCM_HAS_SDIO_V1 */
 
-#if defined(CONFIG_BCM7422A0) || defined(CONFIG_BCM7425A0) || \
-	defined(CONFIG_BCM7231A0)
+#if defined(CONFIG_BCM7425A0) || defined(CONFIG_BCM7231A0)
 
 	/* Disable SDHCI capabilities that are broken in A0 silicon */
 	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(18));	/* ADMA=0 */
@@ -531,12 +480,6 @@ void __init bchip_set_features(void)
 	brcm_usb_enabled = 1;
 
 	/* now remove any features disabled in hardware */
-
-#ifdef CONFIG_BCM7118
-	/* 7118RNG - no SATA */
-	if (BDEV_RD(BCHP_CLKGEN_REG_START) & 0x1c)
-		brcm_sata_enabled = 0;
-#endif
 
 #ifdef CONFIG_BCM7405
 	if (BDEV_RD_F(SUN_TOP_CTRL_OTP_OPTION_STATUS, otp_option_sata_disable))

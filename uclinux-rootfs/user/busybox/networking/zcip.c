@@ -6,7 +6,7 @@
  * Copyright (C) 2003 by Arthur van Hoff (avh@strangeberry.com)
  * Copyright (C) 2004 by David Brownell
  *
- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -77,7 +77,7 @@ enum {
 struct globals {
 	struct sockaddr saddr;
 	struct ether_addr eth_addr;
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define saddr    (G.saddr   )
 #define eth_addr (G.eth_addr)
@@ -160,13 +160,13 @@ static int run(char *argv[3], const char *param, struct in_addr *ip)
 	}
 	bb_info_msg(fmt, argv[2], argv[0], addr);
 
-	status = wait4pid(spawn(argv + 1));
+	status = spawn_and_wait(argv + 1);
 	if (status < 0) {
 		bb_perror_msg("%s %s %s" + 3, argv[2], argv[0]);
 		return -errno;
 	}
 	if (status != 0)
-		bb_error_msg("script %s %s failed, exitcode=%d", argv[1], argv[2], status);
+		bb_error_msg("script %s %s failed, exitcode=%d", argv[1], argv[2], status & 0xff);
 	return status;
 }
 

@@ -269,56 +269,6 @@ static void brcm_mips_int3_dispatch(struct pt_regs *regs)
 }
 #endif
 
-#ifdef CONFIG_BRCM_SHARED_UART_IRQ
-
-/***********************************************************************
- * Support for UPG L2 controller (7400 and older)
- *
- * On newer chips the UARTs have dedicated L1 interrupts, so Linux can
- * just ignore this controller.
- ***********************************************************************/
-
-static irqreturn_t brcm_upg_interrupt(int irq, void *dev_id)
-{
-	unsigned long pend, shift;
-
-	pend = BDEV_RD(BCHP_IRQ0_IRQSTAT) & BDEV_RD(BCHP_IRQ0_IRQEN);
-	while ((shift = ffs(pend)) != 0) {
-		pend ^= (1 << (shift - 1));
-		do_IRQ(shift + BRCM_UPG_L2_BASE - 1);
-	}
-	return IRQ_HANDLED;
-}
-
-static void brcm_upg_enable(unsigned int irq)
-{
-	irq -= BRCM_UPG_L2_BASE;
-	BUG_ON(irq >= 32);
-
-	BDEV_SET(BCHP_IRQ0_IRQEN, (1UL << irq));
-	BDEV_RD(BCHP_IRQ0_IRQEN);
-}
-
-static void brcm_upg_disable(unsigned int irq)
-{
-	irq -= BRCM_UPG_L2_BASE;
-	BUG_ON(irq >= 32);
-
-	BDEV_UNSET(BCHP_IRQ0_IRQEN, irq);
-	BDEV_RD(BCHP_IRQ0_IRQEN);
-}
-
-static struct irq_chip brcm_upg_type = {
-	.name			= "BRCM UPG L2",
-	.ack			= brcm_upg_disable,
-	.mask			= brcm_upg_disable,
-	.mask_ack		= brcm_upg_disable,
-	.unmask			= brcm_upg_enable,
-	NULL
-};
-
-#endif /* CONFIG_BRCM_SHARED_UART_IRQ */
-
 /***********************************************************************
  * IRQ setup / dispatch
  ***********************************************************************/
@@ -349,8 +299,6 @@ void __init arch_init_irq(void)
 	/* enable IRQ2 (this runs on TP0).  IRQ3 enabled during TP1 boot. */
 	set_c0_status(STATUSF_IP2);
 
-#if !defined(CONFIG_BRCM_SHARED_UART_IRQ)
-
 	/* enable non-shared UART interrupts in the L2 */
 
 #if defined(BCHP_IRQ0_UART_IRQEN_uarta_MASK)
@@ -374,36 +322,12 @@ void __init arch_init_irq(void)
 	BDEV_WR_F(TVM_MAIN_INT_CNTL, MAIN_UART1_INT_EN, 1);
 #endif
 
-#else /* CONFIG_BRCM_SHARED_UART_IRQ */
-
-	/* Set up all UPG L2 interrupts */
-
-	BDEV_WR_RB(BCHP_IRQ0_IRQEN, 0);
-	for (irq = BRCM_UPG_L2_BASE; irq <= BRCM_UPG_L2_LAST; irq++)
-		set_irq_chip_and_handler(irq, &brcm_upg_type, handle_level_irq);
-
-#endif /* CONFIG_BRCM_SHARED_UART_IRQ */
-
 #if defined(BCHP_HIF_INTR2_CPU_MASK_SET)
 	/* mask and clear all HIF L2 interrupts */
 	BDEV_WR_RB(BCHP_HIF_INTR2_CPU_MASK_SET, 0xffffffff);
 	BDEV_WR_RB(BCHP_HIF_INTR2_CPU_CLEAR, 0xffffffff);
 #endif
 }
-
-#ifdef CONFIG_BRCM_SHARED_UART_IRQ
-static int brcm_setup_upg_irq(void)
-{
-	int ret;
-
-	ret = request_irq(BRCM_IRQ_UPG, brcm_upg_interrupt,
-		0, "brcm_shared_upg", NULL);
-	if (ret)
-		printk(KERN_ERR "error: can't request UPG interrupt\n");
-	return ret;
-}
-core_initcall(brcm_setup_upg_irq);
-#endif
 
 asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
 {

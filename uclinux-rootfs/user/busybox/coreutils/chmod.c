@@ -7,7 +7,7 @@
  * Reworked by (C) 2002 Vladimir Oleynik <dzo@simtreas.ru>
  *  to correctly parse '-rwxgoa'
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /* BB_AUDIT SUSv3 compliant */
@@ -50,7 +50,7 @@ static int FAST_FUNC fileAction(const char *fileName, struct stat *statbuf, void
 	newmode = statbuf->st_mode;
 
 	if (!bb_parse_mode((char *)param, &newmode))
-		bb_error_msg_and_die("invalid mode: %s", (char *)param);
+		bb_error_msg_and_die("invalid mode '%s'", (char *)param);
 
 	if (chmod(fileName, newmode) == 0) {
 		if (OPT_VERBOSE

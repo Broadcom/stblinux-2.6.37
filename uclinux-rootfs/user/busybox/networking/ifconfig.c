@@ -10,7 +10,7 @@
  * Authors of the original ifconfig was:
  *              Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -36,8 +36,8 @@
 #include <sys/types.h>
 #include <netinet/if_ether.h>
 #endif
-#include "inet_common.h"
 #include "libbb.h"
+#include "inet_common.h"
 
 #if ENABLE_FEATURE_IFCONFIG_SLIP
 # include <net/if_slip.h>
@@ -370,7 +370,7 @@ int ifconfig_main(int argc UNUSED_PARAM, char **argv)
 #endif
 						sai.sin_family = AF_INET;
 						sai.sin_port = 0;
-						if (!strcmp(host, bb_str_default)) {
+						if (strcmp(host, "default") == 0) {
 							/* Default is special, meaning 0.0.0.0. */
 							sai.sin_addr.s_addr = INADDR_ANY;
 						}

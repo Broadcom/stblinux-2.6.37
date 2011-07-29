@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Fri May 21 13:05:55 2010
- *                 MD5 Checksum         34dd0d3bbf3478606c423cca67439a45
+ * Date:           Generated on         Tue May 31 13:23:20 2011
+ *                 MD5 Checksum         3d981376c3cc0d4c52a81813284994b8
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7344/rdb/a0/bchp_hif_mspi.h $
+ * 
+ * Hydra_Software_Devel/2   5/31/11 3:24p albertl
+ * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
 
@@ -144,6 +147,7 @@
 /* HIF_MSPI :: SPCR0_LSB :: SPBR [07:00] */
 #define BCHP_HIF_MSPI_SPCR0_LSB_SPBR_MASK                          0x000000ff
 #define BCHP_HIF_MSPI_SPCR0_LSB_SPBR_SHIFT                         0
+#define BCHP_HIF_MSPI_SPCR0_LSB_SPBR_DEFAULT                       0
 
 /***************************************************************************
  *SPCR0_MSB - SPCR0_MSB Register
@@ -155,22 +159,27 @@
 /* HIF_MSPI :: SPCR0_MSB :: MSTR [07:07] */
 #define BCHP_HIF_MSPI_SPCR0_MSB_MSTR_MASK                          0x00000080
 #define BCHP_HIF_MSPI_SPCR0_MSB_MSTR_SHIFT                         7
+#define BCHP_HIF_MSPI_SPCR0_MSB_MSTR_DEFAULT                       1
 
 /* HIF_MSPI :: SPCR0_MSB :: StartTransDelay [06:06] */
 #define BCHP_HIF_MSPI_SPCR0_MSB_StartTransDelay_MASK               0x00000040
 #define BCHP_HIF_MSPI_SPCR0_MSB_StartTransDelay_SHIFT              6
+#define BCHP_HIF_MSPI_SPCR0_MSB_StartTransDelay_DEFAULT            0
 
 /* HIF_MSPI :: SPCR0_MSB :: BitS [05:02] */
 #define BCHP_HIF_MSPI_SPCR0_MSB_BitS_MASK                          0x0000003c
 #define BCHP_HIF_MSPI_SPCR0_MSB_BitS_SHIFT                         2
+#define BCHP_HIF_MSPI_SPCR0_MSB_BitS_DEFAULT                       0
 
 /* HIF_MSPI :: SPCR0_MSB :: CPOL [01:01] */
 #define BCHP_HIF_MSPI_SPCR0_MSB_CPOL_MASK                          0x00000002
 #define BCHP_HIF_MSPI_SPCR0_MSB_CPOL_SHIFT                         1
+#define BCHP_HIF_MSPI_SPCR0_MSB_CPOL_DEFAULT                       0
 
 /* HIF_MSPI :: SPCR0_MSB :: CPHA [00:00] */
 #define BCHP_HIF_MSPI_SPCR0_MSB_CPHA_MASK                          0x00000001
 #define BCHP_HIF_MSPI_SPCR0_MSB_CPHA_SHIFT                         0
+#define BCHP_HIF_MSPI_SPCR0_MSB_CPHA_DEFAULT                       0
 
 /***************************************************************************
  *SPCR1_LSB - SPCR1_LSB REGISTER
@@ -182,6 +191,7 @@
 /* HIF_MSPI :: SPCR1_LSB :: DTL [07:00] */
 #define BCHP_HIF_MSPI_SPCR1_LSB_DTL_MASK                           0x000000ff
 #define BCHP_HIF_MSPI_SPCR1_LSB_DTL_SHIFT                          0
+#define BCHP_HIF_MSPI_SPCR1_LSB_DTL_DEFAULT                        0
 
 /***************************************************************************
  *SPCR1_MSB - SPCR1_MSB REGISTER
@@ -193,6 +203,7 @@
 /* HIF_MSPI :: SPCR1_MSB :: RDSCLK [07:00] */
 #define BCHP_HIF_MSPI_SPCR1_MSB_RDSCLK_MASK                        0x000000ff
 #define BCHP_HIF_MSPI_SPCR1_MSB_RDSCLK_SHIFT                       0
+#define BCHP_HIF_MSPI_SPCR1_MSB_RDSCLK_DEFAULT                     0
 
 /***************************************************************************
  *NEWQP - NEWQP REGISTER
@@ -204,6 +215,7 @@
 /* HIF_MSPI :: NEWQP :: newqp [03:00] */
 #define BCHP_HIF_MSPI_NEWQP_newqp_MASK                             0x0000000f
 #define BCHP_HIF_MSPI_NEWQP_newqp_SHIFT                            0
+#define BCHP_HIF_MSPI_NEWQP_newqp_DEFAULT                          0
 
 /***************************************************************************
  *ENDQP - ENDQP REGISTER
@@ -215,6 +227,7 @@
 /* HIF_MSPI :: ENDQP :: endqp [03:00] */
 #define BCHP_HIF_MSPI_ENDQP_endqp_MASK                             0x0000000f
 #define BCHP_HIF_MSPI_ENDQP_endqp_SHIFT                            0
+#define BCHP_HIF_MSPI_ENDQP_endqp_DEFAULT                          0
 
 /***************************************************************************
  *SPCR2 - SPCR2 REGISTER
@@ -226,34 +239,42 @@
 /* HIF_MSPI :: SPCR2 :: cont_after_cmd [07:07] */
 #define BCHP_HIF_MSPI_SPCR2_cont_after_cmd_MASK                    0x00000080
 #define BCHP_HIF_MSPI_SPCR2_cont_after_cmd_SHIFT                   7
+#define BCHP_HIF_MSPI_SPCR2_cont_after_cmd_DEFAULT                 0
 
 /* HIF_MSPI :: SPCR2 :: spe [06:06] */
 #define BCHP_HIF_MSPI_SPCR2_spe_MASK                               0x00000040
 #define BCHP_HIF_MSPI_SPCR2_spe_SHIFT                              6
+#define BCHP_HIF_MSPI_SPCR2_spe_DEFAULT                            0
 
 /* HIF_MSPI :: SPCR2 :: spifie [05:05] */
 #define BCHP_HIF_MSPI_SPCR2_spifie_MASK                            0x00000020
 #define BCHP_HIF_MSPI_SPCR2_spifie_SHIFT                           5
+#define BCHP_HIF_MSPI_SPCR2_spifie_DEFAULT                         0
 
 /* HIF_MSPI :: SPCR2 :: wren [04:04] */
 #define BCHP_HIF_MSPI_SPCR2_wren_MASK                              0x00000010
 #define BCHP_HIF_MSPI_SPCR2_wren_SHIFT                             4
+#define BCHP_HIF_MSPI_SPCR2_wren_DEFAULT                           0
 
 /* HIF_MSPI :: SPCR2 :: wrt0 [03:03] */
 #define BCHP_HIF_MSPI_SPCR2_wrt0_MASK                              0x00000008
 #define BCHP_HIF_MSPI_SPCR2_wrt0_SHIFT                             3
+#define BCHP_HIF_MSPI_SPCR2_wrt0_DEFAULT                           0
 
 /* HIF_MSPI :: SPCR2 :: loopq [02:02] */
 #define BCHP_HIF_MSPI_SPCR2_loopq_MASK                             0x00000004
 #define BCHP_HIF_MSPI_SPCR2_loopq_SHIFT                            2
+#define BCHP_HIF_MSPI_SPCR2_loopq_DEFAULT                          0
 
 /* HIF_MSPI :: SPCR2 :: hie [01:01] */
 #define BCHP_HIF_MSPI_SPCR2_hie_MASK                               0x00000002
 #define BCHP_HIF_MSPI_SPCR2_hie_SHIFT                              1
+#define BCHP_HIF_MSPI_SPCR2_hie_DEFAULT                            0
 
 /* HIF_MSPI :: SPCR2 :: halt [00:00] */
 #define BCHP_HIF_MSPI_SPCR2_halt_MASK                              0x00000001
 #define BCHP_HIF_MSPI_SPCR2_halt_SHIFT                             0
+#define BCHP_HIF_MSPI_SPCR2_halt_DEFAULT                           0
 
 /***************************************************************************
  *MSPI_STATUS - MSPI STATUS REGISTER
@@ -265,10 +286,12 @@
 /* HIF_MSPI :: MSPI_STATUS :: HALTA [01:01] */
 #define BCHP_HIF_MSPI_MSPI_STATUS_HALTA_MASK                       0x00000002
 #define BCHP_HIF_MSPI_MSPI_STATUS_HALTA_SHIFT                      1
+#define BCHP_HIF_MSPI_MSPI_STATUS_HALTA_DEFAULT                    0
 
 /* HIF_MSPI :: MSPI_STATUS :: SPIF [00:00] */
 #define BCHP_HIF_MSPI_MSPI_STATUS_SPIF_MASK                        0x00000001
 #define BCHP_HIF_MSPI_MSPI_STATUS_SPIF_SHIFT                       0
+#define BCHP_HIF_MSPI_MSPI_STATUS_SPIF_DEFAULT                     0
 
 /***************************************************************************
  *CPTQP - CPTQP REGISTER
@@ -280,6 +303,7 @@
 /* HIF_MSPI :: CPTQP :: cptqp [03:00] */
 #define BCHP_HIF_MSPI_CPTQP_cptqp_MASK                             0x0000000f
 #define BCHP_HIF_MSPI_CPTQP_cptqp_SHIFT                            0
+#define BCHP_HIF_MSPI_CPTQP_cptqp_DEFAULT                          0
 
 /***************************************************************************
  *TXRAM00 - MSbyte for bit 16 or bit 8 operation (queue pointer = 0)
@@ -1171,6 +1195,7 @@
 /* HIF_MSPI :: WRITE_LOCK :: WriteLock [00:00] */
 #define BCHP_HIF_MSPI_WRITE_LOCK_WriteLock_MASK                    0x00000001
 #define BCHP_HIF_MSPI_WRITE_LOCK_WriteLock_SHIFT                   0
+#define BCHP_HIF_MSPI_WRITE_LOCK_WriteLock_DEFAULT                 0
 
 /***************************************************************************
  *DISABLE_FLUSH_GEN - Debug bit to mask the generation of flush signals from Mspi
@@ -1182,6 +1207,7 @@
 /* HIF_MSPI :: DISABLE_FLUSH_GEN :: DisableFlushGen [00:00] */
 #define BCHP_HIF_MSPI_DISABLE_FLUSH_GEN_DisableFlushGen_MASK       0x00000001
 #define BCHP_HIF_MSPI_DISABLE_FLUSH_GEN_DisableFlushGen_SHIFT      0
+#define BCHP_HIF_MSPI_DISABLE_FLUSH_GEN_DisableFlushGen_DEFAULT    0
 
 #endif /* #ifndef BCHP_HIF_MSPI_H__ */
 

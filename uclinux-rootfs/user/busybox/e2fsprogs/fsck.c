@@ -20,7 +20,7 @@
  * Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
  *      2001, 2002, 2003, 2004, 2005 by  Theodore Ts'o.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 /* All filesystem specific hooks have been removed.
@@ -169,12 +169,12 @@ static char *base_device(const char *device)
 	const char *disk;
 	int len;
 #endif
-	cp = str = xstrdup(device);
+	str = xstrdup(device);
 
-	/* Skip over /dev/; if it's not present, give up. */
-	if (strncmp(cp, "/dev/", 5) != 0)
+	/* Skip over "/dev/"; if it's not present, give up */
+	cp = skip_dev_pfx(str);
+	if (cp == str)
 		goto errout;
-	cp += 5;
 
 	/*
 	 * For md devices, we treat them all as if they were all
@@ -307,7 +307,7 @@ static void load_fs_info(const char *filename)
 
 	fstab = setmntent(filename, "r");
 	if (!fstab) {
-		bb_perror_msg("can't read %s", filename);
+		bb_perror_msg("can't read '%s'", filename);
 		return;
 	}
 
@@ -972,13 +972,13 @@ int fsck_main(int argc UNUSED_PARAM, char **argv)
 			case 'C':
 				progress = 1;
 				if (arg[++j]) { /* -Cn */
-					progress_fd = xatoi_u(&arg[j]);
+					progress_fd = xatoi_positive(&arg[j]);
 					goto next_arg;
 				}
 				/* -C n */
 				if (!*++argv)
 					bb_show_usage();
-				progress_fd = xatoi_u(*argv);
+				progress_fd = xatoi_positive(*argv);
 				goto next_arg;
 #endif
 			case 'V':

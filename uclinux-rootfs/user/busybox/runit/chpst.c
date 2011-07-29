@@ -29,7 +29,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Dependencies on runit_lib.c removed */
 
 #include "libbb.h"
-#include <dirent.h>
 
 /*
 Five applets here: chpst, envdir, envuidgid, setuidgid, softlimit.
@@ -123,10 +122,10 @@ static NOINLINE void edir(const char *directory_name)
 			if ((errno == EISDIR) && directory_name) {
 				if (option_mask32 & OPT_v)
 					bb_perror_msg("warning: %s/%s is a directory",
-						directory_name,	d->d_name);
+						directory_name, d->d_name);
 				continue;
-			} else
-				bb_perror_msg_and_die("open %s/%s",
+			}
+			bb_perror_msg_and_die("open %s/%s",
 						directory_name, d->d_name);
 		}
 		size = full_read(fd, buf, sizeof(buf)-1);
@@ -382,6 +381,5 @@ int chpst_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_2)
 		close(STDERR_FILENO);
 
-	BB_EXECVP(argv[0], argv);
-	bb_perror_msg_and_die("exec %s", argv[0]);
+	BB_EXECVP_or_die(argv);
 }

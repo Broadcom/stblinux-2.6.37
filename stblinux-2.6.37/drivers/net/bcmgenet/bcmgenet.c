@@ -529,6 +529,7 @@ static int bcmgenet_open(struct net_device *dev)
 		init_umac(pDevCtrl);
 		/* Speed settings must be restored */
 		mii_init(dev);
+		mii_setup(dev);
 	}
 
 	if (pDevCtrl->phyType == BRCM_PHY_TYPE_INT)
@@ -3430,13 +3431,13 @@ static int bcmgenet_drv_probe(struct platform_device *pdev)
 		printk(KERN_ERR "%s: can't get resources\n", __func__);
 		return -EIO;
 	}
-	res_size = mres->end - mres->start + 1;
+	res_size = resource_size(mres);
 	if (!request_mem_region(mres->start, res_size, CARDNAME)) {
 		printk(KERN_ERR "%s: can't request mem region: start: 0x%x size: %lu\n",
 				CARDNAME, mres->start, res_size);
 		return -ENODEV;
 	}
-	base = ioremap(mres->start, mres->end - mres->start + 1);
+	base = ioremap(mres->start, res_size);
 	TRACE(("%s: base=0x%x\n", __func__, (unsigned int)base));
 
 	if (!base) {

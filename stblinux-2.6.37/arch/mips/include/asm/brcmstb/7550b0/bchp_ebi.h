@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2009, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu May 21 16:51:56 2009
- *                 MD5 Checksum         c26467d50b13a7fa83bf717b595d8795
+ * Date:           Generated on         Fri May  6 10:36:34 2011
+ *                 MD5 Checksum         fe612bbfa36f70660b1c9bdf3073e170
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7550/rdb/a0/bchp_ebi.h $
+ * $brcm_Log: /magnum/basemodules/chp/7550/rdb/b0/bchp_ebi.h $
  * 
- * Hydra_Software_Devel/2   5/21/09 6:11p albertl
- * PR54730: Updated to match RDB.
+ * Hydra_Software_Devel/2   5/6/11 12:28p tdo
+ * SW7550-740: Sync up RDB
  *
  ***************************************************************************/
 
@@ -102,92 +102,114 @@
 /* EBI :: CS_CONFIG_0 :: mem_io [31:31] */
 #define BCHP_EBI_CS_CONFIG_0_mem_io_MASK                           0x80000000
 #define BCHP_EBI_CS_CONFIG_0_mem_io_SHIFT                          31
+#define BCHP_EBI_CS_CONFIG_0_mem_io_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_0 :: ta_wait [30:30] */
 #define BCHP_EBI_CS_CONFIG_0_ta_wait_MASK                          0x40000000
 #define BCHP_EBI_CS_CONFIG_0_ta_wait_SHIFT                         30
+#define BCHP_EBI_CS_CONFIG_0_ta_wait_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_0 :: wp [29:29] */
 #define BCHP_EBI_CS_CONFIG_0_wp_MASK                               0x20000000
 #define BCHP_EBI_CS_CONFIG_0_wp_SHIFT                              29
+#define BCHP_EBI_CS_CONFIG_0_wp_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_0 :: wait_count [28:24] */
 #define BCHP_EBI_CS_CONFIG_0_wait_count_MASK                       0x1f000000
 #define BCHP_EBI_CS_CONFIG_0_wait_count_SHIFT                      24
+#define BCHP_EBI_CS_CONFIG_0_wait_count_DEFAULT                    7
 
 /* EBI :: CS_CONFIG_0 :: t_hold [23:20] */
 #define BCHP_EBI_CS_CONFIG_0_t_hold_MASK                           0x00f00000
 #define BCHP_EBI_CS_CONFIG_0_t_hold_SHIFT                          20
+#define BCHP_EBI_CS_CONFIG_0_t_hold_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_0 :: t_setup [19:16] */
 #define BCHP_EBI_CS_CONFIG_0_t_setup_MASK                          0x000f0000
 #define BCHP_EBI_CS_CONFIG_0_t_setup_SHIFT                         16
+#define BCHP_EBI_CS_CONFIG_0_t_setup_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_0 :: cs_hold [15:15] */
 #define BCHP_EBI_CS_CONFIG_0_cs_hold_MASK                          0x00008000
 #define BCHP_EBI_CS_CONFIG_0_cs_hold_SHIFT                         15
+#define BCHP_EBI_CS_CONFIG_0_cs_hold_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_0 :: split_cs [14:14] */
 #define BCHP_EBI_CS_CONFIG_0_split_cs_MASK                         0x00004000
 #define BCHP_EBI_CS_CONFIG_0_split_cs_SHIFT                        14
+#define BCHP_EBI_CS_CONFIG_0_split_cs_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_0 :: mask_en [13:13] */
 #define BCHP_EBI_CS_CONFIG_0_mask_en_MASK                          0x00002000
 #define BCHP_EBI_CS_CONFIG_0_mask_en_SHIFT                         13
+#define BCHP_EBI_CS_CONFIG_0_mask_en_DEFAULT                       1
 
 /* EBI :: CS_CONFIG_0 :: ne_sample [12:12] */
 #define BCHP_EBI_CS_CONFIG_0_ne_sample_MASK                        0x00001000
 #define BCHP_EBI_CS_CONFIG_0_ne_sample_SHIFT                       12
+#define BCHP_EBI_CS_CONFIG_0_ne_sample_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_0 :: m68k [11:11] */
 #define BCHP_EBI_CS_CONFIG_0_m68k_MASK                             0x00000800
 #define BCHP_EBI_CS_CONFIG_0_m68k_SHIFT                            11
+#define BCHP_EBI_CS_CONFIG_0_m68k_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_0 :: le [10:10] */
 #define BCHP_EBI_CS_CONFIG_0_le_MASK                               0x00000400
 #define BCHP_EBI_CS_CONFIG_0_le_SHIFT                              10
+#define BCHP_EBI_CS_CONFIG_0_le_DEFAULT                            1
 
 /* EBI :: CS_CONFIG_0 :: fast_read [09:09] */
 #define BCHP_EBI_CS_CONFIG_0_fast_read_MASK                        0x00000200
 #define BCHP_EBI_CS_CONFIG_0_fast_read_SHIFT                       9
+#define BCHP_EBI_CS_CONFIG_0_fast_read_DEFAULT                     0
 #define BCHP_EBI_CS_CONFIG_0_fast_read_Normal                      0
 #define BCHP_EBI_CS_CONFIG_0_fast_read_Fast_Read_Enable            1
 
 /* EBI :: CS_CONFIG_0 :: size_sel [08:08] */
 #define BCHP_EBI_CS_CONFIG_0_size_sel_MASK                         0x00000100
 #define BCHP_EBI_CS_CONFIG_0_size_sel_SHIFT                        8
+#define BCHP_EBI_CS_CONFIG_0_size_sel_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_0 :: sync [07:07] */
 #define BCHP_EBI_CS_CONFIG_0_sync_MASK                             0x00000080
 #define BCHP_EBI_CS_CONFIG_0_sync_SHIFT                            7
+#define BCHP_EBI_CS_CONFIG_0_sync_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_0 :: polarity [06:06] */
 #define BCHP_EBI_CS_CONFIG_0_polarity_MASK                         0x00000040
 #define BCHP_EBI_CS_CONFIG_0_polarity_SHIFT                        6
+#define BCHP_EBI_CS_CONFIG_0_polarity_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_0 :: we_ctl [05:05] */
 #define BCHP_EBI_CS_CONFIG_0_we_ctl_MASK                           0x00000020
 #define BCHP_EBI_CS_CONFIG_0_we_ctl_SHIFT                          5
+#define BCHP_EBI_CS_CONFIG_0_we_ctl_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_0 :: dest_size [04:04] */
 #define BCHP_EBI_CS_CONFIG_0_dest_size_MASK                        0x00000010
 #define BCHP_EBI_CS_CONFIG_0_dest_size_SHIFT                       4
+#define BCHP_EBI_CS_CONFIG_0_dest_size_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_0 :: ms_inh [03:03] */
 #define BCHP_EBI_CS_CONFIG_0_ms_inh_MASK                           0x00000008
 #define BCHP_EBI_CS_CONFIG_0_ms_inh_SHIFT                          3
+#define BCHP_EBI_CS_CONFIG_0_ms_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_0 :: ls_inh [02:02] */
 #define BCHP_EBI_CS_CONFIG_0_ls_inh_MASK                           0x00000004
 #define BCHP_EBI_CS_CONFIG_0_ls_inh_SHIFT                          2
+#define BCHP_EBI_CS_CONFIG_0_ls_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_0 :: bcachen [01:01] */
 #define BCHP_EBI_CS_CONFIG_0_bcachen_MASK                          0x00000002
 #define BCHP_EBI_CS_CONFIG_0_bcachen_SHIFT                         1
+#define BCHP_EBI_CS_CONFIG_0_bcachen_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_0 :: enable [00:00] */
 #define BCHP_EBI_CS_CONFIG_0_enable_MASK                           0x00000001
 #define BCHP_EBI_CS_CONFIG_0_enable_SHIFT                          0
+#define BCHP_EBI_CS_CONFIG_0_enable_DEFAULT                        1
 
 /***************************************************************************
  *CS_BASE_1 - EBI CS Base 1 Register
@@ -195,6 +217,7 @@
 /* EBI :: CS_BASE_1 :: base_addr [31:13] */
 #define BCHP_EBI_CS_BASE_1_base_addr_MASK                          0xffffe000
 #define BCHP_EBI_CS_BASE_1_base_addr_SHIFT                         13
+#define BCHP_EBI_CS_BASE_1_base_addr_DEFAULT                       0
 
 /* EBI :: CS_BASE_1 :: reserved0 [12:04] */
 #define BCHP_EBI_CS_BASE_1_reserved0_MASK                          0x00001ff0
@@ -203,6 +226,7 @@
 /* EBI :: CS_BASE_1 :: size [03:00] */
 #define BCHP_EBI_CS_BASE_1_size_MASK                               0x0000000f
 #define BCHP_EBI_CS_BASE_1_size_SHIFT                              0
+#define BCHP_EBI_CS_BASE_1_size_DEFAULT                            0
 #define BCHP_EBI_CS_BASE_1_size_SIZE_8KB                           0
 #define BCHP_EBI_CS_BASE_1_size_SIZE_16KB                          1
 #define BCHP_EBI_CS_BASE_1_size_SIZE_32KB                          2
@@ -226,92 +250,114 @@
 /* EBI :: CS_CONFIG_1 :: mem_io [31:31] */
 #define BCHP_EBI_CS_CONFIG_1_mem_io_MASK                           0x80000000
 #define BCHP_EBI_CS_CONFIG_1_mem_io_SHIFT                          31
+#define BCHP_EBI_CS_CONFIG_1_mem_io_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_1 :: ta_wait [30:30] */
 #define BCHP_EBI_CS_CONFIG_1_ta_wait_MASK                          0x40000000
 #define BCHP_EBI_CS_CONFIG_1_ta_wait_SHIFT                         30
+#define BCHP_EBI_CS_CONFIG_1_ta_wait_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_1 :: wp [29:29] */
 #define BCHP_EBI_CS_CONFIG_1_wp_MASK                               0x20000000
 #define BCHP_EBI_CS_CONFIG_1_wp_SHIFT                              29
+#define BCHP_EBI_CS_CONFIG_1_wp_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_1 :: wait_count [28:24] */
 #define BCHP_EBI_CS_CONFIG_1_wait_count_MASK                       0x1f000000
 #define BCHP_EBI_CS_CONFIG_1_wait_count_SHIFT                      24
+#define BCHP_EBI_CS_CONFIG_1_wait_count_DEFAULT                    7
 
 /* EBI :: CS_CONFIG_1 :: t_hold [23:20] */
 #define BCHP_EBI_CS_CONFIG_1_t_hold_MASK                           0x00f00000
 #define BCHP_EBI_CS_CONFIG_1_t_hold_SHIFT                          20
+#define BCHP_EBI_CS_CONFIG_1_t_hold_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_1 :: t_setup [19:16] */
 #define BCHP_EBI_CS_CONFIG_1_t_setup_MASK                          0x000f0000
 #define BCHP_EBI_CS_CONFIG_1_t_setup_SHIFT                         16
+#define BCHP_EBI_CS_CONFIG_1_t_setup_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_1 :: cs_hold [15:15] */
 #define BCHP_EBI_CS_CONFIG_1_cs_hold_MASK                          0x00008000
 #define BCHP_EBI_CS_CONFIG_1_cs_hold_SHIFT                         15
+#define BCHP_EBI_CS_CONFIG_1_cs_hold_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_1 :: split_cs [14:14] */
 #define BCHP_EBI_CS_CONFIG_1_split_cs_MASK                         0x00004000
 #define BCHP_EBI_CS_CONFIG_1_split_cs_SHIFT                        14
+#define BCHP_EBI_CS_CONFIG_1_split_cs_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_1 :: mask_en [13:13] */
 #define BCHP_EBI_CS_CONFIG_1_mask_en_MASK                          0x00002000
 #define BCHP_EBI_CS_CONFIG_1_mask_en_SHIFT                         13
+#define BCHP_EBI_CS_CONFIG_1_mask_en_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_1 :: ne_sample [12:12] */
 #define BCHP_EBI_CS_CONFIG_1_ne_sample_MASK                        0x00001000
 #define BCHP_EBI_CS_CONFIG_1_ne_sample_SHIFT                       12
+#define BCHP_EBI_CS_CONFIG_1_ne_sample_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_1 :: m68k [11:11] */
 #define BCHP_EBI_CS_CONFIG_1_m68k_MASK                             0x00000800
 #define BCHP_EBI_CS_CONFIG_1_m68k_SHIFT                            11
+#define BCHP_EBI_CS_CONFIG_1_m68k_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_1 :: le [10:10] */
 #define BCHP_EBI_CS_CONFIG_1_le_MASK                               0x00000400
 #define BCHP_EBI_CS_CONFIG_1_le_SHIFT                              10
+#define BCHP_EBI_CS_CONFIG_1_le_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_1 :: fast_read [09:09] */
 #define BCHP_EBI_CS_CONFIG_1_fast_read_MASK                        0x00000200
 #define BCHP_EBI_CS_CONFIG_1_fast_read_SHIFT                       9
+#define BCHP_EBI_CS_CONFIG_1_fast_read_DEFAULT                     0
 #define BCHP_EBI_CS_CONFIG_1_fast_read_Normal                      0
 #define BCHP_EBI_CS_CONFIG_1_fast_read_Fast_Read_Enable            1
 
 /* EBI :: CS_CONFIG_1 :: size_sel [08:08] */
 #define BCHP_EBI_CS_CONFIG_1_size_sel_MASK                         0x00000100
 #define BCHP_EBI_CS_CONFIG_1_size_sel_SHIFT                        8
+#define BCHP_EBI_CS_CONFIG_1_size_sel_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_1 :: sync [07:07] */
 #define BCHP_EBI_CS_CONFIG_1_sync_MASK                             0x00000080
 #define BCHP_EBI_CS_CONFIG_1_sync_SHIFT                            7
+#define BCHP_EBI_CS_CONFIG_1_sync_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_1 :: polarity [06:06] */
 #define BCHP_EBI_CS_CONFIG_1_polarity_MASK                         0x00000040
 #define BCHP_EBI_CS_CONFIG_1_polarity_SHIFT                        6
+#define BCHP_EBI_CS_CONFIG_1_polarity_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_1 :: we_ctl [05:05] */
 #define BCHP_EBI_CS_CONFIG_1_we_ctl_MASK                           0x00000020
 #define BCHP_EBI_CS_CONFIG_1_we_ctl_SHIFT                          5
+#define BCHP_EBI_CS_CONFIG_1_we_ctl_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_1 :: dest_size [04:04] */
 #define BCHP_EBI_CS_CONFIG_1_dest_size_MASK                        0x00000010
 #define BCHP_EBI_CS_CONFIG_1_dest_size_SHIFT                       4
+#define BCHP_EBI_CS_CONFIG_1_dest_size_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_1 :: ms_inh [03:03] */
 #define BCHP_EBI_CS_CONFIG_1_ms_inh_MASK                           0x00000008
 #define BCHP_EBI_CS_CONFIG_1_ms_inh_SHIFT                          3
+#define BCHP_EBI_CS_CONFIG_1_ms_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_1 :: ls_inh [02:02] */
 #define BCHP_EBI_CS_CONFIG_1_ls_inh_MASK                           0x00000004
 #define BCHP_EBI_CS_CONFIG_1_ls_inh_SHIFT                          2
+#define BCHP_EBI_CS_CONFIG_1_ls_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_1 :: bcachen [01:01] */
 #define BCHP_EBI_CS_CONFIG_1_bcachen_MASK                          0x00000002
 #define BCHP_EBI_CS_CONFIG_1_bcachen_SHIFT                         1
+#define BCHP_EBI_CS_CONFIG_1_bcachen_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_1 :: enable [00:00] */
 #define BCHP_EBI_CS_CONFIG_1_enable_MASK                           0x00000001
 #define BCHP_EBI_CS_CONFIG_1_enable_SHIFT                          0
+#define BCHP_EBI_CS_CONFIG_1_enable_DEFAULT                        0
 
 /***************************************************************************
  *CS_BASE_2 - EBI CS Base 2 Register
@@ -319,6 +365,7 @@
 /* EBI :: CS_BASE_2 :: base_addr [31:13] */
 #define BCHP_EBI_CS_BASE_2_base_addr_MASK                          0xffffe000
 #define BCHP_EBI_CS_BASE_2_base_addr_SHIFT                         13
+#define BCHP_EBI_CS_BASE_2_base_addr_DEFAULT                       0
 
 /* EBI :: CS_BASE_2 :: reserved0 [12:04] */
 #define BCHP_EBI_CS_BASE_2_reserved0_MASK                          0x00001ff0
@@ -327,6 +374,7 @@
 /* EBI :: CS_BASE_2 :: size [03:00] */
 #define BCHP_EBI_CS_BASE_2_size_MASK                               0x0000000f
 #define BCHP_EBI_CS_BASE_2_size_SHIFT                              0
+#define BCHP_EBI_CS_BASE_2_size_DEFAULT                            0
 #define BCHP_EBI_CS_BASE_2_size_SIZE_8KB                           0
 #define BCHP_EBI_CS_BASE_2_size_SIZE_16KB                          1
 #define BCHP_EBI_CS_BASE_2_size_SIZE_32KB                          2
@@ -350,92 +398,114 @@
 /* EBI :: CS_CONFIG_2 :: mem_io [31:31] */
 #define BCHP_EBI_CS_CONFIG_2_mem_io_MASK                           0x80000000
 #define BCHP_EBI_CS_CONFIG_2_mem_io_SHIFT                          31
+#define BCHP_EBI_CS_CONFIG_2_mem_io_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_2 :: ta_wait [30:30] */
 #define BCHP_EBI_CS_CONFIG_2_ta_wait_MASK                          0x40000000
 #define BCHP_EBI_CS_CONFIG_2_ta_wait_SHIFT                         30
+#define BCHP_EBI_CS_CONFIG_2_ta_wait_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_2 :: wp [29:29] */
 #define BCHP_EBI_CS_CONFIG_2_wp_MASK                               0x20000000
 #define BCHP_EBI_CS_CONFIG_2_wp_SHIFT                              29
+#define BCHP_EBI_CS_CONFIG_2_wp_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_2 :: wait_count [28:24] */
 #define BCHP_EBI_CS_CONFIG_2_wait_count_MASK                       0x1f000000
 #define BCHP_EBI_CS_CONFIG_2_wait_count_SHIFT                      24
+#define BCHP_EBI_CS_CONFIG_2_wait_count_DEFAULT                    7
 
 /* EBI :: CS_CONFIG_2 :: t_hold [23:20] */
 #define BCHP_EBI_CS_CONFIG_2_t_hold_MASK                           0x00f00000
 #define BCHP_EBI_CS_CONFIG_2_t_hold_SHIFT                          20
+#define BCHP_EBI_CS_CONFIG_2_t_hold_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_2 :: t_setup [19:16] */
 #define BCHP_EBI_CS_CONFIG_2_t_setup_MASK                          0x000f0000
 #define BCHP_EBI_CS_CONFIG_2_t_setup_SHIFT                         16
+#define BCHP_EBI_CS_CONFIG_2_t_setup_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_2 :: cs_hold [15:15] */
 #define BCHP_EBI_CS_CONFIG_2_cs_hold_MASK                          0x00008000
 #define BCHP_EBI_CS_CONFIG_2_cs_hold_SHIFT                         15
+#define BCHP_EBI_CS_CONFIG_2_cs_hold_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_2 :: split_cs [14:14] */
 #define BCHP_EBI_CS_CONFIG_2_split_cs_MASK                         0x00004000
 #define BCHP_EBI_CS_CONFIG_2_split_cs_SHIFT                        14
+#define BCHP_EBI_CS_CONFIG_2_split_cs_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_2 :: mask_en [13:13] */
 #define BCHP_EBI_CS_CONFIG_2_mask_en_MASK                          0x00002000
 #define BCHP_EBI_CS_CONFIG_2_mask_en_SHIFT                         13
+#define BCHP_EBI_CS_CONFIG_2_mask_en_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_2 :: ne_sample [12:12] */
 #define BCHP_EBI_CS_CONFIG_2_ne_sample_MASK                        0x00001000
 #define BCHP_EBI_CS_CONFIG_2_ne_sample_SHIFT                       12
+#define BCHP_EBI_CS_CONFIG_2_ne_sample_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_2 :: m68k [11:11] */
 #define BCHP_EBI_CS_CONFIG_2_m68k_MASK                             0x00000800
 #define BCHP_EBI_CS_CONFIG_2_m68k_SHIFT                            11
+#define BCHP_EBI_CS_CONFIG_2_m68k_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_2 :: le [10:10] */
 #define BCHP_EBI_CS_CONFIG_2_le_MASK                               0x00000400
 #define BCHP_EBI_CS_CONFIG_2_le_SHIFT                              10
+#define BCHP_EBI_CS_CONFIG_2_le_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_2 :: fast_read [09:09] */
 #define BCHP_EBI_CS_CONFIG_2_fast_read_MASK                        0x00000200
 #define BCHP_EBI_CS_CONFIG_2_fast_read_SHIFT                       9
+#define BCHP_EBI_CS_CONFIG_2_fast_read_DEFAULT                     0
 #define BCHP_EBI_CS_CONFIG_2_fast_read_Normal                      0
 #define BCHP_EBI_CS_CONFIG_2_fast_read_Fast_Read_Enable            1
 
 /* EBI :: CS_CONFIG_2 :: size_sel [08:08] */
 #define BCHP_EBI_CS_CONFIG_2_size_sel_MASK                         0x00000100
 #define BCHP_EBI_CS_CONFIG_2_size_sel_SHIFT                        8
+#define BCHP_EBI_CS_CONFIG_2_size_sel_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_2 :: sync [07:07] */
 #define BCHP_EBI_CS_CONFIG_2_sync_MASK                             0x00000080
 #define BCHP_EBI_CS_CONFIG_2_sync_SHIFT                            7
+#define BCHP_EBI_CS_CONFIG_2_sync_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_2 :: polarity [06:06] */
 #define BCHP_EBI_CS_CONFIG_2_polarity_MASK                         0x00000040
 #define BCHP_EBI_CS_CONFIG_2_polarity_SHIFT                        6
+#define BCHP_EBI_CS_CONFIG_2_polarity_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_2 :: we_ctl [05:05] */
 #define BCHP_EBI_CS_CONFIG_2_we_ctl_MASK                           0x00000020
 #define BCHP_EBI_CS_CONFIG_2_we_ctl_SHIFT                          5
+#define BCHP_EBI_CS_CONFIG_2_we_ctl_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_2 :: dest_size [04:04] */
 #define BCHP_EBI_CS_CONFIG_2_dest_size_MASK                        0x00000010
 #define BCHP_EBI_CS_CONFIG_2_dest_size_SHIFT                       4
+#define BCHP_EBI_CS_CONFIG_2_dest_size_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_2 :: ms_inh [03:03] */
 #define BCHP_EBI_CS_CONFIG_2_ms_inh_MASK                           0x00000008
 #define BCHP_EBI_CS_CONFIG_2_ms_inh_SHIFT                          3
+#define BCHP_EBI_CS_CONFIG_2_ms_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_2 :: ls_inh [02:02] */
 #define BCHP_EBI_CS_CONFIG_2_ls_inh_MASK                           0x00000004
 #define BCHP_EBI_CS_CONFIG_2_ls_inh_SHIFT                          2
+#define BCHP_EBI_CS_CONFIG_2_ls_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_2 :: bcachen [01:01] */
 #define BCHP_EBI_CS_CONFIG_2_bcachen_MASK                          0x00000002
 #define BCHP_EBI_CS_CONFIG_2_bcachen_SHIFT                         1
+#define BCHP_EBI_CS_CONFIG_2_bcachen_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_2 :: enable [00:00] */
 #define BCHP_EBI_CS_CONFIG_2_enable_MASK                           0x00000001
 #define BCHP_EBI_CS_CONFIG_2_enable_SHIFT                          0
+#define BCHP_EBI_CS_CONFIG_2_enable_DEFAULT                        0
 
 /***************************************************************************
  *CS_BASE_3 - EBI CS Base 3 Register
@@ -443,6 +513,7 @@
 /* EBI :: CS_BASE_3 :: base_addr [31:13] */
 #define BCHP_EBI_CS_BASE_3_base_addr_MASK                          0xffffe000
 #define BCHP_EBI_CS_BASE_3_base_addr_SHIFT                         13
+#define BCHP_EBI_CS_BASE_3_base_addr_DEFAULT                       0
 
 /* EBI :: CS_BASE_3 :: reserved0 [12:04] */
 #define BCHP_EBI_CS_BASE_3_reserved0_MASK                          0x00001ff0
@@ -451,6 +522,7 @@
 /* EBI :: CS_BASE_3 :: size [03:00] */
 #define BCHP_EBI_CS_BASE_3_size_MASK                               0x0000000f
 #define BCHP_EBI_CS_BASE_3_size_SHIFT                              0
+#define BCHP_EBI_CS_BASE_3_size_DEFAULT                            0
 #define BCHP_EBI_CS_BASE_3_size_SIZE_8KB                           0
 #define BCHP_EBI_CS_BASE_3_size_SIZE_16KB                          1
 #define BCHP_EBI_CS_BASE_3_size_SIZE_32KB                          2
@@ -474,92 +546,114 @@
 /* EBI :: CS_CONFIG_3 :: mem_io [31:31] */
 #define BCHP_EBI_CS_CONFIG_3_mem_io_MASK                           0x80000000
 #define BCHP_EBI_CS_CONFIG_3_mem_io_SHIFT                          31
+#define BCHP_EBI_CS_CONFIG_3_mem_io_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_3 :: ta_wait [30:30] */
 #define BCHP_EBI_CS_CONFIG_3_ta_wait_MASK                          0x40000000
 #define BCHP_EBI_CS_CONFIG_3_ta_wait_SHIFT                         30
+#define BCHP_EBI_CS_CONFIG_3_ta_wait_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_3 :: wp [29:29] */
 #define BCHP_EBI_CS_CONFIG_3_wp_MASK                               0x20000000
 #define BCHP_EBI_CS_CONFIG_3_wp_SHIFT                              29
+#define BCHP_EBI_CS_CONFIG_3_wp_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_3 :: wait_count [28:24] */
 #define BCHP_EBI_CS_CONFIG_3_wait_count_MASK                       0x1f000000
 #define BCHP_EBI_CS_CONFIG_3_wait_count_SHIFT                      24
+#define BCHP_EBI_CS_CONFIG_3_wait_count_DEFAULT                    7
 
 /* EBI :: CS_CONFIG_3 :: t_hold [23:20] */
 #define BCHP_EBI_CS_CONFIG_3_t_hold_MASK                           0x00f00000
 #define BCHP_EBI_CS_CONFIG_3_t_hold_SHIFT                          20
+#define BCHP_EBI_CS_CONFIG_3_t_hold_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_3 :: t_setup [19:16] */
 #define BCHP_EBI_CS_CONFIG_3_t_setup_MASK                          0x000f0000
 #define BCHP_EBI_CS_CONFIG_3_t_setup_SHIFT                         16
+#define BCHP_EBI_CS_CONFIG_3_t_setup_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_3 :: cs_hold [15:15] */
 #define BCHP_EBI_CS_CONFIG_3_cs_hold_MASK                          0x00008000
 #define BCHP_EBI_CS_CONFIG_3_cs_hold_SHIFT                         15
+#define BCHP_EBI_CS_CONFIG_3_cs_hold_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_3 :: split_cs [14:14] */
 #define BCHP_EBI_CS_CONFIG_3_split_cs_MASK                         0x00004000
 #define BCHP_EBI_CS_CONFIG_3_split_cs_SHIFT                        14
+#define BCHP_EBI_CS_CONFIG_3_split_cs_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_3 :: mask_en [13:13] */
 #define BCHP_EBI_CS_CONFIG_3_mask_en_MASK                          0x00002000
 #define BCHP_EBI_CS_CONFIG_3_mask_en_SHIFT                         13
+#define BCHP_EBI_CS_CONFIG_3_mask_en_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_3 :: ne_sample [12:12] */
 #define BCHP_EBI_CS_CONFIG_3_ne_sample_MASK                        0x00001000
 #define BCHP_EBI_CS_CONFIG_3_ne_sample_SHIFT                       12
+#define BCHP_EBI_CS_CONFIG_3_ne_sample_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_3 :: m68k [11:11] */
 #define BCHP_EBI_CS_CONFIG_3_m68k_MASK                             0x00000800
 #define BCHP_EBI_CS_CONFIG_3_m68k_SHIFT                            11
+#define BCHP_EBI_CS_CONFIG_3_m68k_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_3 :: le [10:10] */
 #define BCHP_EBI_CS_CONFIG_3_le_MASK                               0x00000400
 #define BCHP_EBI_CS_CONFIG_3_le_SHIFT                              10
+#define BCHP_EBI_CS_CONFIG_3_le_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_3 :: fast_read [09:09] */
 #define BCHP_EBI_CS_CONFIG_3_fast_read_MASK                        0x00000200
 #define BCHP_EBI_CS_CONFIG_3_fast_read_SHIFT                       9
+#define BCHP_EBI_CS_CONFIG_3_fast_read_DEFAULT                     0
 #define BCHP_EBI_CS_CONFIG_3_fast_read_Normal                      0
 #define BCHP_EBI_CS_CONFIG_3_fast_read_Fast_Read_Enable            1
 
 /* EBI :: CS_CONFIG_3 :: size_sel [08:08] */
 #define BCHP_EBI_CS_CONFIG_3_size_sel_MASK                         0x00000100
 #define BCHP_EBI_CS_CONFIG_3_size_sel_SHIFT                        8
+#define BCHP_EBI_CS_CONFIG_3_size_sel_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_3 :: sync [07:07] */
 #define BCHP_EBI_CS_CONFIG_3_sync_MASK                             0x00000080
 #define BCHP_EBI_CS_CONFIG_3_sync_SHIFT                            7
+#define BCHP_EBI_CS_CONFIG_3_sync_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_3 :: polarity [06:06] */
 #define BCHP_EBI_CS_CONFIG_3_polarity_MASK                         0x00000040
 #define BCHP_EBI_CS_CONFIG_3_polarity_SHIFT                        6
+#define BCHP_EBI_CS_CONFIG_3_polarity_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_3 :: we_ctl [05:05] */
 #define BCHP_EBI_CS_CONFIG_3_we_ctl_MASK                           0x00000020
 #define BCHP_EBI_CS_CONFIG_3_we_ctl_SHIFT                          5
+#define BCHP_EBI_CS_CONFIG_3_we_ctl_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_3 :: dest_size [04:04] */
 #define BCHP_EBI_CS_CONFIG_3_dest_size_MASK                        0x00000010
 #define BCHP_EBI_CS_CONFIG_3_dest_size_SHIFT                       4
+#define BCHP_EBI_CS_CONFIG_3_dest_size_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_3 :: ms_inh [03:03] */
 #define BCHP_EBI_CS_CONFIG_3_ms_inh_MASK                           0x00000008
 #define BCHP_EBI_CS_CONFIG_3_ms_inh_SHIFT                          3
+#define BCHP_EBI_CS_CONFIG_3_ms_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_3 :: ls_inh [02:02] */
 #define BCHP_EBI_CS_CONFIG_3_ls_inh_MASK                           0x00000004
 #define BCHP_EBI_CS_CONFIG_3_ls_inh_SHIFT                          2
+#define BCHP_EBI_CS_CONFIG_3_ls_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_3 :: bcachen [01:01] */
 #define BCHP_EBI_CS_CONFIG_3_bcachen_MASK                          0x00000002
 #define BCHP_EBI_CS_CONFIG_3_bcachen_SHIFT                         1
+#define BCHP_EBI_CS_CONFIG_3_bcachen_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_3 :: enable [00:00] */
 #define BCHP_EBI_CS_CONFIG_3_enable_MASK                           0x00000001
 #define BCHP_EBI_CS_CONFIG_3_enable_SHIFT                          0
+#define BCHP_EBI_CS_CONFIG_3_enable_DEFAULT                        0
 
 /***************************************************************************
  *CS_BASE_4 - EBI CS Base 4 Register
@@ -567,6 +661,7 @@
 /* EBI :: CS_BASE_4 :: base_addr [31:13] */
 #define BCHP_EBI_CS_BASE_4_base_addr_MASK                          0xffffe000
 #define BCHP_EBI_CS_BASE_4_base_addr_SHIFT                         13
+#define BCHP_EBI_CS_BASE_4_base_addr_DEFAULT                       0
 
 /* EBI :: CS_BASE_4 :: reserved0 [12:04] */
 #define BCHP_EBI_CS_BASE_4_reserved0_MASK                          0x00001ff0
@@ -575,6 +670,7 @@
 /* EBI :: CS_BASE_4 :: size [03:00] */
 #define BCHP_EBI_CS_BASE_4_size_MASK                               0x0000000f
 #define BCHP_EBI_CS_BASE_4_size_SHIFT                              0
+#define BCHP_EBI_CS_BASE_4_size_DEFAULT                            0
 #define BCHP_EBI_CS_BASE_4_size_SIZE_8KB                           0
 #define BCHP_EBI_CS_BASE_4_size_SIZE_16KB                          1
 #define BCHP_EBI_CS_BASE_4_size_SIZE_32KB                          2
@@ -598,92 +694,114 @@
 /* EBI :: CS_CONFIG_4 :: mem_io [31:31] */
 #define BCHP_EBI_CS_CONFIG_4_mem_io_MASK                           0x80000000
 #define BCHP_EBI_CS_CONFIG_4_mem_io_SHIFT                          31
+#define BCHP_EBI_CS_CONFIG_4_mem_io_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_4 :: ta_wait [30:30] */
 #define BCHP_EBI_CS_CONFIG_4_ta_wait_MASK                          0x40000000
 #define BCHP_EBI_CS_CONFIG_4_ta_wait_SHIFT                         30
+#define BCHP_EBI_CS_CONFIG_4_ta_wait_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_4 :: wp [29:29] */
 #define BCHP_EBI_CS_CONFIG_4_wp_MASK                               0x20000000
 #define BCHP_EBI_CS_CONFIG_4_wp_SHIFT                              29
+#define BCHP_EBI_CS_CONFIG_4_wp_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_4 :: wait_count [28:24] */
 #define BCHP_EBI_CS_CONFIG_4_wait_count_MASK                       0x1f000000
 #define BCHP_EBI_CS_CONFIG_4_wait_count_SHIFT                      24
+#define BCHP_EBI_CS_CONFIG_4_wait_count_DEFAULT                    7
 
 /* EBI :: CS_CONFIG_4 :: t_hold [23:20] */
 #define BCHP_EBI_CS_CONFIG_4_t_hold_MASK                           0x00f00000
 #define BCHP_EBI_CS_CONFIG_4_t_hold_SHIFT                          20
+#define BCHP_EBI_CS_CONFIG_4_t_hold_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_4 :: t_setup [19:16] */
 #define BCHP_EBI_CS_CONFIG_4_t_setup_MASK                          0x000f0000
 #define BCHP_EBI_CS_CONFIG_4_t_setup_SHIFT                         16
+#define BCHP_EBI_CS_CONFIG_4_t_setup_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_4 :: cs_hold [15:15] */
 #define BCHP_EBI_CS_CONFIG_4_cs_hold_MASK                          0x00008000
 #define BCHP_EBI_CS_CONFIG_4_cs_hold_SHIFT                         15
+#define BCHP_EBI_CS_CONFIG_4_cs_hold_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_4 :: split_cs [14:14] */
 #define BCHP_EBI_CS_CONFIG_4_split_cs_MASK                         0x00004000
 #define BCHP_EBI_CS_CONFIG_4_split_cs_SHIFT                        14
+#define BCHP_EBI_CS_CONFIG_4_split_cs_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_4 :: mask_en [13:13] */
 #define BCHP_EBI_CS_CONFIG_4_mask_en_MASK                          0x00002000
 #define BCHP_EBI_CS_CONFIG_4_mask_en_SHIFT                         13
+#define BCHP_EBI_CS_CONFIG_4_mask_en_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_4 :: ne_sample [12:12] */
 #define BCHP_EBI_CS_CONFIG_4_ne_sample_MASK                        0x00001000
 #define BCHP_EBI_CS_CONFIG_4_ne_sample_SHIFT                       12
+#define BCHP_EBI_CS_CONFIG_4_ne_sample_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_4 :: m68k [11:11] */
 #define BCHP_EBI_CS_CONFIG_4_m68k_MASK                             0x00000800
 #define BCHP_EBI_CS_CONFIG_4_m68k_SHIFT                            11
+#define BCHP_EBI_CS_CONFIG_4_m68k_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_4 :: le [10:10] */
 #define BCHP_EBI_CS_CONFIG_4_le_MASK                               0x00000400
 #define BCHP_EBI_CS_CONFIG_4_le_SHIFT                              10
+#define BCHP_EBI_CS_CONFIG_4_le_DEFAULT                            0
 
 /* EBI :: CS_CONFIG_4 :: fast_read [09:09] */
 #define BCHP_EBI_CS_CONFIG_4_fast_read_MASK                        0x00000200
 #define BCHP_EBI_CS_CONFIG_4_fast_read_SHIFT                       9
+#define BCHP_EBI_CS_CONFIG_4_fast_read_DEFAULT                     0
 #define BCHP_EBI_CS_CONFIG_4_fast_read_Normal                      0
 #define BCHP_EBI_CS_CONFIG_4_fast_read_Fast_Read_Enable            1
 
 /* EBI :: CS_CONFIG_4 :: size_sel [08:08] */
 #define BCHP_EBI_CS_CONFIG_4_size_sel_MASK                         0x00000100
 #define BCHP_EBI_CS_CONFIG_4_size_sel_SHIFT                        8
+#define BCHP_EBI_CS_CONFIG_4_size_sel_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_4 :: sync [07:07] */
 #define BCHP_EBI_CS_CONFIG_4_sync_MASK                             0x00000080
 #define BCHP_EBI_CS_CONFIG_4_sync_SHIFT                            7
+#define BCHP_EBI_CS_CONFIG_4_sync_DEFAULT                          0
 
 /* EBI :: CS_CONFIG_4 :: polarity [06:06] */
 #define BCHP_EBI_CS_CONFIG_4_polarity_MASK                         0x00000040
 #define BCHP_EBI_CS_CONFIG_4_polarity_SHIFT                        6
+#define BCHP_EBI_CS_CONFIG_4_polarity_DEFAULT                      0
 
 /* EBI :: CS_CONFIG_4 :: we_ctl [05:05] */
 #define BCHP_EBI_CS_CONFIG_4_we_ctl_MASK                           0x00000020
 #define BCHP_EBI_CS_CONFIG_4_we_ctl_SHIFT                          5
+#define BCHP_EBI_CS_CONFIG_4_we_ctl_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_4 :: dest_size [04:04] */
 #define BCHP_EBI_CS_CONFIG_4_dest_size_MASK                        0x00000010
 #define BCHP_EBI_CS_CONFIG_4_dest_size_SHIFT                       4
+#define BCHP_EBI_CS_CONFIG_4_dest_size_DEFAULT                     0
 
 /* EBI :: CS_CONFIG_4 :: ms_inh [03:03] */
 #define BCHP_EBI_CS_CONFIG_4_ms_inh_MASK                           0x00000008
 #define BCHP_EBI_CS_CONFIG_4_ms_inh_SHIFT                          3
+#define BCHP_EBI_CS_CONFIG_4_ms_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_4 :: ls_inh [02:02] */
 #define BCHP_EBI_CS_CONFIG_4_ls_inh_MASK                           0x00000004
 #define BCHP_EBI_CS_CONFIG_4_ls_inh_SHIFT                          2
+#define BCHP_EBI_CS_CONFIG_4_ls_inh_DEFAULT                        0
 
 /* EBI :: CS_CONFIG_4 :: bcachen [01:01] */
 #define BCHP_EBI_CS_CONFIG_4_bcachen_MASK                          0x00000002
 #define BCHP_EBI_CS_CONFIG_4_bcachen_SHIFT                         1
+#define BCHP_EBI_CS_CONFIG_4_bcachen_DEFAULT                       0
 
 /* EBI :: CS_CONFIG_4 :: enable [00:00] */
 #define BCHP_EBI_CS_CONFIG_4_enable_MASK                           0x00000001
 #define BCHP_EBI_CS_CONFIG_4_enable_SHIFT                          0
+#define BCHP_EBI_CS_CONFIG_4_enable_DEFAULT                        0
 
 /***************************************************************************
  *BURST_CFG_0 - EBI Synchronous Intel StrataFlash Burst Configure Register
@@ -691,22 +809,27 @@
 /* EBI :: BURST_CFG_0 :: prefetch_enable [31:31] */
 #define BCHP_EBI_BURST_CFG_0_prefetch_enable_MASK                  0x80000000
 #define BCHP_EBI_BURST_CFG_0_prefetch_enable_SHIFT                 31
+#define BCHP_EBI_BURST_CFG_0_prefetch_enable_DEFAULT               0
 
 /* EBI :: BURST_CFG_0 :: page_enable [30:30] */
 #define BCHP_EBI_BURST_CFG_0_page_enable_MASK                      0x40000000
 #define BCHP_EBI_BURST_CFG_0_page_enable_SHIFT                     30
+#define BCHP_EBI_BURST_CFG_0_page_enable_DEFAULT                   0
 
 /* EBI :: BURST_CFG_0 :: pfetch_abort_enable [29:29] */
 #define BCHP_EBI_BURST_CFG_0_pfetch_abort_enable_MASK              0x20000000
 #define BCHP_EBI_BURST_CFG_0_pfetch_abort_enable_SHIFT             29
+#define BCHP_EBI_BURST_CFG_0_pfetch_abort_enable_DEFAULT           0
 
 /* EBI :: BURST_CFG_0 :: page_latch_enable [28:28] */
 #define BCHP_EBI_BURST_CFG_0_page_latch_enable_MASK                0x10000000
 #define BCHP_EBI_BURST_CFG_0_page_latch_enable_SHIFT               28
+#define BCHP_EBI_BURST_CFG_0_page_latch_enable_DEFAULT             0
 
 /* EBI :: BURST_CFG_0 :: pfetch_wrap_enable [27:27] */
 #define BCHP_EBI_BURST_CFG_0_pfetch_wrap_enable_MASK               0x08000000
 #define BCHP_EBI_BURST_CFG_0_pfetch_wrap_enable_SHIFT              27
+#define BCHP_EBI_BURST_CFG_0_pfetch_wrap_enable_DEFAULT            0
 
 /* EBI :: BURST_CFG_0 :: reserved0 [26:24] */
 #define BCHP_EBI_BURST_CFG_0_reserved0_MASK                        0x07000000
@@ -715,6 +838,7 @@
 /* EBI :: BURST_CFG_0 :: prefetch_size [23:22] */
 #define BCHP_EBI_BURST_CFG_0_prefetch_size_MASK                    0x00c00000
 #define BCHP_EBI_BURST_CFG_0_prefetch_size_SHIFT                   22
+#define BCHP_EBI_BURST_CFG_0_prefetch_size_DEFAULT                 0
 #define BCHP_EBI_BURST_CFG_0_prefetch_size_SIZE_4_BYTES            0
 #define BCHP_EBI_BURST_CFG_0_prefetch_size_SIZE_8_BYTES            1
 #define BCHP_EBI_BURST_CFG_0_prefetch_size_SIZE_16_BYTES           2
@@ -723,6 +847,7 @@
 /* EBI :: BURST_CFG_0 :: page_size [21:20] */
 #define BCHP_EBI_BURST_CFG_0_page_size_MASK                        0x00300000
 #define BCHP_EBI_BURST_CFG_0_page_size_SHIFT                       20
+#define BCHP_EBI_BURST_CFG_0_page_size_DEFAULT                     0
 #define BCHP_EBI_BURST_CFG_0_page_size_SIZE_4_BYTES                0
 #define BCHP_EBI_BURST_CFG_0_page_size_SIZE_8_BYTES                1
 #define BCHP_EBI_BURST_CFG_0_page_size_SIZE_16_BYTES               2
@@ -731,10 +856,12 @@
 /* EBI :: BURST_CFG_0 :: page_wait_count [19:16] */
 #define BCHP_EBI_BURST_CFG_0_page_wait_count_MASK                  0x000f0000
 #define BCHP_EBI_BURST_CFG_0_page_wait_count_SHIFT                 16
+#define BCHP_EBI_BURST_CFG_0_page_wait_count_DEFAULT               1
 
 /* EBI :: BURST_CFG_0 :: burst_cyc_disable [15:15] */
 #define BCHP_EBI_BURST_CFG_0_burst_cyc_disable_MASK                0x00008000
 #define BCHP_EBI_BURST_CFG_0_burst_cyc_disable_SHIFT               15
+#define BCHP_EBI_BURST_CFG_0_burst_cyc_disable_DEFAULT             1
 
 /* EBI :: BURST_CFG_0 :: reserved1 [14:08] */
 #define BCHP_EBI_BURST_CFG_0_reserved1_MASK                        0x00007f00
@@ -743,6 +870,7 @@
 /* EBI :: BURST_CFG_0 :: burst_latency [07:04] */
 #define BCHP_EBI_BURST_CFG_0_burst_latency_MASK                    0x000000f0
 #define BCHP_EBI_BURST_CFG_0_burst_latency_SHIFT                   4
+#define BCHP_EBI_BURST_CFG_0_burst_latency_DEFAULT                 0
 
 /* EBI :: BURST_CFG_0 :: reserved2 [03:02] */
 #define BCHP_EBI_BURST_CFG_0_reserved2_MASK                        0x0000000c
@@ -751,10 +879,12 @@
 /* EBI :: BURST_CFG_0 :: data_hold [01:01] */
 #define BCHP_EBI_BURST_CFG_0_data_hold_MASK                        0x00000002
 #define BCHP_EBI_BURST_CFG_0_data_hold_SHIFT                       1
+#define BCHP_EBI_BURST_CFG_0_data_hold_DEFAULT                     0
 
 /* EBI :: BURST_CFG_0 :: burst_16 [00:00] */
 #define BCHP_EBI_BURST_CFG_0_burst_16_MASK                         0x00000001
 #define BCHP_EBI_BURST_CFG_0_burst_16_SHIFT                        0
+#define BCHP_EBI_BURST_CFG_0_burst_16_DEFAULT                      0
 
 /***************************************************************************
  *BURST_CFG_1 - EBI Synchronous Intel StrataFlash Burst Configure Register
@@ -762,22 +892,27 @@
 /* EBI :: BURST_CFG_1 :: prefetch_enable [31:31] */
 #define BCHP_EBI_BURST_CFG_1_prefetch_enable_MASK                  0x80000000
 #define BCHP_EBI_BURST_CFG_1_prefetch_enable_SHIFT                 31
+#define BCHP_EBI_BURST_CFG_1_prefetch_enable_DEFAULT               0
 
 /* EBI :: BURST_CFG_1 :: page_enable [30:30] */
 #define BCHP_EBI_BURST_CFG_1_page_enable_MASK                      0x40000000
 #define BCHP_EBI_BURST_CFG_1_page_enable_SHIFT                     30
+#define BCHP_EBI_BURST_CFG_1_page_enable_DEFAULT                   0
 
 /* EBI :: BURST_CFG_1 :: pfetch_abort_enable [29:29] */
 #define BCHP_EBI_BURST_CFG_1_pfetch_abort_enable_MASK              0x20000000
 #define BCHP_EBI_BURST_CFG_1_pfetch_abort_enable_SHIFT             29
+#define BCHP_EBI_BURST_CFG_1_pfetch_abort_enable_DEFAULT           0
 
 /* EBI :: BURST_CFG_1 :: page_latch_enable [28:28] */
 #define BCHP_EBI_BURST_CFG_1_page_latch_enable_MASK                0x10000000
 #define BCHP_EBI_BURST_CFG_1_page_latch_enable_SHIFT               28
+#define BCHP_EBI_BURST_CFG_1_page_latch_enable_DEFAULT             0
 
 /* EBI :: BURST_CFG_1 :: pfetch_wrap_enable [27:27] */
 #define BCHP_EBI_BURST_CFG_1_pfetch_wrap_enable_MASK               0x08000000
 #define BCHP_EBI_BURST_CFG_1_pfetch_wrap_enable_SHIFT              27
+#define BCHP_EBI_BURST_CFG_1_pfetch_wrap_enable_DEFAULT            0
 
 /* EBI :: BURST_CFG_1 :: reserved0 [26:24] */
 #define BCHP_EBI_BURST_CFG_1_reserved0_MASK                        0x07000000
@@ -786,6 +921,7 @@
 /* EBI :: BURST_CFG_1 :: prefetch_size [23:22] */
 #define BCHP_EBI_BURST_CFG_1_prefetch_size_MASK                    0x00c00000
 #define BCHP_EBI_BURST_CFG_1_prefetch_size_SHIFT                   22
+#define BCHP_EBI_BURST_CFG_1_prefetch_size_DEFAULT                 0
 #define BCHP_EBI_BURST_CFG_1_prefetch_size_SIZE_4_BYTES            0
 #define BCHP_EBI_BURST_CFG_1_prefetch_size_SIZE_8_BYTES            1
 #define BCHP_EBI_BURST_CFG_1_prefetch_size_SIZE_16_BYTES           2
@@ -794,6 +930,7 @@
 /* EBI :: BURST_CFG_1 :: page_size [21:20] */
 #define BCHP_EBI_BURST_CFG_1_page_size_MASK                        0x00300000
 #define BCHP_EBI_BURST_CFG_1_page_size_SHIFT                       20
+#define BCHP_EBI_BURST_CFG_1_page_size_DEFAULT                     0
 #define BCHP_EBI_BURST_CFG_1_page_size_SIZE_4_BYTES                0
 #define BCHP_EBI_BURST_CFG_1_page_size_SIZE_8_BYTES                1
 #define BCHP_EBI_BURST_CFG_1_page_size_SIZE_16_BYTES               2
@@ -802,10 +939,12 @@
 /* EBI :: BURST_CFG_1 :: page_wait_count [19:16] */
 #define BCHP_EBI_BURST_CFG_1_page_wait_count_MASK                  0x000f0000
 #define BCHP_EBI_BURST_CFG_1_page_wait_count_SHIFT                 16
+#define BCHP_EBI_BURST_CFG_1_page_wait_count_DEFAULT               1
 
 /* EBI :: BURST_CFG_1 :: burst_cyc_disable [15:15] */
 #define BCHP_EBI_BURST_CFG_1_burst_cyc_disable_MASK                0x00008000
 #define BCHP_EBI_BURST_CFG_1_burst_cyc_disable_SHIFT               15
+#define BCHP_EBI_BURST_CFG_1_burst_cyc_disable_DEFAULT             1
 
 /* EBI :: BURST_CFG_1 :: reserved1 [14:08] */
 #define BCHP_EBI_BURST_CFG_1_reserved1_MASK                        0x00007f00
@@ -814,6 +953,7 @@
 /* EBI :: BURST_CFG_1 :: burst_latency [07:04] */
 #define BCHP_EBI_BURST_CFG_1_burst_latency_MASK                    0x000000f0
 #define BCHP_EBI_BURST_CFG_1_burst_latency_SHIFT                   4
+#define BCHP_EBI_BURST_CFG_1_burst_latency_DEFAULT                 0
 
 /* EBI :: BURST_CFG_1 :: reserved2 [03:02] */
 #define BCHP_EBI_BURST_CFG_1_reserved2_MASK                        0x0000000c
@@ -822,10 +962,12 @@
 /* EBI :: BURST_CFG_1 :: data_hold [01:01] */
 #define BCHP_EBI_BURST_CFG_1_data_hold_MASK                        0x00000002
 #define BCHP_EBI_BURST_CFG_1_data_hold_SHIFT                       1
+#define BCHP_EBI_BURST_CFG_1_data_hold_DEFAULT                     0
 
 /* EBI :: BURST_CFG_1 :: burst_16 [00:00] */
 #define BCHP_EBI_BURST_CFG_1_burst_16_MASK                         0x00000001
 #define BCHP_EBI_BURST_CFG_1_burst_16_SHIFT                        0
+#define BCHP_EBI_BURST_CFG_1_burst_16_DEFAULT                      0
 
 /***************************************************************************
  *BURST_CFG_2 - EBI Synchronous Intel StrataFlash Burst Configure Register
@@ -833,22 +975,27 @@
 /* EBI :: BURST_CFG_2 :: prefetch_enable [31:31] */
 #define BCHP_EBI_BURST_CFG_2_prefetch_enable_MASK                  0x80000000
 #define BCHP_EBI_BURST_CFG_2_prefetch_enable_SHIFT                 31
+#define BCHP_EBI_BURST_CFG_2_prefetch_enable_DEFAULT               0
 
 /* EBI :: BURST_CFG_2 :: page_enable [30:30] */
 #define BCHP_EBI_BURST_CFG_2_page_enable_MASK                      0x40000000
 #define BCHP_EBI_BURST_CFG_2_page_enable_SHIFT                     30
+#define BCHP_EBI_BURST_CFG_2_page_enable_DEFAULT                   0
 
 /* EBI :: BURST_CFG_2 :: pfetch_abort_enable [29:29] */
 #define BCHP_EBI_BURST_CFG_2_pfetch_abort_enable_MASK              0x20000000
 #define BCHP_EBI_BURST_CFG_2_pfetch_abort_enable_SHIFT             29
+#define BCHP_EBI_BURST_CFG_2_pfetch_abort_enable_DEFAULT           0
 
 /* EBI :: BURST_CFG_2 :: page_latch_enable [28:28] */
 #define BCHP_EBI_BURST_CFG_2_page_latch_enable_MASK                0x10000000
 #define BCHP_EBI_BURST_CFG_2_page_latch_enable_SHIFT               28
+#define BCHP_EBI_BURST_CFG_2_page_latch_enable_DEFAULT             0
 
 /* EBI :: BURST_CFG_2 :: pfetch_wrap_enable [27:27] */
 #define BCHP_EBI_BURST_CFG_2_pfetch_wrap_enable_MASK               0x08000000
 #define BCHP_EBI_BURST_CFG_2_pfetch_wrap_enable_SHIFT              27
+#define BCHP_EBI_BURST_CFG_2_pfetch_wrap_enable_DEFAULT            0
 
 /* EBI :: BURST_CFG_2 :: reserved0 [26:24] */
 #define BCHP_EBI_BURST_CFG_2_reserved0_MASK                        0x07000000
@@ -857,6 +1004,7 @@
 /* EBI :: BURST_CFG_2 :: prefetch_size [23:22] */
 #define BCHP_EBI_BURST_CFG_2_prefetch_size_MASK                    0x00c00000
 #define BCHP_EBI_BURST_CFG_2_prefetch_size_SHIFT                   22
+#define BCHP_EBI_BURST_CFG_2_prefetch_size_DEFAULT                 0
 #define BCHP_EBI_BURST_CFG_2_prefetch_size_SIZE_4_BYTES            0
 #define BCHP_EBI_BURST_CFG_2_prefetch_size_SIZE_8_BYTES            1
 #define BCHP_EBI_BURST_CFG_2_prefetch_size_SIZE_16_BYTES           2
@@ -865,6 +1013,7 @@
 /* EBI :: BURST_CFG_2 :: page_size [21:20] */
 #define BCHP_EBI_BURST_CFG_2_page_size_MASK                        0x00300000
 #define BCHP_EBI_BURST_CFG_2_page_size_SHIFT                       20
+#define BCHP_EBI_BURST_CFG_2_page_size_DEFAULT                     0
 #define BCHP_EBI_BURST_CFG_2_page_size_SIZE_4_BYTES                0
 #define BCHP_EBI_BURST_CFG_2_page_size_SIZE_8_BYTES                1
 #define BCHP_EBI_BURST_CFG_2_page_size_SIZE_16_BYTES               2
@@ -873,10 +1022,12 @@
 /* EBI :: BURST_CFG_2 :: page_wait_count [19:16] */
 #define BCHP_EBI_BURST_CFG_2_page_wait_count_MASK                  0x000f0000
 #define BCHP_EBI_BURST_CFG_2_page_wait_count_SHIFT                 16
+#define BCHP_EBI_BURST_CFG_2_page_wait_count_DEFAULT               1
 
 /* EBI :: BURST_CFG_2 :: burst_cyc_disable [15:15] */
 #define BCHP_EBI_BURST_CFG_2_burst_cyc_disable_MASK                0x00008000
 #define BCHP_EBI_BURST_CFG_2_burst_cyc_disable_SHIFT               15
+#define BCHP_EBI_BURST_CFG_2_burst_cyc_disable_DEFAULT             1
 
 /* EBI :: BURST_CFG_2 :: reserved1 [14:08] */
 #define BCHP_EBI_BURST_CFG_2_reserved1_MASK                        0x00007f00
@@ -885,6 +1036,7 @@
 /* EBI :: BURST_CFG_2 :: burst_latency [07:04] */
 #define BCHP_EBI_BURST_CFG_2_burst_latency_MASK                    0x000000f0
 #define BCHP_EBI_BURST_CFG_2_burst_latency_SHIFT                   4
+#define BCHP_EBI_BURST_CFG_2_burst_latency_DEFAULT                 0
 
 /* EBI :: BURST_CFG_2 :: reserved2 [03:02] */
 #define BCHP_EBI_BURST_CFG_2_reserved2_MASK                        0x0000000c
@@ -893,10 +1045,12 @@
 /* EBI :: BURST_CFG_2 :: data_hold [01:01] */
 #define BCHP_EBI_BURST_CFG_2_data_hold_MASK                        0x00000002
 #define BCHP_EBI_BURST_CFG_2_data_hold_SHIFT                       1
+#define BCHP_EBI_BURST_CFG_2_data_hold_DEFAULT                     0
 
 /* EBI :: BURST_CFG_2 :: burst_16 [00:00] */
 #define BCHP_EBI_BURST_CFG_2_burst_16_MASK                         0x00000001
 #define BCHP_EBI_BURST_CFG_2_burst_16_SHIFT                        0
+#define BCHP_EBI_BURST_CFG_2_burst_16_DEFAULT                      0
 
 /***************************************************************************
  *BURST_CFG_3 - EBI Synchronous Intel StrataFlash Burst Configure Register
@@ -904,22 +1058,27 @@
 /* EBI :: BURST_CFG_3 :: prefetch_enable [31:31] */
 #define BCHP_EBI_BURST_CFG_3_prefetch_enable_MASK                  0x80000000
 #define BCHP_EBI_BURST_CFG_3_prefetch_enable_SHIFT                 31
+#define BCHP_EBI_BURST_CFG_3_prefetch_enable_DEFAULT               0
 
 /* EBI :: BURST_CFG_3 :: page_enable [30:30] */
 #define BCHP_EBI_BURST_CFG_3_page_enable_MASK                      0x40000000
 #define BCHP_EBI_BURST_CFG_3_page_enable_SHIFT                     30
+#define BCHP_EBI_BURST_CFG_3_page_enable_DEFAULT                   0
 
 /* EBI :: BURST_CFG_3 :: pfetch_abort_enable [29:29] */
 #define BCHP_EBI_BURST_CFG_3_pfetch_abort_enable_MASK              0x20000000
 #define BCHP_EBI_BURST_CFG_3_pfetch_abort_enable_SHIFT             29
+#define BCHP_EBI_BURST_CFG_3_pfetch_abort_enable_DEFAULT           0
 
 /* EBI :: BURST_CFG_3 :: page_latch_enable [28:28] */
 #define BCHP_EBI_BURST_CFG_3_page_latch_enable_MASK                0x10000000
 #define BCHP_EBI_BURST_CFG_3_page_latch_enable_SHIFT               28
+#define BCHP_EBI_BURST_CFG_3_page_latch_enable_DEFAULT             0
 
 /* EBI :: BURST_CFG_3 :: pfetch_wrap_enable [27:27] */
 #define BCHP_EBI_BURST_CFG_3_pfetch_wrap_enable_MASK               0x08000000
 #define BCHP_EBI_BURST_CFG_3_pfetch_wrap_enable_SHIFT              27
+#define BCHP_EBI_BURST_CFG_3_pfetch_wrap_enable_DEFAULT            0
 
 /* EBI :: BURST_CFG_3 :: reserved0 [26:24] */
 #define BCHP_EBI_BURST_CFG_3_reserved0_MASK                        0x07000000
@@ -928,6 +1087,7 @@
 /* EBI :: BURST_CFG_3 :: prefetch_size [23:22] */
 #define BCHP_EBI_BURST_CFG_3_prefetch_size_MASK                    0x00c00000
 #define BCHP_EBI_BURST_CFG_3_prefetch_size_SHIFT                   22
+#define BCHP_EBI_BURST_CFG_3_prefetch_size_DEFAULT                 0
 #define BCHP_EBI_BURST_CFG_3_prefetch_size_SIZE_4_BYTES            0
 #define BCHP_EBI_BURST_CFG_3_prefetch_size_SIZE_8_BYTES            1
 #define BCHP_EBI_BURST_CFG_3_prefetch_size_SIZE_16_BYTES           2
@@ -936,6 +1096,7 @@
 /* EBI :: BURST_CFG_3 :: page_size [21:20] */
 #define BCHP_EBI_BURST_CFG_3_page_size_MASK                        0x00300000
 #define BCHP_EBI_BURST_CFG_3_page_size_SHIFT                       20
+#define BCHP_EBI_BURST_CFG_3_page_size_DEFAULT                     0
 #define BCHP_EBI_BURST_CFG_3_page_size_SIZE_4_BYTES                0
 #define BCHP_EBI_BURST_CFG_3_page_size_SIZE_8_BYTES                1
 #define BCHP_EBI_BURST_CFG_3_page_size_SIZE_16_BYTES               2
@@ -944,10 +1105,12 @@
 /* EBI :: BURST_CFG_3 :: page_wait_count [19:16] */
 #define BCHP_EBI_BURST_CFG_3_page_wait_count_MASK                  0x000f0000
 #define BCHP_EBI_BURST_CFG_3_page_wait_count_SHIFT                 16
+#define BCHP_EBI_BURST_CFG_3_page_wait_count_DEFAULT               1
 
 /* EBI :: BURST_CFG_3 :: burst_cyc_disable [15:15] */
 #define BCHP_EBI_BURST_CFG_3_burst_cyc_disable_MASK                0x00008000
 #define BCHP_EBI_BURST_CFG_3_burst_cyc_disable_SHIFT               15
+#define BCHP_EBI_BURST_CFG_3_burst_cyc_disable_DEFAULT             1
 
 /* EBI :: BURST_CFG_3 :: reserved1 [14:08] */
 #define BCHP_EBI_BURST_CFG_3_reserved1_MASK                        0x00007f00
@@ -956,6 +1119,7 @@
 /* EBI :: BURST_CFG_3 :: burst_latency [07:04] */
 #define BCHP_EBI_BURST_CFG_3_burst_latency_MASK                    0x000000f0
 #define BCHP_EBI_BURST_CFG_3_burst_latency_SHIFT                   4
+#define BCHP_EBI_BURST_CFG_3_burst_latency_DEFAULT                 0
 
 /* EBI :: BURST_CFG_3 :: reserved2 [03:02] */
 #define BCHP_EBI_BURST_CFG_3_reserved2_MASK                        0x0000000c
@@ -964,10 +1128,12 @@
 /* EBI :: BURST_CFG_3 :: data_hold [01:01] */
 #define BCHP_EBI_BURST_CFG_3_data_hold_MASK                        0x00000002
 #define BCHP_EBI_BURST_CFG_3_data_hold_SHIFT                       1
+#define BCHP_EBI_BURST_CFG_3_data_hold_DEFAULT                     0
 
 /* EBI :: BURST_CFG_3 :: burst_16 [00:00] */
 #define BCHP_EBI_BURST_CFG_3_burst_16_MASK                         0x00000001
 #define BCHP_EBI_BURST_CFG_3_burst_16_SHIFT                        0
+#define BCHP_EBI_BURST_CFG_3_burst_16_DEFAULT                      0
 
 /***************************************************************************
  *BURST_CFG_4 - EBI Synchronous Intel StrataFlash Burst Configure Register
@@ -975,22 +1141,27 @@
 /* EBI :: BURST_CFG_4 :: prefetch_enable [31:31] */
 #define BCHP_EBI_BURST_CFG_4_prefetch_enable_MASK                  0x80000000
 #define BCHP_EBI_BURST_CFG_4_prefetch_enable_SHIFT                 31
+#define BCHP_EBI_BURST_CFG_4_prefetch_enable_DEFAULT               0
 
 /* EBI :: BURST_CFG_4 :: page_enable [30:30] */
 #define BCHP_EBI_BURST_CFG_4_page_enable_MASK                      0x40000000
 #define BCHP_EBI_BURST_CFG_4_page_enable_SHIFT                     30
+#define BCHP_EBI_BURST_CFG_4_page_enable_DEFAULT                   0
 
 /* EBI :: BURST_CFG_4 :: pfetch_abort_enable [29:29] */
 #define BCHP_EBI_BURST_CFG_4_pfetch_abort_enable_MASK              0x20000000
 #define BCHP_EBI_BURST_CFG_4_pfetch_abort_enable_SHIFT             29
+#define BCHP_EBI_BURST_CFG_4_pfetch_abort_enable_DEFAULT           0
 
 /* EBI :: BURST_CFG_4 :: page_latch_enable [28:28] */
 #define BCHP_EBI_BURST_CFG_4_page_latch_enable_MASK                0x10000000
 #define BCHP_EBI_BURST_CFG_4_page_latch_enable_SHIFT               28
+#define BCHP_EBI_BURST_CFG_4_page_latch_enable_DEFAULT             0
 
 /* EBI :: BURST_CFG_4 :: pfetch_wrap_enable [27:27] */
 #define BCHP_EBI_BURST_CFG_4_pfetch_wrap_enable_MASK               0x08000000
 #define BCHP_EBI_BURST_CFG_4_pfetch_wrap_enable_SHIFT              27
+#define BCHP_EBI_BURST_CFG_4_pfetch_wrap_enable_DEFAULT            0
 
 /* EBI :: BURST_CFG_4 :: reserved0 [26:24] */
 #define BCHP_EBI_BURST_CFG_4_reserved0_MASK                        0x07000000
@@ -999,6 +1170,7 @@
 /* EBI :: BURST_CFG_4 :: prefetch_size [23:22] */
 #define BCHP_EBI_BURST_CFG_4_prefetch_size_MASK                    0x00c00000
 #define BCHP_EBI_BURST_CFG_4_prefetch_size_SHIFT                   22
+#define BCHP_EBI_BURST_CFG_4_prefetch_size_DEFAULT                 0
 #define BCHP_EBI_BURST_CFG_4_prefetch_size_SIZE_4_BYTES            0
 #define BCHP_EBI_BURST_CFG_4_prefetch_size_SIZE_8_BYTES            1
 #define BCHP_EBI_BURST_CFG_4_prefetch_size_SIZE_16_BYTES           2
@@ -1007,6 +1179,7 @@
 /* EBI :: BURST_CFG_4 :: page_size [21:20] */
 #define BCHP_EBI_BURST_CFG_4_page_size_MASK                        0x00300000
 #define BCHP_EBI_BURST_CFG_4_page_size_SHIFT                       20
+#define BCHP_EBI_BURST_CFG_4_page_size_DEFAULT                     0
 #define BCHP_EBI_BURST_CFG_4_page_size_SIZE_4_BYTES                0
 #define BCHP_EBI_BURST_CFG_4_page_size_SIZE_8_BYTES                1
 #define BCHP_EBI_BURST_CFG_4_page_size_SIZE_16_BYTES               2
@@ -1015,10 +1188,12 @@
 /* EBI :: BURST_CFG_4 :: page_wait_count [19:16] */
 #define BCHP_EBI_BURST_CFG_4_page_wait_count_MASK                  0x000f0000
 #define BCHP_EBI_BURST_CFG_4_page_wait_count_SHIFT                 16
+#define BCHP_EBI_BURST_CFG_4_page_wait_count_DEFAULT               1
 
 /* EBI :: BURST_CFG_4 :: burst_cyc_disable [15:15] */
 #define BCHP_EBI_BURST_CFG_4_burst_cyc_disable_MASK                0x00008000
 #define BCHP_EBI_BURST_CFG_4_burst_cyc_disable_SHIFT               15
+#define BCHP_EBI_BURST_CFG_4_burst_cyc_disable_DEFAULT             1
 
 /* EBI :: BURST_CFG_4 :: reserved1 [14:08] */
 #define BCHP_EBI_BURST_CFG_4_reserved1_MASK                        0x00007f00
@@ -1027,6 +1202,7 @@
 /* EBI :: BURST_CFG_4 :: burst_latency [07:04] */
 #define BCHP_EBI_BURST_CFG_4_burst_latency_MASK                    0x000000f0
 #define BCHP_EBI_BURST_CFG_4_burst_latency_SHIFT                   4
+#define BCHP_EBI_BURST_CFG_4_burst_latency_DEFAULT                 0
 
 /* EBI :: BURST_CFG_4 :: reserved2 [03:02] */
 #define BCHP_EBI_BURST_CFG_4_reserved2_MASK                        0x0000000c
@@ -1035,10 +1211,12 @@
 /* EBI :: BURST_CFG_4 :: data_hold [01:01] */
 #define BCHP_EBI_BURST_CFG_4_data_hold_MASK                        0x00000002
 #define BCHP_EBI_BURST_CFG_4_data_hold_SHIFT                       1
+#define BCHP_EBI_BURST_CFG_4_data_hold_DEFAULT                     0
 
 /* EBI :: BURST_CFG_4 :: burst_16 [00:00] */
 #define BCHP_EBI_BURST_CFG_4_burst_16_MASK                         0x00000001
 #define BCHP_EBI_BURST_CFG_4_burst_16_SHIFT                        0
+#define BCHP_EBI_BURST_CFG_4_burst_16_DEFAULT                      0
 
 /***************************************************************************
  *ECR - EBI Configuration Register
@@ -1050,6 +1228,7 @@
 /* EBI :: ECR :: Ebi_Byte_Swap [27:27] */
 #define BCHP_EBI_ECR_Ebi_Byte_Swap_MASK                            0x08000000
 #define BCHP_EBI_ECR_Ebi_Byte_Swap_SHIFT                           27
+#define BCHP_EBI_ECR_Ebi_Byte_Swap_DEFAULT                         0
 #define BCHP_EBI_ECR_Ebi_Byte_Swap_Byte_Swap_For_32_16_and_8_bit_Xfers 0
 #define BCHP_EBI_ECR_Ebi_Byte_Swap_Byte_Swap_For_8_bit_Xfers_Only  1
 
@@ -1060,6 +1239,7 @@
 /* EBI :: ECR :: Flag_32bit_Xfer [25:25] */
 #define BCHP_EBI_ECR_Flag_32bit_Xfer_MASK                          0x02000000
 #define BCHP_EBI_ECR_Flag_32bit_Xfer_SHIFT                         25
+#define BCHP_EBI_ECR_Flag_32bit_Xfer_DEFAULT                       0
 #define BCHP_EBI_ECR_Flag_32bit_Xfer_Code_32bit_Xfer_as_10         0
 #define BCHP_EBI_ECR_Flag_32bit_Xfer_Code_32bit_Xfer_as_00         1
 
@@ -1070,6 +1250,7 @@
 /* EBI :: ECR :: timeout_count [10:00] */
 #define BCHP_EBI_ECR_timeout_count_MASK                            0x000007ff
 #define BCHP_EBI_ECR_timeout_count_SHIFT                           0
+#define BCHP_EBI_ECR_timeout_count_DEFAULT                         1024
 
 /***************************************************************************
  *TA_CFG - EBI TA Configuration Register
@@ -1081,14 +1262,17 @@
 /* EBI :: TA_CFG :: use_ta3 [03:03] */
 #define BCHP_EBI_TA_CFG_use_ta3_MASK                               0x00000008
 #define BCHP_EBI_TA_CFG_use_ta3_SHIFT                              3
+#define BCHP_EBI_TA_CFG_use_ta3_DEFAULT                            1
 
 /* EBI :: TA_CFG :: use_ta2 [02:02] */
 #define BCHP_EBI_TA_CFG_use_ta2_MASK                               0x00000004
 #define BCHP_EBI_TA_CFG_use_ta2_SHIFT                              2
+#define BCHP_EBI_TA_CFG_use_ta2_DEFAULT                            0
 
 /* EBI :: TA_CFG :: use_ta1 [01:01] */
 #define BCHP_EBI_TA_CFG_use_ta1_MASK                               0x00000002
 #define BCHP_EBI_TA_CFG_use_ta1_SHIFT                              1
+#define BCHP_EBI_TA_CFG_use_ta1_DEFAULT                            1
 
 /* EBI :: TA_CFG :: reserved1 [00:00] */
 #define BCHP_EBI_TA_CFG_reserved1_MASK                             0x00000001
@@ -1104,30 +1288,37 @@
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_7_SEL [07:07] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_7_SEL_MASK               0x00000080
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_7_SEL_SHIFT              7
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_7_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_6_SEL [06:06] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_6_SEL_MASK               0x00000040
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_6_SEL_SHIFT              6
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_6_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_5_SEL [05:05] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_5_SEL_MASK               0x00000020
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_5_SEL_SHIFT              5
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_5_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_4_SEL [04:04] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_4_SEL_MASK               0x00000010
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_4_SEL_SHIFT              4
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_4_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_3_SEL [03:03] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_3_SEL_MASK               0x00000008
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_3_SEL_SHIFT              3
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_3_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_2_SEL [02:02] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_2_SEL_MASK               0x00000004
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_2_SEL_SHIFT              2
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_2_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_1_SEL [01:01] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_1_SEL_MASK               0x00000002
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_1_SEL_SHIFT              1
+#define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_1_SEL_DEFAULT            0
 
 /* EBI :: CS_SPI_SELECT :: SPI_EBI_CS_0_SEL [00:00] */
 #define BCHP_EBI_CS_SPI_SELECT_SPI_EBI_CS_0_SEL_MASK               0x00000001
@@ -1139,6 +1330,7 @@
 /* EBI :: ARRAY_ADDRESS :: ADDRESS [31:09] */
 #define BCHP_EBI_ARRAY_ADDRESS_ADDRESS_MASK                        0xfffffe00
 #define BCHP_EBI_ARRAY_ADDRESS_ADDRESS_SHIFT                       9
+#define BCHP_EBI_ARRAY_ADDRESS_ADDRESS_DEFAULT                     0
 
 /* EBI :: ARRAY_ADDRESS :: reserved0 [08:03] */
 #define BCHP_EBI_ARRAY_ADDRESS_reserved0_MASK                      0x000001f8
@@ -1147,6 +1339,7 @@
 /* EBI :: ARRAY_ADDRESS :: CS_SEL [02:00] */
 #define BCHP_EBI_ARRAY_ADDRESS_CS_SEL_MASK                         0x00000007
 #define BCHP_EBI_ARRAY_ADDRESS_CS_SEL_SHIFT                        0
+#define BCHP_EBI_ARRAY_ADDRESS_CS_SEL_DEFAULT                      0
 
 /***************************************************************************
  *DATA_ARRAY%i - EBI Data Array Read/Write Access

@@ -36,7 +36,7 @@
 #include <linux/io.h>
 
 #define DRV_VERSION		0x00040000
-#define DRV_BUILD_NUMBER	0x20110102
+#define DRV_BUILD_NUMBER	0x20110616
 
 #if defined(CONFIG_BRCMSTB)
 #define MOCA6816		0

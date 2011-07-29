@@ -4,7 +4,7 @@
  *
  * Copyright 1995, 1996, 1997, 1998, 1999, 2000 by Theodore Ts'o.
  *
- * Licensed under GPLv2, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include <stdio.h>
@@ -35,7 +35,7 @@ void check_plausibility(const char *device, int force)
 	if (force)
 		return;
 	if (val == -1)
-		bb_perror_msg_and_die("can't stat %s", device);
+		bb_perror_msg_and_die("can't stat '%s'", device);
 	if (!S_ISBLK(s.st_mode)) {
 		printf("%s is not a block special device.\n", device);
 		proceed_question();
@@ -95,7 +95,6 @@ force_check:
 		bb_error_msg("%s is apparently in use by the system", device);
 		goto force_check;
 	}
-
 }
 
 void parse_journal_opts(char **journal_device, int *journal_flags,

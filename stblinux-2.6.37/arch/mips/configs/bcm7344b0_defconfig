@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-1.1pre Kernel Configuration
-# Tue Mar 29 14:54:13 2011
+# Linux/mips 2.6.37-2.1pre Kernel Configuration
+# Thu Jun 30 11:42:52 2011
 #
 CONFIG_MIPS=y
 
@@ -56,15 +56,13 @@ CONFIG_ARCH_SPARSEMEM_ENABLE=y
 # Broadcom STB options
 #
 # CONFIG_BRCM_LEGACY is not set
-# CONFIG_BCM3548B0 is not set
-# CONFIG_BCM35125A0 is not set
-# CONFIG_BCM35126A0 is not set
+# CONFIG_BCM35125C0 is not set
+# CONFIG_BCM35126B0 is not set
 # CONFIG_BCM35230C0 is not set
 # CONFIG_BCM35330A0 is not set
 # CONFIG_BCM7125C0 is not set
 # CONFIG_BCM7231A0 is not set
-# CONFIG_BCM7325B0 is not set
-# CONFIG_BCM7335B0 is not set
+# CONFIG_BCM7231B0 is not set
 # CONFIG_BCM7340B0 is not set
 # CONFIG_BCM7342B0 is not set
 # CONFIG_BCM7344A0 is not set
@@ -76,17 +74,15 @@ CONFIG_BCM7344B0=y
 # CONFIG_BCM7405D0 is not set
 # CONFIG_BCM7408B0 is not set
 # CONFIG_BCM7420C0 is not set
-# CONFIG_BCM7422A0 is not set
 # CONFIG_BCM7425A0 is not set
 # CONFIG_BCM7425B0 is not set
+# CONFIG_BCM7428A0 is not set
+# CONFIG_BCM7435A0 is not set
 # CONFIG_BCM7468B0 is not set
 # CONFIG_BCM7550A0 is not set
 # CONFIG_BCM7550B0 is not set
 # CONFIG_BCM7552A0 is not set
-# CONFIG_BCM7601B0 is not set
-# CONFIG_BCM7630B0 is not set
 # CONFIG_BCM7631B0 is not set
-# CONFIG_BCM7635A0 is not set
 # CONFIG_BCM7640A0 is not set
 # CONFIG_BCM7640B0 is not set
 
@@ -169,6 +165,7 @@ CONFIG_BRCM_HAS_SDIO_V1=y
 CONFIG_BRCM_ZSCM_L2=y
 CONFIG_BRCM_CPU_DIV=y
 CONFIG_BRCM_HAS_XKS01=y
+CONFIG_BRCM_HAS_XI=y
 CONFIG_BRCM_HAS_UPPER_MEMORY=y
 CONFIG_BRCM_UPPER_768MB=y
 CONFIG_BRCM_HAS_1GB_MEMC0=y

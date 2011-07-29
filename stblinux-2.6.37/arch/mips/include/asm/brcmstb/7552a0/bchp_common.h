@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Jan 13 02:14:30 2011
- *                 MD5 Checksum         cf7b393b4b1b75989d5616e656fe3a56
+ * Date:           Generated on         Mon May 16 20:50:05 2011
+ *                 MD5 Checksum         f5f09b2bf7ad40890d2e5dc57d4789b6
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7552/rdb/a0/bchp_common.h $
  * 
- * Hydra_Software_Devel/4   1/13/11 1:40p pntruong
- * SW7552-2: Synced up with central rdb.
+ * Hydra_Software_Devel/5   5/18/11 2:57p xhuang
+ * SW7552-2: update with central RDB
  *
  ***************************************************************************/
 
@@ -672,9 +672,9 @@
 #define BCHP_XPT_XPU_REG_START                             0x00a28000
 #define BCHP_XPT_XPU_REG_END                               0x00a2c7fc
 #define BCHP_RFM_SYSCLK_REG_START                          0x00b00000
-#define BCHP_RFM_SYSCLK_REG_END                            0x00b000f0
+#define BCHP_RFM_SYSCLK_REG_END                            0x00b00118
 #define BCHP_RFM_CLK27_REG_START                           0x00b00000
-#define BCHP_RFM_CLK27_REG_END                             0x00b00468
+#define BCHP_RFM_CLK27_REG_END                             0x00b00470
 #define BCHP_RFM_L2_REG_START                              0x00b00c00
 #define BCHP_RFM_L2_REG_END                                0x00b00c2c
 #define BCHP_RFM_GRB_REG_START                             0x00b01000

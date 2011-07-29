@@ -1,15 +1,19 @@
 #!/bin/bash
-version="0.3"
+version="0.5"
 curdir=`pwd`
+
+chipname=$PLAT
 
 query_mode=true
 control_mode=
 control_mask=".*"
 runtime_status_mask=".*"
 
+# check kernel version
 uver=`uname -r|cut -d. -f3 |cut -d- -f1`
 
 [ $uver -lt 32 ] && echo "Script relies on runtime PM features available in kernel 2.6.32 and later" && exit 1
+
 
 usage()
 {
@@ -27,10 +31,10 @@ do
 	case $option in
 	m)
 		query_mode=false
-		control_mode=$OPTARG 
+		control_mode=$OPTARG
 		if [ ! "$control_mode" = "auto" -a ! "$control_mode" = "on" ] ; then
 			usage
-			exit 1	
+			exit 1
 		fi
 		;;
 	c)
@@ -43,15 +47,34 @@ do
 	esac
 done
 
-devlist=`ls -d /sys/class/scsi_disk /sys/bus/scsi/devices/host?/target*/*`
+function check_if_sata_controller()
+{
+	fname=$1
+	is_sata_controller="no"
+	[ -e "$fname/uevent" ] && grep -q "DRIVER=sata_brcmstb" $fname/uevent && is_sata_controller="yes"
+	[ -e "$fname/uevent" ] && grep -q "DRIVER=ahci" $fname/uevent && is_sata_controller="yes"
+}
 
-for i in $devlist ; do
+# function generates a list of all 'power' folders found in
+# the current tree
+function gen_powerlist()
+{
+	devfolder=$1
 	powerlist=
-	if [ -d $i ] ; then
-		cd -P $i 
+	if [ -d $devfolder ] ; then
+		cd -P $devfolder
 		powerlist=`find . -name power -type d`
 	fi
-	for j in $powerlist ; do	
+}
+
+# process each power folder
+# in query mode - display runtime_status and control settings
+# in update mode - change runtime control mode
+
+function scan_powerlist()
+{
+	powerlist=$1
+	for j in $powerlist ; do
 		control_file=$j/control
 		status_file=$j/runtime_status
 		if [ "$query_mode" == "true" ] ; then
@@ -72,6 +95,24 @@ for i in $devlist ; do
 			[ "$supported" == "yes" ] && [ -f $control_file ] && [ ! -z "$control_mode" ] && echo $control_mode > $control_file
 		fi
 	done
+
+}
+
+# first process all scsi disks found in the system
+devlist=`ls -d /sys/class/scsi_disk /sys/bus/scsi/devices/host?/target*/* 2>>/dev/null`
+
+for i in $devlist ; do
+	gen_powerlist $i
+	scan_powerlist $powerlist
+done
+
+# now scan all pci devices and find SATA controller
+devlist=`ls -d /sys/devices/pci*/* 2>>/dev/null`
+
+for i in $devlist ; do
+	gen_powerlist $i
+	check_if_sata_controller $i
+	[ "$is_sata_controller" == "yes" ] && scan_powerlist $powerlist
 done
 
 cd $curdir

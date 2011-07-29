@@ -6,6 +6,8 @@
 *.o.*
 *.a
 *.s
+Kbuild
+Config.in
 
 #
 # Never ignore these
@@ -17,6 +19,11 @@
 #
 /busybox
 /busybox_unstripped*
+
+include/NUM_APPLETS.h
+include/applets.h
+include/bbconfigopts_bz2.h
+include/usage.h
 
 #
 # Backups / patches

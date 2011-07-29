@@ -10,7 +10,7 @@
  * Agency (DARPA) and Air Force Research Laboratory, Air Force
  * Materiel Command, USAF, under agreement number F39502-99-1-0512.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 /*
@@ -121,6 +121,7 @@ typedef struct FILE_and_pos_t {
 struct globals {
 	smallint exit_status;
 	int opt_U_context;
+	const char *other_dir;
 	char *label[2];
 	struct stat stb[2];
 };
@@ -229,7 +230,7 @@ static int search(const int *c, int k, int y, const struct cand *list)
 {
 	int i, j;
 
-	if (list[c[k]].y < y)	/* quick look for typical case */
+	if (list[c[k]].y < y)  /* quick look for typical case */
 		return k + 1;
 
 	for (i = 0, j = k + 1;;) {
@@ -478,7 +479,7 @@ start:
 	for (; suff < nlen[0] - pref && suff < nlen[1] - pref &&
 	       nfile[0][nlen[0] - suff].value == nfile[1][nlen[1] - suff].value;
 	       suff++);
-	/* Arrays are pruned by the suffix and prefix lenght,
+	/* Arrays are pruned by the suffix and prefix length,
 	 * the result being sorted and stored in sfile[fileno],
 	 * and their sizes are stored in slen[fileno]
 	 */
@@ -684,9 +685,8 @@ static int diffreg(char *file[2])
 		 */
 		if (lseek(fd, 0, SEEK_SET) == -1 && errno == ESPIPE) {
 			char name[] = "/tmp/difXXXXXX";
-			int fd_tmp = mkstemp(name);
-			if (fd_tmp < 0)
-				bb_perror_msg_and_die("mkstemp");
+			int fd_tmp = xmkstemp(name);
+
 			unlink(name);
 			if (bb_copyfd_eof(fd, fd_tmp) < 0)
 				xfunc_die();
@@ -760,9 +760,11 @@ static int FAST_FUNC add_to_dirlist(const char *filename,
 		void *userdata, int depth UNUSED_PARAM)
 {
 	struct dlist *const l = userdata;
+	const char *file = filename + l->len;
+	while (*file == '/')
+		file++;
 	l->dl = xrealloc_vector(l->dl, 6, l->e);
-	/* + 1 skips "/" after dirname */
-	l->dl[l->e] = xstrdup(filename + l->len + 1);
+	l->dl[l->e] = xstrdup(file);
 	l->e++;
 	return TRUE;
 }
@@ -778,6 +780,25 @@ static int FAST_FUNC skip_dir(const char *filename,
 		add_to_dirlist(filename, sb, userdata, depth);
 		return SKIP;
 	}
+	if (!(option_mask32 & FLAG(N))) {
+		/* -r without -N: no need to recurse into dirs
+		 * which do not exist on the "other side".
+		 * Testcase: diff -r /tmp /
+		 * (it would recurse deep into /proc without this code) */
+		struct dlist *const l = userdata;
+		filename += l->len;
+		if (filename[0]) {
+			struct stat osb;
+			char *othername = concat_path_file(G.other_dir, filename);
+			int r = stat(othername, &osb);
+			free(othername);
+			if (r != 0 || !S_ISDIR(osb.st_mode)) {
+				/* other dir doesn't have similarly named
+				 * directory, don't recurse */
+				return SKIP;
+			}
+		}
+	}
 	return TRUE;
 }
 
@@ -791,6 +812,7 @@ static void diffdir(char *p[2], const char *s_start)
 		/*list[i].s = list[i].e = 0; - memset did it */
 		/*list[i].dl = NULL; */
 
+		G.other_dir = p[1 - i];
 		/* We need to trim root directory prefix.
 		 * Using list.len to specify its length,
 		 * add_to_dirlist will remove it. */

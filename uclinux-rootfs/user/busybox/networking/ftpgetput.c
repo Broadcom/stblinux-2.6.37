@@ -10,7 +10,7 @@
  * Based on wget.c by Chip Rosenthal Covad Communications
  * <chip@laserlink.net>
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
@@ -23,7 +23,7 @@ struct globals {
 	int verbose_flag;
 	int do_continue;
 	char buf[1]; /* actually [BUFSZ] */
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 enum { BUFSZ = COMMON_BUFSIZE - offsetof(struct globals, buf) };
 struct BUG_G_too_big {

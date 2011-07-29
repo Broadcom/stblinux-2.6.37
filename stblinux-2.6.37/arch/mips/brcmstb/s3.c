@@ -32,7 +32,7 @@
 #define DBG(...)	do { } while (0)
 #endif
 
-#define CALCULATE_MEM_HASH		(1)
+#define CALCULATE_MEM_HASH		(0)
 #define VERIFY_HASH			(0)
 struct cp0_value {
 	u32	value;
