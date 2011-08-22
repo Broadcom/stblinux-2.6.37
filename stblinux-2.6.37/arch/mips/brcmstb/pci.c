@@ -23,6 +23,7 @@
 #include <linux/compiler.h>
 #include <linux/delay.h>
 #include <linux/io.h>
+#include <linux/clk.h>
 
 #include <asm/debug.h>
 #include <asm/brcmstb/brcmstb.h>
@@ -485,6 +486,9 @@ static inline void brcm_setup_pcie_bridge(void)
 		;
 
 	if (!PCIE_LINK_UP()) {
+		struct clk *clk = clk_get(NULL, "pcie");
+		if (clk)
+			clk_disable(clk);
 		printk(KERN_INFO "PCI: PCIe link down\n");
 		return;
 	}

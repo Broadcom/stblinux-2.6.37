@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:28:00 2011
- *                 MD5 Checksum         5014fc6b805cdf8eed48fe0da9f96997
+ * Date:           Generated on         Wed Jun 22 16:17:51 2011
+ *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_sdio_0_cfg.h $
  * 
- * Hydra_Software_Devel/1   4/13/11 7:04p albertl
- * SW7231-123: Initial revision.
+ * Hydra_Software_Devel/2   6/22/11 10:26p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -85,10 +85,12 @@
 /* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: DDR_TAP_DELAY [27:24] */
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DDR_TAP_DELAY_MASK         0x0f000000
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DDR_TAP_DELAY_SHIFT        24
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DDR_TAP_DELAY_DEFAULT      0
 
 /* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: DELAY_CTRL [23:21] */
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DELAY_CTRL_MASK            0x00e00000
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DELAY_CTRL_SHIFT           21
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_DELAY_CTRL_DEFAULT         0
 
 /* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: HREADY_IDLE_ENA [20:20] */
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_HREADY_IDLE_ENA_MASK       0x00100000
@@ -176,15 +178,15 @@
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_ADDR_MAP_HW_SHIFT      4
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_ADDR_MAP_HW_DEFAULT    0
 
-/* SDIO_0_CFG :: SDIO_EMMC_CTRL2 :: REG_DATA_SWAP_RD [03:02] */
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_MASK      0x0000000c
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_SHIFT     2
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_DEFAULT   0
-
-/* SDIO_0_CFG :: SDIO_EMMC_CTRL2 :: REG_DATA_SWAP_WR [01:00] */
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_WR_MASK      0x00000003
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_WR_SHIFT     0
+/* SDIO_0_CFG :: SDIO_EMMC_CTRL2 :: REG_DATA_SWAP_WR [03:02] */
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_WR_MASK      0x0000000c
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_WR_SHIFT     2
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_WR_DEFAULT   0
+
+/* SDIO_0_CFG :: SDIO_EMMC_CTRL2 :: REG_DATA_SWAP_RD [01:00] */
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_MASK      0x00000003
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_SHIFT     0
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2_REG_DATA_SWAP_RD_DEFAULT   0
 
 /***************************************************************************
  *TP_OUT_SEL - SDIO TP_OUT Control Register
@@ -204,7 +206,7 @@
 /* SDIO_0_CFG :: CAP_REG0 :: DDR50_SUPPORT [31:31] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_DDR50_SUPPORT_MASK                0x80000000
 #define BCHP_SDIO_0_CFG_CAP_REG0_DDR50_SUPPORT_SHIFT               31
-#define BCHP_SDIO_0_CFG_CAP_REG0_DDR50_SUPPORT_DEFAULT             1
+#define BCHP_SDIO_0_CFG_CAP_REG0_DDR50_SUPPORT_DEFAULT             0
 
 /* SDIO_0_CFG :: CAP_REG0 :: SD104_SUPPORT [30:30] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_SD104_SUPPORT_MASK                0x40000000
@@ -214,12 +216,12 @@
 /* SDIO_0_CFG :: CAP_REG0 :: SDR50 [29:29] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_SDR50_MASK                        0x20000000
 #define BCHP_SDIO_0_CFG_CAP_REG0_SDR50_SHIFT                       29
-#define BCHP_SDIO_0_CFG_CAP_REG0_SDR50_DEFAULT                     1
+#define BCHP_SDIO_0_CFG_CAP_REG0_SDR50_DEFAULT                     0
 
 /* SDIO_0_CFG :: CAP_REG0 :: SLOT_TYPE [28:27] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_SLOT_TYPE_MASK                    0x18000000
 #define BCHP_SDIO_0_CFG_CAP_REG0_SLOT_TYPE_SHIFT                   27
-#define BCHP_SDIO_0_CFG_CAP_REG0_SLOT_TYPE_DEFAULT                 2
+#define BCHP_SDIO_0_CFG_CAP_REG0_SLOT_TYPE_DEFAULT                 0
 
 /* SDIO_0_CFG :: CAP_REG0 :: ASYNCH_INT_SUPPORT [26:26] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_ASYNCH_INT_SUPPORT_MASK           0x04000000
@@ -234,7 +236,7 @@
 /* SDIO_0_CFG :: CAP_REG0 :: 1_8V_SUPPORT [24:24] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_1_8V_SUPPORT_MASK                 0x01000000
 #define BCHP_SDIO_0_CFG_CAP_REG0_1_8V_SUPPORT_SHIFT                24
-#define BCHP_SDIO_0_CFG_CAP_REG0_1_8V_SUPPORT_DEFAULT              1
+#define BCHP_SDIO_0_CFG_CAP_REG0_1_8V_SUPPORT_DEFAULT              0
 
 /* SDIO_0_CFG :: CAP_REG0 :: 3_0V_SUPPORT [23:23] */
 #define BCHP_SDIO_0_CFG_CAP_REG0_3_0V_SUPPORT_MASK                 0x00800000
@@ -331,7 +333,7 @@
 /* SDIO_0_CFG :: CAP_REG1 :: USE_TUNING [07:07] */
 #define BCHP_SDIO_0_CFG_CAP_REG1_USE_TUNING_MASK                   0x00000080
 #define BCHP_SDIO_0_CFG_CAP_REG1_USE_TUNING_SHIFT                  7
-#define BCHP_SDIO_0_CFG_CAP_REG1_USE_TUNING_DEFAULT                1
+#define BCHP_SDIO_0_CFG_CAP_REG1_USE_TUNING_DEFAULT                0
 
 /* SDIO_0_CFG :: CAP_REG1 :: RETUNING_TIMER [06:03] */
 #define BCHP_SDIO_0_CFG_CAP_REG1_RETUNING_TIMER_MASK               0x00000078
@@ -505,7 +507,7 @@
 /* SDIO_0_CFG :: IP_DLY :: IP_TAP_EN [31:31] */
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_MASK                      0x80000000
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_SHIFT                     31
-#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_DEFAULT                   1
+#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_DEFAULT                   0
 
 /* SDIO_0_CFG :: IP_DLY :: reserved0 [30:18] */
 #define BCHP_SDIO_0_CFG_IP_DLY_reserved0_MASK                      0x7ffc0000
@@ -523,7 +525,7 @@
 /* SDIO_0_CFG :: IP_DLY :: IP_TAP_DELAY [05:00] */
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_MASK                   0x0000003f
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_SHIFT                  0
-#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_DEFAULT                40
+#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_DEFAULT                0
 
 /***************************************************************************
  *OP_DLY - SDIO Host output delay register
@@ -531,7 +533,7 @@
 /* SDIO_0_CFG :: OP_DLY :: OP_TAP_EN [31:31] */
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_EN_MASK                      0x80000000
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_EN_SHIFT                     31
-#define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_EN_DEFAULT                   1
+#define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_EN_DEFAULT                   0
 
 /* SDIO_0_CFG :: OP_DLY :: reserved0 [30:18] */
 #define BCHP_SDIO_0_CFG_OP_DLY_reserved0_MASK                      0x7ffc0000
@@ -549,7 +551,7 @@
 /* SDIO_0_CFG :: OP_DLY :: OP_TAP_DELAY [03:00] */
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_DELAY_MASK                   0x0000000f
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_DELAY_SHIFT                  0
-#define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_DELAY_DEFAULT                15
+#define BCHP_SDIO_0_CFG_OP_DLY_OP_TAP_DELAY_DEFAULT                0
 
 /***************************************************************************
  *SCRATCH - SDIO Scratch Register

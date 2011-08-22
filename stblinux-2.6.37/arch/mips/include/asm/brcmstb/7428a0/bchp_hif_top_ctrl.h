@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 03:40:32 2011
- *                 MD5 Checksum         2d40457e5f0b18f5160f8adef567dda7
+ * Date:           Generated on         Tue Jul 12 02:36:38 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -50,6 +50,7 @@
 #define BCHP_HIF_TOP_CTRL_SCRATCH                0x0041241c /* HIF Scratch Register */
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE             0x00412420 /* HIF Decoded Flash Type */
 #define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL            0x00412424 /* SPI test port select register */
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL          0x00412428 /* EMMC Pin Control register */
 
 /***************************************************************************
  *EXT_IRQ_LEVEL - External IRQ Active Level Control Register
@@ -504,6 +505,18 @@
 #define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL_SDIO_TP_SEL_MASK             0x00000001
 #define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL_SDIO_TP_SEL_SHIFT            0
 #define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL_SDIO_TP_SEL_DEFAULT          0
+
+/***************************************************************************
+ *EMMC_PIN_CTRL - EMMC Pin Control register
+ ***************************************************************************/
+/* HIF_TOP_CTRL :: EMMC_PIN_CTRL :: reserved0 [31:01] */
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL_reserved0_MASK             0xfffffffe
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL_reserved0_SHIFT            1
+
+/* HIF_TOP_CTRL :: EMMC_PIN_CTRL :: EMMC_PIN_SEL [00:00] */
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL_EMMC_PIN_SEL_MASK          0x00000001
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL_EMMC_PIN_SEL_SHIFT         0
+#define BCHP_HIF_TOP_CTRL_EMMC_PIN_CTRL_EMMC_PIN_SEL_DEFAULT       0
 
 #endif /* #ifndef BCHP_HIF_TOP_CTRL_H__ */
 

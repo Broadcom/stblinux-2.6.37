@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Jul  8 03:36:21 2010
- *                 MD5 Checksum         b644e23769d1b756250db802f694b032
+ * Date:           Generated on         Wed Jun 22 15:24:37 2011
+ *                 MD5 Checksum         4c7f7c173e488659edce1ceafec7f9f4
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7231/rdb/a0/bchp_aon_pm_l2.h $
+ * 
+ * Hydra_Software_Devel/2   6/22/11 5:42p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -65,42 +68,52 @@
 /* AON_PM_L2 :: CPU_STATUS :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_STATUS_SPARE_WAKEUP_EVENT_0_MASK        0x00000200
 #define BCHP_AON_PM_L2_CPU_STATUS_SPARE_WAKEUP_EVENT_0_SHIFT       9
+#define BCHP_AON_PM_L2_CPU_STATUS_SPARE_WAKEUP_EVENT_0_DEFAULT     0
 
 /* AON_PM_L2 :: CPU_STATUS :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_STATUS_BOUNDARY_SCAN_REQ_MASK           0x00000100
 #define BCHP_AON_PM_L2_CPU_STATUS_BOUNDARY_SCAN_REQ_SHIFT          8
+#define BCHP_AON_PM_L2_CPU_STATUS_BOUNDARY_SCAN_REQ_DEFAULT        0
 
 /* AON_PM_L2 :: CPU_STATUS :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_STATUS_XPT_PMU_MASK                     0x00000080
 #define BCHP_AON_PM_L2_CPU_STATUS_XPT_PMU_SHIFT                    7
+#define BCHP_AON_PM_L2_CPU_STATUS_XPT_PMU_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET_MASK                    0x00000040
 #define BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET_SHIFT                   6
+#define BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET_DEFAULT                 0
 
 /* AON_PM_L2 :: CPU_STATUS :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_STATUS_GPIO_MASK                        0x00000020
 #define BCHP_AON_PM_L2_CPU_STATUS_GPIO_SHIFT                       5
+#define BCHP_AON_PM_L2_CPU_STATUS_GPIO_DEFAULT                     0
 
 /* AON_PM_L2 :: CPU_STATUS :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_STATUS_NMI_B_INTR_MASK                  0x00000010
 #define BCHP_AON_PM_L2_CPU_STATUS_NMI_B_INTR_SHIFT                 4
+#define BCHP_AON_PM_L2_CPU_STATUS_NMI_B_INTR_DEFAULT               0
 
 /* AON_PM_L2 :: CPU_STATUS :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_STATUS_TIMER_INTR_MASK                  0x00000008
 #define BCHP_AON_PM_L2_CPU_STATUS_TIMER_INTR_SHIFT                 3
+#define BCHP_AON_PM_L2_CPU_STATUS_TIMER_INTR_DEFAULT               0
 
 /* AON_PM_L2 :: CPU_STATUS :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_STATUS_KPD_INTR_MASK                    0x00000004
 #define BCHP_AON_PM_L2_CPU_STATUS_KPD_INTR_SHIFT                   2
+#define BCHP_AON_PM_L2_CPU_STATUS_KPD_INTR_DEFAULT                 0
 
 /* AON_PM_L2 :: CPU_STATUS :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_STATUS_IRR_INTR_MASK                    0x00000002
 #define BCHP_AON_PM_L2_CPU_STATUS_IRR_INTR_SHIFT                   1
+#define BCHP_AON_PM_L2_CPU_STATUS_IRR_INTR_DEFAULT                 0
 
 /* AON_PM_L2 :: CPU_STATUS :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_STATUS_CEC_INTR_MASK                    0x00000001
 #define BCHP_AON_PM_L2_CPU_STATUS_CEC_INTR_SHIFT                   0
+#define BCHP_AON_PM_L2_CPU_STATUS_CEC_INTR_DEFAULT                 0
 
 /***************************************************************************
  *CPU_SET - CPU interrupt Set Register
@@ -112,42 +125,52 @@
 /* AON_PM_L2 :: CPU_SET :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_SET_SPARE_WAKEUP_EVENT_0_MASK           0x00000200
 #define BCHP_AON_PM_L2_CPU_SET_SPARE_WAKEUP_EVENT_0_SHIFT          9
+#define BCHP_AON_PM_L2_CPU_SET_SPARE_WAKEUP_EVENT_0_DEFAULT        0
 
 /* AON_PM_L2 :: CPU_SET :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_SET_BOUNDARY_SCAN_REQ_MASK              0x00000100
 #define BCHP_AON_PM_L2_CPU_SET_BOUNDARY_SCAN_REQ_SHIFT             8
+#define BCHP_AON_PM_L2_CPU_SET_BOUNDARY_SCAN_REQ_DEFAULT           0
 
 /* AON_PM_L2 :: CPU_SET :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_SET_XPT_PMU_MASK                        0x00000080
 #define BCHP_AON_PM_L2_CPU_SET_XPT_PMU_SHIFT                       7
+#define BCHP_AON_PM_L2_CPU_SET_XPT_PMU_DEFAULT                     0
 
 /* AON_PM_L2 :: CPU_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_SET_WOL_ENET_MASK                       0x00000040
 #define BCHP_AON_PM_L2_CPU_SET_WOL_ENET_SHIFT                      6
+#define BCHP_AON_PM_L2_CPU_SET_WOL_ENET_DEFAULT                    0
 
 /* AON_PM_L2 :: CPU_SET :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_SET_GPIO_MASK                           0x00000020
 #define BCHP_AON_PM_L2_CPU_SET_GPIO_SHIFT                          5
+#define BCHP_AON_PM_L2_CPU_SET_GPIO_DEFAULT                        0
 
 /* AON_PM_L2 :: CPU_SET :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_SET_NMI_B_INTR_MASK                     0x00000010
 #define BCHP_AON_PM_L2_CPU_SET_NMI_B_INTR_SHIFT                    4
+#define BCHP_AON_PM_L2_CPU_SET_NMI_B_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_SET :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_SET_TIMER_INTR_MASK                     0x00000008
 #define BCHP_AON_PM_L2_CPU_SET_TIMER_INTR_SHIFT                    3
+#define BCHP_AON_PM_L2_CPU_SET_TIMER_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_SET :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_SET_KPD_INTR_MASK                       0x00000004
 #define BCHP_AON_PM_L2_CPU_SET_KPD_INTR_SHIFT                      2
+#define BCHP_AON_PM_L2_CPU_SET_KPD_INTR_DEFAULT                    0
 
 /* AON_PM_L2 :: CPU_SET :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_SET_IRR_INTR_MASK                       0x00000002
 #define BCHP_AON_PM_L2_CPU_SET_IRR_INTR_SHIFT                      1
+#define BCHP_AON_PM_L2_CPU_SET_IRR_INTR_DEFAULT                    0
 
 /* AON_PM_L2 :: CPU_SET :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_SET_CEC_INTR_MASK                       0x00000001
 #define BCHP_AON_PM_L2_CPU_SET_CEC_INTR_SHIFT                      0
+#define BCHP_AON_PM_L2_CPU_SET_CEC_INTR_DEFAULT                    0
 
 /***************************************************************************
  *CPU_CLEAR - CPU interrupt Clear Register
@@ -159,42 +182,52 @@
 /* AON_PM_L2 :: CPU_CLEAR :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_SPARE_WAKEUP_EVENT_0_MASK         0x00000200
 #define BCHP_AON_PM_L2_CPU_CLEAR_SPARE_WAKEUP_EVENT_0_SHIFT        9
+#define BCHP_AON_PM_L2_CPU_CLEAR_SPARE_WAKEUP_EVENT_0_DEFAULT      0
 
 /* AON_PM_L2 :: CPU_CLEAR :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_BOUNDARY_SCAN_REQ_MASK            0x00000100
 #define BCHP_AON_PM_L2_CPU_CLEAR_BOUNDARY_SCAN_REQ_SHIFT           8
+#define BCHP_AON_PM_L2_CPU_CLEAR_BOUNDARY_SCAN_REQ_DEFAULT         0
 
 /* AON_PM_L2 :: CPU_CLEAR :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_XPT_PMU_MASK                      0x00000080
 #define BCHP_AON_PM_L2_CPU_CLEAR_XPT_PMU_SHIFT                     7
+#define BCHP_AON_PM_L2_CPU_CLEAR_XPT_PMU_DEFAULT                   0
 
 /* AON_PM_L2 :: CPU_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_WOL_ENET_MASK                     0x00000040
 #define BCHP_AON_PM_L2_CPU_CLEAR_WOL_ENET_SHIFT                    6
+#define BCHP_AON_PM_L2_CPU_CLEAR_WOL_ENET_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_CLEAR :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_GPIO_MASK                         0x00000020
 #define BCHP_AON_PM_L2_CPU_CLEAR_GPIO_SHIFT                        5
+#define BCHP_AON_PM_L2_CPU_CLEAR_GPIO_DEFAULT                      0
 
 /* AON_PM_L2 :: CPU_CLEAR :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_NMI_B_INTR_MASK                   0x00000010
 #define BCHP_AON_PM_L2_CPU_CLEAR_NMI_B_INTR_SHIFT                  4
+#define BCHP_AON_PM_L2_CPU_CLEAR_NMI_B_INTR_DEFAULT                0
 
 /* AON_PM_L2 :: CPU_CLEAR :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_TIMER_INTR_MASK                   0x00000008
 #define BCHP_AON_PM_L2_CPU_CLEAR_TIMER_INTR_SHIFT                  3
+#define BCHP_AON_PM_L2_CPU_CLEAR_TIMER_INTR_DEFAULT                0
 
 /* AON_PM_L2 :: CPU_CLEAR :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_KPD_INTR_MASK                     0x00000004
 #define BCHP_AON_PM_L2_CPU_CLEAR_KPD_INTR_SHIFT                    2
+#define BCHP_AON_PM_L2_CPU_CLEAR_KPD_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_CLEAR :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_IRR_INTR_MASK                     0x00000002
 #define BCHP_AON_PM_L2_CPU_CLEAR_IRR_INTR_SHIFT                    1
+#define BCHP_AON_PM_L2_CPU_CLEAR_IRR_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: CPU_CLEAR :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_CEC_INTR_MASK                     0x00000001
 #define BCHP_AON_PM_L2_CPU_CLEAR_CEC_INTR_SHIFT                    0
+#define BCHP_AON_PM_L2_CPU_CLEAR_CEC_INTR_DEFAULT                  0
 
 /***************************************************************************
  *CPU_MASK_STATUS - CPU interrupt Mask Status Register
@@ -206,42 +239,52 @@
 /* AON_PM_L2 :: CPU_MASK_STATUS :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_SPARE_WAKEUP_EVENT_0_MASK   0x00000200
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_SPARE_WAKEUP_EVENT_0_SHIFT  9
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SPARE_WAKEUP_EVENT_0_DEFAULT 1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_BOUNDARY_SCAN_REQ_MASK      0x00000100
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_BOUNDARY_SCAN_REQ_SHIFT     8
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_BOUNDARY_SCAN_REQ_DEFAULT   1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_XPT_PMU_MASK                0x00000080
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_XPT_PMU_SHIFT               7
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_XPT_PMU_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_WOL_ENET_MASK               0x00000040
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_WOL_ENET_SHIFT              6
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_WOL_ENET_DEFAULT            1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_GPIO_MASK                   0x00000020
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_GPIO_SHIFT                  5
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_GPIO_DEFAULT                1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_NMI_B_INTR_MASK             0x00000010
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_NMI_B_INTR_SHIFT            4
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_NMI_B_INTR_DEFAULT          1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_TIMER_INTR_MASK             0x00000008
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_TIMER_INTR_SHIFT            3
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_TIMER_INTR_DEFAULT          1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_KPD_INTR_MASK               0x00000004
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_KPD_INTR_SHIFT              2
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_KPD_INTR_DEFAULT            1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_IRR_INTR_MASK               0x00000002
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_IRR_INTR_SHIFT              1
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_IRR_INTR_DEFAULT            1
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_CEC_INTR_MASK               0x00000001
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_CEC_INTR_SHIFT              0
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_CEC_INTR_DEFAULT            1
 
 /***************************************************************************
  *CPU_MASK_SET - CPU interrupt Mask Set Register
@@ -253,42 +296,52 @@
 /* AON_PM_L2 :: CPU_MASK_SET :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_SPARE_WAKEUP_EVENT_0_MASK      0x00000200
 #define BCHP_AON_PM_L2_CPU_MASK_SET_SPARE_WAKEUP_EVENT_0_SHIFT     9
+#define BCHP_AON_PM_L2_CPU_MASK_SET_SPARE_WAKEUP_EVENT_0_DEFAULT   1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_BOUNDARY_SCAN_REQ_MASK         0x00000100
 #define BCHP_AON_PM_L2_CPU_MASK_SET_BOUNDARY_SCAN_REQ_SHIFT        8
+#define BCHP_AON_PM_L2_CPU_MASK_SET_BOUNDARY_SCAN_REQ_DEFAULT      1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_XPT_PMU_MASK                   0x00000080
 #define BCHP_AON_PM_L2_CPU_MASK_SET_XPT_PMU_SHIFT                  7
+#define BCHP_AON_PM_L2_CPU_MASK_SET_XPT_PMU_DEFAULT                1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_WOL_ENET_MASK                  0x00000040
 #define BCHP_AON_PM_L2_CPU_MASK_SET_WOL_ENET_SHIFT                 6
+#define BCHP_AON_PM_L2_CPU_MASK_SET_WOL_ENET_DEFAULT               1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_GPIO_MASK                      0x00000020
 #define BCHP_AON_PM_L2_CPU_MASK_SET_GPIO_SHIFT                     5
+#define BCHP_AON_PM_L2_CPU_MASK_SET_GPIO_DEFAULT                   1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_NMI_B_INTR_MASK                0x00000010
 #define BCHP_AON_PM_L2_CPU_MASK_SET_NMI_B_INTR_SHIFT               4
+#define BCHP_AON_PM_L2_CPU_MASK_SET_NMI_B_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_TIMER_INTR_MASK                0x00000008
 #define BCHP_AON_PM_L2_CPU_MASK_SET_TIMER_INTR_SHIFT               3
+#define BCHP_AON_PM_L2_CPU_MASK_SET_TIMER_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_KPD_INTR_MASK                  0x00000004
 #define BCHP_AON_PM_L2_CPU_MASK_SET_KPD_INTR_SHIFT                 2
+#define BCHP_AON_PM_L2_CPU_MASK_SET_KPD_INTR_DEFAULT               1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_IRR_INTR_MASK                  0x00000002
 #define BCHP_AON_PM_L2_CPU_MASK_SET_IRR_INTR_SHIFT                 1
+#define BCHP_AON_PM_L2_CPU_MASK_SET_IRR_INTR_DEFAULT               1
 
 /* AON_PM_L2 :: CPU_MASK_SET :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_CEC_INTR_MASK                  0x00000001
 #define BCHP_AON_PM_L2_CPU_MASK_SET_CEC_INTR_SHIFT                 0
+#define BCHP_AON_PM_L2_CPU_MASK_SET_CEC_INTR_DEFAULT               1
 
 /***************************************************************************
  *CPU_MASK_CLEAR - CPU interrupt Mask Clear Register
@@ -300,42 +353,52 @@
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_MASK    0x00000200
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_SHIFT   9
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_DEFAULT 1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_BOUNDARY_SCAN_REQ_MASK       0x00000100
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_BOUNDARY_SCAN_REQ_SHIFT      8
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_BOUNDARY_SCAN_REQ_DEFAULT    1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_XPT_PMU_MASK                 0x00000080
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_XPT_PMU_SHIFT                7
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_XPT_PMU_DEFAULT              1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_WOL_ENET_MASK                0x00000040
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_WOL_ENET_SHIFT               6
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_WOL_ENET_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_GPIO_MASK                    0x00000020
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_GPIO_SHIFT                   5
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_GPIO_DEFAULT                 1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_NMI_B_INTR_MASK              0x00000010
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_NMI_B_INTR_SHIFT             4
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_NMI_B_INTR_DEFAULT           1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_TIMER_INTR_MASK              0x00000008
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_TIMER_INTR_SHIFT             3
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_TIMER_INTR_DEFAULT           1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_KPD_INTR_MASK                0x00000004
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_KPD_INTR_SHIFT               2
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_KPD_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_IRR_INTR_MASK                0x00000002
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_IRR_INTR_SHIFT               1
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_IRR_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_CEC_INTR_MASK                0x00000001
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_CEC_INTR_SHIFT               0
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_CEC_INTR_DEFAULT             1
 
 /***************************************************************************
  *PCI_STATUS - PCI interrupt Status Register
@@ -347,42 +410,52 @@
 /* AON_PM_L2 :: PCI_STATUS :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_STATUS_SPARE_WAKEUP_EVENT_0_MASK        0x00000200
 #define BCHP_AON_PM_L2_PCI_STATUS_SPARE_WAKEUP_EVENT_0_SHIFT       9
+#define BCHP_AON_PM_L2_PCI_STATUS_SPARE_WAKEUP_EVENT_0_DEFAULT     0
 
 /* AON_PM_L2 :: PCI_STATUS :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_STATUS_BOUNDARY_SCAN_REQ_MASK           0x00000100
 #define BCHP_AON_PM_L2_PCI_STATUS_BOUNDARY_SCAN_REQ_SHIFT          8
+#define BCHP_AON_PM_L2_PCI_STATUS_BOUNDARY_SCAN_REQ_DEFAULT        0
 
 /* AON_PM_L2 :: PCI_STATUS :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_STATUS_XPT_PMU_MASK                     0x00000080
 #define BCHP_AON_PM_L2_PCI_STATUS_XPT_PMU_SHIFT                    7
+#define BCHP_AON_PM_L2_PCI_STATUS_XPT_PMU_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_STATUS_WOL_ENET_MASK                    0x00000040
 #define BCHP_AON_PM_L2_PCI_STATUS_WOL_ENET_SHIFT                   6
+#define BCHP_AON_PM_L2_PCI_STATUS_WOL_ENET_DEFAULT                 0
 
 /* AON_PM_L2 :: PCI_STATUS :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_STATUS_GPIO_MASK                        0x00000020
 #define BCHP_AON_PM_L2_PCI_STATUS_GPIO_SHIFT                       5
+#define BCHP_AON_PM_L2_PCI_STATUS_GPIO_DEFAULT                     0
 
 /* AON_PM_L2 :: PCI_STATUS :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_STATUS_NMI_B_INTR_MASK                  0x00000010
 #define BCHP_AON_PM_L2_PCI_STATUS_NMI_B_INTR_SHIFT                 4
+#define BCHP_AON_PM_L2_PCI_STATUS_NMI_B_INTR_DEFAULT               0
 
 /* AON_PM_L2 :: PCI_STATUS :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_STATUS_TIMER_INTR_MASK                  0x00000008
 #define BCHP_AON_PM_L2_PCI_STATUS_TIMER_INTR_SHIFT                 3
+#define BCHP_AON_PM_L2_PCI_STATUS_TIMER_INTR_DEFAULT               0
 
 /* AON_PM_L2 :: PCI_STATUS :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_STATUS_KPD_INTR_MASK                    0x00000004
 #define BCHP_AON_PM_L2_PCI_STATUS_KPD_INTR_SHIFT                   2
+#define BCHP_AON_PM_L2_PCI_STATUS_KPD_INTR_DEFAULT                 0
 
 /* AON_PM_L2 :: PCI_STATUS :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_STATUS_IRR_INTR_MASK                    0x00000002
 #define BCHP_AON_PM_L2_PCI_STATUS_IRR_INTR_SHIFT                   1
+#define BCHP_AON_PM_L2_PCI_STATUS_IRR_INTR_DEFAULT                 0
 
 /* AON_PM_L2 :: PCI_STATUS :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_STATUS_CEC_INTR_MASK                    0x00000001
 #define BCHP_AON_PM_L2_PCI_STATUS_CEC_INTR_SHIFT                   0
+#define BCHP_AON_PM_L2_PCI_STATUS_CEC_INTR_DEFAULT                 0
 
 /***************************************************************************
  *PCI_SET - PCI interrupt Set Register
@@ -394,42 +467,52 @@
 /* AON_PM_L2 :: PCI_SET :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_SET_SPARE_WAKEUP_EVENT_0_MASK           0x00000200
 #define BCHP_AON_PM_L2_PCI_SET_SPARE_WAKEUP_EVENT_0_SHIFT          9
+#define BCHP_AON_PM_L2_PCI_SET_SPARE_WAKEUP_EVENT_0_DEFAULT        0
 
 /* AON_PM_L2 :: PCI_SET :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_SET_BOUNDARY_SCAN_REQ_MASK              0x00000100
 #define BCHP_AON_PM_L2_PCI_SET_BOUNDARY_SCAN_REQ_SHIFT             8
+#define BCHP_AON_PM_L2_PCI_SET_BOUNDARY_SCAN_REQ_DEFAULT           0
 
 /* AON_PM_L2 :: PCI_SET :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_SET_XPT_PMU_MASK                        0x00000080
 #define BCHP_AON_PM_L2_PCI_SET_XPT_PMU_SHIFT                       7
+#define BCHP_AON_PM_L2_PCI_SET_XPT_PMU_DEFAULT                     0
 
 /* AON_PM_L2 :: PCI_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_SET_WOL_ENET_MASK                       0x00000040
 #define BCHP_AON_PM_L2_PCI_SET_WOL_ENET_SHIFT                      6
+#define BCHP_AON_PM_L2_PCI_SET_WOL_ENET_DEFAULT                    0
 
 /* AON_PM_L2 :: PCI_SET :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_SET_GPIO_MASK                           0x00000020
 #define BCHP_AON_PM_L2_PCI_SET_GPIO_SHIFT                          5
+#define BCHP_AON_PM_L2_PCI_SET_GPIO_DEFAULT                        0
 
 /* AON_PM_L2 :: PCI_SET :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_SET_NMI_B_INTR_MASK                     0x00000010
 #define BCHP_AON_PM_L2_PCI_SET_NMI_B_INTR_SHIFT                    4
+#define BCHP_AON_PM_L2_PCI_SET_NMI_B_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_SET :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_SET_TIMER_INTR_MASK                     0x00000008
 #define BCHP_AON_PM_L2_PCI_SET_TIMER_INTR_SHIFT                    3
+#define BCHP_AON_PM_L2_PCI_SET_TIMER_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_SET :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_SET_KPD_INTR_MASK                       0x00000004
 #define BCHP_AON_PM_L2_PCI_SET_KPD_INTR_SHIFT                      2
+#define BCHP_AON_PM_L2_PCI_SET_KPD_INTR_DEFAULT                    0
 
 /* AON_PM_L2 :: PCI_SET :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_SET_IRR_INTR_MASK                       0x00000002
 #define BCHP_AON_PM_L2_PCI_SET_IRR_INTR_SHIFT                      1
+#define BCHP_AON_PM_L2_PCI_SET_IRR_INTR_DEFAULT                    0
 
 /* AON_PM_L2 :: PCI_SET :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_SET_CEC_INTR_MASK                       0x00000001
 #define BCHP_AON_PM_L2_PCI_SET_CEC_INTR_SHIFT                      0
+#define BCHP_AON_PM_L2_PCI_SET_CEC_INTR_DEFAULT                    0
 
 /***************************************************************************
  *PCI_CLEAR - PCI interrupt Clear Register
@@ -441,42 +524,52 @@
 /* AON_PM_L2 :: PCI_CLEAR :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_SPARE_WAKEUP_EVENT_0_MASK         0x00000200
 #define BCHP_AON_PM_L2_PCI_CLEAR_SPARE_WAKEUP_EVENT_0_SHIFT        9
+#define BCHP_AON_PM_L2_PCI_CLEAR_SPARE_WAKEUP_EVENT_0_DEFAULT      0
 
 /* AON_PM_L2 :: PCI_CLEAR :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_BOUNDARY_SCAN_REQ_MASK            0x00000100
 #define BCHP_AON_PM_L2_PCI_CLEAR_BOUNDARY_SCAN_REQ_SHIFT           8
+#define BCHP_AON_PM_L2_PCI_CLEAR_BOUNDARY_SCAN_REQ_DEFAULT         0
 
 /* AON_PM_L2 :: PCI_CLEAR :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_XPT_PMU_MASK                      0x00000080
 #define BCHP_AON_PM_L2_PCI_CLEAR_XPT_PMU_SHIFT                     7
+#define BCHP_AON_PM_L2_PCI_CLEAR_XPT_PMU_DEFAULT                   0
 
 /* AON_PM_L2 :: PCI_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_WOL_ENET_MASK                     0x00000040
 #define BCHP_AON_PM_L2_PCI_CLEAR_WOL_ENET_SHIFT                    6
+#define BCHP_AON_PM_L2_PCI_CLEAR_WOL_ENET_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_CLEAR :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_GPIO_MASK                         0x00000020
 #define BCHP_AON_PM_L2_PCI_CLEAR_GPIO_SHIFT                        5
+#define BCHP_AON_PM_L2_PCI_CLEAR_GPIO_DEFAULT                      0
 
 /* AON_PM_L2 :: PCI_CLEAR :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_NMI_B_INTR_MASK                   0x00000010
 #define BCHP_AON_PM_L2_PCI_CLEAR_NMI_B_INTR_SHIFT                  4
+#define BCHP_AON_PM_L2_PCI_CLEAR_NMI_B_INTR_DEFAULT                0
 
 /* AON_PM_L2 :: PCI_CLEAR :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_TIMER_INTR_MASK                   0x00000008
 #define BCHP_AON_PM_L2_PCI_CLEAR_TIMER_INTR_SHIFT                  3
+#define BCHP_AON_PM_L2_PCI_CLEAR_TIMER_INTR_DEFAULT                0
 
 /* AON_PM_L2 :: PCI_CLEAR :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_KPD_INTR_MASK                     0x00000004
 #define BCHP_AON_PM_L2_PCI_CLEAR_KPD_INTR_SHIFT                    2
+#define BCHP_AON_PM_L2_PCI_CLEAR_KPD_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_CLEAR :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_IRR_INTR_MASK                     0x00000002
 #define BCHP_AON_PM_L2_PCI_CLEAR_IRR_INTR_SHIFT                    1
+#define BCHP_AON_PM_L2_PCI_CLEAR_IRR_INTR_DEFAULT                  0
 
 /* AON_PM_L2 :: PCI_CLEAR :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_CEC_INTR_MASK                     0x00000001
 #define BCHP_AON_PM_L2_PCI_CLEAR_CEC_INTR_SHIFT                    0
+#define BCHP_AON_PM_L2_PCI_CLEAR_CEC_INTR_DEFAULT                  0
 
 /***************************************************************************
  *PCI_MASK_STATUS - PCI interrupt Mask Status Register
@@ -488,42 +581,52 @@
 /* AON_PM_L2 :: PCI_MASK_STATUS :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_SPARE_WAKEUP_EVENT_0_MASK   0x00000200
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_SPARE_WAKEUP_EVENT_0_SHIFT  9
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SPARE_WAKEUP_EVENT_0_DEFAULT 1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_BOUNDARY_SCAN_REQ_MASK      0x00000100
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_BOUNDARY_SCAN_REQ_SHIFT     8
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_BOUNDARY_SCAN_REQ_DEFAULT   1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_XPT_PMU_MASK                0x00000080
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_XPT_PMU_SHIFT               7
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_XPT_PMU_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_WOL_ENET_MASK               0x00000040
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_WOL_ENET_SHIFT              6
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_WOL_ENET_DEFAULT            1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_GPIO_MASK                   0x00000020
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_GPIO_SHIFT                  5
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_GPIO_DEFAULT                1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_NMI_B_INTR_MASK             0x00000010
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_NMI_B_INTR_SHIFT            4
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_NMI_B_INTR_DEFAULT          1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_TIMER_INTR_MASK             0x00000008
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_TIMER_INTR_SHIFT            3
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_TIMER_INTR_DEFAULT          1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_KPD_INTR_MASK               0x00000004
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_KPD_INTR_SHIFT              2
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_KPD_INTR_DEFAULT            1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_IRR_INTR_MASK               0x00000002
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_IRR_INTR_SHIFT              1
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_IRR_INTR_DEFAULT            1
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_CEC_INTR_MASK               0x00000001
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_CEC_INTR_SHIFT              0
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_CEC_INTR_DEFAULT            1
 
 /***************************************************************************
  *PCI_MASK_SET - PCI interrupt Mask Set Register
@@ -535,42 +638,52 @@
 /* AON_PM_L2 :: PCI_MASK_SET :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_SPARE_WAKEUP_EVENT_0_MASK      0x00000200
 #define BCHP_AON_PM_L2_PCI_MASK_SET_SPARE_WAKEUP_EVENT_0_SHIFT     9
+#define BCHP_AON_PM_L2_PCI_MASK_SET_SPARE_WAKEUP_EVENT_0_DEFAULT   1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_BOUNDARY_SCAN_REQ_MASK         0x00000100
 #define BCHP_AON_PM_L2_PCI_MASK_SET_BOUNDARY_SCAN_REQ_SHIFT        8
+#define BCHP_AON_PM_L2_PCI_MASK_SET_BOUNDARY_SCAN_REQ_DEFAULT      1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_XPT_PMU_MASK                   0x00000080
 #define BCHP_AON_PM_L2_PCI_MASK_SET_XPT_PMU_SHIFT                  7
+#define BCHP_AON_PM_L2_PCI_MASK_SET_XPT_PMU_DEFAULT                1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_WOL_ENET_MASK                  0x00000040
 #define BCHP_AON_PM_L2_PCI_MASK_SET_WOL_ENET_SHIFT                 6
+#define BCHP_AON_PM_L2_PCI_MASK_SET_WOL_ENET_DEFAULT               1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_GPIO_MASK                      0x00000020
 #define BCHP_AON_PM_L2_PCI_MASK_SET_GPIO_SHIFT                     5
+#define BCHP_AON_PM_L2_PCI_MASK_SET_GPIO_DEFAULT                   1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_NMI_B_INTR_MASK                0x00000010
 #define BCHP_AON_PM_L2_PCI_MASK_SET_NMI_B_INTR_SHIFT               4
+#define BCHP_AON_PM_L2_PCI_MASK_SET_NMI_B_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_TIMER_INTR_MASK                0x00000008
 #define BCHP_AON_PM_L2_PCI_MASK_SET_TIMER_INTR_SHIFT               3
+#define BCHP_AON_PM_L2_PCI_MASK_SET_TIMER_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_KPD_INTR_MASK                  0x00000004
 #define BCHP_AON_PM_L2_PCI_MASK_SET_KPD_INTR_SHIFT                 2
+#define BCHP_AON_PM_L2_PCI_MASK_SET_KPD_INTR_DEFAULT               1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_IRR_INTR_MASK                  0x00000002
 #define BCHP_AON_PM_L2_PCI_MASK_SET_IRR_INTR_SHIFT                 1
+#define BCHP_AON_PM_L2_PCI_MASK_SET_IRR_INTR_DEFAULT               1
 
 /* AON_PM_L2 :: PCI_MASK_SET :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_CEC_INTR_MASK                  0x00000001
 #define BCHP_AON_PM_L2_PCI_MASK_SET_CEC_INTR_SHIFT                 0
+#define BCHP_AON_PM_L2_PCI_MASK_SET_CEC_INTR_DEFAULT               1
 
 /***************************************************************************
  *PCI_MASK_CLEAR - PCI interrupt Mask Clear Register
@@ -582,42 +695,52 @@
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: SPARE_WAKEUP_EVENT_0 [09:09] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_MASK    0x00000200
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_SHIFT   9
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SPARE_WAKEUP_EVENT_0_DEFAULT 1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: BOUNDARY_SCAN_REQ [08:08] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_BOUNDARY_SCAN_REQ_MASK       0x00000100
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_BOUNDARY_SCAN_REQ_SHIFT      8
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_BOUNDARY_SCAN_REQ_DEFAULT    1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: XPT_PMU [07:07] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_XPT_PMU_MASK                 0x00000080
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_XPT_PMU_SHIFT                7
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_XPT_PMU_DEFAULT              1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_WOL_ENET_MASK                0x00000040
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_WOL_ENET_SHIFT               6
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_WOL_ENET_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: GPIO [05:05] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_GPIO_MASK                    0x00000020
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_GPIO_SHIFT                   5
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_GPIO_DEFAULT                 1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: NMI_B_INTR [04:04] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_NMI_B_INTR_MASK              0x00000010
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_NMI_B_INTR_SHIFT             4
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_NMI_B_INTR_DEFAULT           1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: TIMER_INTR [03:03] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_TIMER_INTR_MASK              0x00000008
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_TIMER_INTR_SHIFT             3
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_TIMER_INTR_DEFAULT           1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: KPD_INTR [02:02] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_KPD_INTR_MASK                0x00000004
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_KPD_INTR_SHIFT               2
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_KPD_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: IRR_INTR [01:01] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_IRR_INTR_MASK                0x00000002
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_IRR_INTR_SHIFT               1
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_IRR_INTR_DEFAULT             1
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: CEC_INTR [00:00] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_CEC_INTR_MASK                0x00000001
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_CEC_INTR_SHIFT               0
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_CEC_INTR_DEFAULT             1
 
 #endif /* #ifndef BCHP_AON_PM_L2_H__ */
 

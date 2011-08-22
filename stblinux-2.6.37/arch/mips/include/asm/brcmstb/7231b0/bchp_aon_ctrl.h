@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:31:24 2011
- *                 MD5 Checksum         5014fc6b805cdf8eed48fe0da9f96997
+ * Date:           Generated on         Wed Jun 22 16:21:19 2011
+ *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_aon_ctrl.h $
  * 
- * Hydra_Software_Devel/1   4/13/11 3:35p albertl
- * SW7231-123: Initial revision.
+ * Hydra_Software_Devel/2   6/22/11 10:12p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -77,7 +77,7 @@
 #define BCHP_AON_CTRL_LATCHED_TEST_MODE          0x00408080 /* Final latched testmode value */
 #define BCHP_AON_CTRL_LATCHED_SUB_TEST_MODE      0x00408084 /* Final latched sub-testmode value */
 #define BCHP_AON_CTRL_PM_INITIATE                0x00408088 /* Power down initiate */
-#define BCHP_AON_CTRL_PM_RESTORE                 0x0040808c /* Power up restore */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS             0x0040808c /* Power up restore */
 
 /***************************************************************************
  *RESET_CTRL - Reset Control register for AON
@@ -1383,7 +1383,7 @@
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_cml_sel_pd [04:03] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_MASK         0x00000018
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_SHIFT        3
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      0
+#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      2
 
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_d2cbias_gisb_control [02:00] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_d2cbias_gisb_control_MASK 0x00000007
@@ -1511,51 +1511,51 @@
 #define BCHP_AON_CTRL_PM_INITIATE_pm_initiate_0_DEFAULT            0
 
 /***************************************************************************
- *PM_RESTORE - Power up restore
+ *HOST_MISC_CMDS - Power up restore
  ***************************************************************************/
-/* AON_CTRL :: PM_RESTORE :: reserved0 [31:08] */
-#define BCHP_AON_CTRL_PM_RESTORE_reserved0_MASK                    0xffffff00
-#define BCHP_AON_CTRL_PM_RESTORE_reserved0_SHIFT                   8
+/* AON_CTRL :: HOST_MISC_CMDS :: reserved0 [31:08] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_reserved0_MASK                0xffffff00
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_reserved0_SHIFT               8
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_7 [07:07] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_MASK                 0x00000080
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_SHIFT                7
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_7_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_7 [07:07] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_MASK         0x00000080
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_SHIFT        7
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_7_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_6 [06:06] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_MASK                 0x00000040
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_SHIFT                6
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_6_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_6 [06:06] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_MASK         0x00000040
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_SHIFT        6
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_6_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_5 [05:05] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_MASK                 0x00000020
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_SHIFT                5
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_5_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_5 [05:05] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_MASK         0x00000020
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_SHIFT        5
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_5_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_4 [04:04] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_MASK                 0x00000010
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_SHIFT                4
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_4_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_4 [04:04] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_MASK         0x00000010
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_SHIFT        4
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_4_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_3 [03:03] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_MASK                 0x00000008
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_SHIFT                3
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_3_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_3 [03:03] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_MASK         0x00000008
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_SHIFT        3
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_3_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_2 [02:02] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_MASK                 0x00000004
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_SHIFT                2
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_2_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: host_misc_cmds_2 [02:02] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_MASK         0x00000004
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_SHIFT        2
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_host_misc_cmds_2_DEFAULT      0
 
-/* AON_CTRL :: PM_RESTORE :: dram_scram_key_reuse_req [01:01] */
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_MASK     0x00000002
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_SHIFT    1
-#define BCHP_AON_CTRL_PM_RESTORE_dram_scram_key_reuse_req_DEFAULT  0
+/* AON_CTRL :: HOST_MISC_CMDS :: dram_scram_key_reuse_req [01:01] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_MASK 0x00000002
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_SHIFT 1
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_dram_scram_key_reuse_req_DEFAULT 0
 
-/* AON_CTRL :: PM_RESTORE :: pm_restore_0 [00:00] */
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_MASK                 0x00000001
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_SHIFT                0
-#define BCHP_AON_CTRL_PM_RESTORE_pm_restore_0_DEFAULT              0
+/* AON_CTRL :: HOST_MISC_CMDS :: pm_restore [00:00] */
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_MASK               0x00000001
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_SHIFT              0
+#define BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_DEFAULT            0
 
 /***************************************************************************
  *SYSTEM_DATA_RAM%i - System Data RAM Address 0..127

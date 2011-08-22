@@ -321,6 +321,7 @@ static int tftp_protocol(
 		/* Open file (must be after changing user) */
 		local_fd = CMD_GET(option_mask32) ? STDOUT_FILENO : STDIN_FILENO;
 		if (NOT_LONE_DASH(local_file))
+			/* modified by Broadcom Corporation 2011/07/14 */
 			local_fd = xopen3(local_file, open_mode, 0755);
 /* Removing #if, or using if() statement instead of #if may lead to
  * "warning: null argument where non-null required": */

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 03:44:57 2011
- *                 MD5 Checksum         2d40457e5f0b18f5160f8adef567dda7
+ * Date:           Generated on         Tue Jul 12 02:40:49 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -42,122 +42,8 @@
 /***************************************************************************
  *IRQ1 - Level 2 PCI Interrupt Enable/Status
  ***************************************************************************/
-#define BCHP_IRQ1_IRQEN                          0x00406700 /* Interrupt Enable */
-#define BCHP_IRQ1_IRQSTAT                        0x00406704 /* Interrupt Status */
-
-/***************************************************************************
- *IRQEN - Interrupt Enable
- ***************************************************************************/
-/* IRQ1 :: IRQEN :: reserved0 [31:10] */
-#define BCHP_IRQ1_IRQEN_reserved0_MASK                             0xfffffc00
-#define BCHP_IRQ1_IRQEN_reserved0_SHIFT                            10
-
-/* IRQ1 :: IRQEN :: irb_irqen [09:09] */
-#define BCHP_IRQ1_IRQEN_irb_irqen_MASK                             0x00000200
-#define BCHP_IRQ1_IRQEN_irb_irqen_SHIFT                            9
-#define BCHP_IRQ1_IRQEN_irb_irqen_DEFAULT                          0
-
-/* IRQ1 :: IRQEN :: gpio_irqen [08:08] */
-#define BCHP_IRQ1_IRQEN_gpio_irqen_MASK                            0x00000100
-#define BCHP_IRQ1_IRQEN_gpio_irqen_SHIFT                           8
-#define BCHP_IRQ1_IRQEN_gpio_irqen_DEFAULT                         0
-
-/* IRQ1 :: IRQEN :: iic1_irqen [07:07] */
-#define BCHP_IRQ1_IRQEN_iic1_irqen_MASK                            0x00000080
-#define BCHP_IRQ1_IRQEN_iic1_irqen_SHIFT                           7
-#define BCHP_IRQ1_IRQEN_iic1_irqen_DEFAULT                         0
-
-/* IRQ1 :: IRQEN :: iic0_irqen [06:06] */
-#define BCHP_IRQ1_IRQEN_iic0_irqen_MASK                            0x00000040
-#define BCHP_IRQ1_IRQEN_iic0_irqen_SHIFT                           6
-#define BCHP_IRQ1_IRQEN_iic0_irqen_DEFAULT                         0
-
-/* IRQ1 :: IRQEN :: u2_irqen [05:05] */
-#define BCHP_IRQ1_IRQEN_u2_irqen_MASK                              0x00000020
-#define BCHP_IRQ1_IRQEN_u2_irqen_SHIFT                             5
-#define BCHP_IRQ1_IRQEN_u2_irqen_DEFAULT                           0
-
-/* IRQ1 :: IRQEN :: u1_irqen [04:04] */
-#define BCHP_IRQ1_IRQEN_u1_irqen_MASK                              0x00000010
-#define BCHP_IRQ1_IRQEN_u1_irqen_SHIFT                             4
-#define BCHP_IRQ1_IRQEN_u1_irqen_DEFAULT                           0
-
-/* IRQ1 :: IRQEN :: u0_irqen [03:03] */
-#define BCHP_IRQ1_IRQEN_u0_irqen_MASK                              0x00000008
-#define BCHP_IRQ1_IRQEN_u0_irqen_SHIFT                             3
-#define BCHP_IRQ1_IRQEN_u0_irqen_DEFAULT                           0
-
-/* IRQ1 :: IRQEN :: uart2_irqen [02:02] */
-#define BCHP_IRQ1_IRQEN_uart2_irqen_MASK                           0x00000004
-#define BCHP_IRQ1_IRQEN_uart2_irqen_SHIFT                          2
-#define BCHP_IRQ1_IRQEN_uart2_irqen_DEFAULT                        0
-
-/* IRQ1 :: IRQEN :: uart1_irqen [01:01] */
-#define BCHP_IRQ1_IRQEN_uart1_irqen_MASK                           0x00000002
-#define BCHP_IRQ1_IRQEN_uart1_irqen_SHIFT                          1
-#define BCHP_IRQ1_IRQEN_uart1_irqen_DEFAULT                        0
-
-/* IRQ1 :: IRQEN :: uart0_irqen [00:00] */
-#define BCHP_IRQ1_IRQEN_uart0_irqen_MASK                           0x00000001
-#define BCHP_IRQ1_IRQEN_uart0_irqen_SHIFT                          0
-#define BCHP_IRQ1_IRQEN_uart0_irqen_DEFAULT                        0
-
-/***************************************************************************
- *IRQSTAT - Interrupt Status
- ***************************************************************************/
-/* IRQ1 :: IRQSTAT :: reserved0 [31:10] */
-#define BCHP_IRQ1_IRQSTAT_reserved0_MASK                           0xfffffc00
-#define BCHP_IRQ1_IRQSTAT_reserved0_SHIFT                          10
-
-/* IRQ1 :: IRQSTAT :: irb_irq [09:09] */
-#define BCHP_IRQ1_IRQSTAT_irb_irq_MASK                             0x00000200
-#define BCHP_IRQ1_IRQSTAT_irb_irq_SHIFT                            9
-#define BCHP_IRQ1_IRQSTAT_irb_irq_DEFAULT                          0
-
-/* IRQ1 :: IRQSTAT :: gpio_irq [08:08] */
-#define BCHP_IRQ1_IRQSTAT_gpio_irq_MASK                            0x00000100
-#define BCHP_IRQ1_IRQSTAT_gpio_irq_SHIFT                           8
-#define BCHP_IRQ1_IRQSTAT_gpio_irq_DEFAULT                         0
-
-/* IRQ1 :: IRQSTAT :: iic1_irq [07:07] */
-#define BCHP_IRQ1_IRQSTAT_iic1_irq_MASK                            0x00000080
-#define BCHP_IRQ1_IRQSTAT_iic1_irq_SHIFT                           7
-#define BCHP_IRQ1_IRQSTAT_iic1_irq_DEFAULT                         0
-
-/* IRQ1 :: IRQSTAT :: iic0_irq [06:06] */
-#define BCHP_IRQ1_IRQSTAT_iic0_irq_MASK                            0x00000040
-#define BCHP_IRQ1_IRQSTAT_iic0_irq_SHIFT                           6
-#define BCHP_IRQ1_IRQSTAT_iic0_irq_DEFAULT                         0
-
-/* IRQ1 :: IRQSTAT :: u2_irq [05:05] */
-#define BCHP_IRQ1_IRQSTAT_u2_irq_MASK                              0x00000020
-#define BCHP_IRQ1_IRQSTAT_u2_irq_SHIFT                             5
-#define BCHP_IRQ1_IRQSTAT_u2_irq_DEFAULT                           0
-
-/* IRQ1 :: IRQSTAT :: u1_irq [04:04] */
-#define BCHP_IRQ1_IRQSTAT_u1_irq_MASK                              0x00000010
-#define BCHP_IRQ1_IRQSTAT_u1_irq_SHIFT                             4
-#define BCHP_IRQ1_IRQSTAT_u1_irq_DEFAULT                           0
-
-/* IRQ1 :: IRQSTAT :: u0_irq [03:03] */
-#define BCHP_IRQ1_IRQSTAT_u0_irq_MASK                              0x00000008
-#define BCHP_IRQ1_IRQSTAT_u0_irq_SHIFT                             3
-#define BCHP_IRQ1_IRQSTAT_u0_irq_DEFAULT                           0
-
-/* IRQ1 :: IRQSTAT :: uart2_irq [02:02] */
-#define BCHP_IRQ1_IRQSTAT_uart2_irq_MASK                           0x00000004
-#define BCHP_IRQ1_IRQSTAT_uart2_irq_SHIFT                          2
-#define BCHP_IRQ1_IRQSTAT_uart2_irq_DEFAULT                        0
-
-/* IRQ1 :: IRQSTAT :: uart1_irq [01:01] */
-#define BCHP_IRQ1_IRQSTAT_uart1_irq_MASK                           0x00000002
-#define BCHP_IRQ1_IRQSTAT_uart1_irq_SHIFT                          1
-#define BCHP_IRQ1_IRQSTAT_uart1_irq_DEFAULT                        0
-
-/* IRQ1 :: IRQSTAT :: uart0_irq [00:00] */
-#define BCHP_IRQ1_IRQSTAT_uart0_irq_MASK                           0x00000001
-#define BCHP_IRQ1_IRQSTAT_uart0_irq_SHIFT                          0
-#define BCHP_IRQ1_IRQSTAT_uart0_irq_DEFAULT                        0
+#define BCHP_IRQ1_IRQEN                          0x00406688 /* Interrupt Enable */
+#define BCHP_IRQ1_IRQSTAT                        0x0040668c /* Interrupt Status */
 
 #endif /* #ifndef BCHP_IRQ1_H__ */
 

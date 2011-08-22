@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:30:03 2011
- *                 MD5 Checksum         5014fc6b805cdf8eed48fe0da9f96997
+ * Date:           Generated on         Wed Jun 22 16:19:59 2011
+ *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_sun_top_ctrl.h $
  * 
- * Hydra_Software_Devel/1   4/13/11 7:18p albertl
- * SW7231-123: Initial revision.
+ * Hydra_Software_Devel/2   6/22/11 10:29p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -117,8 +117,7 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_7     0x00404168 /* Pad pull-up/pull-down control register 7 */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8     0x0040416c /* Pad pull-up/pull-down control register 8 */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9     0x00404170 /* Pad pull-up/pull-down control register 9 */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10    0x00404174 /* Pad pull-up/pull-down control register 10 */
-#define BCHP_SUN_TOP_CTRL_BYP_CLK_UNSELECT_0     0x00404178 /* Bypass clock unselect register 0 */
+#define BCHP_SUN_TOP_CTRL_BYP_CLK_UNSELECT_0     0x00404174 /* Bypass clock unselect register 0 */
 #define BCHP_SUN_TOP_CTRL_RESET_CTRL             0x00404300 /* Reset control */
 #define BCHP_SUN_TOP_CTRL_RESET_SOURCE_ENABLE    0x00404304 /* Reset source enable */
 #define BCHP_SUN_TOP_CTRL_SW_MASTER_RESET        0x00404308 /* Software master reset */
@@ -189,24 +188,39 @@
 /***************************************************************************
  *STRAP_VALUE_0 - Strapping values
  ***************************************************************************/
-/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: reserved0 [31:08] */
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_reserved0_MASK             0xffffff00
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_reserved0_SHIFT            8
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: reserved0 [31:09] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_reserved0_MASK             0xfffffe00
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_reserved0_SHIFT            9
 
-/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_boot_shape [07:04] */
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_boot_shape_MASK      0x000000f0
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_boot_shape_SHIFT     4
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_boot_shape [08:05] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_boot_shape_MASK      0x000001e0
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_boot_shape_SHIFT     5
 #define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_boot_shape_DEFAULT   7
 
-/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_system_big_endian [03:03] */
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_system_big_endian_MASK 0x00000008
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_system_big_endian_SHIFT 3
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_system_big_endian [04:04] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_system_big_endian_MASK 0x00000010
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_system_big_endian_SHIFT 4
 #define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_system_big_endian_DEFAULT 0
 
-/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_rsvd [02:00] */
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_rsvd_MASK            0x00000007
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_rsvd_SHIFT           0
-#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_rsvd_DEFAULT         0
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_ebi_cs_swap [03:03] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_ebi_cs_swap_MASK     0x00000008
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_ebi_cs_swap_SHIFT    3
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_ebi_cs_swap_DEFAULT  0
+
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_spare0 [02:02] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare0_MASK          0x00000004
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare0_SHIFT         2
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare0_DEFAULT       0
+
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_spare1 [01:01] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare1_MASK          0x00000002
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare1_SHIFT         1
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare1_DEFAULT       0
+
+/* SUN_TOP_CTRL :: STRAP_VALUE_0 :: strap_spare4 [00:00] */
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare4_MASK          0x00000001
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare4_SHIFT         0
+#define BCHP_SUN_TOP_CTRL_STRAP_VALUE_0_strap_spare4_DEFAULT       0
 
 /***************************************************************************
  *STRAP_VALUE_1 - Strapping values
@@ -382,165 +396,165 @@
 /***************************************************************************
  *OTP_OPTION_TEST_1 - OTP option test register
  ***************************************************************************/
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_31 [31:31] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_31_MASK 0x80000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_31_SHIFT 31
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_31_DEFAULT 0
-
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_30 [30:30] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_30_MASK 0x40000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_30_SHIFT 30
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_30 [31:31] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_30_MASK 0x80000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_30_SHIFT 31
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_30_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_29 [29:29] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_29_MASK 0x20000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_29_SHIFT 29
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_29 [30:30] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_29_MASK 0x40000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_29_SHIFT 30
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_29_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_28 [28:28] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_28_MASK 0x10000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_28_SHIFT 28
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_28 [29:29] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_28_MASK 0x20000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_28_SHIFT 29
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_28_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_27 [27:27] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_27_MASK 0x08000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_27_SHIFT 27
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_27 [28:28] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_27_MASK 0x10000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_27_SHIFT 28
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_27_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_26 [26:26] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_26_MASK 0x04000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_26_SHIFT 26
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_26 [27:27] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_26_MASK 0x08000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_26_SHIFT 27
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_26_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_25 [25:25] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_25_MASK 0x02000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_25_SHIFT 25
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_25 [26:26] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_25_MASK 0x04000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_25_SHIFT 26
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_25_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_24 [24:24] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_24_MASK 0x01000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_24_SHIFT 24
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_24 [25:25] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_24_MASK 0x02000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_24_SHIFT 25
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_24_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_23 [23:23] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_23_MASK 0x00800000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_23_SHIFT 23
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_23 [24:24] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_23_MASK 0x01000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_23_SHIFT 24
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_23_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_22 [22:22] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_22_MASK 0x00400000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_22_SHIFT 22
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_22 [23:23] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_22_MASK 0x00800000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_22_SHIFT 23
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_22_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_21 [21:21] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_21_MASK 0x00200000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_21_SHIFT 21
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_21 [22:22] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_21_MASK 0x00400000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_21_SHIFT 22
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_21_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_20 [20:20] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_20_MASK 0x00100000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_20_SHIFT 20
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_20 [21:21] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_20_MASK 0x00200000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_20_SHIFT 21
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_20_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_19 [19:19] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_19_MASK 0x00080000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_19_SHIFT 19
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_19 [20:20] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_19_MASK 0x00100000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_19_SHIFT 20
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_19_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_18 [18:18] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_18_MASK 0x00040000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_18_SHIFT 18
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_18 [19:19] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_18_MASK 0x00080000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_18_SHIFT 19
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_18_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_17 [17:17] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_17_MASK 0x00020000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_17_SHIFT 17
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_17 [18:18] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_17_MASK 0x00040000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_17_SHIFT 18
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_17_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_16 [16:16] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_16_MASK 0x00010000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_16_SHIFT 16
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_16 [17:17] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_16_MASK 0x00020000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_16_SHIFT 17
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_16_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_15 [15:15] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_15_MASK 0x00008000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_15_SHIFT 15
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_15 [16:16] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_15_MASK 0x00010000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_15_SHIFT 16
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_15_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_14 [14:14] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_14_MASK 0x00004000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_14_SHIFT 14
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_14 [15:15] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_14_MASK 0x00008000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_14_SHIFT 15
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_14_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_13 [13:13] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_13_MASK 0x00002000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_13_SHIFT 13
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_13 [14:14] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_13_MASK 0x00004000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_13_SHIFT 14
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_13_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_12 [12:12] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_12_MASK 0x00001000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_12_SHIFT 12
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_12 [13:13] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_12_MASK 0x00002000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_12_SHIFT 13
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_12_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_11 [11:11] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_11_MASK 0x00000800
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_11_SHIFT 11
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_11 [12:12] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_11_MASK 0x00001000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_11_SHIFT 12
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_11_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_10 [10:10] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_10_MASK 0x00000400
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_10_SHIFT 10
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_10 [11:11] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_10_MASK 0x00000800
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_10_SHIFT 11
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_10_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_9 [09:09] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_9_MASK 0x00000200
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_9_SHIFT 9
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_9 [10:10] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_9_MASK 0x00000400
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_9_SHIFT 10
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_9_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_8 [08:08] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_8_MASK 0x00000100
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_8_SHIFT 8
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_8 [09:09] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_8_MASK 0x00000200
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_8_SHIFT 9
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_8_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_7 [07:07] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_7_MASK 0x00000080
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_7_SHIFT 7
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_7 [08:08] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_7_MASK 0x00000100
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_7_SHIFT 8
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_7_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_6 [06:06] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_6_MASK 0x00000040
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_6_SHIFT 6
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_6 [07:07] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_6_MASK 0x00000080
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_6_SHIFT 7
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_6_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_5 [05:05] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_5_MASK 0x00000020
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_5_SHIFT 5
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_5 [06:06] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_5_MASK 0x00000040
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_5_SHIFT 6
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_5_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_4 [04:04] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_4_MASK 0x00000010
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_4_SHIFT 4
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_4 [05:05] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_4_MASK 0x00000020
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_4_SHIFT 5
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_4_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_3 [03:03] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_3_MASK 0x00000008
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_3_SHIFT 3
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_3 [04:04] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_3_MASK 0x00000010
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_3_SHIFT 4
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_3_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_2 [02:02] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_MASK 0x00000004
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_SHIFT 2
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_2 [03:03] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_MASK 0x00000008
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_SHIFT 3
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_2_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_SHIFT 1
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_1 [02:02] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_MASK 0x00000004
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_SHIFT 2
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_1_DEFAULT 0
 
-/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_0 [00:00] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_SHIFT 0
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_spare_0 [01:01] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_SHIFT 1
 #define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_spare_0_DEFAULT 0
+
+/* SUN_TOP_CTRL :: OTP_OPTION_TEST_1 :: otp_option_rv9_disable [00:00] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_rv9_disable_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_rv9_disable_SHIFT 0
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_TEST_1_otp_option_rv9_disable_DEFAULT 0
 
 /***************************************************************************
  *OTP_OPTION_STATUS_0 - OTP option status register
@@ -660,133 +674,133 @@
 /***************************************************************************
  *OTP_OPTION_STATUS_1 - OTP option status register
  ***************************************************************************/
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_31 [31:31] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_31_MASK 0x80000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_31_SHIFT 31
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_30 [31:31] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_30_MASK 0x80000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_30_SHIFT 31
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_30 [30:30] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_30_MASK 0x40000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_30_SHIFT 30
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_29 [30:30] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_29_MASK 0x40000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_29_SHIFT 30
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_29 [29:29] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_29_MASK 0x20000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_29_SHIFT 29
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_28 [29:29] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_28_MASK 0x20000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_28_SHIFT 29
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_28 [28:28] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_28_MASK 0x10000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_28_SHIFT 28
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_27 [28:28] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_27_MASK 0x10000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_27_SHIFT 28
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_27 [27:27] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_27_MASK 0x08000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_27_SHIFT 27
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_26 [27:27] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_26_MASK 0x08000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_26_SHIFT 27
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_26 [26:26] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_26_MASK 0x04000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_26_SHIFT 26
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_25 [26:26] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_25_MASK 0x04000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_25_SHIFT 26
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_25 [25:25] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_25_MASK 0x02000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_25_SHIFT 25
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_24 [25:25] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_24_MASK 0x02000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_24_SHIFT 25
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_24 [24:24] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_24_MASK 0x01000000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_24_SHIFT 24
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_23 [24:24] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_23_MASK 0x01000000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_23_SHIFT 24
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_23 [23:23] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_23_MASK 0x00800000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_23_SHIFT 23
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_22 [23:23] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_22_MASK 0x00800000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_22_SHIFT 23
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_22 [22:22] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_22_MASK 0x00400000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_22_SHIFT 22
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_21 [22:22] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_21_MASK 0x00400000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_21_SHIFT 22
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_21 [21:21] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_21_MASK 0x00200000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_21_SHIFT 21
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_20 [21:21] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_20_MASK 0x00200000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_20_SHIFT 21
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_20 [20:20] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_20_MASK 0x00100000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_20_SHIFT 20
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_19 [20:20] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_19_MASK 0x00100000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_19_SHIFT 20
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_19 [19:19] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_19_MASK 0x00080000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_19_SHIFT 19
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_18 [19:19] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_18_MASK 0x00080000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_18_SHIFT 19
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_18 [18:18] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_18_MASK 0x00040000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_18_SHIFT 18
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_17 [18:18] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_17_MASK 0x00040000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_17_SHIFT 18
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_17 [17:17] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_17_MASK 0x00020000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_17_SHIFT 17
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_16 [17:17] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_16_MASK 0x00020000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_16_SHIFT 17
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_16 [16:16] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_16_MASK 0x00010000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_16_SHIFT 16
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_15 [16:16] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_15_MASK 0x00010000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_15_SHIFT 16
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_15 [15:15] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_15_MASK 0x00008000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_15_SHIFT 15
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_14 [15:15] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_14_MASK 0x00008000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_14_SHIFT 15
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_14 [14:14] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_14_MASK 0x00004000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_14_SHIFT 14
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_13 [14:14] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_13_MASK 0x00004000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_13_SHIFT 14
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_13 [13:13] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_13_MASK 0x00002000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_13_SHIFT 13
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_12 [13:13] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_12_MASK 0x00002000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_12_SHIFT 13
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_12 [12:12] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_12_MASK 0x00001000
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_12_SHIFT 12
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_11 [12:12] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_11_MASK 0x00001000
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_11_SHIFT 12
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_11 [11:11] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_11_MASK 0x00000800
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_11_SHIFT 11
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_10 [11:11] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_10_MASK 0x00000800
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_10_SHIFT 11
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_10 [10:10] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_10_MASK 0x00000400
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_10_SHIFT 10
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_9 [10:10] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_9_MASK 0x00000400
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_9_SHIFT 10
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_9 [09:09] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_9_MASK 0x00000200
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_9_SHIFT 9
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_8 [09:09] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_8_MASK 0x00000200
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_8_SHIFT 9
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_8 [08:08] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_8_MASK 0x00000100
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_8_SHIFT 8
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_7 [08:08] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_7_MASK 0x00000100
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_7_SHIFT 8
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_7 [07:07] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_7_MASK 0x00000080
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_7_SHIFT 7
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_6 [07:07] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_6_MASK 0x00000080
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_6_SHIFT 7
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_6 [06:06] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_6_MASK 0x00000040
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_6_SHIFT 6
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_5 [06:06] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_5_MASK 0x00000040
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_5_SHIFT 6
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_5 [05:05] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_5_MASK 0x00000020
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_5_SHIFT 5
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_4 [05:05] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_4_MASK 0x00000020
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_4_SHIFT 5
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_4 [04:04] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_4_MASK 0x00000010
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_4_SHIFT 4
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_3 [04:04] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_3_MASK 0x00000010
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_3_SHIFT 4
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_3 [03:03] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_3_MASK 0x00000008
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_3_SHIFT 3
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_2 [03:03] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_MASK 0x00000008
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_SHIFT 3
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_2 [02:02] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_MASK 0x00000004
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_2_SHIFT 2
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_1 [02:02] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_MASK 0x00000004
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_SHIFT 2
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_1_SHIFT 1
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_0 [01:01] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_SHIFT 1
 
-/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_spare_0 [00:00] */
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_spare_0_SHIFT 0
+/* SUN_TOP_CTRL :: OTP_OPTION_STATUS_1 :: otp_option_rv9_disable [00:00] */
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_rv9_disable_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_OTP_OPTION_STATUS_1_otp_option_rv9_disable_SHIFT 0
 
 /***************************************************************************
  *SEMAPHORE_0 - Semaphore channel 0
@@ -1407,10 +1421,10 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_reserved0_MASK    0xfffffffc
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_reserved0_SHIFT   2
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_1 :: general_ctrl_no_scan1_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_general_ctrl_no_scan1_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_general_ctrl_no_scan1_1_SHIFT 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_general_ctrl_no_scan1_1_DEFAULT 1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_1 :: mtsif_hys_en [01:01] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_mtsif_hys_en_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_mtsif_hys_en_SHIFT 1
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_mtsif_hys_en_DEFAULT 1
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_1 :: general_ctrl_no_scan1_0 [00:00] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_1_general_ctrl_no_scan1_0_MASK 0x00000001
@@ -1664,19 +1678,42 @@
 /***************************************************************************
  *GENERAL_CTRL_NO_SCAN_5 - General control register without scan 5
  ***************************************************************************/
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: reserved0 [31:02] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_reserved0_MASK    0xfffffffc
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_reserved0_SHIFT   2
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: reserved0 [31:07] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_reserved0_MASK    0xffffff80
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_reserved0_SHIFT   7
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: general_ctrl_no_scan5_1 [01:01] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_1_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_1_SHIFT 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_1_DEFAULT 1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: test_thp_hys_en [06:06] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_hys_en_MASK 0x00000040
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_hys_en_SHIFT 6
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_hys_en_DEFAULT 1
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: general_ctrl_no_scan5_0 [00:00] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_0_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_0_SHIFT 0
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_general_ctrl_no_scan5_0_DEFAULT 0
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: test_thp_oeb [05:05] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_oeb_MASK 0x00000020
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_oeb_SHIFT 5
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_oeb_DEFAULT 0
+
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: test_thp_do [04:04] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_do_MASK  0x00000010
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_do_SHIFT 4
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_thp_do_DEFAULT 0
+
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: test_drive_src [03:03] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_src_MASK 0x00000008
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_src_SHIFT 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_src_DEFAULT 0
+
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_5 :: test_drive_sel [02:00] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_MASK 0x00000007
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_SHIFT 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DEFAULT 5
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_2MA 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_4MA 1
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_6MA 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_8MA 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_10MA 4
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_12MA 5
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_14MA 6
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_5_test_drive_sel_DRIVE_16MA 7
 
 /***************************************************************************
  *PIN_MUX_CTRL_0 - Pinmux control register 0
@@ -2117,8 +2154,9 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_DEFAULT           0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_GPIO_57           0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_CHIP2POD_MCLKO    1
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_EBI_ADDR15        2
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_PM_GPIO_57        3
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_RMXP_CLK          2
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_EBI_ADDR15        3
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_57_PM_GPIO_57        4
 
 /* SUN_TOP_CTRL :: PIN_MUX_CTRL_6 :: gpio_56 [27:24] */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_6_gpio_56_MASK              0x0f000000
@@ -2371,8 +2409,9 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_DEFAULT           0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_GPIO_79           0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_SC0_VCC           1
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_TP_OUT_06         2
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_PM_GPIO_79        3
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_TEST_THP          2
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_TP_OUT_06         3
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_79_PM_GPIO_79        4
 
 /* SUN_TOP_CTRL :: PIN_MUX_CTRL_9 :: gpio_78 [19:16] */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_9_gpio_78_MASK              0x000f0000
@@ -2597,9 +2636,8 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_PKT1_VALID       1
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_PKT3_CLK         2
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_PPKT_I_ERROR     3
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_MTSIF0_VALID     4
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_TP_OUT_17        5
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_PM_GPIO_90       6
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_TP_OUT_17        4
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_11_gpio_90_PM_GPIO_90       5
 
 /***************************************************************************
  *PIN_MUX_CTRL_12 - Pinmux control register 12
@@ -3024,8 +3062,7 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_MII_RXD_03      1
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_EBI_ADDR19      2
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_SPI_M_SS0B      3
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_HD_DVI0_CS      4
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_PM_GPIO_139     5
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_139_PM_GPIO_139     4
 
 /* SUN_TOP_CTRL :: PIN_MUX_CTRL_16 :: gpio_138 [15:12] */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_16_gpio_138_MASK            0x0000f000
@@ -3072,12 +3109,12 @@
 /***************************************************************************
  *PIN_MUX_CTRL_17 - Pinmux control register 17
  ***************************************************************************/
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_17 :: sgpio_00 [31:28] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_00_MASK            0xf0000000
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_00_SHIFT           28
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_00_DEFAULT         0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_00_SGPIO_00        0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_00_BSC_M0_SCL      1
+/* SUN_TOP_CTRL :: PIN_MUX_CTRL_17 :: sgpio_02 [31:28] */
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_02_MASK            0xf0000000
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_02_SHIFT           28
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_02_DEFAULT         0
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_02_SGPIO_02        0
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_sgpio_02_BSC_M1_SCL      1
 
 /* SUN_TOP_CTRL :: PIN_MUX_CTRL_17 :: gpio_149 [27:24] */
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_17_gpio_149_MASK            0x0f000000
@@ -3155,45 +3192,31 @@
 /***************************************************************************
  *PIN_MUX_CTRL_18 - Pinmux control register 18
  ***************************************************************************/
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: reserved0 [31:20] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_reserved0_MASK           0xfff00000
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_reserved0_SHIFT          20
+/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: reserved0 [31:12] */
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_reserved0_MASK           0xfffff000
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_reserved0_SHIFT          12
 
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_05 [19:16] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_MASK            0x000f0000
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_SHIFT           16
+/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_05 [11:08] */
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_MASK            0x00000f00
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_SHIFT           8
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_DEFAULT         0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_SGPIO_05        0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_BSC_M2_SDA      1
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_05_EXT_IRQ1        2
 
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_04 [15:12] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_MASK            0x0000f000
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_SHIFT           12
+/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_04 [07:04] */
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_MASK            0x000000f0
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_SHIFT           4
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_DEFAULT         0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_SGPIO_04        0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_04_BSC_M2_SCL      1
 
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_03 [11:08] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_MASK            0x00000f00
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_SHIFT           8
+/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_03 [03:00] */
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_MASK            0x0000000f
+#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_SHIFT           0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_DEFAULT         0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_SGPIO_03        0
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_03_BSC_M1_SDA      1
-
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_02 [07:04] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_02_MASK            0x000000f0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_02_SHIFT           4
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_02_DEFAULT         0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_02_SGPIO_02        0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_02_BSC_M1_SCL      1
-
-/* SUN_TOP_CTRL :: PIN_MUX_CTRL_18 :: sgpio_01 [03:00] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_01_MASK            0x0000000f
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_01_SHIFT           0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_01_DEFAULT         0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_01_SGPIO_01        0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_CTRL_18_sgpio_01_BSC_M0_SDA      1
 
 /***************************************************************************
  *PIN_MUX_PAD_CTRL_0 - Pad pull-up/pull-down control register 0
@@ -4478,25 +4501,6 @@
 #define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9_gpio_139_pad_ctrl_PULL_UP 2
 
 /***************************************************************************
- *PIN_MUX_PAD_CTRL_10 - Pad pull-up/pull-down control register 10
- ***************************************************************************/
-/* SUN_TOP_CTRL :: PIN_MUX_PAD_CTRL_10 :: reserved0 [31:06] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_reserved0_MASK       0xffffffc0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_reserved0_SHIFT      6
-
-/* SUN_TOP_CTRL :: PIN_MUX_PAD_CTRL_10 :: spare_pad_ctrl_10 [05:04] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_MASK 0x00000030
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_SHIFT 4
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_DEFAULT 0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_PULL_NONE 0
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_PULL_DOWN 1
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_spare_pad_ctrl_10_PULL_UP 2
-
-/* SUN_TOP_CTRL :: PIN_MUX_PAD_CTRL_10 :: reserved1 [03:00] */
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_reserved1_MASK       0x0000000f
-#define BCHP_SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_10_reserved1_SHIFT      0
-
-/***************************************************************************
  *BYP_CLK_UNSELECT_0 - Bypass clock unselect register 0
  ***************************************************************************/
 /* SUN_TOP_CTRL :: BYP_CLK_UNSELECT_0 :: reserved0 [31:04] */
@@ -5587,15 +5591,15 @@
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_reserved0_MASK             0xfffffffc
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_reserved0_SHIFT            2
 
-/* SUN_TOP_CTRL :: SW_INIT_1_SET :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare1_sw_init_MASK        0x00000002
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare1_sw_init_SHIFT       1
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare1_sw_init_DEFAULT     0
-
-/* SUN_TOP_CTRL :: SW_INIT_1_SET :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare0_sw_init_MASK        0x00000001
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare0_sw_init_SHIFT       0
+/* SUN_TOP_CTRL :: SW_INIT_1_SET :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare0_sw_init_MASK        0x00000002
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare0_sw_init_SHIFT       1
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_spare0_sw_init_DEFAULT     0
+
+/* SUN_TOP_CTRL :: SW_INIT_1_SET :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_sid_sw_init_MASK           0x00000001
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_sid_sw_init_SHIFT          0
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_SET_sid_sw_init_DEFAULT        0
 
 /***************************************************************************
  *SW_INIT_1_CLEAR - Software init 1 clear
@@ -5604,15 +5608,15 @@
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_reserved0_MASK           0xfffffffc
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_reserved0_SHIFT          2
 
-/* SUN_TOP_CTRL :: SW_INIT_1_CLEAR :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare1_sw_init_MASK      0x00000002
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare1_sw_init_SHIFT     1
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare1_sw_init_DEFAULT   0
-
-/* SUN_TOP_CTRL :: SW_INIT_1_CLEAR :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare0_sw_init_MASK      0x00000001
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare0_sw_init_SHIFT     0
+/* SUN_TOP_CTRL :: SW_INIT_1_CLEAR :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare0_sw_init_MASK      0x00000002
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare0_sw_init_SHIFT     1
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_spare0_sw_init_DEFAULT   0
+
+/* SUN_TOP_CTRL :: SW_INIT_1_CLEAR :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_sid_sw_init_MASK         0x00000001
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_sid_sw_init_SHIFT        0
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_CLEAR_sid_sw_init_DEFAULT      0
 
 /***************************************************************************
  *SW_INIT_1_STATUS - Software init 1 status
@@ -5621,15 +5625,15 @@
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_reserved0_MASK          0xfffffffc
 #define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_reserved0_SHIFT         2
 
-/* SUN_TOP_CTRL :: SW_INIT_1_STATUS :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare1_sw_init_MASK     0x00000002
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare1_sw_init_SHIFT    1
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare1_sw_init_DEFAULT  1
+/* SUN_TOP_CTRL :: SW_INIT_1_STATUS :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_MASK     0x00000002
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_SHIFT    1
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_DEFAULT  1
 
-/* SUN_TOP_CTRL :: SW_INIT_1_STATUS :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_MASK     0x00000001
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_SHIFT    0
-#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_spare0_sw_init_DEFAULT  0
+/* SUN_TOP_CTRL :: SW_INIT_1_STATUS :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_sid_sw_init_MASK        0x00000001
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_sid_sw_init_SHIFT       0
+#define BCHP_SUN_TOP_CTRL_SW_INIT_1_STATUS_sid_sw_init_DEFAULT     1
 
 /***************************************************************************
  *SEC_SW_INIT_1_MONITOR - Security software init 1 monitor
@@ -5638,13 +5642,13 @@
 #define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_reserved0_MASK     0xfffffffc
 #define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_reserved0_SHIFT    2
 
-/* SUN_TOP_CTRL :: SEC_SW_INIT_1_MONITOR :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare1_sw_init_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare1_sw_init_SHIFT 1
+/* SUN_TOP_CTRL :: SEC_SW_INIT_1_MONITOR :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 1
 
-/* SUN_TOP_CTRL :: SEC_SW_INIT_1_MONITOR :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 0
+/* SUN_TOP_CTRL :: SEC_SW_INIT_1_MONITOR :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_sid_sw_init_MASK   0x00000001
+#define BCHP_SUN_TOP_CTRL_SEC_SW_INIT_1_MONITOR_sid_sw_init_SHIFT  0
 
 /***************************************************************************
  *TEST_CONFIG_SW_INIT_1_MONITOR - Test configuration software init 1 monitor
@@ -5653,13 +5657,13 @@
 #define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_reserved0_MASK 0xfffffffc
 #define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_reserved0_SHIFT 2
 
-/* SUN_TOP_CTRL :: TEST_CONFIG_SW_INIT_1_MONITOR :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare1_sw_init_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare1_sw_init_SHIFT 1
+/* SUN_TOP_CTRL :: TEST_CONFIG_SW_INIT_1_MONITOR :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 1
 
-/* SUN_TOP_CTRL :: TEST_CONFIG_SW_INIT_1_MONITOR :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 0
+/* SUN_TOP_CTRL :: TEST_CONFIG_SW_INIT_1_MONITOR :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_sid_sw_init_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_TEST_CONFIG_SW_INIT_1_MONITOR_sid_sw_init_SHIFT 0
 
 /***************************************************************************
  *FINAL_SW_INIT_1_MONITOR - Final software init 1 monitor
@@ -5668,13 +5672,13 @@
 #define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_reserved0_MASK   0xfffffffc
 #define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_reserved0_SHIFT  2
 
-/* SUN_TOP_CTRL :: FINAL_SW_INIT_1_MONITOR :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare1_sw_init_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare1_sw_init_SHIFT 1
+/* SUN_TOP_CTRL :: FINAL_SW_INIT_1_MONITOR :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 1
 
-/* SUN_TOP_CTRL :: FINAL_SW_INIT_1_MONITOR :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare0_sw_init_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_spare0_sw_init_SHIFT 0
+/* SUN_TOP_CTRL :: FINAL_SW_INIT_1_MONITOR :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_sid_sw_init_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_FINAL_SW_INIT_1_MONITOR_sid_sw_init_SHIFT 0
 
 /***************************************************************************
  *SW_INIT_ONE_SHOT_TRIGGER - Software init one-shot trigger
@@ -5869,15 +5873,15 @@
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_reserved0_MASK 0xfffffffc
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_reserved0_SHIFT 2
 
-/* SUN_TOP_CTRL :: ONE_SHOT_0_SW_INIT_1_MASK :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare1_sw_init_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare1_sw_init_SHIFT 1
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare1_sw_init_DEFAULT 0
-
-/* SUN_TOP_CTRL :: ONE_SHOT_0_SW_INIT_1_MASK :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare0_sw_init_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare0_sw_init_SHIFT 0
+/* SUN_TOP_CTRL :: ONE_SHOT_0_SW_INIT_1_MASK :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare0_sw_init_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare0_sw_init_SHIFT 1
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_spare0_sw_init_DEFAULT 0
+
+/* SUN_TOP_CTRL :: ONE_SHOT_0_SW_INIT_1_MASK :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_sid_sw_init_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_sid_sw_init_SHIFT 0
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_0_SW_INIT_1_MASK_sid_sw_init_DEFAULT 0
 
 /***************************************************************************
  *ONE_SHOT_1_SW_INIT_WIDTH - One-shot 1 width
@@ -6055,15 +6059,15 @@
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_reserved0_MASK 0xfffffffc
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_reserved0_SHIFT 2
 
-/* SUN_TOP_CTRL :: ONE_SHOT_1_SW_INIT_1_MASK :: spare1_sw_init [01:01] */
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare1_sw_init_MASK 0x00000002
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare1_sw_init_SHIFT 1
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare1_sw_init_DEFAULT 0
-
-/* SUN_TOP_CTRL :: ONE_SHOT_1_SW_INIT_1_MASK :: spare0_sw_init [00:00] */
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare0_sw_init_MASK 0x00000001
-#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare0_sw_init_SHIFT 0
+/* SUN_TOP_CTRL :: ONE_SHOT_1_SW_INIT_1_MASK :: spare0_sw_init [01:01] */
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare0_sw_init_MASK 0x00000002
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare0_sw_init_SHIFT 1
 #define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_spare0_sw_init_DEFAULT 0
+
+/* SUN_TOP_CTRL :: ONE_SHOT_1_SW_INIT_1_MASK :: sid_sw_init [00:00] */
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_sid_sw_init_MASK 0x00000001
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_sid_sw_init_SHIFT 0
+#define BCHP_SUN_TOP_CTRL_ONE_SHOT_1_SW_INIT_1_MASK_sid_sw_init_DEFAULT 0
 
 /***************************************************************************
  *UNCLEARED_SCRATCH - Scratch register

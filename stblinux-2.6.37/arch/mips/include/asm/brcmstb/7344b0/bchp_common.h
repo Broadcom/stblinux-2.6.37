@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue May 31 13:51:14 2011
- *                 MD5 Checksum         b0a0062767e487fe78d25d07b5b21b78
+ * Date:           Generated on         Fri Jul  8 19:13:13 2011
+ *                 MD5 Checksum         6d43009b3dfb16bef651d8873360bc15
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,7 +34,7 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/b0/bchp_common.h $
  * 
- * Hydra_Software_Devel/2   5/31/11 3:28p albertl
+ * Hydra_Software_Devel/3   7/11/11 12:10p albertl
  * SW7344-40: Updated to match RDB.
  *
  ***************************************************************************/
@@ -297,34 +297,36 @@
 #define BCHP_RM_1_REG_END                                  0x001836e4
 #define BCHP_ANA_DEBUG_0_REG_START                         0x00183700
 #define BCHP_ANA_DEBUG_0_REG_END                           0x00183744
-#define BCHP_DTRAM_0_REG_START                             0x00183800
-#define BCHP_DTRAM_0_REG_END                               0x00183c7c
-#define BCHP_DVI_DTG_0_REG_START                           0x00184000
-#define BCHP_DVI_DTG_0_REG_END                             0x00184154
-#define BCHP_DVI_CSC_0_REG_START                           0x00184200
-#define BCHP_DVI_CSC_0_REG_END                             0x00184230
-#define BCHP_DVI_DVF_0_REG_START                           0x00184300
-#define BCHP_DVI_DVF_0_REG_END                             0x00184314
-#define BCHP_DVI_DEBUG_0_REG_START                         0x00184400
-#define BCHP_DVI_DEBUG_0_REG_END                           0x00184444
-#define BCHP_ITU656_DTG_0_REG_START                        0x00184800
-#define BCHP_ITU656_DTG_0_REG_END                          0x00184954
-#define BCHP_ITU656_CSC_0_REG_START                        0x00184a00
-#define BCHP_ITU656_CSC_0_REG_END                          0x00184a30
-#define BCHP_ITU656_DVF_0_REG_START                        0x00184b00
-#define BCHP_ITU656_DVF_0_REG_END                          0x00184b14
-#define BCHP_ITU656_0_REG_START                            0x00184c00
-#define BCHP_ITU656_0_REG_END                              0x00184c20
-#define BCHP_VEC_CFG_REG_START                             0x00185000
-#define BCHP_VEC_CFG_REG_END                               0x00185100
-#define BCHP_VIDEO_ENC_INTR2_REG_START                     0x00185400
-#define BCHP_VIDEO_ENC_INTR2_REG_END                       0x0018542c
-#define BCHP_VIDEO_ENC_TPG_0_REG_START                     0x00185500
-#define BCHP_VIDEO_ENC_TPG_0_REG_END                       0x00185518
-#define BCHP_VIDEO_ENC_DECIM_0_REG_START                   0x00185600
-#define BCHP_VIDEO_ENC_DECIM_0_REG_END                     0x00185608
-#define BCHP_DVP_TVG_0_REG_START                           0x00185700
-#define BCHP_DVP_TVG_0_REG_END                             0x00185788
+#define BCHP_GRPD_0_REG_START                              0x00183800
+#define BCHP_GRPD_0_REG_END                                0x001838ec
+#define BCHP_DTRAM_0_REG_START                             0x00184000
+#define BCHP_DTRAM_0_REG_END                               0x0018447c
+#define BCHP_DVI_DTG_0_REG_START                           0x00184800
+#define BCHP_DVI_DTG_0_REG_END                             0x00184954
+#define BCHP_DVI_CSC_0_REG_START                           0x00184a00
+#define BCHP_DVI_CSC_0_REG_END                             0x00184a30
+#define BCHP_DVI_DVF_0_REG_START                           0x00184b00
+#define BCHP_DVI_DVF_0_REG_END                             0x00184b14
+#define BCHP_DVI_DEBUG_0_REG_START                         0x00184c00
+#define BCHP_DVI_DEBUG_0_REG_END                           0x00184c44
+#define BCHP_ITU656_DTG_0_REG_START                        0x00185000
+#define BCHP_ITU656_DTG_0_REG_END                          0x00185154
+#define BCHP_ITU656_CSC_0_REG_START                        0x00185200
+#define BCHP_ITU656_CSC_0_REG_END                          0x00185230
+#define BCHP_ITU656_DVF_0_REG_START                        0x00185300
+#define BCHP_ITU656_DVF_0_REG_END                          0x00185314
+#define BCHP_ITU656_0_REG_START                            0x00185400
+#define BCHP_ITU656_0_REG_END                              0x00185420
+#define BCHP_VEC_CFG_REG_START                             0x00185600
+#define BCHP_VEC_CFG_REG_END                               0x00185708
+#define BCHP_VIDEO_ENC_INTR2_REG_START                     0x00185a00
+#define BCHP_VIDEO_ENC_INTR2_REG_END                       0x00185a2c
+#define BCHP_VIDEO_ENC_TPG_0_REG_START                     0x00185b00
+#define BCHP_VIDEO_ENC_TPG_0_REG_END                       0x00185b18
+#define BCHP_VIDEO_ENC_DECIM_0_REG_START                   0x00185c00
+#define BCHP_VIDEO_ENC_DECIM_0_REG_END                     0x00185c08
+#define BCHP_DVP_TVG_0_REG_START                           0x00185d00
+#define BCHP_DVP_TVG_0_REG_END                             0x00185d88
 #define BCHP_VBI_ENC_REG_START                             0x00186000
 #define BCHP_VBI_ENC_REG_END                               0x00186074
 #define BCHP_CCE_0_REG_START                               0x00186400

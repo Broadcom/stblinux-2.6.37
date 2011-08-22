@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 11:52:35 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Tue Jul 12 02:29:19 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_gio.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 8:39a vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,38 +42,46 @@
 /***************************************************************************
  *GIO - GPIO
  ***************************************************************************/
-#define BCHP_GIO_ODEN_LO                         0x00406700 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [31:0] */
-#define BCHP_GIO_DATA_LO                         0x00406704 /* GENERAL PURPOSE I/O DATA [31:0] */
-#define BCHP_GIO_IODIR_LO                        0x00406708 /* GENERAL PURPOSE I/O DIRECTION [31:0] */
-#define BCHP_GIO_EC_LO                           0x0040670c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [31:0] */
-#define BCHP_GIO_EI_LO                           0x00406710 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [31:0] */
-#define BCHP_GIO_MASK_LO                         0x00406714 /* GENERAL PURPOSE I/O INTERRUPT MASK [31:0] */
-#define BCHP_GIO_LEVEL_LO                        0x00406718 /* GENERAL PURPOSE I/O INTERRUPT TYPE [31:0] */
-#define BCHP_GIO_STAT_LO                         0x0040671c /* GENERAL PURPOSE I/O INTERRUPT STATUS [31:0] */
-#define BCHP_GIO_ODEN_HI                         0x00406720 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [63:32] */
-#define BCHP_GIO_DATA_HI                         0x00406724 /* GENERAL PURPOSE I/O DATA [63:32] */
-#define BCHP_GIO_IODIR_HI                        0x00406728 /* GENERAL PURPOSE I/O DIRECTION [63:32] */
-#define BCHP_GIO_EC_HI                           0x0040672c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [63:32] */
-#define BCHP_GIO_EI_HI                           0x00406730 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [63:32] */
-#define BCHP_GIO_MASK_HI                         0x00406734 /* GENERAL PURPOSE I/O INTERRUPT MASK [63:32] */
-#define BCHP_GIO_LEVEL_HI                        0x00406738 /* GENERAL PURPOSE I/O INTERRUPT TYPE [63:32] */
-#define BCHP_GIO_STAT_HI                         0x0040673c /* GENERAL PURPOSE I/O INTERRUPT STATUS [63:32] */
-#define BCHP_GIO_ODEN_EXT                        0x00406740 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_DATA_EXT                        0x00406744 /* GENERAL PURPOSE I/O DATA [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_IODIR_EXT                       0x00406748 /* GENERAL PURPOSE I/O DIRECTION [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_EC_EXT                          0x0040674c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_EI_EXT                          0x00406750 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_MASK_EXT                        0x00406754 /* GENERAL PURPOSE I/O INTERRUPT MASK [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_LEVEL_EXT                       0x00406758 /* GENERAL PURPOSE I/O INTERRUPT TYPE [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_STAT_EXT                        0x0040675c /* GENERAL PURPOSE I/O INTERRUPT STATUS [95:64] (GPIO[89:64], SGPIO[5:0]) */
-#define BCHP_GIO_ODEN_EXT_HI                     0x00406760 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_DATA_EXT_HI                     0x00406764 /* GENERAL PURPOSE I/O DATA [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_IODIR_EXT_HI                    0x00406768 /* GENERAL PURPOSE I/O DIRECTION [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_EC_EXT_HI                       0x0040676c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_EI_EXT_HI                       0x00406770 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_MASK_EXT_HI                     0x00406774 /* GENERAL PURPOSE I/O INTERRUPT MASK [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_LEVEL_EXT_HI                    0x00406778 /* GENERAL PURPOSE I/O INTERRUPT TYPE [116:96] (GPIO[110:90]) */
-#define BCHP_GIO_STAT_EXT_HI                     0x0040677c /* GENERAL PURPOSE I/O INTERRUPT STATUS [116:96] (GPIO[110:90]) */
+#define BCHP_GIO_ODEN_LO                         0x00406500 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [31:0] */
+#define BCHP_GIO_DATA_LO                         0x00406504 /* GENERAL PURPOSE I/O DATA [31:0] */
+#define BCHP_GIO_IODIR_LO                        0x00406508 /* GENERAL PURPOSE I/O DIRECTION [31:0] */
+#define BCHP_GIO_EC_LO                           0x0040650c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [31:0] */
+#define BCHP_GIO_EI_LO                           0x00406510 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [31:0] */
+#define BCHP_GIO_MASK_LO                         0x00406514 /* GENERAL PURPOSE I/O INTERRUPT MASK [31:0] */
+#define BCHP_GIO_LEVEL_LO                        0x00406518 /* GENERAL PURPOSE I/O INTERRUPT TYPE [31:0] */
+#define BCHP_GIO_STAT_LO                         0x0040651c /* GENERAL PURPOSE I/O INTERRUPT STATUS [31:0] */
+#define BCHP_GIO_ODEN_HI                         0x00406520 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [63:32] */
+#define BCHP_GIO_DATA_HI                         0x00406524 /* GENERAL PURPOSE I/O DATA [63:32] */
+#define BCHP_GIO_IODIR_HI                        0x00406528 /* GENERAL PURPOSE I/O DIRECTION [63:32] */
+#define BCHP_GIO_EC_HI                           0x0040652c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [63:32] */
+#define BCHP_GIO_EI_HI                           0x00406530 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [63:32] */
+#define BCHP_GIO_MASK_HI                         0x00406534 /* GENERAL PURPOSE I/O INTERRUPT MASK [63:32] */
+#define BCHP_GIO_LEVEL_HI                        0x00406538 /* GENERAL PURPOSE I/O INTERRUPT TYPE [63:32] */
+#define BCHP_GIO_STAT_HI                         0x0040653c /* GENERAL PURPOSE I/O INTERRUPT STATUS [63:32] */
+#define BCHP_GIO_ODEN_EXT                        0x00406540 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_DATA_EXT                        0x00406544 /* GENERAL PURPOSE I/O DATA [95:64] (GPIO[89:64], SGPIO[3:0]) */
+#define BCHP_GIO_IODIR_EXT                       0x00406548 /* GENERAL PURPOSE I/O DIRECTION [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_EC_EXT                          0x0040654c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_EI_EXT                          0x00406550 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_MASK_EXT                        0x00406554 /* GENERAL PURPOSE I/O INTERRUPT MASK [95:64] (GPIO[89:64], SGPIO[3:0]) */
+#define BCHP_GIO_LEVEL_EXT                       0x00406558 /* GENERAL PURPOSE I/O INTERRUPT TYPE [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_STAT_EXT                        0x0040655c /* GENERAL PURPOSE I/O INTERRUPT STATUS [95:64] (GPIO[91:64], SGPIO[3:0]) */
+#define BCHP_GIO_ODEN_EXT_HI                     0x00406560 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_DATA_EXT_HI                     0x00406564 /* GENERAL PURPOSE I/O DATA [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_IODIR_EXT_HI                    0x00406568 /* GENERAL PURPOSE I/O DIRECTION [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_EC_EXT_HI                       0x0040656c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_EI_EXT_HI                       0x00406570 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_MASK_EXT_HI                     0x00406574 /* GENERAL PURPOSE I/O INTERRUPT MASK [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_LEVEL_EXT_HI                    0x00406578 /* GENERAL PURPOSE I/O INTERRUPT TYPE [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_STAT_EXT_HI                     0x0040657c /* GENERAL PURPOSE I/O INTERRUPT STATUS [127:96] (GPIO[123:92]) */
+#define BCHP_GIO_ODEN_EXT2                       0x00406580 /* GENERAL PURPOSE I/O OPEN DRAIN ENABLE [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_DATA_EXT2                       0x00406584 /* GENERAL PURPOSE I/O DATA [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_IODIR_EXT2                      0x00406588 /* GENERAL PURPOSE I/O DIRECTION [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_EC_EXT2                         0x0040658c /* GENERAL PURPOSE I/O EDGE CONFIGURATION [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_EI_EXT2                         0x00406590 /* GENERAL PURPOSE I/O EDGE INSENSITIVE [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_MASK_EXT2                       0x00406594 /* GENERAL PURPOSE I/O INTERRUPT MASK [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_LEVEL_EXT2                      0x00406598 /* GENERAL PURPOSE I/O INTERRUPT TYPE [153:128] (GPIO[149:124]) */
+#define BCHP_GIO_STAT_EXT2                       0x0040659c /* GENERAL PURPOSE I/O INTERRUPT STATUS [153:128] (GPIO[149:124]) */
 
 /***************************************************************************
  *ODEN_LO - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [31:0]
@@ -100,7 +105,7 @@
 /* GIO :: IODIR_LO :: iodir [31:00] */
 #define BCHP_GIO_IODIR_LO_iodir_MASK                               0xffffffff
 #define BCHP_GIO_IODIR_LO_iodir_SHIFT                              0
-#define BCHP_GIO_IODIR_LO_iodir_DEFAULT                            4294967295
+#define BCHP_GIO_IODIR_LO_iodir_DEFAULT                            -1
 
 /***************************************************************************
  *EC_LO - GENERAL PURPOSE I/O EDGE CONFIGURATION [31:0]
@@ -164,7 +169,7 @@
 /* GIO :: IODIR_HI :: iodir [31:00] */
 #define BCHP_GIO_IODIR_HI_iodir_MASK                               0xffffffff
 #define BCHP_GIO_IODIR_HI_iodir_SHIFT                              0
-#define BCHP_GIO_IODIR_HI_iodir_DEFAULT                            511
+#define BCHP_GIO_IODIR_HI_iodir_DEFAULT                            -1
 
 /***************************************************************************
  *EC_HI - GENERAL PURPOSE I/O EDGE CONFIGURATION [63:32]
@@ -207,7 +212,7 @@
 #define BCHP_GIO_STAT_HI_irq_status_DEFAULT                        0
 
 /***************************************************************************
- *ODEN_EXT - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [95:64] (GPIO[89:64], SGPIO[5:0])
+ *ODEN_EXT - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: ODEN_EXT :: oden [31:00] */
 #define BCHP_GIO_ODEN_EXT_oden_MASK                                0xffffffff
@@ -215,7 +220,7 @@
 #define BCHP_GIO_ODEN_EXT_oden_DEFAULT                             0
 
 /***************************************************************************
- *DATA_EXT - GENERAL PURPOSE I/O DATA [95:64] (GPIO[89:64], SGPIO[5:0])
+ *DATA_EXT - GENERAL PURPOSE I/O DATA [95:64] (GPIO[89:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: DATA_EXT :: data [31:00] */
 #define BCHP_GIO_DATA_EXT_data_MASK                                0xffffffff
@@ -223,15 +228,15 @@
 #define BCHP_GIO_DATA_EXT_data_DEFAULT                             0
 
 /***************************************************************************
- *IODIR_EXT - GENERAL PURPOSE I/O DIRECTION [95:64] (GPIO[89:64], SGPIO[5:0])
+ *IODIR_EXT - GENERAL PURPOSE I/O DIRECTION [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: IODIR_EXT :: iodir [31:00] */
 #define BCHP_GIO_IODIR_EXT_iodir_MASK                              0xffffffff
 #define BCHP_GIO_IODIR_EXT_iodir_SHIFT                             0
-#define BCHP_GIO_IODIR_EXT_iodir_DEFAULT                           4294967295
+#define BCHP_GIO_IODIR_EXT_iodir_DEFAULT                           -1
 
 /***************************************************************************
- *EC_EXT - GENERAL PURPOSE I/O EDGE CONFIGURATION [95:64] (GPIO[89:64], SGPIO[5:0])
+ *EC_EXT - GENERAL PURPOSE I/O EDGE CONFIGURATION [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: EC_EXT :: edge_config [31:00] */
 #define BCHP_GIO_EC_EXT_edge_config_MASK                           0xffffffff
@@ -239,7 +244,7 @@
 #define BCHP_GIO_EC_EXT_edge_config_DEFAULT                        0
 
 /***************************************************************************
- *EI_EXT - GENERAL PURPOSE I/O EDGE INSENSITIVE [95:64] (GPIO[89:64], SGPIO[5:0])
+ *EI_EXT - GENERAL PURPOSE I/O EDGE INSENSITIVE [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: EI_EXT :: edge_insensitive [31:00] */
 #define BCHP_GIO_EI_EXT_edge_insensitive_MASK                      0xffffffff
@@ -247,7 +252,7 @@
 #define BCHP_GIO_EI_EXT_edge_insensitive_DEFAULT                   0
 
 /***************************************************************************
- *MASK_EXT - GENERAL PURPOSE I/O INTERRUPT MASK [95:64] (GPIO[89:64], SGPIO[5:0])
+ *MASK_EXT - GENERAL PURPOSE I/O INTERRUPT MASK [95:64] (GPIO[89:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: MASK_EXT :: irq_mask [31:00] */
 #define BCHP_GIO_MASK_EXT_irq_mask_MASK                            0xffffffff
@@ -255,7 +260,7 @@
 #define BCHP_GIO_MASK_EXT_irq_mask_DEFAULT                         0
 
 /***************************************************************************
- *LEVEL_EXT - GENERAL PURPOSE I/O INTERRUPT TYPE [95:64] (GPIO[89:64], SGPIO[5:0])
+ *LEVEL_EXT - GENERAL PURPOSE I/O INTERRUPT TYPE [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: LEVEL_EXT :: level [31:00] */
 #define BCHP_GIO_LEVEL_EXT_level_MASK                              0xffffffff
@@ -263,7 +268,7 @@
 #define BCHP_GIO_LEVEL_EXT_level_DEFAULT                           0
 
 /***************************************************************************
- *STAT_EXT - GENERAL PURPOSE I/O INTERRUPT STATUS [95:64] (GPIO[89:64], SGPIO[5:0])
+ *STAT_EXT - GENERAL PURPOSE I/O INTERRUPT STATUS [95:64] (GPIO[91:64], SGPIO[3:0])
  ***************************************************************************/
 /* GIO :: STAT_EXT :: irq_status [31:00] */
 #define BCHP_GIO_STAT_EXT_irq_status_MASK                          0xffffffff
@@ -271,100 +276,164 @@
 #define BCHP_GIO_STAT_EXT_irq_status_DEFAULT                       0
 
 /***************************************************************************
- *ODEN_EXT_HI - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [116:96] (GPIO[110:90])
+ *ODEN_EXT_HI - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: ODEN_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_ODEN_EXT_HI_reserved0_MASK                        0xffe00000
-#define BCHP_GIO_ODEN_EXT_HI_reserved0_SHIFT                       21
-
-/* GIO :: ODEN_EXT_HI :: oden [20:00] */
-#define BCHP_GIO_ODEN_EXT_HI_oden_MASK                             0x001fffff
+/* GIO :: ODEN_EXT_HI :: oden [31:00] */
+#define BCHP_GIO_ODEN_EXT_HI_oden_MASK                             0xffffffff
 #define BCHP_GIO_ODEN_EXT_HI_oden_SHIFT                            0
 #define BCHP_GIO_ODEN_EXT_HI_oden_DEFAULT                          0
 
 /***************************************************************************
- *DATA_EXT_HI - GENERAL PURPOSE I/O DATA [116:96] (GPIO[110:90])
+ *DATA_EXT_HI - GENERAL PURPOSE I/O DATA [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: DATA_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_DATA_EXT_HI_reserved0_MASK                        0xffe00000
-#define BCHP_GIO_DATA_EXT_HI_reserved0_SHIFT                       21
-
-/* GIO :: DATA_EXT_HI :: data [20:00] */
-#define BCHP_GIO_DATA_EXT_HI_data_MASK                             0x001fffff
+/* GIO :: DATA_EXT_HI :: data [31:00] */
+#define BCHP_GIO_DATA_EXT_HI_data_MASK                             0xffffffff
 #define BCHP_GIO_DATA_EXT_HI_data_SHIFT                            0
 #define BCHP_GIO_DATA_EXT_HI_data_DEFAULT                          0
 
 /***************************************************************************
- *IODIR_EXT_HI - GENERAL PURPOSE I/O DIRECTION [116:96] (GPIO[110:90])
+ *IODIR_EXT_HI - GENERAL PURPOSE I/O DIRECTION [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: IODIR_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_IODIR_EXT_HI_reserved0_MASK                       0xffe00000
-#define BCHP_GIO_IODIR_EXT_HI_reserved0_SHIFT                      21
-
-/* GIO :: IODIR_EXT_HI :: iodir [20:00] */
-#define BCHP_GIO_IODIR_EXT_HI_iodir_MASK                           0x001fffff
+/* GIO :: IODIR_EXT_HI :: iodir [31:00] */
+#define BCHP_GIO_IODIR_EXT_HI_iodir_MASK                           0xffffffff
 #define BCHP_GIO_IODIR_EXT_HI_iodir_SHIFT                          0
-#define BCHP_GIO_IODIR_EXT_HI_iodir_DEFAULT                        2097151
+#define BCHP_GIO_IODIR_EXT_HI_iodir_DEFAULT                        -1
 
 /***************************************************************************
- *EC_EXT_HI - GENERAL PURPOSE I/O EDGE CONFIGURATION [116:96] (GPIO[110:90])
+ *EC_EXT_HI - GENERAL PURPOSE I/O EDGE CONFIGURATION [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: EC_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_EC_EXT_HI_reserved0_MASK                          0xffe00000
-#define BCHP_GIO_EC_EXT_HI_reserved0_SHIFT                         21
-
-/* GIO :: EC_EXT_HI :: edge_config [20:00] */
-#define BCHP_GIO_EC_EXT_HI_edge_config_MASK                        0x001fffff
+/* GIO :: EC_EXT_HI :: edge_config [31:00] */
+#define BCHP_GIO_EC_EXT_HI_edge_config_MASK                        0xffffffff
 #define BCHP_GIO_EC_EXT_HI_edge_config_SHIFT                       0
 #define BCHP_GIO_EC_EXT_HI_edge_config_DEFAULT                     0
 
 /***************************************************************************
- *EI_EXT_HI - GENERAL PURPOSE I/O EDGE INSENSITIVE [116:96] (GPIO[110:90])
+ *EI_EXT_HI - GENERAL PURPOSE I/O EDGE INSENSITIVE [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: EI_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_EI_EXT_HI_reserved0_MASK                          0xffe00000
-#define BCHP_GIO_EI_EXT_HI_reserved0_SHIFT                         21
-
-/* GIO :: EI_EXT_HI :: edge_insensitive [20:00] */
-#define BCHP_GIO_EI_EXT_HI_edge_insensitive_MASK                   0x001fffff
+/* GIO :: EI_EXT_HI :: edge_insensitive [31:00] */
+#define BCHP_GIO_EI_EXT_HI_edge_insensitive_MASK                   0xffffffff
 #define BCHP_GIO_EI_EXT_HI_edge_insensitive_SHIFT                  0
 #define BCHP_GIO_EI_EXT_HI_edge_insensitive_DEFAULT                0
 
 /***************************************************************************
- *MASK_EXT_HI - GENERAL PURPOSE I/O INTERRUPT MASK [116:96] (GPIO[110:90])
+ *MASK_EXT_HI - GENERAL PURPOSE I/O INTERRUPT MASK [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: MASK_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_MASK_EXT_HI_reserved0_MASK                        0xffe00000
-#define BCHP_GIO_MASK_EXT_HI_reserved0_SHIFT                       21
-
-/* GIO :: MASK_EXT_HI :: irq_mask [20:00] */
-#define BCHP_GIO_MASK_EXT_HI_irq_mask_MASK                         0x001fffff
+/* GIO :: MASK_EXT_HI :: irq_mask [31:00] */
+#define BCHP_GIO_MASK_EXT_HI_irq_mask_MASK                         0xffffffff
 #define BCHP_GIO_MASK_EXT_HI_irq_mask_SHIFT                        0
 #define BCHP_GIO_MASK_EXT_HI_irq_mask_DEFAULT                      0
 
 /***************************************************************************
- *LEVEL_EXT_HI - GENERAL PURPOSE I/O INTERRUPT TYPE [116:96] (GPIO[110:90])
+ *LEVEL_EXT_HI - GENERAL PURPOSE I/O INTERRUPT TYPE [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: LEVEL_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_LEVEL_EXT_HI_reserved0_MASK                       0xffe00000
-#define BCHP_GIO_LEVEL_EXT_HI_reserved0_SHIFT                      21
-
-/* GIO :: LEVEL_EXT_HI :: level [20:00] */
-#define BCHP_GIO_LEVEL_EXT_HI_level_MASK                           0x001fffff
+/* GIO :: LEVEL_EXT_HI :: level [31:00] */
+#define BCHP_GIO_LEVEL_EXT_HI_level_MASK                           0xffffffff
 #define BCHP_GIO_LEVEL_EXT_HI_level_SHIFT                          0
 #define BCHP_GIO_LEVEL_EXT_HI_level_DEFAULT                        0
 
 /***************************************************************************
- *STAT_EXT_HI - GENERAL PURPOSE I/O INTERRUPT STATUS [116:96] (GPIO[110:90])
+ *STAT_EXT_HI - GENERAL PURPOSE I/O INTERRUPT STATUS [127:96] (GPIO[123:92])
  ***************************************************************************/
-/* GIO :: STAT_EXT_HI :: reserved0 [31:21] */
-#define BCHP_GIO_STAT_EXT_HI_reserved0_MASK                        0xffe00000
-#define BCHP_GIO_STAT_EXT_HI_reserved0_SHIFT                       21
-
-/* GIO :: STAT_EXT_HI :: irq_status [20:00] */
-#define BCHP_GIO_STAT_EXT_HI_irq_status_MASK                       0x001fffff
+/* GIO :: STAT_EXT_HI :: irq_status [31:00] */
+#define BCHP_GIO_STAT_EXT_HI_irq_status_MASK                       0xffffffff
 #define BCHP_GIO_STAT_EXT_HI_irq_status_SHIFT                      0
 #define BCHP_GIO_STAT_EXT_HI_irq_status_DEFAULT                    0
+
+/***************************************************************************
+ *ODEN_EXT2 - GENERAL PURPOSE I/O OPEN DRAIN ENABLE [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: ODEN_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_ODEN_EXT2_reserved0_MASK                          0xfc000000
+#define BCHP_GIO_ODEN_EXT2_reserved0_SHIFT                         26
+
+/* GIO :: ODEN_EXT2 :: oden [25:00] */
+#define BCHP_GIO_ODEN_EXT2_oden_MASK                               0x03ffffff
+#define BCHP_GIO_ODEN_EXT2_oden_SHIFT                              0
+#define BCHP_GIO_ODEN_EXT2_oden_DEFAULT                            0
+
+/***************************************************************************
+ *DATA_EXT2 - GENERAL PURPOSE I/O DATA [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: DATA_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_DATA_EXT2_reserved0_MASK                          0xfc000000
+#define BCHP_GIO_DATA_EXT2_reserved0_SHIFT                         26
+
+/* GIO :: DATA_EXT2 :: data [25:00] */
+#define BCHP_GIO_DATA_EXT2_data_MASK                               0x03ffffff
+#define BCHP_GIO_DATA_EXT2_data_SHIFT                              0
+#define BCHP_GIO_DATA_EXT2_data_DEFAULT                            0
+
+/***************************************************************************
+ *IODIR_EXT2 - GENERAL PURPOSE I/O DIRECTION [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: IODIR_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_IODIR_EXT2_reserved0_MASK                         0xfc000000
+#define BCHP_GIO_IODIR_EXT2_reserved0_SHIFT                        26
+
+/* GIO :: IODIR_EXT2 :: iodir [25:00] */
+#define BCHP_GIO_IODIR_EXT2_iodir_MASK                             0x03ffffff
+#define BCHP_GIO_IODIR_EXT2_iodir_SHIFT                            0
+#define BCHP_GIO_IODIR_EXT2_iodir_DEFAULT                          67108863
+
+/***************************************************************************
+ *EC_EXT2 - GENERAL PURPOSE I/O EDGE CONFIGURATION [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: EC_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_EC_EXT2_reserved0_MASK                            0xfc000000
+#define BCHP_GIO_EC_EXT2_reserved0_SHIFT                           26
+
+/* GIO :: EC_EXT2 :: edge_config [25:00] */
+#define BCHP_GIO_EC_EXT2_edge_config_MASK                          0x03ffffff
+#define BCHP_GIO_EC_EXT2_edge_config_SHIFT                         0
+#define BCHP_GIO_EC_EXT2_edge_config_DEFAULT                       0
+
+/***************************************************************************
+ *EI_EXT2 - GENERAL PURPOSE I/O EDGE INSENSITIVE [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: EI_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_EI_EXT2_reserved0_MASK                            0xfc000000
+#define BCHP_GIO_EI_EXT2_reserved0_SHIFT                           26
+
+/* GIO :: EI_EXT2 :: edge_insensitive [25:00] */
+#define BCHP_GIO_EI_EXT2_edge_insensitive_MASK                     0x03ffffff
+#define BCHP_GIO_EI_EXT2_edge_insensitive_SHIFT                    0
+#define BCHP_GIO_EI_EXT2_edge_insensitive_DEFAULT                  0
+
+/***************************************************************************
+ *MASK_EXT2 - GENERAL PURPOSE I/O INTERRUPT MASK [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: MASK_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_MASK_EXT2_reserved0_MASK                          0xfc000000
+#define BCHP_GIO_MASK_EXT2_reserved0_SHIFT                         26
+
+/* GIO :: MASK_EXT2 :: irq_mask [25:00] */
+#define BCHP_GIO_MASK_EXT2_irq_mask_MASK                           0x03ffffff
+#define BCHP_GIO_MASK_EXT2_irq_mask_SHIFT                          0
+#define BCHP_GIO_MASK_EXT2_irq_mask_DEFAULT                        0
+
+/***************************************************************************
+ *LEVEL_EXT2 - GENERAL PURPOSE I/O INTERRUPT TYPE [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: LEVEL_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_LEVEL_EXT2_reserved0_MASK                         0xfc000000
+#define BCHP_GIO_LEVEL_EXT2_reserved0_SHIFT                        26
+
+/* GIO :: LEVEL_EXT2 :: level [25:00] */
+#define BCHP_GIO_LEVEL_EXT2_level_MASK                             0x03ffffff
+#define BCHP_GIO_LEVEL_EXT2_level_SHIFT                            0
+#define BCHP_GIO_LEVEL_EXT2_level_DEFAULT                          0
+
+/***************************************************************************
+ *STAT_EXT2 - GENERAL PURPOSE I/O INTERRUPT STATUS [153:128] (GPIO[149:124])
+ ***************************************************************************/
+/* GIO :: STAT_EXT2 :: reserved0 [31:26] */
+#define BCHP_GIO_STAT_EXT2_reserved0_MASK                          0xfc000000
+#define BCHP_GIO_STAT_EXT2_reserved0_SHIFT                         26
+
+/* GIO :: STAT_EXT2 :: irq_status [25:00] */
+#define BCHP_GIO_STAT_EXT2_irq_status_MASK                         0x03ffffff
+#define BCHP_GIO_STAT_EXT2_irq_status_SHIFT                        0
+#define BCHP_GIO_STAT_EXT2_irq_status_DEFAULT                      0
 
 #endif /* #ifndef BCHP_GIO_H__ */
 

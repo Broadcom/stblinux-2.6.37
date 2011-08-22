@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-2.1pre Kernel Configuration
-# Thu Jun 30 11:42:50 2011
+# Linux/mips 2.6.37-2.2pre Kernel Configuration
+# Thu Jul 28 10:56:29 2011
 #
 CONFIG_MIPS=y
 
@@ -100,9 +100,6 @@ CONFIG_BRCM_CONSOLE_DEVICE=0
 CONFIG_BRCM_FLASH=y
 # CONFIG_BRCM_FIXED_MTD_PARTITIONS is not set
 CONFIG_MTD_BRCMNAND=y
-CONFIG_BRCMNAND_MTD_EXTENSION=y
-# CONFIG_MTD_BRCMNAND_VERIFY_WRITE is not set
-# CONFIG_MTD_BRCMNAND_CORRECTABLE_ERR_HANDLING is not set
 CONFIG_SPI_BRCMSTB=y
 CONFIG_BCMGENET=y
 

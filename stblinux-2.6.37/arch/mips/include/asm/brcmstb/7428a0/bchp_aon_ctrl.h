@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 04:00:39 2011
- *                 MD5 Checksum         2d40457e5f0b18f5160f8adef567dda7
+ * Date:           Generated on         Tue Jul 12 02:56:30 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -894,10 +894,10 @@
 #define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_general_ctrl_no_scan0_1_SHIFT 1
 #define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_general_ctrl_no_scan0_1_DEFAULT 0
 
-/* AON_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: general_ctrl_no_scan0_0 [00:00] */
-#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_general_ctrl_no_scan0_0_MASK 0x00000001
-#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_general_ctrl_no_scan0_0_SHIFT 0
-#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_general_ctrl_no_scan0_0_DEFAULT 0
+/* AON_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: aon_pad_slew_0 [00:00] */
+#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_aon_pad_slew_0_MASK   0x00000001
+#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_aon_pad_slew_0_SHIFT  0
+#define BCHP_AON_CTRL_GENERAL_CTRL_NO_SCAN_0_aon_pad_slew_0_DEFAULT 1
 
 /***************************************************************************
  *SPARE_CTRL_0 - Spare control bits reserved for future use
@@ -1381,7 +1381,7 @@
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_cml_sel_pd [06:03] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_MASK         0x00000078
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_SHIFT        3
-#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      8
+#define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_cml_sel_pd_DEFAULT      9
 
 /* AON_CTRL :: ANA_XTAL_CONTROL :: osc_d2cbias_gisb_control [02:00] */
 #define BCHP_AON_CTRL_ANA_XTAL_CONTROL_osc_d2cbias_gisb_control_MASK 0x00000007

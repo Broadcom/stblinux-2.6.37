@@ -25,7 +25,6 @@
 #define REG_OFFSET		(KSEG1 | BCHP_PHYSICAL_OFFSET)
 #define REG(x)			(REG_OFFSET + (x))
 
-#define DRAM_ENCODER_PARAM	0x12345678
 
 	.macro dbg_save_val	src
 	li	t1, REG(BCHP_UARTA_SCR);
@@ -33,12 +32,12 @@
 	.endm
 
 	.macro aon_write_data index reg
-	li	t1, REG(BCHP_AON_CTRL_SYSTEM_DATA_00)
+	li	t1, REG(AON_RAM_BASE)
 	sw	\reg, \index(t1)
 	.endm
 
 	.macro aon_read_data index reg
-	li	t1, REG(BCHP_AON_CTRL_SYSTEM_DATA_00)
+	li	t1, REG(AON_RAM_BASE)
 	lw	\reg, \index(t1)
 	.endm
 
@@ -46,12 +45,16 @@
 	offset		bits
 	0:		0:	0 - cold boot, 1 - warm boot
 	4:		0-31:	reentry address
-	8:		0-31:	temporary stack pointer
-	0x10:		0-127:	memory hash
  */
 	.text
 	.set		noreorder
 	.align		5
+
+#if defined(CONFIG_BCM7425)
+#define CACHE_WRITEBACK_CMD	Hit_Writeback_Inv_SD
+#else
+#define CACHE_WRITEBACK_CMD	Hit_Writeback_Inv_D
+#endif
 
 /*
  * We do not need stack frame, the entire context gets saved
@@ -77,6 +80,18 @@
 	sw	gp, 36(t0)
 	sw	sp, 40(t0)
 	sw	fp, 44(t0)
+
+	mfc0	t1, CP0_STATUS
+# save cp0 sr
+	sw	t1, 48(t0)
+
+	/* Write-back gp registers */
+	cache	CACHE_WRITEBACK_CMD, 0(t0)
+	nop
+	cache	CACHE_WRITEBACK_CMD, 32(t0)
+	nop
+	cache	CACHE_WRITEBACK_CMD, 64(t0)
+	nop
 
 	/*
 	 * Call DRAM encoder start method if it was installed
@@ -168,6 +183,32 @@ s3_reentry:
 	nop
 
 s3_standby_exit:
+#if defined(CONFIG_BMIPS4380)
+	mfc0	t0, $22, 3
+	li	t1, 0x1ff0
+	li	t2, (1 << 12) | (1 << 9)
+	or	t0, t1
+	xor	t0, t1
+	or	t0, t2
+	mtc0	t0, $22, 3
+#elif defined(CONFIG_BMIPS5000)
+	mfc0	t0, $22, 5
+	li	t1, 0x01ff
+	li	t2, (1 << 8) | (1 << 5)
+	or	t0, t1
+	xor	t0, t1
+	or	t0, t2
+	mtc0	t0, $22, 5
+#endif
+	sync
+	nop
+
+#ifdef CONFIG_BRCM_UPPER_MEMORY
+	li	sp, BRCM_WARM_RESTART_VEC
+	la	k0, brcm_upper_tlb_setup
+	jalr	k0
+	nop
+#endif
 
 # return to caller
 	/* general purpose registers */
@@ -185,7 +226,11 @@ s3_standby_exit:
 	lw	sp, 40(t0)
 	lw	fp, 44(t0)
 
-	move	v0, zero
+# restore cp0 sr
+	lw	t1, 48(t0)
+	mtc0	t1, CP0_STATUS
+
+	li	v0, 1
 	jr	ra
 	nop
 

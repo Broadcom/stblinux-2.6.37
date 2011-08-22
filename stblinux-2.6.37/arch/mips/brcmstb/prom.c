@@ -464,8 +464,7 @@ void brcm_set_nmi_handler(void (*fn)(struct pt_regs *))
 }
 EXPORT_SYMBOL(brcm_set_nmi_handler);
 
-static inline void __cpuinit brcm_wr_vec(unsigned long dst,
-	char *start, char *end)
+void __cpuinit brcm_wr_vec(unsigned long dst, char *start, char *end)
 {
 	memcpy((void *)dst, start, end - start);
 	dma_cache_wback((unsigned long)start, end - start);

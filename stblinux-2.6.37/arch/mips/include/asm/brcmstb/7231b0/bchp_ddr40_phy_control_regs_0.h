@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:16:13 2011
- *                 MD5 Checksum         5014fc6b805cdf8eed48fe0da9f96997
+ * Date:           Generated on         Wed Jun 22 16:05:34 2011
+ *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_ddr40_phy_control_regs_0.h $
  * 
- * Hydra_Software_Devel/1   4/13/11 4:42p albertl
- * SW7231-123: Initial revision.
+ * Hydra_Software_Devel/2   6/22/11 10:15p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -57,6 +57,7 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_IDLE_PAD_CONTROL 0x003b6038 /* Idle mode SSTL pad control register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL 0x003b603c /* PVT Compensation control and status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DRIVE_PAD_CTL 0x003b6040 /* SSTL pad drive characteristics control register */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS 0x003b6044 /* PHY Auto Init rd_data_dly result register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_CALIBRATE 0x003b6048 /* PHY VDL calibration control register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_CALIB_STATUS 0x003b604c /* PHY VDL calibration status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_DQ_CALIB_STATUS 0x003b6050 /* PHY DQ VDL calibration status register */
@@ -84,6 +85,7 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_STRAP_STATUS 0x003b60b8 /* Strap Status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_STRAP_STATUS2 0x003b60bc /* Strap Status register */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE 0x003b60c0 /* Freeze-on-error enable register */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK 0x003b60c4 /* Datapth Loopback control register */
 
 /***************************************************************************
  *REVISION - Address & Control revision register
@@ -100,7 +102,7 @@
 /* DDR40_PHY_CONTROL_REGS_0 :: REVISION :: MINOR [07:00] */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_REVISION_MINOR_MASK          0x000000ff
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_REVISION_MINOR_SHIFT         0
-#define BCHP_DDR40_PHY_CONTROL_REGS_0_REVISION_MINOR_DEFAULT       2
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_REVISION_MINOR_DEFAULT       5
 
 /***************************************************************************
  *CLK_PM_CTRL - PHY clock power management control register
@@ -413,7 +415,7 @@
 /* DDR40_PHY_CONTROL_REGS_0 :: ZQ_PVT_COMP_CTL :: sample_done [22:22] */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL_sample_done_MASK 0x00400000
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL_sample_done_SHIFT 22
-#define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL_sample_done_DEFAULT 0
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL_sample_done_DEFAULT 1
 
 /* DDR40_PHY_CONTROL_REGS_0 :: ZQ_PVT_COMP_CTL :: auto_sample_en [21:21] */
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_ZQ_PVT_COMP_CTL_auto_sample_en_MASK 0x00200000
@@ -526,6 +528,28 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DRIVE_PAD_CTL_g_ddr_MASK     0x00000001
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DRIVE_PAD_CTL_g_ddr_SHIFT    0
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DRIVE_PAD_CTL_g_ddr_DEFAULT  0
+
+/***************************************************************************
+ *VDL_RD_DATA_DLY_STATUS - PHY Auto Init rd_data_dly result register
+ ***************************************************************************/
+/* DDR40_PHY_CONTROL_REGS_0 :: VDL_RD_DATA_DLY_STATUS :: reserved0 [31:12] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_reserved0_MASK 0xfffff000
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_reserved0_SHIFT 12
+
+/* DDR40_PHY_CONTROL_REGS_0 :: VDL_RD_DATA_DLY_STATUS :: auto_init_state [11:06] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_auto_init_state_MASK 0x00000fc0
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_auto_init_state_SHIFT 6
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_auto_init_state_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: VDL_RD_DATA_DLY_STATUS :: rd_data_dly_max [05:03] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_max_MASK 0x00000038
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_max_SHIFT 3
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_max_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: VDL_RD_DATA_DLY_STATUS :: rd_data_dly_min [02:00] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_min_MASK 0x00000007
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_min_SHIFT 0
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_VDL_RD_DATA_DLY_STATUS_rd_data_dly_min_DEFAULT 7
 
 /***************************************************************************
  *VDL_CALIBRATE - PHY VDL calibration control register
@@ -1461,6 +1485,28 @@
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_MASK 0x00000001
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_SHIFT 0
 #define BCHP_DDR40_PHY_CONTROL_REGS_0_DEBUG_FREEZE_ENABLE_wl0_bl0_DEFAULT 0
+
+/***************************************************************************
+ *DATAPATH_LOOPBACK - Datapth Loopback control register
+ ***************************************************************************/
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: reserved0 [31:03] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_reserved0_MASK 0xfffffff8
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_reserved0_SHIFT 3
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: xor_dm_rd_en [02:02] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_MASK 0x00000004
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_SHIFT 2
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_xor_dm_rd_en_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: use_addr_ctl [01:01] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_MASK 0x00000002
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_SHIFT 1
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_use_addr_ctl_DEFAULT 0
+
+/* DDR40_PHY_CONTROL_REGS_0 :: DATAPATH_LOOPBACK :: enable [00:00] */
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_MASK 0x00000001
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_SHIFT 0
+#define BCHP_DDR40_PHY_CONTROL_REGS_0_DATAPATH_LOOPBACK_enable_DEFAULT 0
 
 #endif /* #ifndef BCHP_DDR40_PHY_CONTROL_REGS_0_H__ */
 

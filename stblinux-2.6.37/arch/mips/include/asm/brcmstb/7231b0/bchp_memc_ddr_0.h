@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:46:13 2011
- *                 MD5 Checksum         5014fc6b805cdf8eed48fe0da9f96997
+ * Date:           Generated on         Wed Jun 22 16:36:03 2011
+ *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_memc_ddr_0.h $
  * 
- * Hydra_Software_Devel/1   4/13/11 6:26p albertl
- * SW7231-123: Initial revision.
+ * Hydra_Software_Devel/2   6/22/11 10:22p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -236,6 +236,7 @@
 #define BCHP_MEMC_DDR_0_PHY_VDL_CALIB_AUTO_INIT_OVERRIDE 0x003b22f0 /* PHY VDL calibrate override from memc auto init. */
 #define BCHP_MEMC_DDR_0_SHIM_PLL_PNDIV_AUTO_INIT_OVERRIDE 0x003b22f4 /* SHIM PLL pndiv override from memc auto init. */
 #define BCHP_MEMC_DDR_0_SHIM_PLL_MDIV_AUTO_INIT_OVERRIDE 0x003b22f8 /* SHIM PLL mdiv override from memc auto init. */
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY          0x003b22fc /* Dynamic VDL shmoo command delay. */
 
 /***************************************************************************
  *CNTRLR_CONFIG - Memory Controller Mode-Configuration Register.
@@ -2641,6 +2642,23 @@
 #define BCHP_MEMC_DDR_0_SHIM_PLL_MDIV_AUTO_INIT_OVERRIDE_SHIM_PLL_MDIV_OVERRIDE_VAL_MASK 0xffffffff
 #define BCHP_MEMC_DDR_0_SHIM_PLL_MDIV_AUTO_INIT_OVERRIDE_SHIM_PLL_MDIV_OVERRIDE_VAL_SHIFT 0
 #define BCHP_MEMC_DDR_0_SHIM_PLL_MDIV_AUTO_INIT_OVERRIDE_SHIM_PLL_MDIV_OVERRIDE_VAL_DEFAULT 4099
+
+/***************************************************************************
+ *DYN_VDL_CMD_DLY - Dynamic VDL shmoo command delay.
+ ***************************************************************************/
+/* MEMC_DDR_0 :: DYN_VDL_CMD_DLY :: reserved0 [31:12] */
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_reserved0_MASK             0xfffff000
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_reserved0_SHIFT            12
+
+/* MEMC_DDR_0 :: DYN_VDL_CMD_DLY :: END_CAS_DLY [11:06] */
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_END_CAS_DLY_MASK           0x00000fc0
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_END_CAS_DLY_SHIFT          6
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_END_CAS_DLY_DEFAULT        0
+
+/* MEMC_DDR_0 :: DYN_VDL_CMD_DLY :: START_CAS_DLY [05:00] */
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_START_CAS_DLY_MASK         0x0000003f
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_START_CAS_DLY_SHIFT        0
+#define BCHP_MEMC_DDR_0_DYN_VDL_CMD_DLY_START_CAS_DLY_DEFAULT      0
 
 #endif /* #ifndef BCHP_MEMC_DDR_0_H__ */
 

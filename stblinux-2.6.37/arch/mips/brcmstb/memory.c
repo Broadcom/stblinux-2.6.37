@@ -486,7 +486,7 @@ void __cpuinit brcm_tlb_init(void)
  * important structures to be allocated out of upper memory so
  * this happens early on.
  */
-asmlinkage __cpuinit void brcm_upper_tlb_setup(void)
+asmlinkage void brcm_upper_tlb_setup(void)
 {
 #ifdef CONFIG_BRCM_UPPER_MEMORY
 	int i, tlbsz;

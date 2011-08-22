@@ -164,6 +164,7 @@
 #include <asm/brcmstb/7231a0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7231a0/bchp_irq0.h>
 #include <asm/brcmstb/7231a0/bchp_irq1.h>
+#include <asm/brcmstb/7231a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7231a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7231a0/bchp_nand.h>
 #include <asm/brcmstb/7231a0/bchp_sata_top_ctrl.h>
@@ -311,6 +312,7 @@
 #include <asm/brcmstb/7344a0/bchp_hif_spi_intr2.h>
 #include <asm/brcmstb/7344a0/bchp_irq0.h>
 #include <asm/brcmstb/7344a0/bchp_irq1.h>
+#include <asm/brcmstb/7344a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7344a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7344a0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7344a0/bchp_nand.h>
@@ -319,6 +321,7 @@
 #include <asm/brcmstb/7344a0/bchp_uarta.h>
 #include <asm/brcmstb/7344a0/bchp_uartb.h>
 #include <asm/brcmstb/7344a0/bchp_uartc.h>
+#include <asm/brcmstb/7344a0/bchp_usb1_ctrl.h>
 #include <asm/brcmstb/7344a0/bchp_usb_ctrl.h>
 #include <asm/brcmstb/7344a0/bchp_wktmr.h>
 #include <asm/brcmstb/7344a0/brcmirq.h>
@@ -342,6 +345,7 @@
 #include <asm/brcmstb/7344b0/bchp_hif_spi_intr2.h>
 #include <asm/brcmstb/7344b0/bchp_irq0.h>
 #include <asm/brcmstb/7344b0/bchp_irq1.h>
+#include <asm/brcmstb/7344b0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7344b0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7344b0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7344b0/bchp_nand.h>
@@ -351,6 +355,7 @@
 #include <asm/brcmstb/7344b0/bchp_uarta.h>
 #include <asm/brcmstb/7344b0/bchp_uartb.h>
 #include <asm/brcmstb/7344b0/bchp_uartc.h>
+#include <asm/brcmstb/7344b0/bchp_usb1_ctrl.h>
 #include <asm/brcmstb/7344b0/bchp_usb_ctrl.h>
 #include <asm/brcmstb/7344b0/bchp_wktmr.h>
 #include <asm/brcmstb/7344b0/brcmirq.h>
@@ -374,6 +379,7 @@
 #include <asm/brcmstb/7346a0/bchp_hif_spi_intr2.h>
 #include <asm/brcmstb/7346a0/bchp_irq0.h>
 #include <asm/brcmstb/7346a0/bchp_irq1.h>
+#include <asm/brcmstb/7346a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7346a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7346a0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7346a0/bchp_nand.h>
@@ -893,6 +899,7 @@
 #include <asm/brcmstb/7552a0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7552a0/bchp_irq0.h>
 #include <asm/brcmstb/7552a0/bchp_irq1.h>
+#include <asm/brcmstb/7552a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7552a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7552a0/bchp_misb_bridge.h>
 #include <asm/brcmstb/7552a0/bchp_nand.h>
@@ -991,6 +998,15 @@
 #define BRCM_STANDBY_MIPS_PLL_ON	0x10
 /* Don't shut down DDR PLL */
 #define BRCM_STANDBY_DDR_PLL_ON		0x20
+
+#if defined(CONFIG_BRCM_HAS_AON)
+#if defined(BCHP_AON_CTRL_SYSTEM_DATA_00)
+#define AON_RAM_BASE		BCHP_AON_CTRL_SYSTEM_DATA_00
+#else
+#define AON_RAM_BASE		BCHP_AON_CTRL_SYSTEM_DATA_RAM
+#endif
+#define AON_RAM(idx)		(AON_RAM_BASE + (idx << 2))
+#endif
 
 #if !defined(__ASSEMBLY__)
 
@@ -1180,7 +1196,7 @@ struct brcmspi_platform_data {
 
 #endif
 
-asmlinkage __cpuinit void brcm_upper_tlb_setup(void);
+asmlinkage void brcm_upper_tlb_setup(void);
 void board_pinmux_setup(void);
 void __init board_get_ram_size(unsigned long *dram0_mb,
 	unsigned long *dram1_mb);
@@ -1229,6 +1245,12 @@ ssize_t brcm_pm_show_memc1_power(struct device *dev,
 	struct device_attribute *attr, char *buf);
 ssize_t brcm_pm_store_memc1_power(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count);
+ssize_t brcm_pm_show_halt_mode(struct device *dev,
+	struct device_attribute *attr, char *buf);
+ssize_t brcm_pm_store_halt_mode(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count);
+ssize_t brcm_pm_show_time_at_wakeup(struct device *dev,
+	struct device_attribute *attr, char *buf);
 
 void brcm_irq_standby_enter(int wake_irq);
 void brcm_irq_standby_exit(void);
@@ -1264,6 +1286,7 @@ int brcm_pm_wakeup_get_status(u32 mask);
 asmlinkage int brcm_pm_standby_asm(int icache_linesz, unsigned long ebase,
 	unsigned long flags);
 int brcm_pm_s3_standby(unsigned long options);
+void brcm_pm_s3_cold_boot(void);
 
 #define BRCM_MEM_DMA_SCRAM_NONE		0
 #define BRCM_MEM_DMA_SCRAM_BLOCK	1
@@ -1285,6 +1308,9 @@ struct brcm_mem_transfer {
 	u8		dst_remapped:1;
 	u8		src_dst_remapped:1;
 };
+
+int brcm_mem_dma_transfer(struct brcm_mem_transfer *xfer);
+int brcm_mem_dma_simple_transfer(struct brcm_mem_transfer *xfer);
 
 int brcm_pm_dram_encoder_prepare(struct brcm_mem_transfer *param);
 int brcm_pm_dram_encoder_complete(struct brcm_mem_transfer *param);

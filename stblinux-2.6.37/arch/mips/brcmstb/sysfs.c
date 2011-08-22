@@ -290,10 +290,13 @@ static struct device_attribute brcmstb_attr_list[] = {
 		brcm_pm_store_ddr_timeout),
 	__ATTR(standby_flags, 0644, brcm_pm_show_standby_flags,
 		brcm_pm_store_standby_flags),
+	__ATTR(time_at_wakeup, 0444, brcm_pm_show_time_at_wakeup, NULL),
 #if defined(CONFIG_BRCM_HAS_1GB_MEMC1) || defined(CONFIG_BCM7420)
 	__ATTR(memc1_power, 0644, brcm_pm_show_memc1_power,
 		brcm_pm_store_memc1_power),
 #endif
+	__ATTR(halt_mode, 0644, brcm_pm_show_halt_mode,
+		brcm_pm_store_halt_mode),
 	__ATTR_NULL,
 };
 
@@ -333,6 +336,7 @@ static int __init brcm_pdev_init(void)
 			break;
 		snprintf(name, 16, "bmem.%d", i);
 
+		sysfs_attr_init(&attr->attr);
 		attr->attr.name = name;
 		attr->attr.mode = 0444;
 		attr->show = show_bmem;

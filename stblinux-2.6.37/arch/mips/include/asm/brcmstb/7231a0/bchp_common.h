@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue Nov  2 10:10:08 2010
- *                 MD5 Checksum         67c1670c004a622151e1e317336867fd
+ * Date:           Generated on         Wed Jun 22 15:24:14 2011
+ *                 MD5 Checksum         4c7f7c173e488659edce1ceafec7f9f4
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/a0/bchp_common.h $
  * 
- * Hydra_Software_Devel/3   11/2/10 11:27p pntruong
- * HW7231-39: Synced up with central rdb.
+ * Hydra_Software_Devel/4   6/22/11 5:51p pntruong
+ * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
 
@@ -443,8 +443,8 @@
 #define BCHP_HIF_SECURE_INDIRECT_SPI_PIPE_REG_END          0x00414800
 #define BCHP_CLKGEN_REG_START                              0x00420000
 #define BCHP_CLKGEN_REG_END                                0x0042031c
-#define BCHP_PLL_VCXO_RM_REG_START                         0x00422800
-#define BCHP_PLL_VCXO_RM_REG_END                           0x0042282c
+#define BCHP_VCXO_RM_REG_START                             0x00422800
+#define BCHP_VCXO_RM_REG_END                               0x0042282c
 #define BCHP_AVS_HW_MNTR_REG_START                         0x00423000
 #define BCHP_AVS_HW_MNTR_REG_END                           0x00423074
 #define BCHP_AVS_PVT_MNTR_CONFIG_REG_START                 0x00423100

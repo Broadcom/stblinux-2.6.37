@@ -140,6 +140,11 @@ struct BcmEnet_devctrl {
 	struct	clk *clk_wol;
 	int	clock_active;
 	u32	wolopts;
+
+	/* S3 warm boot */
+	struct DmaDesc saved_rx_desc[TOTAL_DESC];
+	u32 int_mask;
+	u32 rbuf_ctrl;
 };
 
 #if defined(CONFIG_BCMGENET_DUMP_TRACE)

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 03:56:00 2011
- *                 MD5 Checksum         2d40457e5f0b18f5160f8adef567dda7
+ * Date:           Generated on         Tue Jul 12 02:51:43 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -65,15 +65,57 @@
 /* SATA_TOP_CTRL :: Version :: minor_version [03:00] */
 #define BCHP_SATA_TOP_CTRL_Version_minor_version_MASK              0x0000000f
 #define BCHP_SATA_TOP_CTRL_Version_minor_version_SHIFT             0
-#define BCHP_SATA_TOP_CTRL_Version_minor_version_DEFAULT           0
+#define BCHP_SATA_TOP_CTRL_Version_minor_version_DEFAULT           1
 
 /***************************************************************************
  *BUS_CTRL - SATA3 System Bus Access Control Register
  ***************************************************************************/
-/* SATA_TOP_CTRL :: BUS_CTRL :: bus_ctrl [31:00] */
-#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_MASK                  0xffffffff
-#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_SHIFT                 0
-#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_DEFAULT               0
+/* SATA_TOP_CTRL :: BUS_CTRL :: bus_ctrl_31_17 [31:17] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_31_17_MASK            0xfffe0000
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_31_17_SHIFT           17
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_31_17_DEFAULT         0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: overide_hwinit_registers [16:16] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_overide_hwinit_registers_MASK  0x00010000
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_overide_hwinit_registers_SHIFT 16
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_overide_hwinit_registers_DEFAULT 0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: bus_ctrl_15_8 [15:08] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_15_8_MASK             0x0000ff00
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_15_8_SHIFT            8
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_bus_ctrl_15_8_DEFAULT          0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: piodata_endian_ctrl [07:06] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_MASK       0x000000c0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_SHIFT      6
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_DEFAULT    0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_SwapEndianess 2
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_HalfWordSwap 1
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_piodata_endian_ctrl_NoSwap     0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: dmadata_endian_ctrl [05:04] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_MASK       0x00000030
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_SHIFT      4
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_DEFAULT    0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_SwapEndianess 2
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_HalfWordSwap 1
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadata_endian_ctrl_NoSwap     0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: dmadesc_endian_ctrl [03:02] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_MASK       0x0000000c
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_SHIFT      2
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_DEFAULT    0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_SwapEndianess 2
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_HalfWordSwap 1
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_dmadesc_endian_ctrl_NoSwap     0
+
+/* SATA_TOP_CTRL :: BUS_CTRL :: reg_endian_ctrl [01:00] */
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_MASK           0x00000003
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_SHIFT          0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_DEFAULT        0
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_SwapEndianess  2
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_HalfWordSwap   1
+#define BCHP_SATA_TOP_CTRL_BUS_CTRL_reg_endian_ctrl_NoSwap         0
 
 /***************************************************************************
  *TP_CTRL - SATA3 Test Port Control register

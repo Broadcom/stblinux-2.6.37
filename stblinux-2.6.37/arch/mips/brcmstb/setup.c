@@ -924,6 +924,10 @@ static void brcm_machine_halt(void)
 	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, irw_top_sw_pwroff, 0);
 	BDEV_WR_F_RB(SUN_TOP_CTRL_GENERAL_CTRL_1, irw_top_sw_pwroff, 1);
 #endif
+#ifdef CONFIG_BRCM_HAS_AON
+	/* may be S3 cold boot */
+	brcm_pm_s3_cold_boot();
+#endif
 	while (1)
 		;
 }

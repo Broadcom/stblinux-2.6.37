@@ -83,7 +83,11 @@ module_param(wp_on, int, 0444);
 #define FC_WORDS		(FC_BYTES >> 2)
 #define FC(x)			(BCHP_NAND_FLASH_CACHEi_ARRAY_BASE + ((x) << 2))
 
-#if CONTROLLER_VER >= 50
+#if CONTROLLER_VER >= 60
+#define MAX_CONTROLLER_OOB	64
+#define OFS_10_RD		BCHP_NAND_SPARE_AREA_READ_OFS_10
+#define OFS_10_WR		BCHP_NAND_SPARE_AREA_WRITE_OFS_10
+#elif CONTROLLER_VER >= 50
 #define MAX_CONTROLLER_OOB	32
 #define OFS_10_RD		BCHP_NAND_SPARE_AREA_READ_OFS_10
 #define OFS_10_WR		BCHP_NAND_SPARE_AREA_WRITE_OFS_10
@@ -102,6 +106,16 @@ module_param(wp_on, int, 0444);
 #define EDU_VA_OK(x)		0
 #endif
 
+#if CONTROLLER_VER >= 60
+
+#define REG_ACC_CONTROL(cs) (BCHP_NAND_ACC_CONTROL_CS0 + ((cs) << 4))
+
+#define REG_CONFIG(cs) (BCHP_NAND_CONFIG_CS0 + ((cs) << 4))
+
+#define REG_TIMING_1(cs) (BCHP_NAND_TIMING_1_CS0 + ((cs) << 4))
+#define REG_TIMING_2(cs) (BCHP_NAND_TIMING_2_CS0 + ((cs) << 4))
+#else
+
 #define REG_ACC_CONTROL(cs) \
 	((cs) == 0 ? BCHP_NAND_ACC_CONTROL : \
 	 (BCHP_NAND_ACC_CONTROL_CS1 + (((cs) - 1) << 4)))
@@ -110,27 +124,35 @@ module_param(wp_on, int, 0444);
 	((cs) == 0 ? BCHP_NAND_CONFIG : \
 	 (BCHP_NAND_CONFIG_CS1 + (((cs) - 1) << 4)))
 
+#define REG_TIMING_1(cs) \
+	((cs) == 0 ? BCHP_NAND_TIMING_1 : \
+	 (BCHP_NAND_TIMING_1_CS1 + (((cs) - 1) << 4)))
+#define REG_TIMING_2(cs) \
+	((cs) == 0 ? BCHP_NAND_TIMING_2 : \
+	 (BCHP_NAND_TIMING_2_CS1 + (((cs) - 1) << 4)))
+#endif
+
 #define WR_CONFIG(cs, field, val) do { \
 	u32 reg = REG_CONFIG(cs), contents = BDEV_RD(reg); \
-	contents &= ~(BCHP_NAND_CONFIG_##field##_MASK); \
-	contents |= (val) << BCHP_NAND_CONFIG_##field##_SHIFT; \
+	contents &= ~(BCHP_NAND_CONFIG_CS1_##field##_MASK); \
+	contents |= (val) << BCHP_NAND_CONFIG_CS1_##field##_SHIFT; \
 	BDEV_WR(reg, contents); \
 	} while (0)
 
 #define RD_CONFIG(cs, field) \
-	((BDEV_RD(REG_CONFIG(cs)) & BCHP_NAND_CONFIG_##field##_MASK) \
-	 >> BCHP_NAND_CONFIG_##field##_SHIFT)
+	((BDEV_RD(REG_CONFIG(cs)) & BCHP_NAND_CONFIG_CS1_##field##_MASK) \
+	 >> BCHP_NAND_CONFIG_CS1_##field##_SHIFT)
 
 #define WR_ACC_CONTROL(cs, field, val) do { \
 	u32 reg = REG_ACC_CONTROL(cs), contents = BDEV_RD(reg); \
-	contents &= ~(BCHP_NAND_ACC_CONTROL_##field##_MASK); \
-	contents |= (val) << BCHP_NAND_ACC_CONTROL_##field##_SHIFT; \
+	contents &= ~(BCHP_NAND_ACC_CONTROL_CS1_##field##_MASK); \
+	contents |= (val) << BCHP_NAND_ACC_CONTROL_CS1_##field##_SHIFT; \
 	BDEV_WR(reg, contents); \
 	} while (0)
 
 #define RD_ACC_CONTROL(cs, field) \
-	((BDEV_RD(REG_ACC_CONTROL(cs)) & BCHP_NAND_ACC_CONTROL_##field##_MASK) \
-		>> BCHP_NAND_ACC_CONTROL_##field##_SHIFT)
+	((BDEV_RD(REG_ACC_CONTROL(cs)) & BCHP_NAND_ACC_CONTROL_CS1_##field##_MASK) \
+		>> BCHP_NAND_ACC_CONTROL_CS1_##field##_SHIFT)
 
 /* Helper functions for reading and writing OOB registers */
 static inline unsigned char oob_reg_read(int offs)
@@ -164,6 +186,14 @@ static inline void oob_reg_write(int offs, unsigned long data)
 	BDEV_WR(OFS_10_WR + (offs & ~0x03), data);
 }
 
+#if CONTROLLER_VER >= 60
+#define CORR_ERROR_COUNT (BDEV_RD(BCHP_NAND_CORR_ERROR_COUNT))
+#define UNCORR_ERROR_COUNT (BDEV_RD(BCHP_NAND_UNCORR_ERROR_COUNT))
+#else
+#define CORR_ERROR_COUNT (1)
+#define UNCORR_ERROR_COUNT (1)
+#endif
+
 struct brcmstb_nand_controller {
 	struct nand_hw_control	controller;
 	unsigned int		irq;
@@ -174,6 +204,18 @@ struct brcmstb_nand_controller {
 	u64			edu_dram_addr;
 	u32			edu_ext_addr;
 	u32			edu_cmd;
+
+#ifdef CONFIG_BRCM_HAS_EDU
+	u32			edu_config;
+#endif
+	u32			nand_cs_nand_select;
+	u32			nand_cs_nand_xor;
+	u32			hif_intr2;
+	/* per CS */
+	u32			acc_control;
+	u32			config;
+	u32			timing_1;
+	u32			timing_2;
 };
 
 static struct brcmstb_nand_controller ctrl;
@@ -275,7 +317,8 @@ static int brcmstb_check_exceptions(struct mtd_info *mtd)
 	int i;
 	u8 id_data[8];
 
-	/* run default nand_base initialization w/o built-in ID table;
+	/*
+	 * run default nand_base initialization w/o built-in ID table;
 	 * should return error, so we tell it to be "silent"
 	 */
 	chip->options |= NAND_SCAN_SILENT_NODEV;
@@ -336,18 +379,18 @@ static int brcmstb_check_exceptions(struct mtd_info *mtd)
 
 static irqreturn_t brcmstb_nand_irq(int irq, void *data)
 {
-	int mine = 0;
-
 	if (HIF_TEST_IRQ(NAND_CTLRDY)) {
 		HIF_ACK_IRQ(NAND_CTLRDY);
-		mine = 1;
-	}
-	if (mine) {
 #ifdef CONFIG_BRCM_HAS_EDU
+		if (ctrl.edu_count) {
+			ctrl.edu_count--;
+			while (!BDEV_RD_F(EDU_DONE, Done))
+				udelay(1);
+			BDEV_WR_F_RB(EDU_DONE, Done, 0);
+		}
 		if (ctrl.edu_count) {
 			ctrl.edu_dram_addr += FC_BYTES;
 			ctrl.edu_ext_addr += FC_BYTES;
-			ctrl.edu_count--;
 
 			BDEV_WR_RB(BCHP_EDU_DRAM_ADDR, (u32)ctrl.edu_dram_addr);
 			BDEV_WR_RB(BCHP_EDU_EXT_ADDR, ctrl.edu_ext_addr);
@@ -520,7 +563,7 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	ctrl.edu_dram_addr = pa;
 	ctrl.edu_ext_addr = addr;
 	ctrl.edu_cmd = edu_cmd;
-	ctrl.edu_count = trans - 1;
+	ctrl.edu_count = trans;
 
 	brcmstb_nand_wp(mtd, edu_cmd == EDU_CMD_READ);
 
@@ -533,8 +576,13 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	mb();
 	BDEV_WR_RB(BCHP_EDU_CMD, ctrl.edu_cmd);
 
-	/* wait for completion, then (for program page) check NAND status */
+#if CONTROLLER_VER >= 60
+	/* Enable prefetching when handling multiple consecutive transfers */
+	if (trans > 1)
+		WR_ACC_CONTROL(host->cs, PREFETCH_EN, 1);
+#endif
 
+	/* wait for completion, then (for program page) check NAND status */
 	if ((brcmstb_nand_waitfunc(mtd, chip) & NAND_STATUS_FAIL) &&
 			edu_cmd == EDU_CMD_WRITE) {
 		dev_info(&host->pdev->dev, "program failed at %llx\n",
@@ -542,10 +590,13 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 		ret = -EIO;
 	}
 
+#if CONTROLLER_VER >= 60
+	WR_ACC_CONTROL(host->cs, PREFETCH_EN, 0);
+#endif
+
 	dma_unmap_single(&host->pdev->dev, pa, len, dir);
 
 	/* Make sure the EDU status is clean */
-
 	if (BDEV_RD_F(EDU_STATUS, Active))
 		dev_warn(&host->pdev->dev, "EDU still active: %08lx\n",
 			BDEV_RD(BCHP_EDU_STATUS));
@@ -639,10 +690,10 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 	if (err_addr != 0) {
 		dev_warn(&host->pdev->dev, "uncorrectable error at 0x%llx\n",
 			(unsigned long long)err_addr);
-		mtd->ecc_stats.failed++;
 		if (use_edu)
 			brcmstb_nand_read_by_pio(mtd, chip, addr, trans, buf,
 					oob);
+		mtd->ecc_stats.failed += UNCORR_ERROR_COUNT;
 		return -EIO;
 	}
 
@@ -651,23 +702,18 @@ static int brcmstb_nand_read(struct mtd_info *mtd,
 	if (err_addr) {
 		dev_info(&host->pdev->dev, "corrected error at 0x%llx\n",
 			(unsigned long long)err_addr);
-		mtd->ecc_stats.corrected++;
 		if (use_edu)
 			brcmstb_nand_read_by_pio(mtd, chip, addr, trans, buf,
 					oob);
+		mtd->ecc_stats.corrected += CORR_ERROR_COUNT;
 		return -EUCLEAN;
 	}
 
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 static int brcmstb_nand_read_page(struct mtd_info *mtd,
 	struct nand_chip *chip, uint8_t *buf, int page)
-#else
-static int brcmstb_nand_read_page(struct mtd_info *mtd,
-	struct nand_chip *chip, uint8_t *buf)
-#endif
 {
 	struct brcmstb_nand_host *host = chip->priv;
 
@@ -676,13 +722,8 @@ static int brcmstb_nand_read_page(struct mtd_info *mtd,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 static int brcmstb_nand_read_page_raw(struct mtd_info *mtd,
 	struct nand_chip *chip, uint8_t *buf, int page)
-#else
-static int brcmstb_nand_read_page_raw(struct mtd_info *mtd,
-	struct nand_chip *chip, uint8_t *buf)
-#endif
 {
 	struct brcmstb_nand_host *host = chip->priv;
 
@@ -1145,16 +1186,74 @@ static int __devexit brcmstb_nand_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#define HIF_ENABLED_IRQ(bit) \
+	(!BDEV_RD_F(HIF_INTR2_CPU_MASK_STATUS, bit##_INTR))
+
+static int brcmstb_nand_suspend(struct device *dev)
+{
+	if (brcm_pm_deep_sleep()) {
+		struct brcmstb_nand_host *host = dev_get_drvdata(dev);
+
+		dev_dbg(dev, "Save state for S3 suspend\n");
+#ifdef CONFIG_BRCM_HAS_EDU
+		ctrl.edu_config = BDEV_RD(BCHP_EDU_CONFIG);
+#endif
+		ctrl.nand_cs_nand_select = BDEV_RD(BCHP_NAND_CS_NAND_SELECT);
+		ctrl.nand_cs_nand_xor = BDEV_RD(BCHP_NAND_CS_NAND_XOR);
+		ctrl.hif_intr2 = HIF_ENABLED_IRQ(NAND_CTLRDY);
+
+		ctrl.acc_control = BDEV_RD(REG_ACC_CONTROL(host->cs));
+		ctrl.config = BDEV_RD(REG_CONFIG(host->cs));
+		ctrl.timing_1 = BDEV_RD(REG_TIMING_1(host->cs));
+		ctrl.timing_2 = BDEV_RD(REG_TIMING_2(host->cs));
+	}
+	return 0;
+}
+
+static int brcmstb_nand_resume(struct device *dev)
+{
+	if (brcm_pm_deep_sleep()) {
+		struct brcmstb_nand_host *host = dev_get_drvdata(dev);
+
+		dev_dbg(dev, "Restore state after S3 suspend\n");
+#ifdef CONFIG_BRCM_HAS_EDU
+		BDEV_WR_RB(BCHP_EDU_CONFIG, ctrl.edu_config);
+		BDEV_WR(BCHP_EDU_ERR_STATUS, 0);
+		BDEV_WR(BCHP_EDU_DONE, 0);
+		BDEV_WR(BCHP_EDU_DONE, 0);
+		BDEV_WR(BCHP_EDU_DONE, 0);
+		BDEV_WR(BCHP_EDU_DONE, 0);
+#endif
+		BDEV_WR_RB(BCHP_NAND_CS_NAND_SELECT, ctrl.nand_cs_nand_select);
+		BDEV_WR_RB(BCHP_NAND_CS_NAND_XOR, ctrl.nand_cs_nand_xor);
+
+		BDEV_WR_RB(REG_ACC_CONTROL(host->cs), ctrl.acc_control);
+		BDEV_WR_RB(REG_CONFIG(host->cs), ctrl.config);
+		BDEV_WR_RB(REG_TIMING_1(host->cs), ctrl.timing_1);
+		BDEV_WR_RB(REG_TIMING_2(host->cs), ctrl.timing_2);
+
+		HIF_ACK_IRQ(NAND_CTLRDY);
+		if (ctrl.hif_intr2)
+			HIF_ENABLE_IRQ(NAND_CTLRDY);
+	}
+	return 0;
+}
+
+static const struct dev_pm_ops brcmstb_nand_pm_ops = {
+	.suspend		= brcmstb_nand_suspend,
+	.resume			= brcmstb_nand_resume,
+};
+
 /***********************************************************************
  * Platform driver setup (per controller)
  ***********************************************************************/
-
 static struct platform_driver brcmstb_nand_driver = {
 	.probe			= brcmstb_nand_probe,
 	.remove			= __devexit_p(brcmstb_nand_remove),
 	.driver = {
 		.name		= "brcmnand",
 		.owner		= THIS_MODULE,
+		.pm		= &brcmstb_nand_pm_ops,
 	},
 };
 

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 03:48:02 2011
- *                 MD5 Checksum         2d40457e5f0b18f5160f8adef567dda7
+ * Date:           Generated on         Tue Jul 12 02:43:49 2011
+ *                 MD5 Checksum         c5a82bedc88d370fb68d7daceef9c302
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -42,22 +42,22 @@
 /***************************************************************************
  *TIMER - Watchdog & Programmable Timers
  ***************************************************************************/
-#define BCHP_TIMER_TIMER_IS                      0x00406200 /* TIMER INTERRUPT STATUS REGISTER */
-#define BCHP_TIMER_TIMER_IE0                     0x00406204 /* TIMER CPU INTERRUPT ENABLE REGISTER */
-#define BCHP_TIMER_TIMER0_CTRL                   0x00406208 /* TIMER0 CONTROL REGISTER */
-#define BCHP_TIMER_TIMER1_CTRL                   0x0040620c /* TIMER1 CONTROL REGISTER */
-#define BCHP_TIMER_TIMER2_CTRL                   0x00406210 /* TIMER2 CONTROL REGISTER */
-#define BCHP_TIMER_TIMER3_CTRL                   0x00406214 /* TIMER3 CONTROL REGISTER */
-#define BCHP_TIMER_TIMER0_STAT                   0x00406218 /* TIMER0 STATUS REGISTER */
-#define BCHP_TIMER_TIMER1_STAT                   0x0040621c /* TIMER1 STATUS REGISTER */
-#define BCHP_TIMER_TIMER2_STAT                   0x00406220 /* TIMER2 STATUS REGISTER */
-#define BCHP_TIMER_TIMER3_STAT                   0x00406224 /* TIMER3 STATUS REGISTER */
-#define BCHP_TIMER_WDTIMEOUT                     0x00406228 /* WATCHDOG TIMEOUT REGISTER */
-#define BCHP_TIMER_WDCMD                         0x0040622c /* WATCHDOG COMMAND REGISTER */
-#define BCHP_TIMER_WDCHIPRST_CNT                 0x00406230 /* WATCHDOG CHIP RESET COUNT REGISTER */
-#define BCHP_TIMER_WDCRS                         0x00406234 /* WATCHDOG CHIP RESET STATUS REGISTER */
-#define BCHP_TIMER_TIMER_IE1                     0x00406238 /* TIMER PCI INTERRUPT ENABLE REGISTER */
-#define BCHP_TIMER_WDCTRL                        0x0040623c /* WATCHDOG CONTROL REGISTER */
+#define BCHP_TIMER_TIMER_IS                      0x004066c0 /* TIMER INTERRUPT STATUS REGISTER */
+#define BCHP_TIMER_TIMER_IE0                     0x004066c4 /* TIMER CPU INTERRUPT ENABLE REGISTER */
+#define BCHP_TIMER_TIMER0_CTRL                   0x004066c8 /* TIMER0 CONTROL REGISTER */
+#define BCHP_TIMER_TIMER1_CTRL                   0x004066cc /* TIMER1 CONTROL REGISTER */
+#define BCHP_TIMER_TIMER2_CTRL                   0x004066d0 /* TIMER2 CONTROL REGISTER */
+#define BCHP_TIMER_TIMER3_CTRL                   0x004066d4 /* TIMER3 CONTROL REGISTER */
+#define BCHP_TIMER_TIMER0_STAT                   0x004066d8 /* TIMER0 STATUS REGISTER */
+#define BCHP_TIMER_TIMER1_STAT                   0x004066dc /* TIMER1 STATUS REGISTER */
+#define BCHP_TIMER_TIMER2_STAT                   0x004066e0 /* TIMER2 STATUS REGISTER */
+#define BCHP_TIMER_TIMER3_STAT                   0x004066e4 /* TIMER3 STATUS REGISTER */
+#define BCHP_TIMER_WDTIMEOUT                     0x004066e8 /* WATCHDOG TIMEOUT REGISTER */
+#define BCHP_TIMER_WDCMD                         0x004066ec /* WATCHDOG COMMAND REGISTER */
+#define BCHP_TIMER_WDCHIPRST_CNT                 0x004066f0 /* WATCHDOG CHIP RESET COUNT REGISTER */
+#define BCHP_TIMER_WDCRS                         0x004066f4 /* WATCHDOG CHIP RESET STATUS REGISTER */
+#define BCHP_TIMER_TIMER_IE1                     0x004066f8 /* TIMER PCI INTERRUPT ENABLE REGISTER */
+#define BCHP_TIMER_WDCTRL                        0x004066fc /* WATCHDOG CONTROL REGISTER */
 
 /***************************************************************************
  *TIMER_IS - TIMER INTERRUPT STATUS REGISTER

@@ -301,7 +301,7 @@ static dma_addr_t brcm_mem_dma_prepare_descriptors(
 	dma_addr_t pa_d;
 	pa_d = dma_map_single(NULL, d, size, DMA_TO_DEVICE);
 	brcm_mem_dma_wait_for_ready(0);
-	BDEV_WR(BCHP_MEM_DMA_0_FIRST_DESC, pa_d);
+	BDEV_WR_RB(BCHP_MEM_DMA_0_FIRST_DESC, pa_d);
 
 	return pa_d;
 }

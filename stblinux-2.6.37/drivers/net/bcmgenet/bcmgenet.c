@@ -159,6 +159,9 @@ static struct sk_buff *__bcmgenet_alloc_skb_from_buf(unsigned char *buf,
 /* clock control */
 static void bcmgenet_clock_enable(struct BcmEnet_devctrl *pDevCtrl);
 static void bcmgenet_clock_disable(struct BcmEnet_devctrl *pDevCtrl);
+/* S3 warm boot */
+static void save_state(struct BcmEnet_devctrl *pDevCtrl);
+static void restore_state(struct BcmEnet_devctrl *pDevCtrl);
 
 static struct net_device *eth_root_dev;
 static int DmaDescThres = DMA_DESC_THRES;
@@ -486,14 +489,17 @@ static int bcmgenet_wakeup_disable(void *ref)
 
 static int bcmgenet_wakeup_poll(void *ref)
 {
-	int retval;
 	struct BcmEnet_devctrl *pDevCtrl = (struct BcmEnet_devctrl *)ref;
-	u32 mask;
-	if (pDevCtrl->phyType == BRCM_PHY_TYPE_MOCA)
-		mask = WOL_MOCA_MASK;
-	else
-		mask = pDevCtrl->devnum ? WOL_MOCA_MASK : WOL_ENET_MASK;
-	retval = brcm_pm_wakeup_get_status(mask);
+	int retval = 0;
+	u32 mask = 0;
+
+	if (device_may_wakeup(&pDevCtrl->dev->dev)) {
+		if (pDevCtrl->phyType == BRCM_PHY_TYPE_MOCA)
+			mask = WOL_MOCA_MASK;
+		else
+			mask = pDevCtrl->devnum ? WOL_MOCA_MASK : WOL_ENET_MASK;
+		retval = brcm_pm_wakeup_get_status(mask);
+	}
 	printk(KERN_DEBUG "%s %s(%08x): %d\n", __func__,
 	       pDevCtrl->dev->name, mask, retval);
 	return retval;
@@ -555,7 +561,12 @@ static int bcmgenet_open(struct net_device *dev)
 	/* reset internal book keeping variables. */
 	pDevCtrl->txLastCIndex = 0;
 	pDevCtrl->rxBdAssignPtr = pDevCtrl->rxBds;
-	assign_rx_buffers(pDevCtrl);
+
+	if (brcm_pm_deep_sleep())
+		restore_state(pDevCtrl);
+	else
+		assign_rx_buffers(pDevCtrl);
+
 	pDevCtrl->txFreeBds = pDevCtrl->nrTxBds;
 
 	/*Always enable ring 16 - descriptor ring */
@@ -582,6 +593,7 @@ static int bcmgenet_open(struct net_device *dev)
 	/* Start the network engine */
 	netif_tx_start_all_queues(dev);
 	napi_enable(&pDevCtrl->napi);
+
 	pDevCtrl->umac->cmd |= (CMD_TX_EN | CMD_RX_EN);
 	pDevCtrl->dev_opened = 1;
 
@@ -658,6 +670,9 @@ static int bcmgenet_close(struct net_device *dev)
 	 * will be scheduled.
 	 */
 	cancel_work_sync(&pDevCtrl->bcmgenet_irq_work);
+
+	if (brcm_pm_deep_sleep())
+		save_state(pDevCtrl);
 
 	pDevCtrl->dev_opened = 0;
 	if (device_may_wakeup(&dev->dev) && pDevCtrl->dev_asleep) {
@@ -2193,6 +2208,39 @@ static int assign_rx_buffers(struct BcmEnet_devctrl *pDevCtrl)
 
 	TRACE(("%s return bdsfilled=%d\n", __func__, bdsfilled));
 	return bdsfilled;
+}
+
+static void save_state(struct BcmEnet_devctrl *pDevCtrl)
+{
+	int ii;
+	volatile struct DmaDesc *rxBdAssignPtr = pDevCtrl->rxBds;
+
+	for (ii = 0; ii < pDevCtrl->nrRxBds; ++ii, ++rxBdAssignPtr) {
+		pDevCtrl->saved_rx_desc[ii].length_status =
+			rxBdAssignPtr->length_status;
+		pDevCtrl->saved_rx_desc[ii].address = rxBdAssignPtr->address;
+	}
+
+	pDevCtrl->int_mask = pDevCtrl->intrl2_0->cpu_mask_status;
+	pDevCtrl->rbuf_ctrl = pDevCtrl->rbuf->rbuf_ctrl;
+}
+
+static void restore_state(struct BcmEnet_devctrl *pDevCtrl)
+{
+	int ii;
+	volatile struct DmaDesc *rxBdAssignPtr = pDevCtrl->rxBds;
+
+	pDevCtrl->intrl2_0->cpu_mask_clear = 0xFFFFFFFF ^ pDevCtrl->int_mask;
+	pDevCtrl->rbuf->rbuf_ctrl = pDevCtrl->rbuf_ctrl;
+
+	for (ii = 0; ii < pDevCtrl->nrRxBds; ++ii, ++rxBdAssignPtr) {
+		rxBdAssignPtr->length_status =
+			pDevCtrl->saved_rx_desc[ii].length_status;
+		rxBdAssignPtr->address = pDevCtrl->saved_rx_desc[ii].address;
+	}
+
+	pDevCtrl->rxDma->rdma_ctrl |= DMA_EN;
+
 }
 
 /*

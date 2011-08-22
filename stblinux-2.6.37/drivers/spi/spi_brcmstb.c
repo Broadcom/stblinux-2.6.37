@@ -85,6 +85,7 @@
 
 #define OPCODE_EN4B		0xB7
 #define OPCODE_EX4B		0xE9
+#define OPCODE_BRWR		0x17
 
 #define	BSPI_WIDTH_1BIT		1
 #define BSPI_WIDTH_2BIT		2
@@ -226,7 +227,6 @@ struct bcmspi_priv {
 	volatile struct bcm_mspi_hw *mspi_hw;
 	int			irq;
 	struct tasklet_struct	tasklet;
-	wait_queue_head_t	idle_wait;
 	int			curr_cs;
 
 	/* BSPI */
@@ -237,14 +237,18 @@ struct bcmspi_priv {
 
 	/* LR */
 	volatile struct bcm_bspi_raf *bspi_hw_raf;
-	struct completion	completion;
 	struct spi_transfer	*cur_xfer;
 	u32			cur_xfer_idx;
 	u32			cur_xfer_len;
 	u32			xfer_status;
+	struct spi_message	*cur_msg;
+	u32			actual_length;
 
 	/* current flex mode settings */
 	struct bcm_flex_mode	flex_mode;
+
+	/* S3 warm boot context save */
+	u32			s3_intr2_mask;
 };
 
 static void bcmspi_enable_interrupt(u32 mask)
@@ -810,7 +814,6 @@ static void write_to_hw(struct bcmspi_priv *priv)
 	} else {
 		BDEV_WR_F_RB(HIF_MSPI_WRITE_LOCK, WriteLock, 0);
 		priv->state = STATE_IDLE;
-		wake_up(&priv->idle_wait);
 	}
 }
 
@@ -824,7 +827,7 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 	u32 addr, len, len_in_dwords;
 	u8 *buf, *src;
 	unsigned long flags;
-	int retval, idx;
+	int idx;
 
 #ifndef BSPI_HAS_4BYTE_ADDRESS
 	/* 4-byte address mode is not supported through BSPI */
@@ -837,12 +840,10 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 		spin_lock_irqsave(&priv->lock, flags);
 		if (priv->state == STATE_IDLE)
 			break;
-		if (priv->state == STATE_SHUTDOWN) {
-			spin_unlock_irqrestore(&priv->lock, flags);
-			return -EIO;
-		}
 		spin_unlock_irqrestore(&priv->lock, flags);
-		sleep_on(&priv->idle_wait);
+		if (priv->state == STATE_SHUTDOWN)
+			return -EIO;
+		udelay(1);
 	}
 	bcmspi_set_chip_select(priv, msg->spi->chip_select);
 
@@ -873,6 +874,8 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 
 	buf = (void *)trans->rx_buf;
 
+	len = trans->len;
+
 	/* non-aligned and very short transfers are handled by MSPI */
 	if (unlikely(!DWORD_ALIGNED(addr) ||
 		     !DWORD_ALIGNED(buf) ||
@@ -882,7 +885,6 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 		return -1;
 	}
 
-	len = trans->len;
 	src = (u8 *)BSPI_BASE_ADDR + addr;
 
 	bcmspi_enable_bspi(priv);
@@ -897,43 +899,26 @@ static int bcmspi_emulate_flash_read(struct bcmspi_priv *priv,
 		ADDR_TO_4MBYTE_SEGMENT(addr+len-1));
 
 	len_in_dwords = (len + 3) >> 2;
+
 	/* initialize software parameters */
 	priv->xfer_status = 0;
 	priv->cur_xfer = trans;
 	priv->cur_xfer_idx = 0;
 	priv->cur_xfer_len = len;
+	priv->cur_msg = msg;
+	priv->actual_length = idx + 4 + trans->len;
+
 	/* setup hardware */
 	/* address must be 4-byte aligned */
 	priv->bspi_hw_raf->start_address = addr;
 	priv->bspi_hw_raf->num_words = len_in_dwords;
 	priv->bspi_hw_raf->watermark = 0;
-	DBG("READ: %08x %08x (%08x)\n",
-		addr, len_in_dwords, trans->len);
-	init_completion(&priv->completion);
+
+	DBG("READ: %08x %08x (%08x)\n", addr, len_in_dwords, trans->len);
+
 	bcmspi_clear_interrupt(0xffffffff);
 	bcmspi_enable_interrupt(BSPI_LR_INTERRUPTS_ALL);
 	bcmspi_lr_start(priv);
-
-	spin_unlock_irqrestore(&priv->lock, flags);
-	retval = wait_for_completion_timeout(&priv->completion,
-			BSPI_LR_TIMEOUT);
-	spin_lock_irqsave(&priv->lock, flags);
-
-	if (!retval)
-		priv->xfer_status = -EIO;
-	priv->cur_xfer = NULL;
-	bcmspi_disable_interrupt(BSPI_LR_INTERRUPTS_ALL);
-
-	if (priv->xfer_status) {
-		bcmspi_lr_clear(priv);
-		spin_unlock_irqrestore(&priv->lock, flags);
-		return -EIO;
-	}
-	bcmspi_flush_prefetch_buffers(priv);
-
-	msg->actual_length = idx + 4 + trans->len;
-	msg->complete(msg->context);
-	msg->status = 0;
 
 	spin_unlock_irqrestore(&priv->lock, flags);
 
@@ -999,6 +984,16 @@ static int bcmspi_transfer(struct spi_device *spi, struct spi_message *msg)
 				DBG("DISABLE 4-BYTE MODE\n");
 				bcmspi_set_mode(priv, -1,
 					BSPI_ADDRLEN_3BYTES, -1);
+				break;
+			case OPCODE_BRWR:
+				{
+					u8 enable = ((u8 *)trans->tx_buf)[1];
+					DBG("%s 4-BYTE MODE\n",
+					    enable ? "ENABLE" : "DISABLE");
+					bcmspi_set_mode(priv, -1,
+						enable ? BSPI_ADDRLEN_4BYTES :
+						BSPI_ADDRLEN_3BYTES, -1);
+				}
 				break;
 			default:
 				break;
@@ -1075,8 +1070,25 @@ static irqreturn_t bcmspi_interrupt(int irq, void *dev_id)
 			priv->xfer_status = -EIO;
 		} else if (!priv->cur_xfer_len)
 			done = 1;
-		if (done)
-			complete(&priv->completion);
+		if (done) {
+			priv->cur_xfer = NULL;
+			bcmspi_disable_interrupt(BSPI_LR_INTERRUPTS_ALL);
+
+			if (priv->xfer_status) {
+				bcmspi_lr_clear(priv);
+			} else {
+				bcmspi_flush_prefetch_buffers(priv);
+
+				if (priv->cur_msg) {
+					priv->cur_msg->actual_length =
+						priv->actual_length;
+					priv->cur_msg->complete(
+						priv->cur_msg->context);
+					priv->cur_msg->status = 0;
+				}
+			}
+			priv->cur_msg = NULL;
+		}
 		bcmspi_clear_interrupt(status);
 		return IRQ_HANDLED;
 	}
@@ -1415,7 +1427,6 @@ static int bcmspi_probe(struct platform_device *pdev)
 
 	INIT_LIST_HEAD(&priv->msg_queue);
 	spin_lock_init(&priv->lock);
-	init_waitqueue_head(&priv->idle_wait);
 
 	platform_set_drvdata(pdev, priv);
 
@@ -1467,7 +1478,7 @@ static int bcmspi_remove(struct platform_device *pdev)
 		if (priv->state == STATE_IDLE)
 			break;
 		spin_unlock_irqrestore(&priv->lock, flags);
-		sleep_on(&priv->idle_wait);
+		udelay(100);
 	}
 	priv->state = STATE_SHUTDOWN;
 	spin_unlock_irqrestore(&priv->lock, flags);
@@ -1486,11 +1497,42 @@ static int bcmspi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int bcmspi_suspend(struct device *dev)
+{
+	if (brcm_pm_deep_sleep()) {
+		struct bcmspi_priv *priv = dev_get_drvdata(dev);
+		priv->s3_intr2_mask =
+			BDEV_RD(BCHP_HIF_SPI_INTR2_CPU_MASK_STATUS);
+	}
+	return 0;
+};
+
+static int bcmspi_resume(struct device *dev)
+{
+	if (brcm_pm_deep_sleep()) {
+		struct bcmspi_priv *priv = dev_get_drvdata(dev);
+		int curr_cs = priv->curr_cs;
+		BDEV_WR_RB(BCHP_HIF_SPI_INTR2_CPU_MASK_CLEAR,
+			~priv->s3_intr2_mask);
+		bcmspi_hw_init(priv);
+		bcmspi_set_mode(priv, -1, -1, -1);
+		priv->curr_cs = -1;
+		bcmspi_set_chip_select(priv, curr_cs);
+	}
+	return 0;
+}
+
+static const struct dev_pm_ops bcmspi_pm_ops = {
+	.suspend		= bcmspi_suspend,
+	.resume			= bcmspi_resume,
+};
+
 static struct platform_driver driver = {
 	.driver = {
 		.name = "spi_brcmstb",
 		.bus = &platform_bus_type,
 		.owner = THIS_MODULE,
+		.pm		= &bcmspi_pm_ops,
 	},
 	.probe = bcmspi_probe,
 	.remove = __devexit_p(bcmspi_remove),

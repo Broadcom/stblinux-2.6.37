@@ -308,6 +308,17 @@ void board_pinmux_setup(void)
 
 #elif defined(CONFIG_BCM7344)
 
+	PINMUX(15, gpio_79, 1);		/* MoCA link */
+	PINMUX(15, gpio_80, 1);		/* MoCA activity */
+
+	PINMUX(17, uart_rxdb, 0);	/* UARTB RX */
+
+#ifdef CONFIG_BCM7344A0
+	PINMUX(18, uart_txdb, 0);	/* UARTB TX */
+#else
+	PINMUX(17, uart_txdb, 0);	/* UARTB TX */
+#endif
+
 	AON_PINMUX(0, aon_gpio_00, 3);	/* UARTC RX (NC) */
 	AON_PINMUX(0, aon_gpio_01, 3);	/* UARTC TX (NC) */
 

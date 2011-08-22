@@ -33,6 +33,19 @@
 #define MAX_DDR_APHY_PARAMS_NUM		16
 #define MAX_ARB_PARAMS_NUM		2
 
+#define MEMC_STATE_UNKNOWN		0
+#define MEMC_STATE_ON			1
+#define MEMC_STATE_OFF			2
+
+static int  __brcm_pm_memc1_initialized(void);
+static void __brcm_pm_memc1_clock_start(void);
+static void __brcm_pm_memc1_clock_stop(void);
+static int  __brcm_pm_memc1_clock_running(void);
+static void __brcm_pm_memc1_suspend(int mode);
+static void __brcm_pm_memc1_resume(int mode);
+static void __brcm_pm_memc1_powerdown(void);
+static int  __brcm_pm_memc1_powerup(void);
+
 struct memc_config {
 	u32	client_info[MAX_CLIENT_INFO_NUM];
 	u32	ddr23_aphy_params[MAX_DDR_APHY_PARAMS_NUM];
@@ -42,14 +55,24 @@ struct memc_config {
 	u32	vcdl[4];
 	int	shmoo_value[8];
 
-	int	shmoo_valid:1;
-	int	valid:1;
-
+	int	shmoo_valid;
+	int	valid;
+	/* if CFE did not initialize non-primary MEMC we cannot touch it
+	  because we do not have calibration capabilities.
+	  _initalized_ and _clock_active_ are initially set to
+	  0: unknown
+	  The first time any method is called it will set _initialized_ to
+	  one of the following values:
+	  1: on
+	  2: off - unusable
+	 */
+	int	initialized;
+	int	clock_active;
 };
 
 static struct memc_config __maybe_unused memc1_config;
 
-static void brcm_memc1_sspd_control(int enable)
+static void brcm_pm_memc1_sspd_control(int enable)
 {
 	if (enable) {
 		BDEV_WR_F_RB(MEMC_DDR_1_SSPD_CMD, SSPD, 1);
@@ -62,7 +85,7 @@ static void brcm_memc1_sspd_control(int enable)
 	}
 }
 
-static void brcm_memc1_ddr_params(int restore)
+static void brcm_pm_memc1_ddr_params(int restore)
 {
 	int ii = 0;
 
@@ -121,7 +144,7 @@ static void brcm_memc1_ddr_params(int restore)
 	BUG_ON(ii > MAX_DDR_PARAMS_NUM);
 }
 
-static void brcm_memc1_arb_params(int restore)
+static void brcm_pm_memc1_arb_params(int restore)
 {
 	int ii = 0;
 
@@ -140,7 +163,7 @@ static void brcm_memc1_arb_params(int restore)
 	BUG_ON(ii > MAX_ARB_PARAMS_NUM);
 }
 
-static void brcm_memc1_client_info(int restore)
+static void brcm_pm_memc1_client_info(int restore)
 {
 	int ii = 0;
 	u32 addr = BCHP_MEMC_ARB_1_REG_START + 4;
@@ -158,11 +181,144 @@ static void brcm_memc1_client_info(int restore)
 		}
 }
 
-#if defined(CONFIG_BCM7420)
-
-static void bcm7420_memc1_suspend(int mode)
+static int brcm_pm_memc1_clock_running(void)
 {
+	if (memc1_config.clock_active == MEMC_STATE_UNKNOWN) {
+		/* do this only once */
+		memc1_config.clock_active = __brcm_pm_memc1_clock_running() ?
+			MEMC_STATE_ON : MEMC_STATE_OFF;
+	}
+	return memc1_config.clock_active == MEMC_STATE_ON;
+}
+
+static void brcm_pm_memc1_clock_start(void)
+{
+	if (!brcm_pm_memc1_clock_running())
+		__brcm_pm_memc1_clock_start();
+	memc1_config.clock_active = MEMC_STATE_ON;
+}
+
+static void brcm_pm_memc1_clock_stop(void)
+{
+	if (brcm_pm_memc1_clock_running())
+		__brcm_pm_memc1_clock_stop();
+	memc1_config.clock_active = MEMC_STATE_OFF;
+}
+
+static int brcm_pm_memc1_initialized(void)
+{
+	if (memc1_config.initialized == MEMC_STATE_UNKNOWN) {
+		brcm_pm_memc1_clock_start();
+		/* do this only once */
+		memc1_config.initialized = __brcm_pm_memc1_initialized() ?
+			MEMC_STATE_ON : MEMC_STATE_OFF;
+	}
+	return memc1_config.initialized == MEMC_STATE_ON;
+}
+
+#define CHECK_MEMC1_INIT() \
+	if (!brcm_pm_memc1_initialized()) { \
+		printk(KERN_ERR "%s: not initialized\n", __func__); \
+		return -1; \
+	}
+
+int brcm_pm_memc1_suspend(void)
+{
+	CHECK_MEMC1_INIT();
+
+	__brcm_pm_memc1_suspend(0);
+	/* Stop the clocks */
+	brcm_pm_memc1_clock_stop();
+
+	return 0;
+}
+
+int brcm_pm_memc1_resume(void)
+{
+	CHECK_MEMC1_INIT();
+
+	/* Restart the clocks */
+	brcm_pm_memc1_clock_start();
+	__brcm_pm_memc1_resume(0);
+	brcm_pm_memc1_sspd_control(0);
+
+	return 0;
+}
+
+int brcm_pm_memc1_powerdown(void)
+{
+	CHECK_MEMC1_INIT();
+
 	DBG(KERN_DEBUG "%s\n", __func__);
+
+	brcm_pm_memc1_client_info(0);
+	brcm_pm_memc1_ddr_params(0);
+	brcm_pm_memc1_arb_params(0);
+	__brcm_pm_memc1_powerdown();
+	/* Stop the clocks */
+	brcm_pm_memc1_clock_stop();
+	memc1_config.valid = 1;
+
+	return 0;
+}
+
+int brcm_pm_memc1_powerup(void)
+{
+	CHECK_MEMC1_INIT();
+
+	if (!memc1_config.valid || !memc1_config.shmoo_valid) {
+		printk(KERN_ERR "%s: no valid saved configuration %d %d\n",
+		       __func__, memc1_config.valid, memc1_config.shmoo_valid);
+		return -1;
+	}
+
+	DBG(KERN_DEBUG "%s\n", __func__);
+
+	/* Restart the clocks */
+	brcm_pm_memc1_clock_start();
+	__brcm_pm_memc1_resume(1);
+	__brcm_pm_memc1_powerup();
+	brcm_pm_memc1_ddr_params(1);
+	brcm_pm_memc1_arb_params(1);
+	brcm_pm_memc1_client_info(1);
+	brcm_pm_memc1_sspd_control(0);
+
+	return 0;
+}
+
+#if defined(CONFIG_BCM7420)
+static int __brcm_pm_memc1_initialized(void)
+{
+	return BDEV_RD_F(MEMC_DDR_1_DRAM_INIT_STATUS, INIT_DONE);
+}
+
+static void __brcm_pm_memc1_clock_start(void)
+{
+	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK, 0);
+	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK, 0);
+	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_216M_CLK, 0);
+	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_108M_CLK, 0);
+}
+
+static void __brcm_pm_memc1_clock_stop(void)
+{
+	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK, 1);
+	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK, 1);
+	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_216M_CLK, 1);
+	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_108M_CLK, 1);
+}
+
+static int __brcm_pm_memc1_clock_running(void)
+{
+	return !(BDEV_RD_F(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK) ||
+	    BDEV_RD_F(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK) ||
+	    BDEV_RD_F(CLK_MEMC_1_PM_CTRL, DIS_216M_CLK) ||
+	    BDEV_RD_F(CLK_MEMC_1_PM_CTRL, DIS_108M_CLK));
+}
+
+static void __brcm_pm_memc1_suspend(int mode)
+{
+	DBG(KERN_DEBUG "%s %d\n", __func__, mode);
 
 	if (!memc1_config.shmoo_valid) {
 		memc1_config.shmoo_value[0] =
@@ -215,7 +371,7 @@ static void bcm7420_memc1_suspend(int mode)
 	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_WORDSLICE_CNTRL_1,
 		PWRDN_DLL_ON_SELFREF, 1);
 
-	brcm_memc1_sspd_control(1);
+	brcm_pm_memc1_sspd_control(1);
 
 	if (mode) {
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
@@ -237,25 +393,14 @@ static void bcm7420_memc1_suspend(int mode)
 	BDEV_WR_F_RB(MEMC_DDR23_APHY_WL1_1_WORDSLICE_CNTRL_1,
 		LDO_PWRDN, 1);
 
-	/* Stop the clocks */
-	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK, 1);
-	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK, 1);
-	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_216M_CLK, 1);
-	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_108M_CLK, 1);
-
 }
 
-static void bcm7420_memc1_resume(int mode)
+static void __brcm_pm_memc1_resume(int mode)
 {
 	u32 val, cur_val;
 	s32 sval, scur_val, inc_val;
 
-	DBG(KERN_DEBUG "%s\n", __func__);
-	/* Restart the clocks */
-	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_216M_CLK, 0);
-	BDEV_WR_F_RB(CLK_DDR23_APHY_1_PM_CTRL, DIS_108M_CLK, 0);
-	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_216M_CLK, 0);
-	BDEV_WR_F_RB(CLK_MEMC_1_PM_CTRL, DIS_108M_CLK, 0);
+	DBG(KERN_DEBUG "%s %d\n", __func__, mode);
 
 	/* power up LDOs */
 	BDEV_WR_F_RB(MEMC_DDR23_APHY_AC_1_PLL_CTRL1_REG,
@@ -466,28 +611,10 @@ static void bcm7420_memc1_resume(int mode)
 
 }
 
-void brcm_pm_memc1_suspend(void)
+static void __brcm_pm_memc1_powerdown(void)
 {
-	bcm7420_memc1_suspend(0);
-}
+	int ii = 0;
 
-void brcm_pm_memc1_resume(void)
-{
-	bcm7420_memc1_resume(0);
-	brcm_memc1_sspd_control(0);
-}
-
-void brcm_pm_memc1_powerdown(void)
-{
-	int ii;
-
-	DBG(KERN_DEBUG "%s\n", __func__);
-
-	brcm_memc1_client_info(0);
-
-	brcm_memc1_ddr_params(0);
-
-	ii = 0;
 	memc1_config.ddr23_aphy_params[ii++] =
 		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_PLL_CTRL1_REG);
 	memc1_config.ddr23_aphy_params[ii++] =
@@ -505,37 +632,20 @@ void brcm_pm_memc1_powerdown(void)
 
 	BUG_ON(ii > MAX_DDR_APHY_PARAMS_NUM);
 
-	brcm_memc1_arb_params(0);
-
 	/* CKE_IDDQ */
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
 		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) | 4);
 
-	bcm7420_memc1_suspend(1);
-
-	memc1_config.valid = 1;
-
+	__brcm_pm_memc1_suspend(1);
 }
 
-int brcm_pm_memc1_powerup(void)
+static int __brcm_pm_memc1_powerup(void)
 {
 	int ii = 0;
-
-	DBG(KERN_DEBUG "%s\n", __func__);
-	/* Restore MEMC1 configuration */
-
-	if (!memc1_config.valid || !memc1_config.shmoo_valid) {
-		printk(KERN_ERR "%s: no valid saved configuration\n", __func__);
-		return -1;
-	}
-
-	bcm7420_memc1_resume(1);
 
 	/* Remove CKE_IDDQ */
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
 		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) & ~4);
-
-	brcm_memc1_ddr_params(1);
 
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_PLL_CTRL1_REG,
 		memc1_config.ddr23_aphy_params[ii++]);
@@ -552,21 +662,45 @@ int brcm_pm_memc1_powerup(void)
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_ODT_CONFIG,
 		memc1_config.ddr23_aphy_params[ii++]);
 
-	brcm_memc1_arb_params(1);
-
-	brcm_memc1_client_info(1);
-
-	brcm_memc1_sspd_control(0);
-
 	return 0;
 }
 #endif
 
 #if defined(CONFIG_BCM7425)
-
-static void bcm7425_memc1_suspend(int mode)
+static int __brcm_pm_memc1_initialized(void)
 {
-	DBG(KERN_DEBUG "%s\n", __func__);
+	return BDEV_RD_F(MEMC_DDR_1_DRAM_INIT_STATUS, INIT_DONE);
+}
+
+static void __brcm_pm_memc1_clock_start(void)
+{
+	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+		DDR1_SCB_CLOCK_ENABLE, 1);
+	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+		DDR1_108_CLOCK_ENABLE, 1);
+}
+
+static void __brcm_pm_memc1_clock_stop(void)
+{
+	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+		DDR1_SCB_CLOCK_ENABLE, 0);
+	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+		DDR1_108_CLOCK_ENABLE, 0);
+}
+
+static int __brcm_pm_memc1_clock_running(void)
+{
+	return BDEV_RD_F(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+			DDR1_SCB_CLOCK_ENABLE) &&
+		BDEV_RD_F(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
+			DDR1_108_CLOCK_ENABLE);
+}
+
+static void __brcm_pm_memc1_suspend(int mode)
+{
+	DBG(KERN_DEBUG "%s %d\n", __func__, mode);
+
+	memc1_config.shmoo_valid = 1;
 
 	/* power down the pads */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
@@ -585,7 +719,7 @@ static void bcm7425_memc1_suspend(int mode)
 			0xFFFFF);
 
 	/* enter SSPD */
-	brcm_memc1_sspd_control(1);
+	brcm_pm_memc1_sspd_control(1);
 
 	/* power down the PLLs */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_SYS_PLL_PWRDN_ref_clk_sel,
@@ -608,42 +742,17 @@ static void bcm7425_memc1_suspend(int mode)
 		mdelay(1);
 	}
 
-	/* stop the clocks to MEMSYS1 */
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_SCB_CLOCK_ENABLE, 0);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_108_CLOCK_ENABLE, 0);
-
 	memc1_config.valid = 1;
 }
 
-void brcm_pm_memc1_suspend(void)
+static void __brcm_pm_memc1_powerdown(void)
 {
-	bcm7425_memc1_suspend(0);
+	__brcm_pm_memc1_suspend(1);
 }
 
-void brcm_pm_memc1_powerdown(void)
+static void __brcm_pm_memc1_resume(int mode)
 {
-	DBG(KERN_DEBUG "%s\n", __func__);
-
-	brcm_memc1_client_info(0);
-
-	brcm_memc1_ddr_params(0);
-
-	brcm_memc1_arb_params(0);
-
-	bcm7425_memc1_suspend(1);
-}
-
-static void bcm7425_memc1_resume(int mode)
-{
-	DBG(KERN_DEBUG "%s\n", __func__);
-
-	/* re-enable the clocks */
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_SCB_CLOCK_ENABLE, 1);
-	BDEV_WR_F_RB(CLKGEN_MEMSYS_32_1_INST_CLOCK_ENABLE,
-		DDR1_108_CLOCK_ENABLE, 1);
+	DBG(KERN_DEBUG "%s %d\n", __func__, mode);
 
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_SYS_PLL_PWRDN_ref_clk_sel,
 		PWRDN, 0);
@@ -663,8 +772,6 @@ static void bcm7425_memc1_resume(int mode)
 	/* power up the pads */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
 		IDDQ_MODE_ON_SELFREF, 0);
-/*	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
-		PHY_IDLE_ENABLE, 0); */
 	BDEV_WR_F_RB(MEMC_DDR23_SHIM_ADDR_CNTL_1_DDR_PAD_CNTRL,
 		HIZ_ON_SELFREF, 0);
 	BDEV_WR_RB(BCHP_DDR40_PHY_CONTROL_REGS_1_IDLE_PAD_CONTROL,
@@ -676,7 +783,7 @@ static void bcm7425_memc1_resume(int mode)
 		BDEV_RD(BCHP_DDR40_PHY_WORD_LANE_1_1_IDLE_PAD_CONTROL) |
 			0);
 
-	brcm_memc1_sspd_control(0);
+	brcm_pm_memc1_sspd_control(0);
 
 	if (mode) {
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET, MEMC_DRAM_INIT, 0);
@@ -687,30 +794,9 @@ static void bcm7425_memc1_resume(int mode)
 		printk(KERN_DEBUG "memc1: resumed\n");
 }
 
-void brcm_pm_memc1_resume(void)
-{
-	bcm7425_memc1_resume(0);
-}
-
-int brcm_pm_memc1_powerup(void)
+static int __brcm_pm_memc1_powerup(void)
 {
 	DBG(KERN_DEBUG "%s\n", __func__);
-
-	/* Restore MEMC1 configuration */
-	if (!memc1_config.valid) {
-		printk(KERN_ERR "%s: no valid saved configuration\n", __func__);
-		return -1;
-	}
-
-	bcm7425_memc1_resume(1);
-
-	brcm_memc1_ddr_params(1);
-
-	brcm_memc1_arb_params(1);
-
-	brcm_memc1_client_info(1);
-
-	brcm_memc1_sspd_control(0);
 
 	return 0;
 }
