@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jun 13 14:14:06 2011
- *                 MD5 Checksum         a14f8e7f638a7ebe759043ff756befc5
+ * Date:           Generated on         Mon Aug 22 02:01:04 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_hif_top_ctrl.h $
- * 
- * Hydra_Software_Devel/3   6/14/11 1:50p vanessah
- * SW7425-715: 7425 B0 RDB resync
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,14 +42,16 @@
 /***************************************************************************
  *HIF_TOP_CTRL - HIF Top Control Registers
  ***************************************************************************/
-#define BCHP_HIF_TOP_CTRL_EXT_IRQ_LEVEL          0x0041b400 /* External IRQ Active Level Control Register */
-#define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL            0x0041b404 /* SPI test port select register */
-#define BCHP_HIF_TOP_CTRL_SCRATCH                0x0041b408 /* HIF Scratch Register */
-#define BCHP_HIF_TOP_CTRL_PM_CTRL0               0x0041b40c /* HIF Power Management Control0 Register */
-#define BCHP_HIF_TOP_CTRL_PM_CTRL1               0x0041b410 /* HIF Power Management Control1 Register */
-#define BCHP_HIF_TOP_CTRL_PM_CTRL2               0x0041b414 /* HIF Power Management Control Register:used to control SDIO_0 (CARD) */
-#define BCHP_HIF_TOP_CTRL_PM_CTRL3               0x0041b418 /* HIF Power Management Control Register:used to control SDIO_1 (EMMC) */
-#define BCHP_HIF_TOP_CTRL_FLASH_TYPE             0x0041b41c /* HIF Decoded Flash Type */
+#define BCHP_HIF_TOP_CTRL_EXT_IRQ_LEVEL          0x0041c400 /* External IRQ Active Level Control Register */
+#define BCHP_HIF_TOP_CTRL_SPI_DBG_SEL            0x0041c404 /* SPI test port select register */
+#define BCHP_HIF_TOP_CTRL_SCRATCH                0x0041c408 /* HIF Scratch Register */
+#define BCHP_HIF_TOP_CTRL_PM_CTRL0               0x0041c40c /* HIF Power Management Control0 Register */
+#define BCHP_HIF_TOP_CTRL_PM_CTRL1               0x0041c410 /* HIF Power Management Control1 Register */
+#define BCHP_HIF_TOP_CTRL_PM_CTRL2               0x0041c414 /* HIF Power Management Control Register:used to control SDIO_0 (CARD) */
+#define BCHP_HIF_TOP_CTRL_PM_CTRL3               0x0041c418 /* HIF Power Management Control Register:used to control SDIO_1 (EMMC) */
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE             0x0041c41c /* HIF Decoded Flash Type */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL          0x0041c430 /* CPU MODE Control register (PUBLIC) */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS        0x0041c434 /* CPU MODE Control status register (PUBLIC) */
 
 /***************************************************************************
  *EXT_IRQ_LEVEL - External IRQ Active Level Control Register
@@ -507,6 +506,39 @@
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_Nand               1
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_SerialNOR          2
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_eMMC               3
+
+/***************************************************************************
+ *CPU_MODE_CTRL - CPU MODE Control register (PUBLIC)
+ ***************************************************************************/
+/* HIF_TOP_CTRL :: CPU_MODE_CTRL :: reserved0 [31:01] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_reserved0_MASK             0xfffffffe
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_reserved0_SHIFT            1
+
+/* HIF_TOP_CTRL :: CPU_MODE_CTRL :: CPU_MODE [00:00] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_CPU_MODE_MASK              0x00000001
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_CPU_MODE_SHIFT             0
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_CPU_MODE_DEFAULT           0
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_CPU_MODE_QuadSMP           0
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_CTRL_CPU_MODE_WebCPU            1
+
+/***************************************************************************
+ *CPU_MODE_STATUS - CPU MODE Control status register (PUBLIC)
+ ***************************************************************************/
+/* HIF_TOP_CTRL :: CPU_MODE_STATUS :: reserved0 [31:08] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_reserved0_MASK           0xffffff00
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_reserved0_SHIFT          8
+
+/* HIF_TOP_CTRL :: CPU_MODE_STATUS :: SPARE_STATUS [07:03] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_SPARE_STATUS_MASK        0x000000f8
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_SPARE_STATUS_SHIFT       3
+
+/* HIF_TOP_CTRL :: CPU_MODE_STATUS :: CPU_MODE_STATUS [02:02] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_CPU_MODE_STATUS_MASK     0x00000004
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_CPU_MODE_STATUS_SHIFT    2
+
+/* HIF_TOP_CTRL :: CPU_MODE_STATUS :: CPU_MODE_OTP [01:00] */
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_CPU_MODE_OTP_MASK        0x00000003
+#define BCHP_HIF_TOP_CTRL_CPU_MODE_STATUS_CPU_MODE_OTP_SHIFT       0
 
 #endif /* #ifndef BCHP_HIF_TOP_CTRL_H__ */
 

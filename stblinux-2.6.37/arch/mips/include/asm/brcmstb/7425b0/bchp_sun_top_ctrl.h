@@ -34,6 +34,9 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_sun_top_ctrl.h $
  * 
+ * Hydra_Software_Devel/4   8/2/11 12:36p vanessah
+ * SW7425-715: 7425 B0 RDB resync
+ * 
  * Hydra_Software_Devel/3   6/14/11 3:19p vanessah
  * SW7425-715: 7425 B0 RDB resync
  *
@@ -1420,8 +1423,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_1_pad_sel_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_1_pad_slew [05:05] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_slew_MASK 0x00000020
@@ -1434,8 +1437,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_0_pad_slew [02:02] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_slew_MASK 0x00000004
@@ -1448,8 +1451,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 3
 
 /***************************************************************************
  *GENERAL_CTRL_NO_SCAN_1 - General control register without scan 1

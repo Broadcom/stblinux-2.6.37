@@ -92,7 +92,7 @@ void Server::Sig_Int( int inSigno ) {
 }
 
 /* ------------------------------------------------------------------- 
- * Receieve data from the (connected) TCP/UDP socket. 
+ * Receive data from the (connected) socket.
  * Sends termination flag several times at the end. 
  * Does not close the socket. 
  * ------------------------------------------------------------------- */ 
@@ -128,14 +128,27 @@ void Server::Run( void ) {
                 reportstruct->packetID = -reportstruct->packetID;
                 currLen = -1; 
             }
-	    if ( isUDP (mSettings))
+
+	    if ( isUDP (mSettings)) {
 		ReportPacket( mSettings->reporthdr, reportstruct );
+            } else if ( !isUDP (mSettings) && mSettings->mInterval > 0) {
+                reportstruct->packetLen = currLen;
+                gettimeofday( &(reportstruct->packetTime), NULL );
+                ReportPacket( mSettings->reporthdr, reportstruct );
+            }
+
+
+
         } while ( currLen > 0 ); 
+        
         
         // stop timing 
         gettimeofday( &(reportstruct->packetTime), NULL );
+        
 	if ( !isUDP (mSettings)) {
-		reportstruct->packetLen = totLen;
+		if(0.0 == mSettings->mInterval) {
+                        reportstruct->packetLen = totLen;
+                }
 		ReportPacket( mSettings->reporthdr, reportstruct );
 	}
         CloseReport( mSettings->reporthdr, reportstruct );

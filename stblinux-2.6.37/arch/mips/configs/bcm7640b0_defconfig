@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-2.2pre Kernel Configuration
-# Thu Jul 28 10:56:41 2011
+# Linux/mips 2.6.37-2.3pre Kernel Configuration
+# Sat Aug 27 13:05:49 2011
 #
 CONFIG_MIPS=y
 
@@ -75,12 +75,13 @@ CONFIG_BRCMSTB=y
 # CONFIG_BCM7420C0 is not set
 # CONFIG_BCM7425A0 is not set
 # CONFIG_BCM7425B0 is not set
-# CONFIG_BCM7428A0 is not set
+# CONFIG_BCM7429A0 is not set
 # CONFIG_BCM7435A0 is not set
 # CONFIG_BCM7468B0 is not set
 # CONFIG_BCM7550A0 is not set
 # CONFIG_BCM7550B0 is not set
 # CONFIG_BCM7552A0 is not set
+# CONFIG_BCM7552B0 is not set
 # CONFIG_BCM7631B0 is not set
 # CONFIG_BCM7640A0 is not set
 CONFIG_BCM7640B0=y

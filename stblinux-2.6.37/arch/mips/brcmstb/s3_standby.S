@@ -50,7 +50,7 @@
 	.set		noreorder
 	.align		5
 
-#if defined(CONFIG_BCM7425)
+#if defined(CONFIG_BMIPS5000)
 #define CACHE_WRITEBACK_CMD	Hit_Writeback_Inv_SD
 #else
 #define CACHE_WRITEBACK_CMD	Hit_Writeback_Inv_D
@@ -110,30 +110,26 @@ skip_dram_encode:
 	sw	t1, 0(t0)
 	lw	zero, 0(t0)
 
-	li	t1, 0x1fff
-	li	t0, REG(BCHP_AON_CTRL_PM_S3_STANDBY_TIMER)
-	sw	t1, 0(t0)
-	lw	zero, 0(t0)
-	li	t0, REG(BCHP_AON_CTRL_PM_S3_WAKEUP_TIMER)
-	sw	t1, 0(t0)
-	lw	t1, 0(t0)
-
 # set 'warm boot' flag
 	li	t0, 1
 	aon_write_data	0, t0
-# save reentry point and stack pointer in AON
+# reentry point
 	la	t0, s3_reentry
 	aon_write_data  4, t0
-	aon_write_data	8, sp
 
-#if 1
 # deep power down request
+
 pd_request:
 	li	t0, REG(BCHP_AON_CTRL_PM_CTRL)
-# SET: pm_start_pwrdn, pm_deep_standby, pm_warm_boot, pm_enable_pll_pwrdn
-	li	t1, 0x33
+# SET: pm_deep_standby, pm_warm_boot, pm_enable_pll_pwrdn
+	li	t1, 0x32
 	sw	zero, 0(t0)
 	lw	zero, 0(t0)
+	sw	t1, 0(t0)
+	lw	zero, 0(t0)
+
+# SET: pm_start_pwrdn
+	li	t1, 0x33
 	sw	t1, 0(t0)
 	lw	zero, 0(t0)
 
@@ -155,27 +151,6 @@ wait_loop:
 	mtc0	t0, CP0_STATUS
 	wait
 	nop
-
-#else
-
-/* Test: issue restart */
-	li	t1, 1
-	li	t0, REG(BCHP_SUN_TOP_CTRL_RESET_SOURCE_ENABLE)
-	sw	t1, 0(t0)
-	lw	zero, 0(t0)
-	li	t0, REG(BCHP_SUN_TOP_CTRL_SW_MASTER_RESET)
-#	sw	t1, 0(t0)
-#	lw	zero, 0(t0)
-
-	/* simulate return from CFE */
-	aon_read_data	4, t0
-	aon_read_data	8, sp
-	jr	t0
-	nop
-
-	/* we are never here */
-	j	panic
-#endif
 
 s3_reentry:
 # restore sr

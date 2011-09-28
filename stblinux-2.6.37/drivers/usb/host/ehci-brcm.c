@@ -160,12 +160,8 @@ static int ehci_brcm_resume(struct usb_hcd *hcd)
 		ehci_writel(ehci, 0x00800040, &ehci->regs->port_status[0x10]);
 		ehci_writel(ehci, 0x00000001, &ehci->regs->port_status[0x12]);
 
-		/* Else reset, to cope with power loss or flush-to-storage
-		 * style "resume" having let BIOS kick in during reboot.
-		 */
-		(void) ehci_halt(ehci);
-		(void) ehci_reset(ehci);
-		msleep(300);
+		(void)ehci_halt(ehci);
+		(void)ehci_reset(ehci);
 
 		ehci_writel(ehci, ehci->command, &ehci->regs->command);
 		ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
@@ -186,7 +182,7 @@ static int ehci_brcm_resume(struct usb_hcd *hcd)
 		/* Some controller/firmware combinations need a delay during
 		 * which they set up the port statuses.  See Bugzilla #8190. */
 		/* SWLINUX-1929 need extra delay here */
-		msleep(300);
+		msleep(10);
 
 		ehci->next_statechange = jiffies + msecs_to_jiffies(5);
 		hcd->state = HC_STATE_RUNNING;

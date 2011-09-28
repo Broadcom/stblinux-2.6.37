@@ -543,14 +543,6 @@ void ahci_start_engine(struct ata_port *ap)
 	void __iomem *port_mmio = ahci_port_base(ap);
 	u32 tmp;
 
-#if defined(CONFIG_BRCM_HAS_SATA3)
-	u8 status = readl(port_mmio + PORT_TFDATA) & 0xFF;
-	if (status & (ATA_BUSY | ATA_DRQ) ||
-	    ahci_scr_read(&ap->link, SCR_STATUS, &tmp) ||
-	    (tmp & 0x0f) != 0x03)
-		return;
-#endif
-
 	/* start DMA */
 	tmp = readl(port_mmio + PORT_CMD);
 	tmp |= PORT_CMD_START;
@@ -733,9 +725,6 @@ static void ahci_start_port(struct ata_port *ap)
 
 	/* enable FIS reception */
 	ahci_start_fis_rx(ap);
-
-	/* enable DMA */
-	ahci_start_engine(ap);
 
 	/* turn on LEDs */
 	if (ap->flags & ATA_FLAG_EM) {
@@ -1950,7 +1939,7 @@ static int ahci_port_suspend(struct ata_port *ap, pm_message_t mesg)
 		ahci_power_down(ap);
 	else {
 		ata_port_printk(ap, KERN_ERR, "%s (%d)\n", emsg, rc);
-		ahci_start_port(ap);
+		ata_port_freeze(ap);
 	}
 
 	return rc;

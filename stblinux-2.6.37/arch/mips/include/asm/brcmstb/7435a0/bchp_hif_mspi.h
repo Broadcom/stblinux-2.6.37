@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 12:10:28 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Mon Aug 22 02:04:39 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_hif_mspi.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 8:43a vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,97 +42,97 @@
 /***************************************************************************
  *HIF_MSPI - Public MSPI Registers
  ***************************************************************************/
-#define BCHP_HIF_MSPI_SPCR0_LSB                  0x0041c200 /* SPCR0_LSB REGISTER */
-#define BCHP_HIF_MSPI_SPCR0_MSB                  0x0041c204 /* SPCR0_MSB Register */
-#define BCHP_HIF_MSPI_SPCR1_LSB                  0x0041c208 /* SPCR1_LSB REGISTER */
-#define BCHP_HIF_MSPI_SPCR1_MSB                  0x0041c20c /* SPCR1_MSB REGISTER */
-#define BCHP_HIF_MSPI_NEWQP                      0x0041c210 /* NEWQP REGISTER */
-#define BCHP_HIF_MSPI_ENDQP                      0x0041c214 /* ENDQP REGISTER */
-#define BCHP_HIF_MSPI_SPCR2                      0x0041c218 /* SPCR2 REGISTER */
-#define BCHP_HIF_MSPI_MSPI_STATUS                0x0041c220 /* MSPI STATUS REGISTER */
-#define BCHP_HIF_MSPI_CPTQP                      0x0041c224 /* CPTQP REGISTER */
-#define BCHP_HIF_MSPI_TXRAM00                    0x0041c240 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 0) */
-#define BCHP_HIF_MSPI_TXRAM01                    0x0041c244 /* LSbyte for bit 16 operation only (queue pointer = 0) */
-#define BCHP_HIF_MSPI_TXRAM02                    0x0041c248 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 1) */
-#define BCHP_HIF_MSPI_TXRAM03                    0x0041c24c /* LSbyte for bit 16 operation only (queue pointer = 1) */
-#define BCHP_HIF_MSPI_TXRAM04                    0x0041c250 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 2) */
-#define BCHP_HIF_MSPI_TXRAM05                    0x0041c254 /* LSbyte for bit 16 operation only (queue pointer = 2) */
-#define BCHP_HIF_MSPI_TXRAM06                    0x0041c258 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 3) */
-#define BCHP_HIF_MSPI_TXRAM07                    0x0041c25c /* LSbyte for bit 16 operation only (queue pointer = 3) */
-#define BCHP_HIF_MSPI_TXRAM08                    0x0041c260 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 4) */
-#define BCHP_HIF_MSPI_TXRAM09                    0x0041c264 /* LSbyte for bit 16 operation only (queue pointer = 4) */
-#define BCHP_HIF_MSPI_TXRAM10                    0x0041c268 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 5) */
-#define BCHP_HIF_MSPI_TXRAM11                    0x0041c26c /* LSbyte for bit 16 operation only (queue pointer = 5) */
-#define BCHP_HIF_MSPI_TXRAM12                    0x0041c270 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 6) */
-#define BCHP_HIF_MSPI_TXRAM13                    0x0041c274 /* LSbyte for bit 16 operation only (queue pointer = 6) */
-#define BCHP_HIF_MSPI_TXRAM14                    0x0041c278 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 7) */
-#define BCHP_HIF_MSPI_TXRAM15                    0x0041c27c /* LSbyte for bit 16 operation only (queue pointer = 7) */
-#define BCHP_HIF_MSPI_TXRAM16                    0x0041c280 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 8) */
-#define BCHP_HIF_MSPI_TXRAM17                    0x0041c284 /* LSbyte for bit 16 operation only (queue pointer = 8) */
-#define BCHP_HIF_MSPI_TXRAM18                    0x0041c288 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 9) */
-#define BCHP_HIF_MSPI_TXRAM19                    0x0041c28c /* LSbyte for bit 16 operation only (queue pointer = 9) */
-#define BCHP_HIF_MSPI_TXRAM20                    0x0041c290 /* MSbyte for bit 16 or bit 8 operation (queue pointer = a) */
-#define BCHP_HIF_MSPI_TXRAM21                    0x0041c294 /* LSbyte for bit 16 operation only (queue pointer = a) */
-#define BCHP_HIF_MSPI_TXRAM22                    0x0041c298 /* MSbyte for bit 16 or bit 8 operation (queue pointer = b) */
-#define BCHP_HIF_MSPI_TXRAM23                    0x0041c29c /* LSbyte for bit 16 operation only (queue pointer = b) */
-#define BCHP_HIF_MSPI_TXRAM24                    0x0041c2a0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = c) */
-#define BCHP_HIF_MSPI_TXRAM25                    0x0041c2a4 /* LSbyte for bit 16 operation only (queue pointer = c) */
-#define BCHP_HIF_MSPI_TXRAM26                    0x0041c2a8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = d) */
-#define BCHP_HIF_MSPI_TXRAM27                    0x0041c2ac /* LSbyte for bit 16 operation only (queue pointer = d) */
-#define BCHP_HIF_MSPI_TXRAM28                    0x0041c2b0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = e) */
-#define BCHP_HIF_MSPI_TXRAM29                    0x0041c2b4 /* LSbyte for bit 16 operation only (queue pointer = e) */
-#define BCHP_HIF_MSPI_TXRAM30                    0x0041c2b8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = f) */
-#define BCHP_HIF_MSPI_TXRAM31                    0x0041c2bc /* LSbyte for bit 16 operation only (queue pointer = f) */
-#define BCHP_HIF_MSPI_RXRAM00                    0x0041c2c0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 0) */
-#define BCHP_HIF_MSPI_RXRAM01                    0x0041c2c4 /* LSbyte for bit 16 operation only (queue pointer = 0) */
-#define BCHP_HIF_MSPI_RXRAM02                    0x0041c2c8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 1) */
-#define BCHP_HIF_MSPI_RXRAM03                    0x0041c2cc /* LSbyte for bit 16 operation only (queue pointer = 1) */
-#define BCHP_HIF_MSPI_RXRAM04                    0x0041c2d0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 2) */
-#define BCHP_HIF_MSPI_RXRAM05                    0x0041c2d4 /* LSbyte for bit 16 operation only (queue pointer = 2) */
-#define BCHP_HIF_MSPI_RXRAM06                    0x0041c2d8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 3) */
-#define BCHP_HIF_MSPI_RXRAM07                    0x0041c2dc /* LSbyte for bit 16 operation only (queue pointer = 3) */
-#define BCHP_HIF_MSPI_RXRAM08                    0x0041c2e0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 4) */
-#define BCHP_HIF_MSPI_RXRAM09                    0x0041c2e4 /* LSbyte for bit 16 operation only (queue pointer = 4) */
-#define BCHP_HIF_MSPI_RXRAM10                    0x0041c2e8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 5) */
-#define BCHP_HIF_MSPI_RXRAM11                    0x0041c2ec /* LSbyte for bit 16 operation only (queue pointer = 5) */
-#define BCHP_HIF_MSPI_RXRAM12                    0x0041c2f0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 6) */
-#define BCHP_HIF_MSPI_RXRAM13                    0x0041c2f4 /* LSbyte for bit 16 operation only (queue pointer = 6) */
-#define BCHP_HIF_MSPI_RXRAM14                    0x0041c2f8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 7) */
-#define BCHP_HIF_MSPI_RXRAM15                    0x0041c2fc /* LSbyte for bit 16 operation only (queue pointer = 7) */
-#define BCHP_HIF_MSPI_RXRAM16                    0x0041c300 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 8) */
-#define BCHP_HIF_MSPI_RXRAM17                    0x0041c304 /* LSbyte for bit 16 operation only (queue pointer = 8) */
-#define BCHP_HIF_MSPI_RXRAM18                    0x0041c308 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 9) */
-#define BCHP_HIF_MSPI_RXRAM19                    0x0041c30c /* LSbyte for bit 16 operation only (queue pointer = 9) */
-#define BCHP_HIF_MSPI_RXRAM20                    0x0041c310 /* MSbyte for bit 16 or bit 8 operation (queue pointer = a) */
-#define BCHP_HIF_MSPI_RXRAM21                    0x0041c314 /* LSbyte for bit 16 operation only (queue pointer = a) */
-#define BCHP_HIF_MSPI_RXRAM22                    0x0041c318 /* MSbyte for bit 16 or bit 8 operation (queue pointer = b) */
-#define BCHP_HIF_MSPI_RXRAM23                    0x0041c31c /* LSbyte for bit 16 operation only (queue pointer = b) */
-#define BCHP_HIF_MSPI_RXRAM24                    0x0041c320 /* MSbyte for bit 16 or bit 8 operation (queue pointer = c) */
-#define BCHP_HIF_MSPI_RXRAM25                    0x0041c324 /* LSbyte for bit 16 operation only (queue pointer = c) */
-#define BCHP_HIF_MSPI_RXRAM26                    0x0041c328 /* MSbyte for bit 16 or bit 8 operation (queue pointer = d) */
-#define BCHP_HIF_MSPI_RXRAM27                    0x0041c32c /* LSbyte for bit 16 operation only (queue pointer = d) */
-#define BCHP_HIF_MSPI_RXRAM28                    0x0041c330 /* MSbyte for bit 16 or bit 8 operation (queue pointer = e) */
-#define BCHP_HIF_MSPI_RXRAM29                    0x0041c334 /* LSbyte for bit 16 operation only (queue pointer = e) */
-#define BCHP_HIF_MSPI_RXRAM30                    0x0041c338 /* MSbyte for bit 16 or bit 8 operation (queue pointer = f) */
-#define BCHP_HIF_MSPI_RXRAM31                    0x0041c33c /* LSbyte for bit 16 operation only (queue pointer = f) */
-#define BCHP_HIF_MSPI_CDRAM00                    0x0041c340 /* 8-bit command (queue pointer = 0) */
-#define BCHP_HIF_MSPI_CDRAM01                    0x0041c344 /* 8-bit command (queue pointer = 1) */
-#define BCHP_HIF_MSPI_CDRAM02                    0x0041c348 /* 8-bit command (queue pointer = 2) */
-#define BCHP_HIF_MSPI_CDRAM03                    0x0041c34c /* 8-bit command (queue pointer = 3) */
-#define BCHP_HIF_MSPI_CDRAM04                    0x0041c350 /* 8-bit command (queue pointer = 4) */
-#define BCHP_HIF_MSPI_CDRAM05                    0x0041c354 /* 8-bit command (queue pointer = 5) */
-#define BCHP_HIF_MSPI_CDRAM06                    0x0041c358 /* 8-bit command (queue pointer = 6) */
-#define BCHP_HIF_MSPI_CDRAM07                    0x0041c35c /* 8-bit command (queue pointer = 7) */
-#define BCHP_HIF_MSPI_CDRAM08                    0x0041c360 /* 8-bit command (queue pointer = 8) */
-#define BCHP_HIF_MSPI_CDRAM09                    0x0041c364 /* 8-bit command (queue pointer = 9) */
-#define BCHP_HIF_MSPI_CDRAM10                    0x0041c368 /* 8-bit command (queue pointer = a) */
-#define BCHP_HIF_MSPI_CDRAM11                    0x0041c36c /* 8-bit command (queue pointer = b) */
-#define BCHP_HIF_MSPI_CDRAM12                    0x0041c370 /* 8-bit command (queue pointer = c) */
-#define BCHP_HIF_MSPI_CDRAM13                    0x0041c374 /* 8-bit command (queue pointer = d) */
-#define BCHP_HIF_MSPI_CDRAM14                    0x0041c378 /* 8-bit command (queue pointer = e) */
-#define BCHP_HIF_MSPI_CDRAM15                    0x0041c37c /* 8-bit command (queue pointer = f) */
-#define BCHP_HIF_MSPI_WRITE_LOCK                 0x0041c380 /* Control bit to lock group of write commands */
-#define BCHP_HIF_MSPI_DISABLE_FLUSH_GEN          0x0041c384 /* Debug bit to mask the generation of flush signals from Mspi */
+#define BCHP_HIF_MSPI_SPCR0_LSB                  0x0041d400 /* SPCR0_LSB REGISTER */
+#define BCHP_HIF_MSPI_SPCR0_MSB                  0x0041d404 /* SPCR0_MSB Register */
+#define BCHP_HIF_MSPI_SPCR1_LSB                  0x0041d408 /* SPCR1_LSB REGISTER */
+#define BCHP_HIF_MSPI_SPCR1_MSB                  0x0041d40c /* SPCR1_MSB REGISTER */
+#define BCHP_HIF_MSPI_NEWQP                      0x0041d410 /* NEWQP REGISTER */
+#define BCHP_HIF_MSPI_ENDQP                      0x0041d414 /* ENDQP REGISTER */
+#define BCHP_HIF_MSPI_SPCR2                      0x0041d418 /* SPCR2 REGISTER */
+#define BCHP_HIF_MSPI_MSPI_STATUS                0x0041d420 /* MSPI STATUS REGISTER */
+#define BCHP_HIF_MSPI_CPTQP                      0x0041d424 /* CPTQP REGISTER */
+#define BCHP_HIF_MSPI_TXRAM00                    0x0041d440 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 0) */
+#define BCHP_HIF_MSPI_TXRAM01                    0x0041d444 /* LSbyte for bit 16 operation only (queue pointer = 0) */
+#define BCHP_HIF_MSPI_TXRAM02                    0x0041d448 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 1) */
+#define BCHP_HIF_MSPI_TXRAM03                    0x0041d44c /* LSbyte for bit 16 operation only (queue pointer = 1) */
+#define BCHP_HIF_MSPI_TXRAM04                    0x0041d450 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 2) */
+#define BCHP_HIF_MSPI_TXRAM05                    0x0041d454 /* LSbyte for bit 16 operation only (queue pointer = 2) */
+#define BCHP_HIF_MSPI_TXRAM06                    0x0041d458 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 3) */
+#define BCHP_HIF_MSPI_TXRAM07                    0x0041d45c /* LSbyte for bit 16 operation only (queue pointer = 3) */
+#define BCHP_HIF_MSPI_TXRAM08                    0x0041d460 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 4) */
+#define BCHP_HIF_MSPI_TXRAM09                    0x0041d464 /* LSbyte for bit 16 operation only (queue pointer = 4) */
+#define BCHP_HIF_MSPI_TXRAM10                    0x0041d468 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 5) */
+#define BCHP_HIF_MSPI_TXRAM11                    0x0041d46c /* LSbyte for bit 16 operation only (queue pointer = 5) */
+#define BCHP_HIF_MSPI_TXRAM12                    0x0041d470 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 6) */
+#define BCHP_HIF_MSPI_TXRAM13                    0x0041d474 /* LSbyte for bit 16 operation only (queue pointer = 6) */
+#define BCHP_HIF_MSPI_TXRAM14                    0x0041d478 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 7) */
+#define BCHP_HIF_MSPI_TXRAM15                    0x0041d47c /* LSbyte for bit 16 operation only (queue pointer = 7) */
+#define BCHP_HIF_MSPI_TXRAM16                    0x0041d480 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 8) */
+#define BCHP_HIF_MSPI_TXRAM17                    0x0041d484 /* LSbyte for bit 16 operation only (queue pointer = 8) */
+#define BCHP_HIF_MSPI_TXRAM18                    0x0041d488 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 9) */
+#define BCHP_HIF_MSPI_TXRAM19                    0x0041d48c /* LSbyte for bit 16 operation only (queue pointer = 9) */
+#define BCHP_HIF_MSPI_TXRAM20                    0x0041d490 /* MSbyte for bit 16 or bit 8 operation (queue pointer = a) */
+#define BCHP_HIF_MSPI_TXRAM21                    0x0041d494 /* LSbyte for bit 16 operation only (queue pointer = a) */
+#define BCHP_HIF_MSPI_TXRAM22                    0x0041d498 /* MSbyte for bit 16 or bit 8 operation (queue pointer = b) */
+#define BCHP_HIF_MSPI_TXRAM23                    0x0041d49c /* LSbyte for bit 16 operation only (queue pointer = b) */
+#define BCHP_HIF_MSPI_TXRAM24                    0x0041d4a0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = c) */
+#define BCHP_HIF_MSPI_TXRAM25                    0x0041d4a4 /* LSbyte for bit 16 operation only (queue pointer = c) */
+#define BCHP_HIF_MSPI_TXRAM26                    0x0041d4a8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = d) */
+#define BCHP_HIF_MSPI_TXRAM27                    0x0041d4ac /* LSbyte for bit 16 operation only (queue pointer = d) */
+#define BCHP_HIF_MSPI_TXRAM28                    0x0041d4b0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = e) */
+#define BCHP_HIF_MSPI_TXRAM29                    0x0041d4b4 /* LSbyte for bit 16 operation only (queue pointer = e) */
+#define BCHP_HIF_MSPI_TXRAM30                    0x0041d4b8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = f) */
+#define BCHP_HIF_MSPI_TXRAM31                    0x0041d4bc /* LSbyte for bit 16 operation only (queue pointer = f) */
+#define BCHP_HIF_MSPI_RXRAM00                    0x0041d4c0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 0) */
+#define BCHP_HIF_MSPI_RXRAM01                    0x0041d4c4 /* LSbyte for bit 16 operation only (queue pointer = 0) */
+#define BCHP_HIF_MSPI_RXRAM02                    0x0041d4c8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 1) */
+#define BCHP_HIF_MSPI_RXRAM03                    0x0041d4cc /* LSbyte for bit 16 operation only (queue pointer = 1) */
+#define BCHP_HIF_MSPI_RXRAM04                    0x0041d4d0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 2) */
+#define BCHP_HIF_MSPI_RXRAM05                    0x0041d4d4 /* LSbyte for bit 16 operation only (queue pointer = 2) */
+#define BCHP_HIF_MSPI_RXRAM06                    0x0041d4d8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 3) */
+#define BCHP_HIF_MSPI_RXRAM07                    0x0041d4dc /* LSbyte for bit 16 operation only (queue pointer = 3) */
+#define BCHP_HIF_MSPI_RXRAM08                    0x0041d4e0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 4) */
+#define BCHP_HIF_MSPI_RXRAM09                    0x0041d4e4 /* LSbyte for bit 16 operation only (queue pointer = 4) */
+#define BCHP_HIF_MSPI_RXRAM10                    0x0041d4e8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 5) */
+#define BCHP_HIF_MSPI_RXRAM11                    0x0041d4ec /* LSbyte for bit 16 operation only (queue pointer = 5) */
+#define BCHP_HIF_MSPI_RXRAM12                    0x0041d4f0 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 6) */
+#define BCHP_HIF_MSPI_RXRAM13                    0x0041d4f4 /* LSbyte for bit 16 operation only (queue pointer = 6) */
+#define BCHP_HIF_MSPI_RXRAM14                    0x0041d4f8 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 7) */
+#define BCHP_HIF_MSPI_RXRAM15                    0x0041d4fc /* LSbyte for bit 16 operation only (queue pointer = 7) */
+#define BCHP_HIF_MSPI_RXRAM16                    0x0041d500 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 8) */
+#define BCHP_HIF_MSPI_RXRAM17                    0x0041d504 /* LSbyte for bit 16 operation only (queue pointer = 8) */
+#define BCHP_HIF_MSPI_RXRAM18                    0x0041d508 /* MSbyte for bit 16 or bit 8 operation (queue pointer = 9) */
+#define BCHP_HIF_MSPI_RXRAM19                    0x0041d50c /* LSbyte for bit 16 operation only (queue pointer = 9) */
+#define BCHP_HIF_MSPI_RXRAM20                    0x0041d510 /* MSbyte for bit 16 or bit 8 operation (queue pointer = a) */
+#define BCHP_HIF_MSPI_RXRAM21                    0x0041d514 /* LSbyte for bit 16 operation only (queue pointer = a) */
+#define BCHP_HIF_MSPI_RXRAM22                    0x0041d518 /* MSbyte for bit 16 or bit 8 operation (queue pointer = b) */
+#define BCHP_HIF_MSPI_RXRAM23                    0x0041d51c /* LSbyte for bit 16 operation only (queue pointer = b) */
+#define BCHP_HIF_MSPI_RXRAM24                    0x0041d520 /* MSbyte for bit 16 or bit 8 operation (queue pointer = c) */
+#define BCHP_HIF_MSPI_RXRAM25                    0x0041d524 /* LSbyte for bit 16 operation only (queue pointer = c) */
+#define BCHP_HIF_MSPI_RXRAM26                    0x0041d528 /* MSbyte for bit 16 or bit 8 operation (queue pointer = d) */
+#define BCHP_HIF_MSPI_RXRAM27                    0x0041d52c /* LSbyte for bit 16 operation only (queue pointer = d) */
+#define BCHP_HIF_MSPI_RXRAM28                    0x0041d530 /* MSbyte for bit 16 or bit 8 operation (queue pointer = e) */
+#define BCHP_HIF_MSPI_RXRAM29                    0x0041d534 /* LSbyte for bit 16 operation only (queue pointer = e) */
+#define BCHP_HIF_MSPI_RXRAM30                    0x0041d538 /* MSbyte for bit 16 or bit 8 operation (queue pointer = f) */
+#define BCHP_HIF_MSPI_RXRAM31                    0x0041d53c /* LSbyte for bit 16 operation only (queue pointer = f) */
+#define BCHP_HIF_MSPI_CDRAM00                    0x0041d540 /* 8-bit command (queue pointer = 0) */
+#define BCHP_HIF_MSPI_CDRAM01                    0x0041d544 /* 8-bit command (queue pointer = 1) */
+#define BCHP_HIF_MSPI_CDRAM02                    0x0041d548 /* 8-bit command (queue pointer = 2) */
+#define BCHP_HIF_MSPI_CDRAM03                    0x0041d54c /* 8-bit command (queue pointer = 3) */
+#define BCHP_HIF_MSPI_CDRAM04                    0x0041d550 /* 8-bit command (queue pointer = 4) */
+#define BCHP_HIF_MSPI_CDRAM05                    0x0041d554 /* 8-bit command (queue pointer = 5) */
+#define BCHP_HIF_MSPI_CDRAM06                    0x0041d558 /* 8-bit command (queue pointer = 6) */
+#define BCHP_HIF_MSPI_CDRAM07                    0x0041d55c /* 8-bit command (queue pointer = 7) */
+#define BCHP_HIF_MSPI_CDRAM08                    0x0041d560 /* 8-bit command (queue pointer = 8) */
+#define BCHP_HIF_MSPI_CDRAM09                    0x0041d564 /* 8-bit command (queue pointer = 9) */
+#define BCHP_HIF_MSPI_CDRAM10                    0x0041d568 /* 8-bit command (queue pointer = a) */
+#define BCHP_HIF_MSPI_CDRAM11                    0x0041d56c /* 8-bit command (queue pointer = b) */
+#define BCHP_HIF_MSPI_CDRAM12                    0x0041d570 /* 8-bit command (queue pointer = c) */
+#define BCHP_HIF_MSPI_CDRAM13                    0x0041d574 /* 8-bit command (queue pointer = d) */
+#define BCHP_HIF_MSPI_CDRAM14                    0x0041d578 /* 8-bit command (queue pointer = e) */
+#define BCHP_HIF_MSPI_CDRAM15                    0x0041d57c /* 8-bit command (queue pointer = f) */
+#define BCHP_HIF_MSPI_WRITE_LOCK                 0x0041d580 /* Control bit to lock group of write commands */
+#define BCHP_HIF_MSPI_DISABLE_FLUSH_GEN          0x0041d584 /* Debug bit to mask the generation of flush signals from Mspi */
 
 /***************************************************************************
  *SPCR0_LSB - SPCR0_LSB REGISTER

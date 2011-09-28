@@ -12,7 +12,8 @@ export CC CFLAGS
 all::
 	if [ ! -e Makefile ]; then \
 		./configure --host=$(MACHINE)-linux \
-			ac_cv_func_malloc_0_nonnull=yes || exit 1 ; \
+			ac_cv_func_malloc_0_nonnull=yes MISSING=/bin/true || \
+			exit 1 ; \
 	fi
 	$(MAKE) -f Makefile
 

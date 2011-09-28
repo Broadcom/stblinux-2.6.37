@@ -315,7 +315,7 @@ wait_loop:
 	bal	dputc
 	li	a0, 'm'
 
-#ifdef CONFIG_BRCM_PWR_HANDSHAKE_V0
+#if defined(CONFIG_BRCM_PWR_HANDSHAKE_V0)
 # disarm the BSP
 	li	t0, REG(BCHP_BSP_GLB_CONTROL_REG_START + 0x38)
 	lw	t1, 0(t0)
@@ -336,7 +336,12 @@ wait_loop:
 
 	bal	dputc
 	li	a0, 'b'
-#endif /* CONFIG_BRCM_PWR_HANDSHAKE_V0 */
+#elif defined(CONFIG_BRCM_PWR_HANDSHAKE_V1)
+	li	t0, REG(BCHP_AON_CTRL_HOST_MISC_CMDS)
+	li	t1, BCHP_AON_CTRL_HOST_MISC_CMDS_pm_restore_MASK
+	sw	t1, 0(t0)
+	lw	t1, 0(t0)
+#endif /* CONFIG_BRCM_PWR_HANDSHAKE_V0/V1 */
 
 	li	t0, REG(PM_CONTROL)
 	sw	zero, 0(t0)

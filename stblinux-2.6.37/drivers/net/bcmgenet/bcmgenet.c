@@ -59,7 +59,7 @@
 
 #ifdef CONFIG_NET_SCH_MULTIQ
 
-#ifndef CONFIG_BRCM_GENET_V2
+#if defined(CONFIG_BRCM_GENET_V1)
 #error "This version of GENET doesn't support tx multi queue"
 #endif
 /* Default # of tx queues for multi queue support */
@@ -929,7 +929,7 @@ struct sk_buff *bcmgenet_alloc_txring_skb(struct net_device *dev, int index)
 	return skb;
 }
 EXPORT_SYMBOL(bcmgenet_alloc_txring_skb);
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 /* --------------------------------------------------------------------------
 Name: netif_any_subqueue_stopped
 Purpose: return 1 if any subqueue is stopped
@@ -953,7 +953,7 @@ static struct Enet_CB *bcmgenet_get_txcb(struct net_device *dev,
 {
 	struct BcmEnet_devctrl *pDevCtrl = netdev_priv(dev);
 	struct Enet_CB *txCBPtr = NULL;
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		txCBPtr = pDevCtrl->txCbs;
 		txCBPtr += (*pos - GENET_MQ_CNT*GENET_MQ_BD_CNT);
@@ -1000,7 +1000,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 	c_index = pDevCtrl->txDma->tDmaRings[index].tdma_consumer_index;
 
 
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		lastCIndex = pDevCtrl->txLastCIndex;
 		nrTxBds = GENET_DEFAULT_BD_CNT;
@@ -1058,7 +1058,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 		else
 			lastCIndex++;
 	}
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		if (pDevCtrl->txFreeBds > (MAX_SKB_FRAGS + 1)
 			&& __netif_subqueue_stopped(dev, 0)) {
@@ -1115,7 +1115,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		spin_unlock_irqrestore(&pDevCtrl->lock, flags);
 		return NETDEV_TX_OK;
 	}
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (skb) {
 		index = skb_get_queue_mapping(skb);
 		/*
@@ -1252,7 +1252,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 				16, 1, skb->data, skb->len, 0);
 #endif
 		/* Decrement total BD count and advance our write pointer */
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 		if (index == DESC_INDEX)
 			pDevCtrl->txFreeBds -= 1;
 		else
@@ -1293,7 +1293,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 				16, 1, skb->data, skb_headlen(skb), 0);
 #endif
 		/* Decrement total BD count and advance our write pointer */
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 		if (index == DESC_INDEX)
 			pDevCtrl->txFreeBds -= 1;
 		else
@@ -1342,7 +1342,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 			if (i == nr_frags - 1)
 				txCBPtr->BdAddr->length_status |= DMA_EOP;
 
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 			if (index == DESC_INDEX)
 				pDevCtrl->txFreeBds -= 1;
 			else
@@ -1359,7 +1359,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		dev->stats.tx_packets++;
 	}
 
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		if (pDevCtrl->txFreeBds <= (MAX_SKB_FRAGS + 1))
 			netif_stop_subqueue(dev, 0);
@@ -2379,7 +2379,7 @@ static void init_edma(struct BcmEnet_devctrl *pDevCtrl)
 	tDma_desc->tdma_mbuf_done_threshold = 0;
 	/* Disable rate control for now */
 	tDma_desc->tdma_flow_period = 0;
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 	/* Unclassified traffic goes to ring 16 */
 	tDma_desc->tdma_ring_buf_size = ((GENET_DEFAULT_BD_CNT <<
 				DMA_RING_SIZE_SHIFT) | RX_BUF_LENGTH);
@@ -2624,7 +2624,7 @@ int bcmgenet_uninit_ringbuf(struct net_device *dev, int direction,
 	return 0;
 }
 EXPORT_SYMBOL(bcmgenet_uninit_ringbuf);
-#if defined(CONFIG_BRCM_GENET_V2) && defined(CONFIG_NET_SCH_MULTIQ)
+#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
 /*
  * init multi xmit queues, only available for GENET2
  * the queue is partitioned as follows:
@@ -2708,7 +2708,7 @@ static int bcmgenet_init_dev(struct BcmEnet_devctrl *pDevCtrl)
 	pDevCtrl->sys = (struct SysRegs *)(base);
 	pDevCtrl->grb = (struct GrBridgeRegs *)(base + GENET_GR_BRIDGE_OFF);
 	pDevCtrl->ext = (struct ExtRegs *)(base + GENET_EXT_OFF);
-#ifdef CONFIG_BRCM_GENET_V1
+#if defined(CONFIG_BRCM_GENET_V1)
 	/* SWLINUX-1813: EXT block is not available on MOCA_GENET */
 #if !defined(CONFIG_BCM7125)
 	if (pDevCtrl->devnum == 1)
@@ -2723,7 +2723,7 @@ static int bcmgenet_init_dev(struct BcmEnet_devctrl *pDevCtrl)
 	pDevCtrl->txDma = (struct tDmaRegs *)(base + GENET_TDMA_REG_OFF);
 	pDevCtrl->rxDma = (struct rDmaRegs *)(base + GENET_RDMA_REG_OFF);
 
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	pDevCtrl->tbuf = (struct tbufRegs *)(base + GENET_TBUF_OFF);
 	pDevCtrl->hfbReg = (struct hfbRegs *)(base + GENET_HFB_REG_OFF);
 #endif

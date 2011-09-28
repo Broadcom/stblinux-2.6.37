@@ -45,7 +45,6 @@ struct	brcm_pm_s3_context {
 	u32			gp_regs[MAX_GP_REGS];
 	struct cp0_value	cp0_regs[MAX_CP0_REGS];
 	int			cp0_regs_idx;
-	u32			wktmr_counter;
 };
 
 struct brcm_pm_s3_context s3_context;
@@ -318,7 +317,6 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 
 	/* save I/O context */
 
-	s3_context.wktmr_counter = BDEV_RD(BCHP_WKTMR_COUNTER);
 	local_flush_tlb_all();
 	_dma_cache_wback_inv(0, ~0);
 
@@ -343,30 +341,22 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 #endif
 
 	/* CPU reconfiguration */
-	/* WARNING: Location 0x80000000 is cleared, need to restore it for
-	  TP1 to restart */
-	BDEV_WR_RB(BCHP_AON_CTRL_SYSTEM_DATA_24, *(u32 *)BRCM_NMI_VEC);
+	/*
+	 * WARNING: Location 0x80000000 is cleared, need to restore it for
+	 * TP1 to restart (HW7425-1104 and SWCFE-583)
+	 */
+#if defined(CONFIG_BCM7425)
 	brcm_wr_vec(BRCM_NMI_VEC, brcm_reset_nmi_vec, brcm_reset_nmi_vec+4);
-	BDEV_WR_RB(BCHP_AON_CTRL_SYSTEM_DATA_25, *(u32 *)BRCM_NMI_VEC);
+#endif
 
 	bchip_mips_setup();
-
-	/* brcm_setup_ebase */
-	ebase = 0x80001000;
-	write_c0_brcm_bootvec(0xa0088008);
-	write_c0_ebase(ebase);
+	brcm_setup_ebase();
 
 	/* restore I/O context */
 	board_pinmux_setup();
 
-	BDEV_WR_RB(BCHP_WKTMR_COUNTER, s3_context.wktmr_counter);
-
 	/* restore CP0 context */
 	brcm_pm_restore_cp0_context(&s3_context);
-
-#if defined(CONFIG_BRCM_HAS_MOCA)
-/*	bchip_moca_init(); */
-#endif
 
 #if defined(BCHP_IRQ0_UART_IRQEN_uarta_MASK)
 	/* 3548 style - separate register */

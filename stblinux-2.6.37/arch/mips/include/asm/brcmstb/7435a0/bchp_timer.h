@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 12:20:27 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Mon Aug 22 02:13:51 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_timer.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 4:38p vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -58,7 +55,6 @@
 #define BCHP_TIMER_WDTIMEOUT                     0x004067e8 /* WATCHDOG TIMEOUT REGISTER */
 #define BCHP_TIMER_WDCMD                         0x004067ec /* WATCHDOG COMMAND REGISTER */
 #define BCHP_TIMER_WDCHIPRST_CNT                 0x004067f0 /* WATCHDOG CHIP RESET COUNT REGISTER */
-#define BCHP_TIMER_WDCRS                         0x004067f4 /* WATCHDOG CHIP RESET STATUS REGISTER */
 #define BCHP_TIMER_TIMER_IE1                     0x004067f8 /* TIMER PCI INTERRUPT ENABLE REGISTER */
 #define BCHP_TIMER_WDCTRL                        0x004067fc /* WATCHDOG CONTROL REGISTER */
 
@@ -273,18 +269,6 @@
 #define BCHP_TIMER_WDCHIPRST_CNT_WDCHIPRST_CNT_MASK                0x03ffffff
 #define BCHP_TIMER_WDCHIPRST_CNT_WDCHIPRST_CNT_SHIFT               0
 #define BCHP_TIMER_WDCHIPRST_CNT_WDCHIPRST_CNT_DEFAULT             50331647
-
-/***************************************************************************
- *WDCRS - WATCHDOG CHIP RESET STATUS REGISTER
- ***************************************************************************/
-/* TIMER :: WDCRS :: reserved0 [31:01] */
-#define BCHP_TIMER_WDCRS_reserved0_MASK                            0xfffffffe
-#define BCHP_TIMER_WDCRS_reserved0_SHIFT                           1
-
-/* TIMER :: WDCRS :: WDCR [00:00] */
-#define BCHP_TIMER_WDCRS_WDCR_MASK                                 0x00000001
-#define BCHP_TIMER_WDCRS_WDCR_SHIFT                                0
-#define BCHP_TIMER_WDCRS_WDCR_DEFAULT                              0
 
 /***************************************************************************
  *TIMER_IE1 - TIMER PCI INTERRUPT ENABLE REGISTER

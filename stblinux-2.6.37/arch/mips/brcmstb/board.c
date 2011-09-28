@@ -570,9 +570,13 @@ void board_pinmux_setup(void)
 		BDEV_SET(BCHP_GIO_AON_DATA_LO, 1 << 4);
 	}
 
-	PINMUX(18, sgpio_00, 1);	/* MoCA I2C on BSCA */
+	PINMUX(18, sgpio_00, 1);	/* MoCA I2C */
 	PINMUX(19, sgpio_01, 1);
+#if defined(CONFIG_BCM7425B0)
+	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCC_REG_START);
+#else
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCA_REG_START);
+#endif
 
 #elif defined(CONFIG_BCM7468)
 

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-2.1pre Kernel Configuration
-# Mon Jun 20 16:27:06 2011
+# Linux/mips 2.6.37-2.3pre Kernel Configuration
+# Sat Aug 27 13:05:34 2011
 #
 CONFIG_MIPS=y
 
@@ -76,12 +76,13 @@ CONFIG_BCM35125C0=y
 # CONFIG_BCM7420C0 is not set
 # CONFIG_BCM7425A0 is not set
 # CONFIG_BCM7425B0 is not set
-# CONFIG_BCM7428A0 is not set
+# CONFIG_BCM7429A0 is not set
 # CONFIG_BCM7435A0 is not set
 # CONFIG_BCM7468B0 is not set
 # CONFIG_BCM7550A0 is not set
 # CONFIG_BCM7550B0 is not set
 # CONFIG_BCM7552A0 is not set
+# CONFIG_BCM7552B0 is not set
 # CONFIG_BCM7631B0 is not set
 # CONFIG_BCM7640A0 is not set
 # CONFIG_BCM7640B0 is not set
@@ -125,6 +126,7 @@ CONFIG_BRCM_WLAN_MODULES=y
 # CONFIG_BRCM_DEBUG_OPTIONS is not set
 CONFIG_BRCM_HAS_16550=y
 CONFIG_BRCM_HAS_PCU_UARTS=y
+CONFIG_BRCM_SLOW_TVM_CLOCK=y
 CONFIG_BRCM_HAS_UARTA=y
 CONFIG_BRCM_HAS_UARTB=y
 CONFIG_BRCM_UARTA_IS_16550=y

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 11:52:27 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Mon Aug 22 01:48:39 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_hif_spi_intr2.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 8:44a vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,18 +42,18 @@
 /***************************************************************************
  *HIF_SPI_INTR2 - HIF Level 2 Interrupt Controller Registers for SPI
  ***************************************************************************/
-#define BCHP_HIF_SPI_INTR2_CPU_STATUS            0x0041ad00 /* CPU interrupt Status Register */
-#define BCHP_HIF_SPI_INTR2_CPU_SET               0x0041ad04 /* CPU interrupt Set Register */
-#define BCHP_HIF_SPI_INTR2_CPU_CLEAR             0x0041ad08 /* CPU interrupt Clear Register */
-#define BCHP_HIF_SPI_INTR2_CPU_MASK_STATUS       0x0041ad0c /* CPU interrupt Mask Status Register */
-#define BCHP_HIF_SPI_INTR2_CPU_MASK_SET          0x0041ad10 /* CPU interrupt Mask Set Register */
-#define BCHP_HIF_SPI_INTR2_CPU_MASK_CLEAR        0x0041ad14 /* CPU interrupt Mask Clear Register */
-#define BCHP_HIF_SPI_INTR2_PCI_STATUS            0x0041ad18 /* PCI interrupt Status Register */
-#define BCHP_HIF_SPI_INTR2_PCI_SET               0x0041ad1c /* PCI interrupt Set Register */
-#define BCHP_HIF_SPI_INTR2_PCI_CLEAR             0x0041ad20 /* PCI interrupt Clear Register */
-#define BCHP_HIF_SPI_INTR2_PCI_MASK_STATUS       0x0041ad24 /* PCI interrupt Mask Status Register */
-#define BCHP_HIF_SPI_INTR2_PCI_MASK_SET          0x0041ad28 /* PCI interrupt Mask Set Register */
-#define BCHP_HIF_SPI_INTR2_PCI_MASK_CLEAR        0x0041ad2c /* PCI interrupt Mask Clear Register */
+#define BCHP_HIF_SPI_INTR2_CPU_STATUS            0x0041bd00 /* CPU interrupt Status Register */
+#define BCHP_HIF_SPI_INTR2_CPU_SET               0x0041bd04 /* CPU interrupt Set Register */
+#define BCHP_HIF_SPI_INTR2_CPU_CLEAR             0x0041bd08 /* CPU interrupt Clear Register */
+#define BCHP_HIF_SPI_INTR2_CPU_MASK_STATUS       0x0041bd0c /* CPU interrupt Mask Status Register */
+#define BCHP_HIF_SPI_INTR2_CPU_MASK_SET          0x0041bd10 /* CPU interrupt Mask Set Register */
+#define BCHP_HIF_SPI_INTR2_CPU_MASK_CLEAR        0x0041bd14 /* CPU interrupt Mask Clear Register */
+#define BCHP_HIF_SPI_INTR2_PCI_STATUS            0x0041bd18 /* PCI interrupt Status Register */
+#define BCHP_HIF_SPI_INTR2_PCI_SET               0x0041bd1c /* PCI interrupt Set Register */
+#define BCHP_HIF_SPI_INTR2_PCI_CLEAR             0x0041bd20 /* PCI interrupt Clear Register */
+#define BCHP_HIF_SPI_INTR2_PCI_MASK_STATUS       0x0041bd24 /* PCI interrupt Mask Status Register */
+#define BCHP_HIF_SPI_INTR2_PCI_MASK_SET          0x0041bd28 /* PCI interrupt Mask Set Register */
+#define BCHP_HIF_SPI_INTR2_PCI_MASK_CLEAR        0x0041bd2c /* PCI interrupt Mask Clear Register */
 
 /***************************************************************************
  *CPU_STATUS - CPU interrupt Status Register

@@ -34,9 +34,15 @@ struct status_64 {
 	unsigned long length_status;	/* length and peripheral status */
 	unsigned long ext_status;		/* Extended status*/
 	unsigned long rx_csum;			/* partial rx checksum */
+#if defined(CONFIG_BRCM_GENET_V1) || defined(CONFIG_BRCM_GENET_V2)
 	unsigned long filter_index;		/* Filter index */
 	unsigned long extracted_bytes[4];	/* Extracted byte 0 - 16 */
 	unsigned long reserved[4];
+#else /* GENET_V3+ */
+	unsigned long filter_index[2];		/* Filter index */
+	unsigned long extracted_bytes[4];	/* Extracted byte 0 - 16 */
+	unsigned long reserved[3];
+#endif
 	unsigned long tx_csum_info;		/* Tx checksum info. */
 	unsigned long unused[3];		/* unused */
 } ;
@@ -174,7 +180,7 @@ struct uniMacRegs {
 	unsigned long unused7[2];
 	unsigned long mdio_cmd;			/* (0x614  RO */
 	unsigned long mdio_cfg;			/* (0x618) RW */
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	unsigned long unused9;
 #else
 	unsigned long rbuf_ovfl_pkt_cnt;	/* (0x61c) RO */
@@ -188,7 +194,7 @@ struct uniMacRegs {
 
 };
 
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 struct tbufRegs {
 	unsigned long tbuf_ctrl;	/* (00) tx buffer control */
 	unsigned long unused0;
@@ -210,24 +216,40 @@ struct rbufRegs {
 	unsigned long rbuf_status;			/* (0c)*/
 	unsigned long rbuf_endian_ctrl;		/* (10)*/
 	unsigned long rbuf_chk_ctrl;		/* (14)*/
-	unsigned long rbuf_rxc_offset[8];	/* (18 - 34)*/
+#if defined(CONFIG_BRCM_GENET_V2)
+	unsigned long rbuf_rxc_offset[8];	/* (18 - 34) */
 	unsigned long unused1[18];
 	unsigned long rbuf_ovfl_pkt_cnt;	/* (80) */
-	unsigned long rbuf_err_cnt;			/* (84) */
+	unsigned long rbuf_err_cnt;		/* (84) */
 	unsigned long rbuf_energy_ctrl;		/* (88) */
 
 	unsigned long unused2[7];
 	unsigned long rbuf_pd_sram_ctrl;	/* (a8) */
 	unsigned long unused3[12];
 	unsigned long rbuf_test_mux_ctrl;	/* (dc) */
+#else /* GENET_V3+ */
+	unsigned long unused1[7];		/* (18 - 34) */
+	unsigned long rbuf_rxc_offset[24];	/* (34 - 90) */
+	unsigned long rbuf_ovfl_pkt_cnt;	/* (94) */
+	unsigned long rbuf_err_cnt;		/* (98) */
+	unsigned long rbuf_energy_ctrl;		/* (9c) */
+	unsigned long rbuf_pd_sram_ctrl;	/* (a0) */
+	unsigned long rbuf_test_mux_ctrl;	/* (a4) */
+#endif
 };
 
 struct hfbRegs {
 	unsigned long hfb_ctrl;
-	unsigned long hfb_fltr_len[4];
+#if defined(CONFIG_BRCM_GENET_V2)
+#define HFB_NUM_FLTRS		16
+#else
+#define HFB_NUM_FLTRS		48
+	unsigned long hfb_flt_enable[2];
+#endif
+	unsigned long hfb_fltr_len[HFB_NUM_FLTRS / 4];
 };
 
-#else	/*! CONFIG_BRCM_GENET_V2 */
+#else /* !defined(CONFIG_BRCM_GENET_V1) */
 struct rbufRegs {
 	unsigned long rbuf_ctrl;			/* (00) */
 	unsigned long rbuf_flush_ctrl;		/* (04) */
@@ -278,22 +300,29 @@ struct intrl2Regs {
 #define GENET_INTRL2_1_OFF			0x0240
 #define GENET_RBUF_OFF				0X0300
 #define GENET_UMAC_OFF				0x0800
-#define GENET_HFB_OFF				0x1000
 
-#ifdef CONFIG_BRCM_GENET_V2
-#define GENET_TBUF_OFF				0x0600
-#define GENET_RDMA_OFF				0x3000
-#define GENET_TDMA_OFF				0x4000
-#define GENET_HFB_REG_OFF			0x2000
-#else
+#if defined(CONFIG_BRCM_GENET_V1)
+#define GENET_HFB_OFF				0x1000
 #define GENET_RDMA_OFF				0x2000
 #define GENET_TDMA_OFF				0x3000
+#elif defined(CONFIG_BRCM_GENET_V2)
+#define GENET_TBUF_OFF				0x0600
+#define GENET_HFB_OFF				0x1000
+#define GENET_HFB_REG_OFF			0x2000
+#define GENET_RDMA_OFF				0x3000
+#define GENET_TDMA_OFF				0x4000
+#else /* GENET_V3+ */
+#define GENET_TBUF_OFF				0x0600
+#define GENET_HFB_OFF				0x8000
+#define GENET_HFB_REG_OFF			0xfc00
+#define GENET_RDMA_OFF				0x10000
+#define GENET_TDMA_OFF				0x11000
 #endif
 
 struct SysRegs {
 	unsigned long sys_rev_ctrl;
 	unsigned long sys_port_ctrl;
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	unsigned long rbuf_flush_ctrl;
 	unsigned long tbuf_flush_ctrl;
 #endif
@@ -310,7 +339,7 @@ struct ExtRegs {
 	unsigned long ext_pwr_mgmt;
 	unsigned long ext_emcg_ctrl;
 	unsigned long ext_test_ctrl;
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	unsigned long rgmii_oob_ctrl;
 	unsigned long rgmii_ib_status;
 	unsigned long rgmii_led_ctrl;
@@ -352,7 +381,7 @@ struct tDmaRingRegs {
 
 struct rDmaRegs {
 	struct rDmaRingRegs rDmaRings[17];
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	unsigned long rdma_ring_cfg;
 #endif
 	unsigned long rdma_ctrl;
@@ -365,24 +394,31 @@ struct rDmaRegs {
 	unsigned long rdma_back_status;
 	unsigned long rdma_override;
 	unsigned long rdma_timeout[17];
+#if !defined(CONFIG_BRCM_GENET_V1) && !defined(CONFIG_BRCM_GENET_V2)
+	unsigned long rdma_index2ring[8];
+#endif
 	unsigned long rdma_test;
 	unsigned long rdma_debug;
 };
 
 struct tDmaRegs {
 	struct tDmaRingRegs tDmaRings[17];
-#ifdef CONFIG_BRCM_GENET_V2
+#if !defined(CONFIG_BRCM_GENET_V1)
 	unsigned long tdma_ring_cfg;
 #endif
 	unsigned long tdma_ctrl;
 	unsigned long tdma_status;
-#ifndef CONFIG_BRCM_GENET_V2
+#if defined(CONFIG_BRCM_GENET_V1)
 	unsigned long unused;
 #endif
 	unsigned long tdma_scb_burst_size;
 	unsigned long tdma_activity;
 	unsigned long tdma_mask;
+#if !defined(CONFIG_BRCM_GENET_V1) && !defined(CONFIG_BRCM_GENET_V2)
+	unsigned long tdma_map[2];
+#else
 	unsigned long tdma_map[3];
+#endif
 	unsigned long tdma_back_status;
 	unsigned long tdma_override;
 	unsigned long tdma_rate_limit_ctrl;

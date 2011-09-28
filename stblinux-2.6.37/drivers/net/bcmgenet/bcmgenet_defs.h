@@ -254,7 +254,11 @@ extern "C" {
 #define DMA_TX_APPEND_CRC		0x0040
 #define DMA_TX_OW_CRC			0x0020
 #define DMA_TX_DO_CSUM			0x0010
+#if defined(CONFIG_BRCM_GENET_V1) || defined(CONFIG_BRCM_GENET_V2)
 #define DMA_TX_QTAG_MASK		0x001F
+#else /* GENET_V3+: 6-bit QTAG */
+#define DMA_TX_QTAG_MASK		0x003F
+#endif
 #define DMA_TX_QTAG_SHIFT		7
 
 /* Rx Specific Dma descriptor bits */

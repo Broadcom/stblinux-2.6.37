@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 12:27:26 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Mon Aug 22 02:20:16 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_usb_ctrl.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 4:40p vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -74,10 +71,20 @@
 #define BCHP_USB_CTRL_SETUP_SRAM_CS_DIS_SHIFT                      25
 #define BCHP_USB_CTRL_SETUP_SRAM_CS_DIS_DEFAULT                    0
 
-/* USB_CTRL :: SETUP :: SETUP_SPARE [24:13] */
-#define BCHP_USB_CTRL_SETUP_SETUP_SPARE_MASK                       0x01ffe000
-#define BCHP_USB_CTRL_SETUP_SETUP_SPARE_SHIFT                      13
+/* USB_CTRL :: SETUP :: SETUP_SPARE [24:15] */
+#define BCHP_USB_CTRL_SETUP_SETUP_SPARE_MASK                       0x01ff8000
+#define BCHP_USB_CTRL_SETUP_SETUP_SPARE_SHIFT                      15
 #define BCHP_USB_CTRL_SETUP_SETUP_SPARE_DEFAULT                    0
+
+/* USB_CTRL :: SETUP :: scb1_en [14:14] */
+#define BCHP_USB_CTRL_SETUP_scb1_en_MASK                           0x00004000
+#define BCHP_USB_CTRL_SETUP_scb1_en_SHIFT                          14
+#define BCHP_USB_CTRL_SETUP_scb1_en_DEFAULT                        0
+
+/* USB_CTRL :: SETUP :: scb_client_swap [13:13] */
+#define BCHP_USB_CTRL_SETUP_scb_client_swap_MASK                   0x00002000
+#define BCHP_USB_CTRL_SETUP_scb_client_swap_SHIFT                  13
+#define BCHP_USB_CTRL_SETUP_scb_client_swap_DEFAULT                0
 
 /* USB_CTRL :: SETUP :: async_expire_dis [12:12] */
 #define BCHP_USB_CTRL_SETUP_async_expire_dis_MASK                  0x00001000

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 12:02:19 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Mon Aug 22 01:57:24 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_edu.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 8:35a vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,15 +42,15 @@
 /***************************************************************************
  *EDU - EDU Registers
  ***************************************************************************/
-#define BCHP_EDU_CONFIG                          0x0041bc00 /* EDU Config */
-#define BCHP_EDU_DRAM_ADDR                       0x0041bc04 /* DRAM Address for transaction */
-#define BCHP_EDU_EXT_ADDR                        0x0041bc08 /* External Address for transaction */
-#define BCHP_EDU_LENGTH                          0x0041bc0c /* Length of transaction */
-#define BCHP_EDU_CMD                             0x0041bc10 /* Command Type and Start */
-#define BCHP_EDU_STOP                            0x0041bc14 /* Stop */
-#define BCHP_EDU_STATUS                          0x0041bc18 /* EDU Status bits */
-#define BCHP_EDU_DONE                            0x0041bc1c /* EDU Done bits */
-#define BCHP_EDU_ERR_STATUS                      0x0041bc20 /* EDU Error Status */
+#define BCHP_EDU_CONFIG                          0x0041d100 /* EDU Config */
+#define BCHP_EDU_DRAM_ADDR                       0x0041d104 /* DRAM Address for transaction */
+#define BCHP_EDU_EXT_ADDR                        0x0041d108 /* External Address for transaction */
+#define BCHP_EDU_LENGTH                          0x0041d10c /* Length of transaction */
+#define BCHP_EDU_CMD                             0x0041d110 /* Command Type and Start */
+#define BCHP_EDU_STOP                            0x0041d114 /* Stop */
+#define BCHP_EDU_STATUS                          0x0041d118 /* EDU Status bits */
+#define BCHP_EDU_DONE                            0x0041d11c /* EDU Done bits */
+#define BCHP_EDU_ERR_STATUS                      0x0041d120 /* EDU Error Status */
 
 /***************************************************************************
  *CONFIG - EDU Config

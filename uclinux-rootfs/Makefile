@@ -1,6 +1,6 @@
 #
-# STB Linux build system v2.1
-# Copyright (C) 2010 Broadcom Corporation
+# STB Linux build system v2.2
+# Copyright (C) 2011 Broadcom Corporation
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -177,9 +177,11 @@ release:
 		echo "ERROR: \"make release\" must be run on a pristine view"; \
 		exit 1 ; \
 	fi
+	# fix perms and create source release
 	../tools/set_extraversion.pl --drop-pre
 	chmod -R u+w . linux-2.6.x/
 	chmod -R 0755 bin/
+	../tools/makedelta.pl
 	export LINK=`readlink linux-2.6.x`; \
 		export STBLINUX=`basename $$LINK`; \
 		tar -C .. -jcf ../stblinux-$(DOTVERSION).tar.bz2 $$STBLINUX
@@ -192,6 +194,7 @@ release:
 	mkdir -p release/src
 	mv ../stblinux-$(DOTVERSION).tar.bz2 \
 		../uclinux-rootfs-$(DOTVERSION).tar.bz2 \
+		../delta-*.patch* \
 		release/src/
 	mkdir release/$(VERSION)
 	mv images/* release/$(VERSION)/

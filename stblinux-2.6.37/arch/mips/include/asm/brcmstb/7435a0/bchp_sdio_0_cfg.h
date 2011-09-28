@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jun 13 14:49:35 2011
- *                 MD5 Checksum         a14f8e7f638a7ebe759043ff756befc5
+ * Date:           Generated on         Mon Aug 22 02:31:52 2011
+ *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_sdio_0_cfg.h $
- * 
- * Hydra_Software_Devel/3   6/14/11 3:08p vanessah
- * SW7425-715: 7425 B0 RDB resync
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -45,21 +42,21 @@
 /***************************************************************************
  *SDIO_0_CFG - SDIO (CARD) Configuration Registers
  ***************************************************************************/
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1          0x00419100 /* SDIO EMMC Control Register */
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2          0x00419104 /* SDIO EMMC Control Register */
-#define BCHP_SDIO_0_CFG_TP_OUT_SEL               0x00419108 /* SDIO TP_OUT Control Register */
-#define BCHP_SDIO_0_CFG_CAP_REG0                 0x0041910c /* SDIO CAPABILITIES override Register */
-#define BCHP_SDIO_0_CFG_CAP_REG1                 0x00419110 /* SDIO CAPABILITIES override Register */
-#define BCHP_SDIO_0_CFG_PRESET1                  0x00419114 /* SDIO CAPABILITIES override Register */
-#define BCHP_SDIO_0_CFG_PRESET2                  0x00419118 /* SDIO CAPABILITIES override Register */
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY           0x0041911c /* SDIO Clock delay register */
-#define BCHP_SDIO_0_CFG_SD_PAD_DRV               0x00419120 /* SDIO Clock delay register */
-#define BCHP_SDIO_0_CFG_IP_DLY                   0x00419130 /* SDIO Host input delay register */
-#define BCHP_SDIO_0_CFG_OP_DLY                   0x00419134 /* SDIO Host output delay register */
-#define BCHP_SDIO_0_CFG_TUNING                   0x00419138 /* SDIO Host tuning configuration register */
-#define BCHP_SDIO_0_CFG_VOLT_CTRL                0x0041913c /* SDIO Host 1p8V control logic select register */
-#define BCHP_SDIO_0_CFG_SCRATCH                  0x004191fc /* SDIO Scratch Register */
-#define BCHP_SDIO_0_CFG_VERSION                  0x004191f0 /* SDIO VERSION Register */
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1          0x0041a100 /* SDIO EMMC Control Register */
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL2          0x0041a104 /* SDIO EMMC Control Register */
+#define BCHP_SDIO_0_CFG_TP_OUT_SEL               0x0041a108 /* SDIO TP_OUT Control Register */
+#define BCHP_SDIO_0_CFG_CAP_REG0                 0x0041a10c /* SDIO CAPABILITIES override Register */
+#define BCHP_SDIO_0_CFG_CAP_REG1                 0x0041a110 /* SDIO CAPABILITIES override Register */
+#define BCHP_SDIO_0_CFG_PRESET1                  0x0041a114 /* SDIO CAPABILITIES override Register */
+#define BCHP_SDIO_0_CFG_PRESET2                  0x0041a118 /* SDIO CAPABILITIES override Register */
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY           0x0041a11c /* SDIO Clock delay register */
+#define BCHP_SDIO_0_CFG_SD_PAD_DRV               0x0041a120 /* SDIO Clock delay register */
+#define BCHP_SDIO_0_CFG_IP_DLY                   0x0041a130 /* SDIO Host input delay register */
+#define BCHP_SDIO_0_CFG_OP_DLY                   0x0041a134 /* SDIO Host output delay register */
+#define BCHP_SDIO_0_CFG_TUNING                   0x0041a138 /* SDIO Host tuning configuration register */
+#define BCHP_SDIO_0_CFG_VOLT_CTRL                0x0041a13c /* SDIO Host 1p8V control logic select register */
+#define BCHP_SDIO_0_CFG_SCRATCH                  0x0041a1fc /* SDIO Scratch Register */
+#define BCHP_SDIO_0_CFG_VERSION                  0x0041a1f0 /* SDIO VERSION Register */
 
 /***************************************************************************
  *SDIO_EMMC_CTRL1 - SDIO EMMC Control Register

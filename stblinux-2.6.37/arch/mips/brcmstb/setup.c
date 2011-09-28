@@ -320,7 +320,11 @@ static void __init brcm_register_moca(int enet_id)
 
 	memset(&res, 0, sizeof(res));
 	res[0].start = BPHYSADDR(BCHP_DATA_MEM_REG_START);
+#ifdef BCHP_MOCA_HOSTMISC_MMP_REG_END
 	res[0].end = BPHYSADDR(BCHP_MOCA_HOSTMISC_MMP_REG_END) + 3;
+#else
+	res[0].end = BPHYSADDR(BCHP_MOCA_HOSTMISC_REG_END) + 3;
+#endif
 	res[0].flags = IORESOURCE_MEM;
 
 	res[1].start = BRCM_IRQ_MOCA;

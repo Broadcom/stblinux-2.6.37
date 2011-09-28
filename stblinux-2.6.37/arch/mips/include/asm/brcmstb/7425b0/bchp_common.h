@@ -34,6 +34,15 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_common.h $
  * 
+ * Hydra_Software_Devel/6   8/15/11 3:31p vanessah
+ * SW7425-715: update ViCE2 MBox data version id
+ * 
+ * Hydra_Software_Devel/5   8/10/11 3:04p vanessah
+ * SW7425-715: 7425 B0 RDB resync
+ * 
+ * Hydra_Software_Devel/4   8/3/11 5:24p vanessah
+ * SW7425-715: 7425 B0 RDB resync
+ * 
  * Hydra_Software_Devel/3   6/14/11 1:14p vanessah
  * SW7425-715: 7425 B0 RDB resync
  *
@@ -2794,6 +2803,23 @@
  *VICE2_REGSET_MISC
  ***************************************************************************/
 /***************************************************************************
+ *DCCM - registers interface address offset in DCCM.
+ ***************************************************************************/
+/* VICE2_REGSET_MISC :: DCCM :: INTERFACE [31:16] */
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_MASK                 0xffff0000
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_SHIFT                16
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_HOST2VICE_OFFSET     0
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_VICE2HOST_OFFSET     4
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_BVN2VICE_OFFSET      8
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_MBOX_0_START         16
+#define BCHP_VICE2_REGSET_MISC_DCCM_INTERFACE_MBOX_1_START         36
+
+/* VICE2_REGSET_MISC :: DCCM :: REVISION [15:00] */
+#define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_MASK                  0x0000ffff
+#define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_SHIFT                 0
+#define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_ID                    1
+
+/***************************************************************************
  *DWORD_00_BVB_PIC_SIZE - BVB Picture Size
  ***************************************************************************/
 /* VICE2_REGSET_MISC :: DWORD_00_BVB_PIC_SIZE :: H_SIZE [31:16] */
@@ -2877,19 +2903,17 @@
 /* VICE2_REGSET_MISC :: MBOX :: INTERFACE [31:16] */
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_MASK                 0xffff0000
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_SHIFT                16
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_HOST2VICE_OFFSET     0
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_VICE2HOST_OFFSET     4
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_BVN2VICE_OFFSET      8
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_00_BVB_PIC_SIZE_OFFSET 16
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_01_SAMPLE_ASPECT_RATIO_OFFSET 20
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_02_PIC_INFO_OFFSET 24
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_03_ORIGINAL_PTS_OFFSET 28
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_04_PICTURE_ID_OFFSET 32
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_00_BVB_PIC_SIZE_OFFSET 0
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_01_SAMPLE_ASPECT_RATIO_OFFSET 4
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_02_PIC_INFO_OFFSET 8
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_03_ORIGINAL_PTS_OFFSET 12
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_04_PICTURE_ID_OFFSET 16
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_SIZE                 5
 
 /* VICE2_REGSET_MISC :: MBOX :: REVISION [15:00] */
 #define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_MASK                  0x0000ffff
 #define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_SHIFT                 0
-#define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_ID                    0
+#define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_ID                    1
 
 /***************************************************************************
  *XPT_PB

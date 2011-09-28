@@ -53,14 +53,21 @@
 /***********************************************************************
  * CPU divisor / PLL manipulation
  ***********************************************************************/
+/*
+ * 0: CP0 COUNT/COMPARE frequency depends on divisor
+ * 1: CP0 COUNT/COMPARE frequency does not depend on divisor
+ */
+static int fixed_counter_freq;
 
-#ifdef CONFIG_BMIPS5000
-/* CP0 COUNT/COMPARE frequency is affected by the PLL input but not divisor */
-#define FIXED_COUNTER_FREQ	1
-#else
-/* CP0 COUNT/COMPARE frequency is affected by the PLL input AND the divisor */
-#define FIXED_COUNTER_FREQ	0
+#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346B0)
+#define	BRCM_MIPS_PLL_REPROGRAM
+#define BRCM_CPU_FULL_FREQ	1305
+#define BRCM_CPU_HALF_FREQ	702
 #endif
+
+/* TODO - 7344B0, 35126, 35330 use entirely different set of registers to
+ * control MIPS PLL frequency
+ */
 
 /* MIPS active standby on 7550 */
 #define CPU_PLL_MODE1		216000
@@ -72,8 +79,13 @@
  */
 unsigned long brcm_adj_cpu_khz;
 
+/* multiplier used in brcm_fixup_ticks to scale the # of ticks
+ * 0               - no fixup needed
+ * any other value - factor * 2^16 */
+static unsigned long fixup_ticks_ratio;
+
 /* current CPU divisor, as set by the user */
-static int cpu_div = 1;
+static __maybe_unused int cpu_div = 1;
 
 /*
  * MIPS clockevent code always assumes the original boot-time CP0 clock rate.
@@ -86,11 +98,13 @@ unsigned long brcm_fixup_ticks(unsigned long delta)
 
 	if (unlikely(!brcm_adj_cpu_khz))
 		brcm_adj_cpu_khz = brcm_cpu_khz;
-#if FIXED_COUNTER_FREQ
-	tmp = (tmp * brcm_adj_cpu_khz) / brcm_cpu_khz;
-#else
-	tmp = (tmp * brcm_adj_cpu_khz) / (brcm_cpu_khz * cpu_div);
-#endif
+
+	if (likely(!fixup_ticks_ratio))
+		return delta;
+
+	tmp *= fixup_ticks_ratio;
+	tmp >>= 16;
+
 	return (unsigned long)tmp;
 }
 
@@ -103,17 +117,126 @@ struct spd_change {
 	int			new_base;
 };
 
+#if defined(BRCM_MIPS_PLL_REPROGRAM)
+/* Delay function used in MIPS PLL bypass mode, when udelay_val is invalid */
+static void __bypass_delay(unsigned long ms)
+{
+	unsigned long count_delay = ms * 216000 / 8, end_delay, count;
+	count = read_c0_count();
+	end_delay = count + count_delay;
+	if (end_delay < count)
+		while (read_c0_count() > end_delay)
+			;
+
+	while (read_c0_count() < end_delay)
+		;
+}
+
+#define _DELAY __bypass_delay(1)
+
+/* glitchless MIPS PLL frequency change */
+static void brcm_change_cpu_pll_freq(int half)
+{
+	int freq_index = half ? 6 : 0;
+	unsigned long count, compare, delta;
+	signed long sdelta;
+
+	/* MIPS clock is switched to 216 MHz */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, BYPASS_PLL_RQ, 1);
+	_DELAY;
+
+	/* disable MIPS PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
+		POST_DIVIDER_HOLD_CH0, 1);
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
+		CLOCK_DIS_CH0, 1);
+
+	/* Set PLL mode override */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL,
+		bypassed_PLL_mode_OVERRIDE_CPU_FREQ_PIN_STRAP, 1);
+	_DELAY;
+
+	/* change MIPS clock frequency */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_CPU_FREQ,
+		freq_index);
+	_DELAY;
+
+	/* assert digital and analog resets of PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_A_RST_PLL, 1);
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_D_RST_PLL, 1);
+	_DELAY;
+
+	/* de-assert digital and analog resets of PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_A_RST_PLL, 0);
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_D_RST_PLL, 0);
+	_DELAY;
+
+	/* wait for PLL lock */
+	while (!BDEV_RD_F(CLKGEN_PLL_MIPS_PLL_LOCK_STATUS, LOCK))
+		;
+
+	/* enable MIPS PLL */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
+		POST_DIVIDER_HOLD_CH0, 0);
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
+		CLOCK_DIS_CH0, 0);
+
+	/* MIPS clock is switched back from 216 MHz */
+	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, BYPASS_PLL_RQ, 0);
+	_DELAY;
+
+	count = read_c0_count();
+	compare = read_c0_compare();
+
+	sdelta = (long)compare - (long)count;
+	if (sdelta > 0) {
+		delta = (((unsigned long)sdelta << 16) / BRCM_CPU_FULL_FREQ) *
+			BRCM_CPU_HALF_FREQ;
+		delta >>= 16;
+		write_c0_compare(read_c0_count() + delta);
+		printk(KERN_DEBUG "cnt=%lu->%lu cmp=%lu->%lu delta=%lu\n",
+			count,
+			(long unsigned)read_c0_count(),
+			compare,
+			(long unsigned)read_c0_compare(),
+			delta);
+	}
+}
+#endif
+
 void brcm_set_cpu_speed(void *arg)
 {
 	struct spd_change *c = arg;
 	uint32_t new_div = (uint32_t)c->new_div;
 	unsigned long __maybe_unused count, compare, delta;
+	signed long sdelta;
 	int cpu = smp_processor_id();
 	uint32_t __maybe_unused tmp0, tmp1, tmp2, tmp3;
 
 	/* scale udelay_val */
 	if (!orig_udelay_val[cpu])
 		orig_udelay_val[cpu] = current_cpu_data.udelay_val;
+
+#if defined(BRCM_MIPS_PLL_REPROGRAM)
+	/* TP1 must be stopped while MIPS PLL frequency is being changed !!! */
+	BUG_ON(cpu);
+	/* Valid divisors are only 1 and 2 */
+	if (new_div == 2) {
+		brcm_change_cpu_pll_freq(1);
+		cpu_data[cpu].udelay_val =
+			((unsigned long long)orig_udelay_val[cpu]
+			 / BRCM_CPU_FULL_FREQ) * BRCM_CPU_HALF_FREQ;
+		fixup_ticks_ratio = (BRCM_CPU_HALF_FREQ << 16) /
+			BRCM_CPU_FULL_FREQ;
+	} else {
+		brcm_change_cpu_pll_freq(0);
+		cpu_data[cpu].udelay_val =
+			(unsigned long long)orig_udelay_val[cpu];
+		fixup_ticks_ratio = 0;
+	}
+	return;
+#endif
+
 	if (c->new_base == brcm_cpu_khz)
 		current_cpu_data.udelay_val = orig_udelay_val[cpu] / new_div;
 	else
@@ -125,24 +248,17 @@ void brcm_set_cpu_speed(void *arg)
 	compare = read_c0_compare();
 	count = read_c0_count();
 
-#if !FIXED_COUNTER_FREQ
-	if (compare > count)
-		delta = ((unsigned long long)(compare - count) *
-			c->old_div * c->new_base) /
-			(new_div * c->old_base);
-	else
-		delta = ((unsigned long long)(count - compare) *
-			c->old_div * c->new_base) /
-			(new_div * c->old_base);
-#else
-	if (compare > count)
-		delta = ((unsigned long long)(compare - count) *
-			c->new_base) / c->old_base;
-	else
-		delta = ((unsigned long long)(count - compare) *
-			c->new_base) / c->old_base;
-#endif
+	sdelta = (long)compare - (long)count;
+	if (sdelta > 0) {
+		if (!fixed_counter_freq)
+			delta = ((unsigned long long)sdelta *
+				c->old_div * c->new_base) /
+				(new_div * c->old_base);
+		else
+			delta = ((unsigned long long)sdelta *
+				c->new_base) / c->old_base;
 	write_c0_compare(read_c0_count() + delta);
+	}
 
 	if (cpu != 0)
 		return;
@@ -169,6 +285,19 @@ void brcm_set_cpu_speed(void *arg)
 #endif
 #endif
 
+	if ((brcm_adj_cpu_khz == brcm_cpu_khz) &&
+	    (fixed_counter_freq || new_div == 1)) {
+		fixup_ticks_ratio = 0;
+	} else {
+		fixup_ticks_ratio =
+			((unsigned long long)brcm_adj_cpu_khz << 16) /
+			 (unsigned long long)brcm_cpu_khz;
+		if (!fixed_counter_freq)
+			fixup_ticks_ratio /= new_div;
+	}
+
+	printk(KERN_DEBUG "ratio=%lu adj=%lu freq=%lu new_div=%d\n",
+	       fixup_ticks_ratio, brcm_adj_cpu_khz, brcm_cpu_khz, new_div);
 	new_div = ffs(new_div) - 1;
 
 	/* see BMIPS datasheet, CP0 register $22 */
@@ -260,6 +389,13 @@ ssize_t brcm_pm_store_cpu_div(struct device *dev,
 #endif
 			)
 		return -EINVAL;
+
+#if defined(BRCM_MIPS_PLL_REPROGRAM)
+	if (cpu_div == val)
+		return count;
+	if (val != 1 && val != 2)
+		return -EINVAL;
+#endif
 
 	chg.old_div = cpu_div;
 	chg.new_div = val;
@@ -2346,7 +2482,8 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 	defined(CONFIG_BCM7346) || \
 	defined(CONFIG_BCM7231) || \
 	defined(CONFIG_BCM7552) || \
-	defined(CONFIG_BCM7344)
+	defined(CONFIG_BCM7344) || \
+	defined(CONFIG_BCM7358)
 static __maybe_unused int mem_power_down = 1;
 
 #undef PLL_CH_ENA
@@ -2443,22 +2580,52 @@ do { \
 #define SRAM_ON_3i(core, mask, inst) SRAM_ON_3(core ## _INST, mask, inst)
 #endif
 
-#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346)
+/******************************************************************
+ *   USB recovery after S3 warm boot
+ * These parameters are mostly configured by CFE on cold boot, some
+ * of them are set during HC reset code which we do not execute on
+ * warm boot because it re-allocates memory.
+ * The code will probably work on all 40nm chips, but we will see...
+ ******************************************************************/
 static u32 usb_cfg[4];
+
+static __maybe_unused void bcm40nm_pm_usb_disable_s3(void)
+{
+	if (!brcm_pm_deep_sleep())
+		return;
+#ifdef BCHP_USB_CTRL_SETUP
+	usb_cfg[0] = BDEV_RD(BCHP_USB_CTRL_SETUP);
+	usb_cfg[1] = BDEV_RD(BCHP_USB_CTRL_EBRIDGE);
+#endif
+#ifdef BCHP_USB1_CTRL_SETUP
+	usb_cfg[2] = BDEV_RD(BCHP_USB1_CTRL_SETUP);
+	usb_cfg[3] = BDEV_RD(BCHP_USB1_CTRL_EBRIDGE);
+#endif
+}
+
+static __maybe_unused void bcm40nm_pm_usb_enable_s3(void)
+{
+	if (!brcm_pm_deep_sleep())
+		return;
+	printk(KERN_DEBUG "Restoring USB HC state from S3 suspend\n");
+#ifdef BCHP_USB_CTRL_SETUP
+	BDEV_WR_RB(BCHP_USB_CTRL_SETUP, usb_cfg[0]);
+	BDEV_WR_RB(BCHP_USB_CTRL_EBRIDGE, usb_cfg[1]);
+#endif
+#ifdef BCHP_USB1_CTRL_SETUP
+	BDEV_WR_RB(BCHP_USB1_CTRL_SETUP, usb_cfg[2]);
+	BDEV_WR_RB(BCHP_USB1_CTRL_EBRIDGE, usb_cfg[3]);
+#endif
+	mdelay(500);
+	bchip_usb_init();
+}
+
+#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346)
 static void bcm40nm_pm_usb_disable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
 
-	if (brcm_pm_deep_sleep()) {
-#ifdef BCHP_USB_CTRL_SETUP
-		usb_cfg[0] = BDEV_RD(BCHP_USB_CTRL_SETUP);
-		usb_cfg[1] = BDEV_RD(BCHP_USB_CTRL_EBRIDGE);
-#endif
-#ifdef BCHP_USB1_CTRL_SETUP
-		usb_cfg[2] = BDEV_RD(BCHP_USB1_CTRL_SETUP);
-		usb_cfg[3] = BDEV_RD(BCHP_USB1_CTRL_EBRIDGE);
-#endif
-	}
+	bcm40nm_pm_usb_disable_s3();
 
 	/* USB0 */
 	/* power down USB PHY */
@@ -2543,49 +2710,8 @@ static void bcm40nm_pm_usb_enable(u32 flags)
 	/* power up USB PHY */
 	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
 		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
-#if 0
-	if (brcm_pm_deep_sleep()) {
-#ifdef BCHP_USB_CTRL_SETUP
-		BDEV_WR_RB(BCHP_USB_CTRL_SETUP, usb_cfg[0]);
-		BDEV_WR_RB(BCHP_USB_CTRL_EBRIDGE, usb_cfg[1]);
-		BDEV_WR_RB(BCHP_USB_EHCI_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB_EHCI1_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB_EHCI_REG_START+0x9c, 0x00000001);
-		BDEV_WR_RB(BCHP_USB_EHCI1_REG_START+0x9c, 0x00000001);
-#endif
-#ifdef BCHP_USB1_CTRL_SETUP
-		BDEV_WR_RB(BCHP_USB1_CTRL_SETUP, usb_cfg[2]);
-		BDEV_WR_RB(BCHP_USB1_CTRL_EBRIDGE, usb_cfg[3]);
-		BDEV_WR_RB(BCHP_USB1_EHCI_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB1_EHCI1_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB1_EHCI_REG_START+0x9c, 0x00000001);
-		BDEV_WR_RB(BCHP_USB1_EHCI1_REG_START+0x9c, 0x00000001);
-#endif
-		bchip_usb_init();
-	}
-#else
-	if (brcm_pm_deep_sleep()) {
-		int idx = 0;
-		printk(KERN_DEBUG "Restoring USB HC state from S3 suspend\n");
-		BDEV_WR_RB(BCHP_USB_CTRL_SETUP, usb_cfg[idx++]);
-		BDEV_WR_RB(BCHP_USB1_CTRL_SETUP, usb_cfg[idx++]);
 
-		BDEV_WR_RB(BCHP_USB_CTRL_EBRIDGE, usb_cfg[idx++]);
-		BDEV_WR_RB(BCHP_USB1_CTRL_EBRIDGE, usb_cfg[idx++]);
-
-		BDEV_WR_RB(BCHP_USB_EHCI_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB1_EHCI_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB_EHCI1_REG_START+0x94, 0x00800040);
-		BDEV_WR_RB(BCHP_USB1_EHCI1_REG_START+0x94, 0x00800040);
-
-		BDEV_WR_RB(BCHP_USB_EHCI_REG_START+0x9c, 0x00000001);
-		BDEV_WR_RB(BCHP_USB1_EHCI_REG_START+0x9c, 0x00000001);
-		BDEV_WR_RB(BCHP_USB_EHCI1_REG_START+0x9c, 0x00000001);
-		BDEV_WR_RB(BCHP_USB1_EHCI1_REG_START+0x9c, 0x00000001);
-
-		bchip_usb_init();
-	}
-#endif
+	bcm40nm_pm_usb_enable_s3();
 }
 
 static void bcm40nm_pm_sata_disable(u32 flags)
@@ -2799,6 +2925,8 @@ static void bcm40nm_pm_moca_enable(u32 flags)
 static void bcm7231_pm_usb_disable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
+
+	bcm40nm_pm_usb_disable_s3();
 	/* USB0 */
 	/* power down USB PHY */
 	BDEV_SET(BCHP_USB_CTRL_PLL_CTL,
@@ -2872,6 +3000,8 @@ static void bcm7231_pm_usb_enable(u32 flags)
 	/* power up USB PHY */
 	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
 		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
+
+	bcm40nm_pm_usb_enable_s3();
 }
 
 #ifdef CONFIG_BCM7231A0
@@ -3132,6 +3262,8 @@ static void bcm7344_pm_usb_disable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
 
+	bcm40nm_pm_usb_disable_s3();
+
 	/* USB0 */
 
 	/* power down PHY and PLL */
@@ -3203,6 +3335,7 @@ static void bcm7344_pm_usb_enable(u32 flags)
 	BDEV_UNSET(BCHP_USB1_CTRL_PLL_CTL,
 		BCHP_USB_CTRL_PLL_CTL_PLL_IDDQ_PWRDN_MASK);
 
+	bcm40nm_pm_usb_enable_s3();
 }
 
 static void bcm7344_pm_moca_disable(u32 flags)
@@ -3484,16 +3617,12 @@ static struct brcm_chip_pm_ops chip_pm_ops = {
 };
 #endif
 
-#if defined(CONFIG_BCM7552)
+#if defined(CONFIG_BCM7552) || defined(CONFIG_BCM7358)
 static void bcm7552_pm_usb_disable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
 
-	/* resetting port causes failure on resume */
-	/*
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x0);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB_P1, 0x0);
-	*/
+	bcm40nm_pm_usb_disable_s3();
 
 	/* power down PHY and PLL */
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL, PLL_PWRDWNB, 0);
@@ -3523,19 +3652,27 @@ static void bcm7552_pm_usb_enable(u32 flags)
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL, PLL_IDDQ_PWRDN, 0);
 	BDEV_WR_F_RB(USB_CTRL_PLL_CTL, PLL_PWRDWNB, 1);
 
-	/* resetting port causes failure on resume */
-	/*
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB, 0x1);
-	BDEV_WR_F_RB(USB_CTRL_UTMI_CTL_1, UTMI_SOFT_RESETB_P1, 0x1);
-	*/
+	bcm40nm_pm_usb_enable_s3();
 }
 
 static void bcm7552_pm_genet_disable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
 
-	if (ENET_WOL(flags))
+	if (ENET_WOL(flags)) {
+		BDEV_WR_F_RB(CLKGEN_GENET_TOP_RGMII_INST_CLOCK_SELECT,
+			GENET0_GMII_CLOCK_SELECT, 1);
+		BDEV_WR_F_RB(CLKGEN_GENET_TOP_RGMII_INST_CLOCK_SELECT,
+			GENET0_CLOCK_SELECT, 1);
+		BDEV_SET(BCHP_CLKGEN_GENET_TOP_RGMII_INST_CLOCK_DISABLE, 0xB);
+		/*
+		 * NOTE: disabling L2INTR clock breaks ACPI pattern detection
+		 */
+		BDEV_UNSET(BCHP_CLKGEN_GENET_TOP_RGMII_INST_CLOCK_ENABLE,
+			0x1C7);
+		PLL_CH_DIS(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL, 1);
 		return;
+	}
 
 	/* Stop GENET clocks */
 	BDEV_WR_F_RB(CLKGEN_GENET_TOP_RGMII_INST_CLOCK_ENABLE,
@@ -3553,8 +3690,16 @@ static void bcm7552_pm_genet_enable(u32 flags)
 {
 	PRINT_PM_CALLBACK;
 
-	if (ENET_WOL(flags))
+	if (ENET_WOL(flags)) {
+		PLL_CH_ENA(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL, 1);
+		BDEV_SET(BCHP_CLKGEN_GENET_TOP_RGMII_INST_CLOCK_ENABLE, 0x1C7);
+		BDEV_UNSET(BCHP_CLKGEN_GENET_TOP_RGMII_INST_CLOCK_DISABLE, 0xB);
+		BDEV_WR_F_RB(CLKGEN_GENET_TOP_RGMII_INST_CLOCK_SELECT,
+			GENET0_GMII_CLOCK_SELECT, 0);
+		BDEV_WR_F_RB(CLKGEN_GENET_TOP_RGMII_INST_CLOCK_SELECT,
+			GENET0_CLOCK_SELECT, 0);
 		return;
+	}
 
 	/* Power up PLL channels */
 	PLL_CH_ENA(CLKGEN_PLL_SYS1_PLL_CHANNEL_CTRL, 1);
@@ -3576,7 +3721,9 @@ static void bcm7552_pm_suspend(u32 flags)
 	PLL_CH_DIS(CLKGEN_PLL_VCXO_PLL_CHANNEL_CTRL, 2);
 	PLL_DIS(CLKGEN_PLL_VCXO_PLL);
 	/* SYS PLL 1 */
-	PLL_DIS(CLKGEN_PLL_SYS1_PLL);
+	if (!ENET_WOL(flags))
+		PLL_DIS(CLKGEN_PLL_SYS1_PLL);
+
 	/* SYS PLL 0 channels 2, 4, 5 */
 	PLL_CH_DIS(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL, 2);
 	PLL_CH_DIS(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL, 4);
@@ -3590,7 +3737,8 @@ static void bcm7552_pm_resume(u32 flags)
 	PLL_CH_ENA(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL, 4);
 	PLL_CH_ENA(CLKGEN_PLL_SYS0_PLL_CHANNEL_CTRL, 5);
 	/* SYS PLL 1 */
-	PLL_ENA(CLKGEN_PLL_SYS1_PLL);
+	if (!ENET_WOL(flags))
+		PLL_ENA(CLKGEN_PLL_SYS1_PLL);
 
 	/* VCX0 channel 0, 1, 2 and PLL 0 */
 	PLL_ENA(CLKGEN_PLL_VCXO_PLL);
@@ -3829,7 +3977,7 @@ static suspend_state_t suspend_state;
 
 static void brcm_pm_handshake(void)
 {
-#ifdef CONFIG_BRCM_PWR_HANDSHAKE_V0
+#if defined(CONFIG_BRCM_PWR_HANDSHAKE_V0)
 	int i;
 	unsigned long base = BCHP_BSP_CMDBUF_REG_START & ~0xffff;
 	unsigned long cmdbuf = BCHP_BSP_CMDBUF_REG_START;
@@ -3874,6 +4022,11 @@ static void brcm_pm_handshake(void)
 	}
 	BDEV_UNSET_RB(base + 0xb038, 0xff00);
 	printk(KERN_DEBUG "BSP power handshake complete OK: %x\n", tmp);
+#elif defined(CONFIG_BRCM_PWR_HANDSHAKE_V1)
+	BDEV_WR_F_RB(AON_CTRL_HOST_MISC_CMDS, pm_restore, 0);
+	BDEV_WR_F_RB(AON_CTRL_PM_INITIATE, pm_initiate_0, 0);
+	BDEV_WR_F_RB(AON_CTRL_PM_INITIATE, pm_initiate_0, 1);
+	mdelay(10);
 #endif /* CONFIG_BRCM_PWR_HANDSHAKE_V0 */
 }
 
@@ -3987,7 +4140,19 @@ static struct brcm_wakeup_ops brcm_timer_wakeup_ops = {
 
 static void brcm_pm_set_alarm(int timeout)
 {
+	u32 tmp;
 	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
+	if (timeout == 1) {
+		/* Wait for next second to start - if too little time left
+		 * before the counter increment we may receive WKTMR interrupt
+		 * before system is fully suspended.
+		 * One second should be enough to complete suspend
+		 * from this point
+		 */
+		tmp = BDEV_RD(BCHP_WKTMR_COUNTER);
+		while (BDEV_RD(BCHP_WKTMR_COUNTER) == tmp)
+			;
+	}
 	BDEV_WR_RB(BCHP_WKTMR_ALARM, BDEV_RD(BCHP_WKTMR_COUNTER) + timeout);
 }
 
@@ -3996,6 +4161,11 @@ static void brcm_pm_clear_alarm(void)
 	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
 }
 
+#if     defined(CONFIG_BCM7468) || \
+	defined(CONFIG_BCM7552A0) || \
+	defined(CONFIG_BCM7358A0)
+#define NON_RELOCATABLE_VEC
+#endif
 static int brcm_pm_standby(int mode)
 {
 	int ret = 0, valid_event = 1;
@@ -4008,7 +4178,7 @@ static int brcm_pm_standby(int mode)
 
 		brcm_irq_standby_enter(BRCM_IRQ_STANDBY);
 
-#if defined(CONFIG_BCM7468) || defined(CONFIG_BCM7552)
+#if defined(NON_RELOCATABLE_VEC)
 	{
 	u32 oldvec[5];
 	const int vecsize = 0x14;
@@ -4166,7 +4336,7 @@ static int brcm_pm_standby(int mode)
 	brcm_pm_wakeup_disable();
 	brcm_system_resume();
 
-#if defined(CONFIG_BCM7468) || defined(CONFIG_BCM7552)
+#if defined(NON_RELOCATABLE_VEC)
 	memcpy(vec, oldvec, vecsize);
 	flush_icache_range(restart_vec, restart_vec + vecsize);
 	}
@@ -4192,6 +4362,22 @@ static int brcm_pm_standby(int mode)
 }
 
 #ifdef CONFIG_BRCM_HAS_AON
+#if defined(BCHP_AON_CTRL_PM_CTRL_pm_clk_divider_reset_en_MASK) || \
+defined(BCHP_SUN_TOP_CTRL_PM_CTRL_pm_clk_divider_reset_en_MASK)
+#define PM_CMD_BASE		0x0A
+#else
+#define PM_CMD_BASE		0x02
+#endif
+
+#if defined(CONFIG_BMIPS5000)
+#define PM_USE_MIPS_READY	0x04
+#else
+#define PM_USE_MIPS_READY	0x00
+#endif
+
+#define PM_STANDBY_CONFIG	(PM_CMD_BASE|PM_USE_MIPS_READY)
+#define PM_STANDBY_COMMAND	(PM_STANDBY_CONFIG|1)
+
 void brcm_pm_s3_cold_boot(void)
 {
 	if (!brcm_pm_halt_mode)
@@ -4205,15 +4391,12 @@ void brcm_pm_s3_cold_boot(void)
 	brcm_pm_handshake();
 	BDEV_WR_RB(AON_RAM(0), 0);
 	BDEV_WR_RB(BCHP_AON_CTRL_PM_MIPS_WAIT_COUNT, 0xffff);
-	BDEV_WR_RB(BCHP_AON_CTRL_PM_S3_STANDBY_TIMER, 0x1fff);
-	BDEV_WR_RB(BCHP_AON_CTRL_PM_S3_WAKEUP_TIMER, 0);
 
 	/* PD request is initiated on pm_start_pwrdn transition 0->1 */
 	BDEV_WR_RB(BCHP_AON_CTRL_PM_CTRL, 0);
-	BDEV_WR_RB(BCHP_AON_CTRL_PM_CTRL,
-		BCHP_AON_CTRL_PM_CTRL_pm_start_pwrdn_MASK |
-		BCHP_AON_CTRL_PM_CTRL_pm_enable_pll_pwrdn_MASK |
-		BCHP_AON_CTRL_PM_CTRL_pm_deep_standby_MASK);
+	BDEV_WR_RB(BCHP_AON_CTRL_PM_CTRL, PM_STANDBY_CONFIG);
+	/* Separate PD request from the rest of PMSM setup */
+	BDEV_WR_RB(BCHP_AON_CTRL_PM_CTRL, PM_STANDBY_COMMAND);
 
 	__asm__ __volatile__(
 	"	wait\n"
@@ -4296,6 +4479,23 @@ static int brcm_suspend_init(void)
 late_initcall(brcm_suspend_init);
 
 #endif /* CONFIG_BRCM_HAS_STANDBY */
+
+static int brcm_pm_check_caps(void)
+{
+	unsigned long __maybe_unused config;
+#ifdef CONFIG_BMIPS5000
+	fixed_counter_freq = 1;
+#elif defined(CONFIG_BMIPS4380)
+	config = read_c0_brcm_config();
+	fixed_counter_freq = !!(config & 0x40);
+#else
+	fixed_counter_freq = 0;
+#endif
+	printk(KERN_INFO "PM: CP0 COUNT/COMPARE frequency %s on divisor\n",
+	       fixed_counter_freq ? "does not depend" : "depends");
+	return 0;
+}
+late_initcall(brcm_pm_check_caps);
 
 int brcm_pm_deep_sleep(void)
 {

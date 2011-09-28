@@ -29,6 +29,7 @@ config BCM35125C0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_HAS_PCU_UARTS
+	select BRCM_SLOW_TVM_CLOCK
 	select BRCM_HAS_GENET_0
 	select BRCM_GENET_V2
 	select BRCM_HAS_WKTMR
@@ -39,7 +40,8 @@ config BCM35126B0
 	bool "35126 Bx"
 	select BRCM_PLATFORM_DEFAULTS
 	select BCM35126
-	select BMIPS4380
+	select BMIPS5000
+	select BRCM_HAS_XI
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_HAS_PCU_UARTS
@@ -57,6 +59,7 @@ config BCM35230C0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_HAS_PCU_UARTS
+	select BRCM_SLOW_TVM_CLOCK
 	select BRCM_HAS_GENET_0
 	select BRCM_GENET_V2
 	select BRCM_HAS_WKTMR
@@ -74,6 +77,7 @@ config BCM35330A0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_HAS_PCU_UARTS
+	select BRCM_SLOW_TVM_CLOCK
 	select BRCM_HAS_GENET_0
 	select BRCM_GENET_V2
 	select BRCM_HAS_WKTMR
@@ -153,10 +157,9 @@ config BCM7231B0
 	select BRCM_HAS_WKTMR
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_1GB_MEMC0
-	#select BRCM_HAS_STANDBY
-	#select BRCM_HAS_AON
-	#select BRCM_PWR_HANDSHAKE_V0
-	#select BRCM_HAS_DIGITAL_DDR_PHY
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V0
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7340B0
 	bool "7340 Bx"
@@ -259,6 +262,9 @@ config BCM7344B0
 	select BRCM_HAS_WKTMR
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_1GB_MEMC0
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V1
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7346A0
 	bool "7346 Ax"
@@ -310,6 +316,9 @@ config BCM7346B0
 	select BRCM_HAS_WKTMR
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_1GB_MEMC0
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V1
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7358A0
 	bool "7358 Ax"
@@ -326,6 +335,9 @@ config BCM7358A0
 	select BRCM_HAS_NAND_MINOR_0
 	select BRCM_HAS_BSPI_V4
 	select BRCM_HAS_WKTMR
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V0
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7405B0
 	bool "7405/97459 Bx"
@@ -469,14 +481,14 @@ config BCM7425B0
 	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_2GB_MEMC0
 	select BRCM_HAS_1GB_MEMC1
-	#select BRCM_HAS_AON
-	#select BRCM_PWR_HANDSHAKE_V1
-	#select BRCM_HAS_DIGITAL_DDR_PHY
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V1
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
-config BCM7428A0
-	bool "7428 Ax"
+config BCM7429A0
+	bool "7429 Ax"
 	select BRCM_PLATFORM_DEFAULTS
-	select BCM7428
+	select BCM7429
 	select BMIPS4380
 	select BRCM_HAS_XKS01
 	# select BRCM_HAS_XI
@@ -517,9 +529,9 @@ config BCM7435A0
 	select BRCM_HAS_GENET_0
 	# select BRCM_HAS_MOCA_20
 	# select BRCM_MOCA_ON_GENET_1
-	select BRCM_GENET_V2
+	select BRCM_GENET_V3
 	select BRCM_HAS_NOR
-	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MAJOR_6
 	select BRCM_HAS_NAND_MINOR_0
 	select BRCM_HAS_EDU
 	select BRCM_HAS_BSPI_V4
@@ -611,6 +623,26 @@ config BCM7552A0
 	select BRCM_HAS_AON
 	select BRCM_PWR_HANDSHAKE_V0
 	select BRCM_HAS_DIGITAL_DDR_PHY
+
+config BCM7552B0
+	bool "7552 Bx"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7552
+	select BMIPS3300
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_GENET_0
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SDIO_V1
+	select BRCM_HAS_WKTMR
+	#select BRCM_HAS_AON
+	#select BRCM_PWR_HANDSHAKE_V1
+	#select BRCM_HAS_DIGITAL_DDR_PHY
 
 config BCM7631B0
 	bool "7631 Bx"
@@ -1173,6 +1205,10 @@ config BRCM_HAS_16550
 config BRCM_HAS_PCU_UARTS
 	bool
 
+# old DTV platforms used 54MHz as the UART base clock; new platforms use 216MHz
+config BRCM_SLOW_TVM_CLOCK
+	bool
+
 config BRCM_HAS_UARTA
 	bool
 
@@ -1574,7 +1610,7 @@ config BCM7420
 config BCM7425
 	bool
 
-config BCM7428
+config BCM7429
 	bool
 
 config BCM7435

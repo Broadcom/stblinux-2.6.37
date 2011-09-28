@@ -151,7 +151,8 @@ module_param(wp_on, int, 0444);
 	} while (0)
 
 #define RD_ACC_CONTROL(cs, field) \
-	((BDEV_RD(REG_ACC_CONTROL(cs)) & BCHP_NAND_ACC_CONTROL_CS1_##field##_MASK) \
+	((BDEV_RD(REG_ACC_CONTROL(cs)) & \
+	BCHP_NAND_ACC_CONTROL_CS1_##field##_MASK) \
 		>> BCHP_NAND_ACC_CONTROL_CS1_##field##_SHIFT)
 
 /* Helper functions for reading and writing OOB registers */
@@ -210,6 +211,7 @@ struct brcmstb_nand_controller {
 #endif
 	u32			nand_cs_nand_select;
 	u32			nand_cs_nand_xor;
+	u32			corr_stat_threshold;
 	u32			hif_intr2;
 	/* per CS */
 	u32			acc_control;
@@ -1200,6 +1202,8 @@ static int brcmstb_nand_suspend(struct device *dev)
 #endif
 		ctrl.nand_cs_nand_select = BDEV_RD(BCHP_NAND_CS_NAND_SELECT);
 		ctrl.nand_cs_nand_xor = BDEV_RD(BCHP_NAND_CS_NAND_XOR);
+		ctrl.corr_stat_threshold =
+			BDEV_RD(BCHP_NAND_CORR_STAT_THRESHOLD);
 		ctrl.hif_intr2 = HIF_ENABLED_IRQ(NAND_CTLRDY);
 
 		ctrl.acc_control = BDEV_RD(REG_ACC_CONTROL(host->cs));
@@ -1214,6 +1218,7 @@ static int brcmstb_nand_resume(struct device *dev)
 {
 	if (brcm_pm_deep_sleep()) {
 		struct brcmstb_nand_host *host = dev_get_drvdata(dev);
+		struct mtd_info *mtd = &host->mtd;
 
 		dev_dbg(dev, "Restore state after S3 suspend\n");
 #ifdef CONFIG_BRCM_HAS_EDU
@@ -1226,6 +1231,8 @@ static int brcmstb_nand_resume(struct device *dev)
 #endif
 		BDEV_WR_RB(BCHP_NAND_CS_NAND_SELECT, ctrl.nand_cs_nand_select);
 		BDEV_WR_RB(BCHP_NAND_CS_NAND_XOR, ctrl.nand_cs_nand_xor);
+		BDEV_WR_RB(BCHP_NAND_CORR_STAT_THRESHOLD,
+			ctrl.corr_stat_threshold);
 
 		BDEV_WR_RB(REG_ACC_CONTROL(host->cs), ctrl.acc_control);
 		BDEV_WR_RB(REG_CONFIG(host->cs), ctrl.config);
@@ -1235,6 +1242,8 @@ static int brcmstb_nand_resume(struct device *dev)
 		HIF_ACK_IRQ(NAND_CTLRDY);
 		if (ctrl.hif_intr2)
 			HIF_ENABLE_IRQ(NAND_CTLRDY);
+
+		nand_scan_ident(mtd, 1, NULL);
 	}
 	return 0;
 }

@@ -373,7 +373,12 @@ static void __brcm_pm_memc1_suspend(int mode)
 
 	brcm_pm_memc1_sspd_control(1);
 
+
 	if (mode) {
+		/* CKE_IDDQ */
+		BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
+			BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) | 4);
+
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
 			MEMC_DRAM_INIT, 1);
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
@@ -600,6 +605,10 @@ static void __brcm_pm_memc1_resume(int mode)
 	}
 
 	if (mode) {
+		/* Remove CKE_IDDQ */
+		BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
+			BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) & ~4);
+
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
 			MEMC_DRAM_INIT, 0);
 		BDEV_WR_F_RB(MEMC_MISC_1_SOFT_RESET,
@@ -632,20 +641,12 @@ static void __brcm_pm_memc1_powerdown(void)
 
 	BUG_ON(ii > MAX_DDR_APHY_PARAMS_NUM);
 
-	/* CKE_IDDQ */
-	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
-		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) | 4);
-
 	__brcm_pm_memc1_suspend(1);
 }
 
 static int __brcm_pm_memc1_powerup(void)
 {
 	int ii = 0;
-
-	/* Remove CKE_IDDQ */
-	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL,
-		BDEV_RD(BCHP_MEMC_DDR23_APHY_AC_1_DDR_PAD_CNTRL) & ~4);
 
 	BDEV_WR_RB(BCHP_MEMC_DDR23_APHY_AC_1_PLL_CTRL1_REG,
 		memc1_config.ddr23_aphy_params[ii++]);
