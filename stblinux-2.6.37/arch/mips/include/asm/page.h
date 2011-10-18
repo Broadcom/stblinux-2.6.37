@@ -248,6 +248,8 @@ typedef struct { unsigned long pgprot; } pgprot_t;
 
 /* uncached kseg1 does not exist in this configuration */
 
+#define CAC_ADDR(addr)		({ BUG(); NULL; })
+
 #else
 #define UNCAC_ADDR(addr)	((addr) - PAGE_OFFSET + UNCAC_BASE + 	\
 								PHYS_OFFSET)

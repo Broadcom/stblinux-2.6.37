@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Jun 23 16:42:55 2011
- *                 MD5 Checksum         5a01cf5675903503ea6423a69b7413f7
+ * Date:           Generated on         Wed Sep 14 10:13:00 2011
+ *                 MD5 Checksum         b58886ba1b7d13c588c3eeb60d07c3a6
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7640/rdb/b0/bchp_common.h $
  * 
- * Hydra_Software_Devel/3   6/24/11 4:30p etrudeau
- * SWBLURAY-25888: update 7640 B0 RDB with latest in Central RDB
+ * Hydra_Software_Devel/5   9/14/11 4:53p jzhu
+ * SWBLURAY-26653:7640 b0 bringup, rename SDIO registers
  *
  ***************************************************************************/
 
@@ -103,8 +103,8 @@
 #define BCHP_WRAP_M2MC_L2_REG_END                          0x0009002c
 #define BCHP_WRAP_M2MC_GRB_REG_START                       0x00090100
 #define BCHP_WRAP_M2MC_GRB_REG_END                         0x0009010c
-#define BCHP_M2MC_0_REG_START                              0x00091000
-#define BCHP_M2MC_0_REG_END                                0x000917fc
+#define BCHP_M2MC_REG_START                                0x00091000
+#define BCHP_M2MC_REG_END                                  0x000917fc
 #define BCHP_M2MC_1_REG_START                              0x00092000
 #define BCHP_M2MC_1_REG_END                                0x000927fc
 #define BCHP_GFX_L2_REG_START                              0x000c0000
@@ -821,24 +821,24 @@
 #define BCHP_NAND_REG_END                                  0x01402dfc
 #define BCHP_EDU_REG_START                                 0x01403000
 #define BCHP_EDU_REG_END                                   0x01403020
-#define BCHP_SDIO_HOST_REG_START                           0x01404000
-#define BCHP_SDIO_HOST_REG_END                             0x014040fc
-#define BCHP_SDIO_CFG_REG_START                            0x01404100
-#define BCHP_SDIO_CFG_REG_END                              0x014041fc
-#define BCHP_SDIO_BOOT_REG_START                           0x01404200
-#define BCHP_SDIO_BOOT_REG_END                             0x0140423c
+#define BCHP_SDIO_0_HOST_REG_START                         0x01404000
+#define BCHP_SDIO_0_HOST_REG_END                           0x014040fc
+#define BCHP_SDIO_0_CFG_REG_START                          0x01404100
+#define BCHP_SDIO_0_CFG_REG_END                            0x014041fc
+#define BCHP_SDIO_0_BOOT_REG_START                         0x01404200
+#define BCHP_SDIO_0_BOOT_REG_END                           0x0140423c
 #define BCHP_SHARF_TOP_REG_START                           0x01405000
 #define BCHP_SHARF_TOP_REG_END                             0x01405094
 #define BCHP_SHARF_MEM_DMA0_REG_START                      0x01405100
 #define BCHP_SHARF_MEM_DMA0_REG_END                        0x0140511c
 #define BCHP_SHARF_MEM_DMA1_REG_START                      0x01405200
 #define BCHP_SHARF_MEM_DMA1_REG_END                        0x0140521c
-#define BCHP_EMMC_SDIO_HOST_REG_START                      0x01407000
-#define BCHP_EMMC_SDIO_HOST_REG_END                        0x014070fc
-#define BCHP_EMMC_SDIO_CFG_REG_START                       0x01407100
-#define BCHP_EMMC_SDIO_CFG_REG_END                         0x014071fc
-#define BCHP_EMMC_SDIO_BOOT_REG_START                      0x01407200
-#define BCHP_EMMC_SDIO_BOOT_REG_END                        0x0140723c
+#define BCHP_SDIO_1_HOST_REG_START                         0x01407000
+#define BCHP_SDIO_1_HOST_REG_END                           0x014070fc
+#define BCHP_SDIO_1_CFG_REG_START                          0x01407100
+#define BCHP_SDIO_1_CFG_REG_END                            0x014071fc
+#define BCHP_SDIO_1_BOOT_REG_START                         0x01407200
+#define BCHP_SDIO_1_BOOT_REG_END                           0x0140723c
 #define BCHP_SID_REG_START                                 0x01520100
 #define BCHP_SID_REG_END                                   0x015201a0
 #define BCHP_SID_RLE_REG_START                             0x01520300

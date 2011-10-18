@@ -40,7 +40,10 @@
 #include <mntent.h>
 #include <sys/stat.h>
 #undef ustat
-#include <sys/ustat.h>
+
+#include <sys/statfs.h>
+#include <sys/types.h>
+
 #include <sys/ioctl.h>
 
 extern char *progname;
@@ -60,7 +63,7 @@ extern char *progname;
 int
 platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
 {
-	struct ustat	ust;
+	struct statfs	ust;
 	struct stat64	st;
 
 	if (!s) {
@@ -71,7 +74,7 @@ platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
 		s = &st;
 	}
 
-	if (ustat(s->st_rdev, &ust) >= 0) {
+	if (statfs(s->st_rdev, &ust) >= 0) {
 		if (verbose)
 			fprintf(stderr,
 				_("%s: %s contains a mounted filesystem\n"),

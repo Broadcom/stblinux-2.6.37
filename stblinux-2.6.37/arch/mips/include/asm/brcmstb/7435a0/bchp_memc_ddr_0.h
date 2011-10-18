@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 02:58:17 2011
- *                 MD5 Checksum         ddacd647a9c3fb40ade5d5be5cb8334a
+ * Date:           Generated on         Tue Oct 11 08:05:39 2011
+ *                 MD5 Checksum         12f5dd38e0ec050efd2afb0b1c62e9d9
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -1339,7 +1339,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_TRANS_ALL :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_ALL_COUNT_MASK              0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_ALL_COUNT_SHIFT             0
-#define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_ALL_COUNT_DEFAULT           -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_ALL_COUNT_DEFAULT           4294967295
 
 /***************************************************************************
  *STAT_CLIENT_SERVICE_CAS - Service CAS Cycle Count register.
@@ -1363,7 +1363,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_CLIENT_SERVICE_CAS :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CAS_COUNT_MASK     0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CAS_COUNT_SHIFT    0
-#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CAS_COUNT_DEFAULT  -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CAS_COUNT_DEFAULT  4294967295
 
 /***************************************************************************
  *STAT_CLIENT_SERVICE_INTR_PENALTY - Service Intra DRAM Penalty Cycle Count register.
@@ -1395,7 +1395,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_CLIENT_SERVICE_CYCLES :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CYCLES_COUNT_MASK  0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CYCLES_COUNT_SHIFT 0
-#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CYCLES_COUNT_DEFAULT -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_CYCLES_COUNT_DEFAULT 4294967295
 
 /***************************************************************************
  *STAT_CLIENT_SERVICE_TRANS_READ - Service Read Transaction Count register.
@@ -1427,7 +1427,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_CLIENT_SERVICE_TRANS :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_TRANS_COUNT_MASK   0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_TRANS_COUNT_SHIFT  0
-#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_TRANS_COUNT_DEFAULT -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_TRANS_COUNT_DEFAULT 4294967295
 
 /***************************************************************************
  *STAT_CLIENT_SERVICE_LATENCY - Service Latency Count register.
@@ -1451,7 +1451,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_CLIENT_SERVICE_LATENCY :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_LATENCY_COUNT_MASK 0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_LATENCY_COUNT_SHIFT 0
-#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_LATENCY_COUNT_DEFAULT -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_CLIENT_SERVICE_LATENCY_COUNT_DEFAULT 4294967295
 
 /***************************************************************************
  *STAT_CLIENT_ABS_MAX_SERVICE_LATENCY - Absolute Minimum Service Latency count register.
@@ -1467,7 +1467,7 @@
 /* MEMC_DDR_0 :: STAT_CLIENT_ABS_MIN_SERVICE_LATENCY :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_CLIENT_ABS_MIN_SERVICE_LATENCY_COUNT_MASK 0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_CLIENT_ABS_MIN_SERVICE_LATENCY_COUNT_SHIFT 0
-#define BCHP_MEMC_DDR_0_STAT_CLIENT_ABS_MIN_SERVICE_LATENCY_COUNT_DEFAULT -1
+#define BCHP_MEMC_DDR_0_STAT_CLIENT_ABS_MIN_SERVICE_LATENCY_COUNT_DEFAULT 4294967295
 
 /***************************************************************************
  *STAT_REFRESH - Total number of refreshes issuedr.
@@ -2507,7 +2507,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_CAS_ALL :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_CAS_ALL_COUNT_MASK                0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_CAS_ALL_COUNT_SHIFT               0
-#define BCHP_MEMC_DDR_0_STAT_MIN_CAS_ALL_COUNT_DEFAULT             -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_CAS_ALL_COUNT_DEFAULT             4294967295
 
 /***************************************************************************
  *STAT_MIN_TRANS_CYCLES_ALL - Minimum number of transactions cycles (CAS+Penalty_ALL).
@@ -2515,7 +2515,7 @@
 /* MEMC_DDR_0 :: STAT_MIN_TRANS_CYCLES_ALL :: COUNT [31:00] */
 #define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_CYCLES_ALL_COUNT_MASK       0xffffffff
 #define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_CYCLES_ALL_COUNT_SHIFT      0
-#define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_CYCLES_ALL_COUNT_DEFAULT    -1
+#define BCHP_MEMC_DDR_0_STAT_MIN_TRANS_CYCLES_ALL_COUNT_DEFAULT    4294967295
 
 /***************************************************************************
  *MEMSYS_AUTO_INIT_CONTROL - MEMSYS Auto Init Control.

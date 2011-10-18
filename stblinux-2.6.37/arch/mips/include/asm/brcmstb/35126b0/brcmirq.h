@@ -34,5 +34,7 @@
 #define BRCM_IRQ_UARTB		39
 #define BRCM_IRQ_UARTC		40
 #define BRCM_IRQ_UPG		44
+#define BRCM_IRQLIST_EHCI	{ 56, 58 }
+#define BRCM_IRQLIST_OHCI	{ 57, 59 }
 
 #endif /* _BRCMIRQ_H_ */

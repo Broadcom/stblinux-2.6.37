@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Jun 22 16:19:59 2011
- *                 MD5 Checksum         f1fe9dd101680af6476d6b0b4e1d855e
+ * Date:           Generated on         Mon Aug  8 18:42:10 2011
+ *                 MD5 Checksum         2fa181eb09c8005dabf78dab1495aac5
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,7 +34,7 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7231/rdb/b0/bchp_sun_top_ctrl.h $
  * 
- * Hydra_Software_Devel/2   6/22/11 10:29p pntruong
+ * Hydra_Software_Devel/3   8/9/11 5:02p pntruong
  * SW7231-196: Synced with central rdb.
  *
  ***************************************************************************/
@@ -1073,25 +1073,25 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_20_SHIFT    20
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_20_DEFAULT  1
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: general_ctrl0_19 [19:19] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_19_MASK     0x00080000
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_19_SHIFT    19
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_19_DEFAULT  1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: usb1_pwrflt_4_disable [19:19] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_4_disable_MASK 0x00080000
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_4_disable_SHIFT 19
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_4_disable_DEFAULT 1
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: general_ctrl0_18 [18:18] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_18_MASK     0x00040000
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_18_SHIFT    18
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_18_DEFAULT  1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: usb1_pwrflt_3_disable [18:18] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_3_disable_MASK 0x00040000
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_3_disable_SHIFT 18
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb1_pwrflt_3_disable_DEFAULT 1
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: general_ctrl0_17 [17:17] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_17_MASK     0x00020000
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_17_SHIFT    17
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_17_DEFAULT  1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: usb0_pwrflt_2_disable [17:17] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_2_disable_MASK 0x00020000
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_2_disable_SHIFT 17
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_2_disable_DEFAULT 1
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: general_ctrl0_16 [16:16] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_16_MASK     0x00010000
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_16_SHIFT    16
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_16_DEFAULT  1
+/* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: usb0_pwrflt_1_disable [16:16] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_1_disable_MASK 0x00010000
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_1_disable_SHIFT 16
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_usb0_pwrflt_1_disable_DEFAULT 1
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_0 :: general_ctrl0_15 [15:15] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_0_general_ctrl0_15_MASK     0x00008000

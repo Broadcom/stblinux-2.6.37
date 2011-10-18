@@ -11,7 +11,7 @@ all::
 .PHONY: romfs
 romfs::
 	mkdir -p $(ROMFSDIR)/lib
-	cp -f lib/*.so* $(ROMFSDIR)/lib/
+	cp -df lib/*.so* $(ROMFSDIR)/lib/
 
 # These targets must not be passed through to the original Makefile
 .PHONY: $(BOGUS_TARGETS)

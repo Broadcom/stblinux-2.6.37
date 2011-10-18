@@ -1031,7 +1031,7 @@ static int doc200x_correct_data(struct mtd_info *mtd, u_char *dat,
 		WriteDOC(DOC_ECC_DIS, docptr, Mplus_ECCConf);
 	else
 		WriteDOC(DOC_ECC_DIS, docptr, ECCConf);
-	if (no_ecc_failures && (ret == -EBADMSG)) {
+	if (no_ecc_failures && mtd_is_eccerr(ret)) {
 		printk(KERN_ERR "suppressing ECC failure\n");
 		ret = 0;
 	}
@@ -1656,7 +1656,7 @@ static int __init doc_probe(unsigned long physadr)
 	nand->ecc.mode		= NAND_ECC_HW_SYNDROME;
 	nand->ecc.size		= 512;
 	nand->ecc.bytes		= 6;
-	nand->options		= NAND_USE_FLASH_BBT;
+	nand->bbt_options	= NAND_BBT_USE_FLASH;
 
 	doc->physadr		= physadr;
 	doc->virtadr		= virtadr;

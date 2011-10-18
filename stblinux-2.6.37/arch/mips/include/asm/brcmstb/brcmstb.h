@@ -1004,8 +1004,7 @@
 #include <asm/brcmstb/7640b0/bchp_irq0.h>
 #include <asm/brcmstb/7640b0/bchp_irq1.h>
 #include <asm/brcmstb/7640b0/bchp_nand.h>
-#include <asm/brcmstb/7640b0/bchp_sdio_cfg.h>
-#include <asm/brcmstb/7640b0/bchp_sdio_host.h>
+#include <asm/brcmstb/7640b0/bchp_sdio_0_cfg.h>
 #include <asm/brcmstb/7640b0/bchp_sun_top_ctrl.h>
 #include <asm/brcmstb/7640b0/bchp_timer.h>
 #include <asm/brcmstb/7640b0/bchp_uarta.h>
@@ -1252,7 +1251,8 @@ void __init bchip_check_compat(void);
 void __init bchip_set_features(void);
 void __init bchip_early_setup(void);
 
-void __init brcm_early_pcie_setup(void);
+void brcm_early_pcie_setup(void);
+void brcm_setup_pcie_bridge(void);
 
 void __init cfe_die(char *fmt, ...);
 
@@ -1324,7 +1324,7 @@ void brcm_pm_wakeup_source_enable(u32 mask, int enable);
 int brcm_pm_wakeup_get_status(u32 mask);
 
 asmlinkage int brcm_pm_standby_asm(int icache_linesz, unsigned long ebase,
-	unsigned long flags);
+	unsigned int vec_size, unsigned long flags);
 int brcm_pm_s3_standby(unsigned long options);
 void brcm_pm_s3_cold_boot(void);
 
@@ -1372,6 +1372,7 @@ void brcm_pm_sata3(int enable);
 extern unsigned long brcm_dram0_size_mb;
 extern unsigned long brcm_dram1_size_mb;
 extern unsigned long brcm_dram1_linux_mb;
+extern unsigned long brcm_dram1_start;
 
 extern struct plat_smp_ops brcmstb_smp_ops;
 
@@ -1473,6 +1474,7 @@ __BUILD_SET_C0(brcm_reset)
 #define BMIPS_GET_CBR()			0xff400000
 #define BMIPS_RAC_CONFIG		0x00000000
 #define BMIPS_RAC_ADDRESS_RANGE		0x00000004
+#define BMIPS_RELO_VECTOR_CONTROL_0	0x00030000
 
 #elif defined(CONFIG_BMIPS5000)
 

@@ -81,7 +81,8 @@
 
 # a0 is icache line size
 # a1 is the interrupt vector (or general exception base)
-# a2 is brcm_pm_standby_flags
+# a2 is the interrupt vector size
+# a3 is brcm_pm_standby_flags
 
 	LEAF(brcm_pm_standby_asm)
 	subu	sp, 64
@@ -95,7 +96,7 @@
 	sw	s6, 28(sp)
 	sw	s7, 32(sp)
 
-	move	FLAGREG, a2
+	move	FLAGREG, a3
 
 	bal	memc_settings_valid
 	nop
@@ -168,7 +169,13 @@
 	addu	t0, s0
 
 # now lock the interrupt vector
+	move	t0, zero
+2:
 	cache	0x1c, 0(a1)
+	addu	a1, s0
+	addu	t0, s0
+	ble	t0, a2, 2b
+	nop
 
 	bal	dputc
 	li	a0, 's'
@@ -271,7 +278,7 @@ wait_loop:
  ***********************************************************************/
 #ifdef CONFIG_BRCM_HAS_AON
 	li	t0, REG(BCHP_WKTMR_COUNTER)
-	lw	a0, 0(t0) 	/* WKTMR_COUNTER */
+	lw	a0, 0(t0)	/* WKTMR_COUNTER */
 	lw	a1, 12(t0)	/* WKTMR_PRESCALER_VAL */
 	li	t0, REG(AON_RAM_BASE)
 	sw	a0, 0(t0)
@@ -435,16 +442,16 @@ dputc:
 	nop
 
 1:
-	li 	t1, REG(UART_BASE)
+	li	t1, REG(UART_BASE)
 1:
-	lw 	t2, UART_LSR_OFFSET(t1)
+	lw	t2, UART_LSR_OFFSET(t1)
 	andi	t2, UART_LSR_MASK
 	beqz	t2, 1b
 	nop
 
 	sw	a0, UART_TX_OFFSET(t1)
 
-1:	lw 	t2, UART_LSR_OFFSET(t1)
+1:	lw	t2, UART_LSR_OFFSET(t1)
 	andi	t2, UART_LSR_MASK
 	beqz	t2, 1b
 	nop
@@ -607,38 +614,38 @@ LEAF(wake_up_memc_0)
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL)
 	lw	a1, 0(a0)
 	li	a2, ~(BCHP_MEMC_DDR23_APHY_WL0_0_DDR_PAD_CNTRL_IDDQ_MODE_ON_SELFREF_MASK)
-	and 	a1, a1, a2
+	and	a1, a1, a2
 	sw	a1, 0(a0)
 
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL)
 	lw	a1, 0(a0)
 	li	a2, ~(BCHP_MEMC_DDR23_APHY_WL1_0_DDR_PAD_CNTRL_IDDQ_MODE_ON_SELFREF_MASK)
-	and 	a1, a1, a2
+	and	a1, a1, a2
 	sw	a1, 0(a0)
 
 
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1)
 	lw	a1, 0(a0)
 	li	a2, ~(BCHP_MEMC_DDR23_APHY_WL0_0_WORDSLICE_CNTRL_1_PWRDN_DLL_ON_SELFREF_MASK)
-	and 	a1, a1, a2
+	and	a1, a1, a2
 	sw	a1, 0(a0)
 
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1)
 	lw	a1, 0(a0)
 	li	a2, ~(BCHP_MEMC_DDR23_APHY_WL1_0_WORDSLICE_CNTRL_1_PWRDN_DLL_ON_SELFREF_MASK)
-	and 	a1, a1, a2
+	and	a1, a1, a2
 	sw	a1, 0(a0)
 
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_AC_0_POWERDOWN)
 	lw	a1, 0(a0)
 	li	a2, ~(BCHP_MEMC_DDR23_APHY_AC_0_POWERDOWN_PLLCLKS_OFF_ON_SELFREF_MASK)
-	and 	a1, a1, a2
+	and	a1, a1, a2
 	sw	a1, 0(a0)
 
 	bal	reprogram_ddr_pll
 	nop
 
-	jr 	s7
+	jr	s7
 	nop
 
 END(wake_up_memc_0)
@@ -649,8 +656,8 @@ END(wake_up_memc_0)
  * a1 - maximum value
  ***********************************************************************/
 reload_vcdl:
-	sll 	v0, a1, 8
-	or  	a1, v0		# max value to load
+	sll	v0, a1, 8
+	or	a1, v0		# max value to load
 
 	move	v1, zero
 vcdl_loop:
@@ -913,22 +920,22 @@ LEAF(reprogram_ddr_pll)
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE0_VCDL_PHASE_CNTL)
 	li	t0, REG(VCDL_SAVE_REG)
 	lw	t0, 0(t0)
-	bal 	reload_vcdl
+	bal	reload_vcdl
 	andi	a1, t0, 0x1f
 
 	srl	a1, t0, 8
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL0_0_BYTE1_VCDL_PHASE_CNTL)
-	bal 	reload_vcdl
+	bal	reload_vcdl
 	andi	a1, 0x1f
 
 	srl	a1, t0, 16
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE0_VCDL_PHASE_CNTL)
-	bal 	reload_vcdl
+	bal	reload_vcdl
 	andi	a1, 0x1f
 
 	srl	a1, t0, 24
 	li	a0, REG(BCHP_MEMC_DDR23_APHY_WL1_0_BYTE1_VCDL_PHASE_CNTL)
-	bal 	reload_vcdl
+	bal	reload_vcdl
 	andi	a1, 0x1f
 
 	jr	s6

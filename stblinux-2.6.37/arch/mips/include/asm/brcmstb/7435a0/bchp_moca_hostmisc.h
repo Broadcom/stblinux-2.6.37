@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 02:57:42 2011
- *                 MD5 Checksum         ddacd647a9c3fb40ade5d5be5cb8334a
+ * Date:           Generated on         Thu Sep 29 02:08:55 2011
+ *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -153,12 +153,12 @@
 /* MOCA_HOSTMISC :: VERSION :: core_version [11:08] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_version_MASK               0x00000f00
 #define BCHP_MOCA_HOSTMISC_VERSION_core_version_SHIFT              8
-#define BCHP_MOCA_HOSTMISC_VERSION_core_version_DEFAULT            1
+#define BCHP_MOCA_HOSTMISC_VERSION_core_version_DEFAULT            3
 
 /* MOCA_HOSTMISC :: VERSION :: core_revision [07:04] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_revision_MASK              0x000000f0
 #define BCHP_MOCA_HOSTMISC_VERSION_core_revision_SHIFT             4
-#define BCHP_MOCA_HOSTMISC_VERSION_core_revision_DEFAULT           1
+#define BCHP_MOCA_HOSTMISC_VERSION_core_revision_DEFAULT           0
 
 /* MOCA_HOSTMISC :: VERSION :: core_mask [03:00] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_mask_MASK                  0x0000000f

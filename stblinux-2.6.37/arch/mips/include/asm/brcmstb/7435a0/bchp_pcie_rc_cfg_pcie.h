@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Apr 11 12:40:17 2011
- *                 MD5 Checksum         8cf142ad25caa9f873c54e8bb2bb1755
+ * Date:           Generated on         Thu Sep 29 02:45:48 2011
+ *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_pcie_rc_cfg_pcie.h $
- * 
- * Hydra_Software_Devel/2   4/12/11 4:22p vanessah
- * SW7425-112: Update rdb files for 7425 B0.
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -150,7 +147,7 @@
 /* PCIE_RC_CFG_PCIE :: DEVICE_CAPABILITY :: MAX_PL_SIZE_SUPPORTED [02:00] */
 #define BCHP_PCIE_RC_CFG_PCIE_DEVICE_CAPABILITY_MAX_PL_SIZE_SUPPORTED_MASK 0x00000007
 #define BCHP_PCIE_RC_CFG_PCIE_DEVICE_CAPABILITY_MAX_PL_SIZE_SUPPORTED_SHIFT 0
-#define BCHP_PCIE_RC_CFG_PCIE_DEVICE_CAPABILITY_MAX_PL_SIZE_SUPPORTED_DEFAULT 0
+#define BCHP_PCIE_RC_CFG_PCIE_DEVICE_CAPABILITY_MAX_PL_SIZE_SUPPORTED_DEFAULT 1
 
 /***************************************************************************
  *DEVICE_STATUS_CONTROL - device_status_control
@@ -255,9 +252,14 @@
 #define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_PORT_NUMBER_SHIFT    24
 #define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_PORT_NUMBER_DEFAULT  0
 
-/* PCIE_RC_CFG_PCIE :: LINK_CAPABILITY :: RESERVED0 [23:22] */
-#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_RESERVED0_MASK       0x00c00000
-#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_RESERVED0_SHIFT      22
+/* PCIE_RC_CFG_PCIE :: LINK_CAPABILITY :: RESERVED0 [23:23] */
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_RESERVED0_MASK       0x00800000
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_RESERVED0_SHIFT      23
+
+/* PCIE_RC_CFG_PCIE :: LINK_CAPABILITY :: ASPM_OPTIONALITY [22:22] */
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_ASPM_OPTIONALITY_MASK 0x00400000
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_ASPM_OPTIONALITY_SHIFT 22
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_ASPM_OPTIONALITY_DEFAULT 1
 
 /* PCIE_RC_CFG_PCIE :: LINK_CAPABILITY :: LINK_BW_NOTIFY [21:21] */
 #define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_LINK_BW_NOTIFY_MASK  0x00200000
@@ -302,7 +304,7 @@
 /* PCIE_RC_CFG_PCIE :: LINK_CAPABILITY :: MAX_LINK_SPEED [03:00] */
 #define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_MAX_LINK_SPEED_MASK  0x0000000f
 #define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_MAX_LINK_SPEED_SHIFT 0
-#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_MAX_LINK_SPEED_DEFAULT 1
+#define BCHP_PCIE_RC_CFG_PCIE_LINK_CAPABILITY_MAX_LINK_SPEED_DEFAULT 2
 
 /***************************************************************************
  *LINK_STATUS_CONTROL - link_status_control

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Aug 22 02:19:48 2011
- *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
+ * Date:           Generated on         Tue Oct 11 08:30:26 2011
+ *                 MD5 Checksum         12f5dd38e0ec050efd2afb0b1c62e9d9
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -161,18 +161,18 @@
 /* NAND :: REVISION :: MINOR [07:00] */
 #define BCHP_NAND_REVISION_MINOR_MASK                              0x000000ff
 #define BCHP_NAND_REVISION_MINOR_SHIFT                             0
-#define BCHP_NAND_REVISION_MINOR_DEFAULT                           1
+#define BCHP_NAND_REVISION_MINOR_DEFAULT                           2
 
 /***************************************************************************
  *CMD_START - Nand Flash Command Start
  ***************************************************************************/
-/* NAND :: CMD_START :: reserved0 [31:29] */
-#define BCHP_NAND_CMD_START_reserved0_MASK                         0xe0000000
-#define BCHP_NAND_CMD_START_reserved0_SHIFT                        29
+/* NAND :: CMD_START :: reserved0 [31:05] */
+#define BCHP_NAND_CMD_START_reserved0_MASK                         0xffffffe0
+#define BCHP_NAND_CMD_START_reserved0_SHIFT                        5
 
-/* NAND :: CMD_START :: OPCODE [28:24] */
-#define BCHP_NAND_CMD_START_OPCODE_MASK                            0x1f000000
-#define BCHP_NAND_CMD_START_OPCODE_SHIFT                           24
+/* NAND :: CMD_START :: OPCODE [04:00] */
+#define BCHP_NAND_CMD_START_OPCODE_MASK                            0x0000001f
+#define BCHP_NAND_CMD_START_OPCODE_SHIFT                           0
 #define BCHP_NAND_CMD_START_OPCODE_DEFAULT                         0
 #define BCHP_NAND_CMD_START_OPCODE_NULL                            0
 #define BCHP_NAND_CMD_START_OPCODE_PAGE_READ                       1
@@ -196,10 +196,6 @@
 #define BCHP_NAND_CMD_START_OPCODE_PROGRAM_PAGE_MULTI              19
 #define BCHP_NAND_CMD_START_OPCODE_PROGRAM_PAGE_MULTI_CACHE        20
 #define BCHP_NAND_CMD_START_OPCODE_BLOCK_ERASE_MULTI               21
-
-/* NAND :: CMD_START :: reserved1 [23:00] */
-#define BCHP_NAND_CMD_START_reserved1_MASK                         0x00ffffff
-#define BCHP_NAND_CMD_START_reserved1_SHIFT                        0
 
 /***************************************************************************
  *CMD_EXT_ADDRESS - Nand Flash Command Extended Address

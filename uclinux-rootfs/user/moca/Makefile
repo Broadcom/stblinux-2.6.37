@@ -20,3 +20,5 @@ romfs:
 		fw/mocacore-gen1.bin /etc/moca/mocacore-gen1.bin
 	$(ROMFSINST) -e CONFIG_USER_NONFREE_MOCA_GEN2 \
 		fw/mocacore-gen2.bin /etc/moca/mocacore-gen2.bin
+	$(ROMFSINST) -e CONFIG_USER_NONFREE_MOCA_GEN3 \
+		fw/mocacore-gen3.bin /etc/moca/mocacore-gen3.bin

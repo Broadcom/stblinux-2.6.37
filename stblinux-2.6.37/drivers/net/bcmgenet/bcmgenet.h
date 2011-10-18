@@ -85,7 +85,7 @@ struct BcmEnet_devctrl {
 	volatile struct GrBridgeRegs *grb;	/* Grb */
 	volatile struct ExtRegs    *ext;	/* Extention register */
 	volatile unsigned long *hfb;/* HFB registers */
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	volatile struct tbufRegs *tbuf;	/* tbuf register for GENET2 */
 	volatile struct hfbRegs  *hfbReg;	/* hfb register for GENET2 */
 #endif
@@ -157,7 +157,7 @@ struct BcmEnet_devctrl {
  * between GENET1.1 and GENET2. Only those currently being used
  * by driver are defined.
  */
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 
 #define GENET_TBUF_CTRL(pdev)			(pdev->tbuf->tbuf_ctrl)
 #define GENET_TBUF_BP_MC(pdev)			(pdev->tbuf->tbuf_bp_mc)
@@ -183,6 +183,6 @@ struct BcmEnet_devctrl {
 #define GENET_HFB_CTRL(pdev)			(pdev->rbuf->rbuf_hfb_ctrl)
 #define GENET_HFB_FLTR_LEN(pdev, i)		(pdev->rbuf->rbuf_fltr_len[i])
 
-#endif /* !defined(CONFIG_BRCM_GENET_V1) */
+#endif /* CONFIG_BRCM_GENET_VERSION > 1 */
 
 #endif /* __BCMGENET_H__ */

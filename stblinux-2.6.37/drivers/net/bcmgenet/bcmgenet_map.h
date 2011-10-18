@@ -34,7 +34,7 @@ struct status_64 {
 	unsigned long length_status;	/* length and peripheral status */
 	unsigned long ext_status;		/* Extended status*/
 	unsigned long rx_csum;			/* partial rx checksum */
-#if defined(CONFIG_BRCM_GENET_V1) || defined(CONFIG_BRCM_GENET_V2)
+#if CONFIG_BRCM_GENET_VERSION < 3
 	unsigned long filter_index;		/* Filter index */
 	unsigned long extracted_bytes[4];	/* Extracted byte 0 - 16 */
 	unsigned long reserved[4];
@@ -180,7 +180,7 @@ struct uniMacRegs {
 	unsigned long unused7[2];
 	unsigned long mdio_cmd;			/* (0x614  RO */
 	unsigned long mdio_cfg;			/* (0x618) RW */
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	unsigned long unused9;
 #else
 	unsigned long rbuf_ovfl_pkt_cnt;	/* (0x61c) RO */
@@ -194,7 +194,13 @@ struct uniMacRegs {
 
 };
 
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION < 3
+#define HFB_NUM_FLTRS		16
+#else
+#define HFB_NUM_FLTRS		48
+#endif
+
+#if CONFIG_BRCM_GENET_VERSION > 1
 struct tbufRegs {
 	unsigned long tbuf_ctrl;	/* (00) tx buffer control */
 	unsigned long unused0;
@@ -216,7 +222,7 @@ struct rbufRegs {
 	unsigned long rbuf_status;			/* (0c)*/
 	unsigned long rbuf_endian_ctrl;		/* (10)*/
 	unsigned long rbuf_chk_ctrl;		/* (14)*/
-#if defined(CONFIG_BRCM_GENET_V2)
+#if CONFIG_BRCM_GENET_VERSION == 2
 	unsigned long rbuf_rxc_offset[8];	/* (18 - 34) */
 	unsigned long unused1[18];
 	unsigned long rbuf_ovfl_pkt_cnt;	/* (80) */
@@ -240,16 +246,14 @@ struct rbufRegs {
 
 struct hfbRegs {
 	unsigned long hfb_ctrl;
-#if defined(CONFIG_BRCM_GENET_V2)
-#define HFB_NUM_FLTRS		16
-#else
-#define HFB_NUM_FLTRS		48
+#if CONFIG_BRCM_GENET_VERSION > 2
 	unsigned long hfb_flt_enable[2];
+	unsigned long unused[4];
 #endif
 	unsigned long hfb_fltr_len[HFB_NUM_FLTRS / 4];
 };
 
-#else /* !defined(CONFIG_BRCM_GENET_V1) */
+#else /* CONFIG_BRCM_GENET_VERSION > 1 */
 struct rbufRegs {
 	unsigned long rbuf_ctrl;			/* (00) */
 	unsigned long rbuf_flush_ctrl;		/* (04) */
@@ -259,7 +263,7 @@ struct rbufRegs {
 	unsigned long rbuf_chk_ctrl;		/* (14) */
 	unsigned long rbuf_rxc_offset[8];	/* (18 - 34) */
 	unsigned long rbuf_hfb_ctrl;		/* (38) */
-	unsigned long rbuf_fltr_len[4];		/* (3c - 48) */
+	unsigned long rbuf_fltr_len[HFB_NUM_FLTRS / 4];	/* (3c - 48) */
 	unsigned long unused0[13];
 	unsigned long tbuf_ctrl;			/* (80) */
 	unsigned long tbuf_flush_ctrl;		/* (84) */
@@ -301,11 +305,11 @@ struct intrl2Regs {
 #define GENET_RBUF_OFF				0X0300
 #define GENET_UMAC_OFF				0x0800
 
-#if defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION == 1
 #define GENET_HFB_OFF				0x1000
 #define GENET_RDMA_OFF				0x2000
 #define GENET_TDMA_OFF				0x3000
-#elif defined(CONFIG_BRCM_GENET_V2)
+#elif CONFIG_BRCM_GENET_VERSION == 2
 #define GENET_TBUF_OFF				0x0600
 #define GENET_HFB_OFF				0x1000
 #define GENET_HFB_REG_OFF			0x2000
@@ -322,7 +326,7 @@ struct intrl2Regs {
 struct SysRegs {
 	unsigned long sys_rev_ctrl;
 	unsigned long sys_port_ctrl;
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	unsigned long rbuf_flush_ctrl;
 	unsigned long tbuf_flush_ctrl;
 #endif
@@ -339,7 +343,7 @@ struct ExtRegs {
 	unsigned long ext_pwr_mgmt;
 	unsigned long ext_emcg_ctrl;
 	unsigned long ext_test_ctrl;
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	unsigned long rgmii_oob_ctrl;
 	unsigned long rgmii_ib_status;
 	unsigned long rgmii_led_ctrl;
@@ -381,7 +385,7 @@ struct tDmaRingRegs {
 
 struct rDmaRegs {
 	struct rDmaRingRegs rDmaRings[17];
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	unsigned long rdma_ring_cfg;
 #endif
 	unsigned long rdma_ctrl;
@@ -394,7 +398,7 @@ struct rDmaRegs {
 	unsigned long rdma_back_status;
 	unsigned long rdma_override;
 	unsigned long rdma_timeout[17];
-#if !defined(CONFIG_BRCM_GENET_V1) && !defined(CONFIG_BRCM_GENET_V2)
+#if CONFIG_BRCM_GENET_VERSION > 2
 	unsigned long rdma_index2ring[8];
 #endif
 	unsigned long rdma_test;
@@ -403,18 +407,18 @@ struct rDmaRegs {
 
 struct tDmaRegs {
 	struct tDmaRingRegs tDmaRings[17];
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	unsigned long tdma_ring_cfg;
 #endif
 	unsigned long tdma_ctrl;
 	unsigned long tdma_status;
-#if defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION == 1
 	unsigned long unused;
 #endif
 	unsigned long tdma_scb_burst_size;
 	unsigned long tdma_activity;
 	unsigned long tdma_mask;
-#if !defined(CONFIG_BRCM_GENET_V1) && !defined(CONFIG_BRCM_GENET_V2)
+#if CONFIG_BRCM_GENET_VERSION > 2
 	unsigned long tdma_map[2];
 #else
 	unsigned long tdma_map[3];

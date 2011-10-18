@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jun 13 14:28:33 2011
- *                 MD5 Checksum         a14f8e7f638a7ebe759043ff756befc5
+ * Date:           Generated on         Thu Sep 29 02:25:19 2011
+ *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_pcie_misc.h $
- * 
- * Hydra_Software_Devel/3   6/14/11 2:55p vanessah
- * SW7425-715: 7425 B0 RDB resync
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -324,13 +321,13 @@
 /***************************************************************************
  *RC_BAR1_CONFIG_LO - RC BAR1 Configuration Low Register
  ***************************************************************************/
-/* PCIE_MISC :: RC_BAR1_CONFIG_LO :: MATCH_ADDRESS [31:16] */
-#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_MATCH_ADDRESS_MASK        0xffff0000
-#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_MATCH_ADDRESS_SHIFT       16
+/* PCIE_MISC :: RC_BAR1_CONFIG_LO :: MATCH_ADDRESS [31:12] */
+#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_MATCH_ADDRESS_MASK        0xfffff000
+#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_MATCH_ADDRESS_SHIFT       12
 #define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_MATCH_ADDRESS_DEFAULT     0
 
-/* PCIE_MISC :: RC_BAR1_CONFIG_LO :: reserved0 [15:05] */
-#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_reserved0_MASK            0x0000ffe0
+/* PCIE_MISC :: RC_BAR1_CONFIG_LO :: reserved0 [11:05] */
+#define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_reserved0_MASK            0x00000fe0
 #define BCHP_PCIE_MISC_RC_BAR1_CONFIG_LO_reserved0_SHIFT           5
 
 /* PCIE_MISC :: RC_BAR1_CONFIG_LO :: SIZE [04:00] */
@@ -349,13 +346,13 @@
 /***************************************************************************
  *RC_BAR2_CONFIG_LO - RC BAR2 Configuration Low Register
  ***************************************************************************/
-/* PCIE_MISC :: RC_BAR2_CONFIG_LO :: MATCH_ADDRESS [31:16] */
-#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_MATCH_ADDRESS_MASK        0xffff0000
-#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_MATCH_ADDRESS_SHIFT       16
+/* PCIE_MISC :: RC_BAR2_CONFIG_LO :: MATCH_ADDRESS [31:12] */
+#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_MATCH_ADDRESS_MASK        0xfffff000
+#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_MATCH_ADDRESS_SHIFT       12
 #define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_MATCH_ADDRESS_DEFAULT     0
 
-/* PCIE_MISC :: RC_BAR2_CONFIG_LO :: reserved0 [15:05] */
-#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_reserved0_MASK            0x0000ffe0
+/* PCIE_MISC :: RC_BAR2_CONFIG_LO :: reserved0 [11:05] */
+#define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_reserved0_MASK            0x00000fe0
 #define BCHP_PCIE_MISC_RC_BAR2_CONFIG_LO_reserved0_SHIFT           5
 
 /* PCIE_MISC :: RC_BAR2_CONFIG_LO :: SIZE [04:00] */
@@ -374,13 +371,13 @@
 /***************************************************************************
  *RC_BAR3_CONFIG_LO - RC BAR3 Configuration Low Register
  ***************************************************************************/
-/* PCIE_MISC :: RC_BAR3_CONFIG_LO :: MATCH_ADDRESS [31:16] */
-#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_MATCH_ADDRESS_MASK        0xffff0000
-#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_MATCH_ADDRESS_SHIFT       16
+/* PCIE_MISC :: RC_BAR3_CONFIG_LO :: MATCH_ADDRESS [31:12] */
+#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_MATCH_ADDRESS_MASK        0xfffff000
+#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_MATCH_ADDRESS_SHIFT       12
 #define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_MATCH_ADDRESS_DEFAULT     0
 
-/* PCIE_MISC :: RC_BAR3_CONFIG_LO :: reserved0 [15:05] */
-#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_reserved0_MASK            0x0000ffe0
+/* PCIE_MISC :: RC_BAR3_CONFIG_LO :: reserved0 [11:05] */
+#define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_reserved0_MASK            0x00000fe0
 #define BCHP_PCIE_MISC_RC_BAR3_CONFIG_LO_reserved0_SHIFT           5
 
 /* PCIE_MISC :: RC_BAR3_CONFIG_LO :: SIZE [04:00] */
@@ -507,9 +504,14 @@
 /***************************************************************************
  *PCIE_STATUS - PCIe Status
  ***************************************************************************/
-/* PCIE_MISC :: PCIE_STATUS :: reserved0 [31:12] */
-#define BCHP_PCIE_MISC_PCIE_STATUS_reserved0_MASK                  0xfffff000
-#define BCHP_PCIE_MISC_PCIE_STATUS_reserved0_SHIFT                 12
+/* PCIE_MISC :: PCIE_STATUS :: reserved0 [31:13] */
+#define BCHP_PCIE_MISC_PCIE_STATUS_reserved0_MASK                  0xffffe000
+#define BCHP_PCIE_MISC_PCIE_STATUS_reserved0_SHIFT                 13
+
+/* PCIE_MISC :: PCIE_STATUS :: PCIE_SSC_STATUS [12:12] */
+#define BCHP_PCIE_MISC_PCIE_STATUS_PCIE_SSC_STATUS_MASK            0x00001000
+#define BCHP_PCIE_MISC_PCIE_STATUS_PCIE_SSC_STATUS_SHIFT           12
+#define BCHP_PCIE_MISC_PCIE_STATUS_PCIE_SSC_STATUS_DEFAULT         0
 
 /* PCIE_MISC :: PCIE_STATUS :: PCIE_PM_STATE [11:10] */
 #define BCHP_PCIE_MISC_PCIE_STATUS_PCIE_PM_STATE_MASK              0x00000c00
@@ -565,7 +567,7 @@
 /* PCIE_MISC :: REVISION :: MINOR [07:00] */
 #define BCHP_PCIE_MISC_REVISION_MINOR_MASK                         0x000000ff
 #define BCHP_PCIE_MISC_REVISION_MINOR_SHIFT                        0
-#define BCHP_PCIE_MISC_REVISION_MINOR_DEFAULT                      2
+#define BCHP_PCIE_MISC_REVISION_MINOR_DEFAULT                      3
 
 /***************************************************************************
  *CPU_2_PCIE_MEM_WIN0_BASE_LIMIT - CPU to PCIe Memory Window 0 base/limit
@@ -700,13 +702,13 @@
 /***************************************************************************
  *UBUS_BAR1_CONFIG_REMAP - UBUS BAR1 System Bus Address Remap Register
  ***************************************************************************/
-/* PCIE_MISC :: UBUS_BAR1_CONFIG_REMAP :: OFFSET [31:16] */
-#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_OFFSET_MASK          0xffff0000
-#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_OFFSET_SHIFT         16
+/* PCIE_MISC :: UBUS_BAR1_CONFIG_REMAP :: OFFSET [31:12] */
+#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_OFFSET_MASK          0xfffff000
+#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_OFFSET_SHIFT         12
 #define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_OFFSET_DEFAULT       0
 
-/* PCIE_MISC :: UBUS_BAR1_CONFIG_REMAP :: reserved0 [15:04] */
-#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_reserved0_MASK       0x0000fff0
+/* PCIE_MISC :: UBUS_BAR1_CONFIG_REMAP :: reserved0 [11:04] */
+#define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_reserved0_MASK       0x00000ff0
 #define BCHP_PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_reserved0_SHIFT      4
 
 /* PCIE_MISC :: UBUS_BAR1_CONFIG_REMAP :: UNUSED_3_1 [03:01] */
@@ -722,13 +724,13 @@
 /***************************************************************************
  *UBUS_BAR2_CONFIG_REMAP - UBUS BAR2 System Bus Address Remap Register
  ***************************************************************************/
-/* PCIE_MISC :: UBUS_BAR2_CONFIG_REMAP :: OFFSET [31:16] */
-#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_OFFSET_MASK          0xffff0000
-#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_OFFSET_SHIFT         16
+/* PCIE_MISC :: UBUS_BAR2_CONFIG_REMAP :: OFFSET [31:12] */
+#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_OFFSET_MASK          0xfffff000
+#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_OFFSET_SHIFT         12
 #define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_OFFSET_DEFAULT       0
 
-/* PCIE_MISC :: UBUS_BAR2_CONFIG_REMAP :: reserved0 [15:04] */
-#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_reserved0_MASK       0x0000fff0
+/* PCIE_MISC :: UBUS_BAR2_CONFIG_REMAP :: reserved0 [11:04] */
+#define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_reserved0_MASK       0x00000ff0
 #define BCHP_PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_reserved0_SHIFT      4
 
 /* PCIE_MISC :: UBUS_BAR2_CONFIG_REMAP :: UNUSED_3_1 [03:01] */
@@ -744,13 +746,13 @@
 /***************************************************************************
  *UBUS_BAR3_CONFIG_REMAP - UBUS BAR3 System Bus Address Remap Register
  ***************************************************************************/
-/* PCIE_MISC :: UBUS_BAR3_CONFIG_REMAP :: OFFSET [31:16] */
-#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_OFFSET_MASK          0xffff0000
-#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_OFFSET_SHIFT         16
+/* PCIE_MISC :: UBUS_BAR3_CONFIG_REMAP :: OFFSET [31:12] */
+#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_OFFSET_MASK          0xfffff000
+#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_OFFSET_SHIFT         12
 #define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_OFFSET_DEFAULT       0
 
-/* PCIE_MISC :: UBUS_BAR3_CONFIG_REMAP :: reserved0 [15:04] */
-#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_reserved0_MASK       0x0000fff0
+/* PCIE_MISC :: UBUS_BAR3_CONFIG_REMAP :: reserved0 [11:04] */
+#define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_reserved0_MASK       0x00000ff0
 #define BCHP_PCIE_MISC_UBUS_BAR3_CONFIG_REMAP_reserved0_SHIFT      4
 
 /* PCIE_MISC :: UBUS_BAR3_CONFIG_REMAP :: UNUSED_3_1 [03:01] */

@@ -1047,7 +1047,7 @@ static int onenand_recover_lsb(struct mtd_info *mtd, loff_t addr, int status)
 		return status;
 
 	/* check if we failed due to uncorrectable error */
-	if (status != -EBADMSG && status != ONENAND_BBT_READ_ECC_ERROR)
+	if (!mtd_is_eccerr(status) && status != ONENAND_BBT_READ_ECC_ERROR)
 		return status;
 
 	/* check if address lies in MLC region */
@@ -1093,7 +1093,7 @@ static int onenand_mlc_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 	DEBUG(MTD_DEBUG_LEVEL3, "%s: from = 0x%08x, len = %i\n",
 	      __func__, (unsigned int) from, (int) len);
 
-	if (ops->mode == MTD_OOB_AUTO)
+	if (ops->mode == MTD_OPS_AUTO_OOB)
 		oobsize = this->ecclayout->oobavail;
 	else
 		oobsize = mtd->oobsize;
@@ -1127,7 +1127,7 @@ static int onenand_mlc_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 			if (unlikely(ret))
 				ret = onenand_recover_lsb(mtd, from, ret);
 			onenand_update_bufferram(mtd, from, !ret);
-			if (ret == -EBADMSG)
+			if (mtd_is_eccerr(ret))
 				ret = 0;
 		}
 
@@ -1136,7 +1136,7 @@ static int onenand_mlc_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 			thisooblen = oobsize - oobcolumn;
 			thisooblen = min_t(int, thisooblen, ooblen - oobread);
 
-			if (ops->mode == MTD_OOB_AUTO)
+			if (ops->mode == MTD_OPS_AUTO_OOB)
 				onenand_transfer_auto_oob(mtd, oobbuf, oobcolumn, thisooblen);
 			else
 				this->read_bufferram(mtd, ONENAND_SPARERAM, oobbuf, oobcolumn, thisooblen);
@@ -1195,7 +1195,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 	DEBUG(MTD_DEBUG_LEVEL3, "%s: from = 0x%08x, len = %i\n",
 			__func__, (unsigned int) from, (int) len);
 
-	if (ops->mode == MTD_OOB_AUTO)
+	if (ops->mode == MTD_OPS_AUTO_OOB)
 		oobsize = this->ecclayout->oobavail;
 	else
 		oobsize = mtd->oobsize;
@@ -1221,7 +1221,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 			this->command(mtd, ONENAND_CMD_READ, from, writesize);
  			ret = this->wait(mtd, FL_READING);
  			onenand_update_bufferram(mtd, from, !ret);
-			if (ret == -EBADMSG)
+			if (mtd_is_eccerr(ret))
 				ret = 0;
  		}
  	}
@@ -1257,7 +1257,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
 			thisooblen = oobsize - oobcolumn;
 			thisooblen = min_t(int, thisooblen, ooblen - oobread);
 
-			if (ops->mode == MTD_OOB_AUTO)
+			if (ops->mode == MTD_OPS_AUTO_OOB)
 				onenand_transfer_auto_oob(mtd, oobbuf, oobcolumn, thisooblen);
 			else
 				this->read_bufferram(mtd, ONENAND_SPARERAM, oobbuf, oobcolumn, thisooblen);
@@ -1281,7 +1281,7 @@ static int onenand_read_ops_nolock(struct mtd_info *mtd, loff_t from,
  		/* Now wait for load */
  		ret = this->wait(mtd, FL_READING);
  		onenand_update_bufferram(mtd, from, !ret);
-		if (ret == -EBADMSG)
+		if (mtd_is_eccerr(ret))
 			ret = 0;
  	}
 
@@ -1317,7 +1317,7 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 	struct mtd_ecc_stats stats;
 	int read = 0, thislen, column, oobsize;
 	size_t len = ops->ooblen;
-	mtd_oob_mode_t mode = ops->mode;
+	unsigned int mode = ops->mode;
 	u_char *buf = ops->oobbuf;
 	int ret = 0, readcmd;
 
@@ -1329,7 +1329,7 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 	/* Initialize return length value */
 	ops->oobretlen = 0;
 
-	if (mode == MTD_OOB_AUTO)
+	if (mode == MTD_OPS_AUTO_OOB)
 		oobsize = this->ecclayout->oobavail;
 	else
 		oobsize = mtd->oobsize;
@@ -1369,13 +1369,13 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 		if (unlikely(ret))
 			ret = onenand_recover_lsb(mtd, from, ret);
 
-		if (ret && ret != -EBADMSG) {
+		if (ret && !mtd_is_eccerr(ret)) {
 			printk(KERN_ERR "%s: read failed = 0x%x\n",
 				__func__, ret);
 			break;
 		}
 
-		if (mode == MTD_OOB_AUTO)
+		if (mode == MTD_OPS_AUTO_OOB)
 			onenand_transfer_auto_oob(mtd, buf, column, thislen);
 		else
 			this->read_bufferram(mtd, ONENAND_SPARERAM, buf, column, thislen);
@@ -1453,10 +1453,10 @@ static int onenand_read_oob(struct mtd_info *mtd, loff_t from,
 	int ret;
 
 	switch (ops->mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_AUTO:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_AUTO_OOB:
 		break;
-	case MTD_OOB_RAW:
+	case MTD_OPS_RAW:
 		/* Not implemented yet */
 	default:
 		return -EINVAL;
@@ -1872,7 +1872,7 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 	if (!len)
 		return 0;
 
-	if (ops->mode == MTD_OOB_AUTO)
+	if (ops->mode == MTD_OPS_AUTO_OOB)
 		oobsize = this->ecclayout->oobavail;
 	else
 		oobsize = mtd->oobsize;
@@ -1909,7 +1909,7 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 				/* We send data to spare ram with oobsize
 				 * to prevent byte access */
 				memset(oobbuf, 0xff, mtd->oobsize);
-				if (ops->mode == MTD_OOB_AUTO)
+				if (ops->mode == MTD_OPS_AUTO_OOB)
 					onenand_fill_auto_oob(mtd, oobbuf, oob, oobcolumn, thisooblen);
 				else
 					memcpy(oobbuf + oobcolumn, oob, thisooblen);
@@ -2026,7 +2026,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 	u_char *oobbuf;
 	size_t len = ops->ooblen;
 	const u_char *buf = ops->oobbuf;
-	mtd_oob_mode_t mode = ops->mode;
+	unsigned int mode = ops->mode;
 
 	to += ops->ooboffs;
 
@@ -2036,7 +2036,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 	/* Initialize retlen, in case of early exit */
 	ops->oobretlen = 0;
 
-	if (mode == MTD_OOB_AUTO)
+	if (mode == MTD_OPS_AUTO_OOB)
 		oobsize = this->ecclayout->oobavail;
 	else
 		oobsize = mtd->oobsize;
@@ -2080,7 +2080,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 		/* We send data to spare ram with oobsize
 		 * to prevent byte access */
 		memset(oobbuf, 0xff, mtd->oobsize);
-		if (mode == MTD_OOB_AUTO)
+		if (mode == MTD_OPS_AUTO_OOB)
 			onenand_fill_auto_oob(mtd, oobbuf, buf, column, thislen);
 		else
 			memcpy(oobbuf + column, buf, thislen);
@@ -2169,10 +2169,10 @@ static int onenand_write_oob(struct mtd_info *mtd, loff_t to,
 	int ret;
 
 	switch (ops->mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_AUTO:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_AUTO_OOB:
 		break;
-	case MTD_OOB_RAW:
+	case MTD_OPS_RAW:
 		/* Not implemented yet */
 	default:
 		return -EINVAL;
@@ -2553,7 +2553,7 @@ static int onenand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	struct bbm_info *bbm = this->bbm;
 	u_char buf[2] = {0, 0};
 	struct mtd_oob_ops ops = {
-		.mode = MTD_OOB_PLACE,
+		.mode = MTD_OPS_PLACE_OOB,
 		.ooblen = 2,
 		.oobbuf = buf,
 		.ooboffs = 0,
@@ -3121,7 +3121,7 @@ static int do_otp_lock(struct mtd_info *mtd, loff_t from, size_t len,
 		this->command(mtd, ONENAND_CMD_RESET, 0, 0);
 		this->wait(mtd, FL_RESETING);
 	} else {
-		ops.mode = MTD_OOB_PLACE;
+		ops.mode = MTD_OPS_PLACE_OOB;
 		ops.ooblen = len;
 		ops.oobbuf = buf;
 		ops.ooboffs = 0;
@@ -3606,7 +3606,7 @@ static int flexonenand_check_blocks_erased(struct mtd_info *mtd, int start, int 
 	int i, ret;
 	int block;
 	struct mtd_oob_ops ops = {
-		.mode = MTD_OOB_PLACE,
+		.mode = MTD_OPS_PLACE_OOB,
 		.ooboffs = 0,
 		.ooblen	= mtd->oobsize,
 		.datbuf	= NULL,

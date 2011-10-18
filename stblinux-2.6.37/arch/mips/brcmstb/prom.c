@@ -46,6 +46,7 @@
 unsigned long brcm_dram0_size_mb;
 unsigned long brcm_dram1_size_mb;
 unsigned long brcm_dram1_linux_mb;
+unsigned long brcm_dram1_start = MEMC1_START;
 
 static u8 brcm_primary_macaddr[6] = { 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef };
 
@@ -434,16 +435,38 @@ void __init prom_init(void)
 		add_memory_region(HIGHMEM_START, dram0_mb << 20, BOOT_MEM_RAM);
 		break;
 #endif
-
-		printk(KERN_WARNING "Reducing DRAM0 to %lu MB; consider "
-			"using BRCM_UPPER_MEMORY or HIGHMEM\n",
-			brcm_dram0_size_mb - dram0_mb);
+		/*
+		 * We wound up here because the chip's architecture cannot
+		 * make use of all MEMC0 RAM in Linux.  i.e. no suitable
+		 * HIGHMEM or upper memory options are supported by the CPU.
+		 *
+		 * But we can still report the excess memory as a "bonus"
+		 * reserved (bmem) region, so the application can manage it.
+		 */
+		mb = brcm_dram0_size_mb - dram0_mb;	/* Linux memory */
+		if (!brcm_dram1_size_mb && mb == 256) {
+			printk(KERN_INFO "MEMC0 split: %lu MB -> Linux; "
+				"%lu MB -> extra bmem\n", mb, dram0_mb);
+			brcm_dram1_size_mb = dram0_mb;
+			brcm_dram1_start = UPPERMEM_START;
+		}
 	} while (0);
 
 #if defined(CONFIG_HIGHMEM) && defined(CONFIG_BRCM_HAS_1GB_MEMC1)
-	if (brcm_dram1_linux_mb && brcm_dram1_linux_mb <= brcm_dram1_size_mb)
+	if (brcm_dram1_linux_mb > brcm_dram1_size_mb) {
+		printk(KERN_WARNING "warning: 'memc1=%luM' exceeds "
+			"available memory (%lu MB); ignoring\n",
+			brcm_dram1_linux_mb, brcm_dram1_size_mb);
+		brcm_dram1_linux_mb = 0;
+	} else if (brcm_dram1_linux_mb)
 		add_memory_region(MEMC1_START, brcm_dram1_linux_mb << 20,
 			BOOT_MEM_RAM);
+#else
+	if (brcm_dram1_linux_mb) {
+		printk(KERN_WARNING "warning: MEMC1 is not available on this "
+			"system; ignoring\n");
+		brcm_dram1_linux_mb = 0;
+	}
 #endif
 
 #ifdef CONFIG_SMP
@@ -482,7 +505,9 @@ static inline void __cpuinit brcm_nmi_handler_setup(void)
 unsigned long __cpuinit brcm_setup_ebase(void)
 {
 	unsigned long ebase = CAC_BASE;
-#if defined(CONFIG_BMIPS4380)
+#if defined(CONFIG_BCM7468) || defined(CONFIG_BCM7550)
+	/* brain-dead */
+#elif defined(CONFIG_BMIPS3300) || defined(CONFIG_BMIPS4380)
 	/*
 	 * Exception vector configuration on BMIPS4380:
 	 *
@@ -496,12 +521,16 @@ unsigned long __cpuinit brcm_setup_ebase(void)
 	 * The initial reset/NMI vector for TP1 is at a000_0000 because the
 	 * BMIPS4380 I$ comes up in an undefined state, but it is almost
 	 * immediately moved down to kseg0.
+	 *
+	 * This is nearly identical on BMIPS3300, except for the fact that
+	 * BMIPS3300 only has a single thread.
 	 */
 
 	unsigned long cbr = BMIPS_GET_CBR();
 	DEV_WR_RB(cbr + BMIPS_RELO_VECTOR_CONTROL_0, 0x80080800);
+#ifdef CONFIG_BMIPS4380
 	DEV_WR_RB(cbr + BMIPS_RELO_VECTOR_CONTROL_1, 0xa0080800);
-
+#endif
 	ebase = 0x80000400;
 
 	board_nmi_handler_setup = &brcm_nmi_handler_setup;

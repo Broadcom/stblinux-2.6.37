@@ -273,7 +273,6 @@ static void brcm_pm_dram_encode(void)
 #else
 #define brcm_pm_dram_encode	NULL
 #endif
-void brcm_wr_vec(unsigned long dst, char *start, char *end);
 
 int __ref brcm_pm_s3_standby(unsigned long options)
 {
@@ -310,6 +309,9 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	}
 #endif
 
+	/* clear RESET_HISTORY */
+	BDEV_WR_F_RB(AON_CTRL_RESET_CTRL, clear_reset_history, 1);
+
 	local_irq_save(flags);
 	/* save CP0 context */
 	brcm_pm_init_cp0_context(&s3_context);
@@ -341,14 +343,6 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 #endif
 
 	/* CPU reconfiguration */
-	/*
-	 * WARNING: Location 0x80000000 is cleared, need to restore it for
-	 * TP1 to restart (HW7425-1104 and SWCFE-583)
-	 */
-#if defined(CONFIG_BCM7425)
-	brcm_wr_vec(BRCM_NMI_VEC, brcm_reset_nmi_vec, brcm_reset_nmi_vec+4);
-#endif
-
 	bchip_mips_setup();
 	brcm_setup_ebase();
 
@@ -375,6 +369,19 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 #endif
 
 	local_irq_restore(flags);
+
+#if defined(CONFIG_BRCM_HAS_PCIE) && defined(CONFIG_PCI)
+	BDEV_WR_F_RB(WKTMR_EVENT, wktmr_alarm_event, 1);
+	BDEV_WR_F_RB(WKTMR_PRESCALER, wktmr_prescaler, WKTMR_FREQ);
+
+	if (brcm_pcie_enabled) {
+		BDEV_WR_F_RB(SUN_TOP_CTRL_SW_INIT_0_SET, pcie_sw_init, 1);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_SW_INIT_0_CLEAR, pcie_sw_init, 1);
+
+		brcm_early_pcie_setup();
+		brcm_setup_pcie_bridge();
+	}
+#endif
 
 #if CALCULATE_MEM_HASH
 	brcm_pm_dram_encoder_complete(xfer);

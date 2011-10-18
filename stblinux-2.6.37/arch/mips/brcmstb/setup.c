@@ -232,28 +232,135 @@ static void __init brcm_add_sdio_host(int id, uintptr_t cfg_base,
 
 #endif /* defined(CONFIG_BRCM_HAS_SDIO_V1) */
 
-static struct platform_device __init *brcm_new_usb_host(char *name, int id,
-	uintptr_t base, int irq)
+#define CAP_ACTIVE		0x01
+#define CAP_LAST		0x02
+#define CAP_TYPE		0x0c
+#define CAP_TYPE_SHIFT		0x02
+#define CAP_TYPE_EHCI		0x00
+#define CAP_TYPE_OHCI		0x01
+#define CAP_ADDR		0xffffff00
+
+static void __init brcm_add_usb_host(int type, int id, uintptr_t base)
 {
 	struct resource res[2];
 	struct platform_device *pdev;
 	static const u64 usb_dmamask = ~(u32)0;
+#ifdef CONFIG_BRCM_USB_DISABLE_MASK
+	const unsigned long usb_disable_mask = CONFIG_BRCM_USB_DISABLE_MASK;
+#else
+	const unsigned long usb_disable_mask = 0x00;
+#endif
+	const int ehci_irqlist[] = BRCM_IRQLIST_EHCI;
+	const int ohci_irqlist[] = BRCM_IRQLIST_OHCI;
+
+	if (usb_disable_mask & (1 << id))
+		return;
 
 	memset(&res, 0, sizeof(res));
 	res[0].start = BPHYSADDR(base);
 	res[0].end = BPHYSADDR(base + 0xff);
 	res[0].flags = IORESOURCE_MEM;
 
-	res[1].start = res[1].end = irq;
 	res[1].flags = IORESOURCE_IRQ;
 
-	pdev = platform_device_alloc(name, id);
+	if (type == CAP_TYPE_EHCI) {
+		res[1].start = res[1].end = ehci_irqlist[id];
+		pdev = platform_device_alloc("ehci-brcm", id);
+	} else {
+		res[1].start = res[1].end = ohci_irqlist[id];
+		pdev = platform_device_alloc("ohci-brcm", id);
+	}
+
 	platform_device_add_resources(pdev, res, 2);
 
 	pdev->dev.dma_mask = (u64 *)&usb_dmamask;
 	pdev->dev.coherent_dma_mask = 0xffffffff;
 
-	return pdev;
+	platform_device_add(pdev);
+}
+
+static void __init brcm_add_usb_hosts(void)
+{
+#if defined(CONFIG_BRCM_HAS_USB_CAPS)
+	unsigned long caplist[] = { BCHP_USB_CAPS_REG_START,
+#if defined(BCHP_USB1_CAPS_REG_START)
+				    BCHP_USB1_CAPS_REG_START,
+#endif
+				    0 };
+	unsigned long capp, cap;
+	int i, ehci_id = 0, ohci_id = 0;
+
+	for (i = 0; caplist[i] != 0; i++) {
+		capp = caplist[i];
+		do {
+			cap = BDEV_RD(capp);
+			capp += 4;
+
+			switch ((cap & CAP_TYPE) >> CAP_TYPE_SHIFT) {
+			case CAP_TYPE_EHCI:
+				if (cap & CAP_ACTIVE)
+					brcm_add_usb_host(CAP_TYPE_EHCI,
+						ehci_id, cap & CAP_ADDR);
+				ehci_id++;
+				break;
+			case CAP_TYPE_OHCI:
+				if (cap & CAP_ACTIVE)
+					brcm_add_usb_host(CAP_TYPE_OHCI,
+						ohci_id, cap & CAP_ADDR);
+				ohci_id++;
+				break;
+			}
+#if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7231B0) || \
+	defined(CONFIG_BCM7344B0) || defined(CONFIG_BCM7346B0) || \
+	defined(CONFIG_BCM7640B0) || defined(CONFIG_BCM35126B0)
+		/* bug: incorrect CAP_LAST bit on some chips */
+		} while (capp != (caplist[i] + 0x20));
+#else
+		} while (!(cap & CAP_LAST));
+#endif
+	}
+
+#else /* CONFIG_BRCM_HAS_USB_CAPS */
+
+#define USB_BASE(shortname)	BCHP_##shortname##_REG_START
+
+#if defined(BCHP_USB_EHCI_REG_START)
+	brcm_add_usb_host(CAP_TYPE_EHCI, 0, USB_BASE(USB_EHCI));
+#endif
+#if defined(BCHP_USB_EHCI1_REG_START)
+	brcm_add_usb_host(CAP_TYPE_EHCI, 1, USB_BASE(USB_EHCI1));
+#endif
+#if defined(BCHP_USB_EHCI2_REG_START)
+	brcm_add_usb_host(CAP_TYPE_EHCI, 2, USB_BASE(USB_EHCI2));
+#endif
+#if defined(BCHP_USB_OHCI_REG_START)
+	brcm_add_usb_host(CAP_TYPE_OHCI, 0, USB_BASE(USB_OHCI));
+#endif
+#if defined(BCHP_USB_OHCI1_REG_START)
+	brcm_add_usb_host(CAP_TYPE_OHCI, 1, USB_BASE(USB_OHCI1));
+#endif
+#if defined(BCHP_USB_OHCI2_REG_START)
+	brcm_add_usb_host(CAP_TYPE_OHCI, 2, USB_BASE(USB_OHCI2));
+#endif
+#if defined(CONFIG_BCM7231A0) || defined(CONFIG_BCM7344A0)
+	/* 7230, 7418 do not have USB1 clocks connected on the substrate */
+	if (BRCM_PROD_ID() == 0x7230 || BRCM_PROD_ID() == 0x7418)
+		return;
+#endif
+#if defined(BCHP_USB1_EHCI_REG_START)
+	brcm_add_usb_host(CAP_TYPE_EHCI, 2, USB_BASE(USB1_EHCI));
+#endif
+#if defined(BCHP_USB1_EHCI1_REG_START)
+	brcm_add_usb_host(CAP_TYPE_EHCI, 3, USB_BASE(USB1_EHCI1));
+#endif
+#if defined(BCHP_USB1_OHCI_REG_START)
+	brcm_add_usb_host(CAP_TYPE_OHCI, 2, USB_BASE(USB1_OHCI));
+#endif
+#if defined(BCHP_USB1_OHCI1_REG_START)
+	brcm_add_usb_host(CAP_TYPE_OHCI, 3, USB_BASE(USB1_OHCI1));
+#endif
+
+#endif /* CONFIG_BRCM_HAS_USB_CAPS */
 }
 
 #if defined(CONFIG_BRCM_HAS_GENET)
@@ -372,63 +479,9 @@ static int __init platform_devices_setup(void)
 
 	/* USB controllers */
 
-#define ADD_USB(type, reg, irq) do { \
-	if (!(usb_disable_mask & (1 << type##_id))) \
-		pdevs[devno++] = brcm_new_usb_host(#type "-brcm", type##_id, \
-			BCHP_##reg##_REG_START, BRCM_IRQ_##irq); \
-	type##_id++; \
-	} while (0)
-
 	if (brcm_usb_enabled) {
-#ifdef CONFIG_BRCM_USB_DISABLE_MASK
-		unsigned long usb_disable_mask = CONFIG_BRCM_USB_DISABLE_MASK;
-#else
-		unsigned long usb_disable_mask = 0x00;
-#endif
-		struct platform_device *pdevs[16];
-		int ehci_id = 0, ohci_id = 0, devno = 0, i;
-
 		bchip_usb_init();
-
-#if defined(CONFIG_BCM7231A0) || defined(CONFIG_BCM7344A0)
-		/* SWLINUX-1790: disable USB1 on these chips */
-		if (BRCM_PROD_ID() == 0x7230 || BRCM_PROD_ID() == 0x7418)
-			usb_disable_mask |= 0x0c;
-#endif
-
-#if defined(BCHP_USB_EHCI_REG_START)
-		ADD_USB(ehci, USB_EHCI, EHCI0_0);
-#endif
-#if defined(BCHP_USB_EHCI1_REG_START)
-		ADD_USB(ehci, USB_EHCI1, EHCI0_1);
-#endif
-#if defined(BCHP_USB_EHCI2_REG_START)
-		ADD_USB(ehci, USB_EHCI2, EHCI0_2);
-#endif
-#if defined(BCHP_USB_OHCI_REG_START)
-		ADD_USB(ohci, USB_OHCI, OHCI0_0);
-#endif
-#if defined(BCHP_USB_OHCI1_REG_START)
-		ADD_USB(ohci, USB_OHCI1, OHCI0_1);
-#endif
-#if defined(BCHP_USB_OHCI2_REG_START)
-		ADD_USB(ohci, USB_OHCI2, OHCI0_2);
-#endif
-#if defined(BCHP_USB1_EHCI_REG_START)
-		ADD_USB(ehci, USB1_EHCI, EHCI1_0);
-#endif
-#if defined(BCHP_USB1_EHCI1_REG_START)
-		ADD_USB(ehci, USB1_EHCI1, EHCI1_1);
-#endif
-#if defined(BCHP_USB1_OHCI_REG_START)
-		ADD_USB(ohci, USB1_OHCI, OHCI1_0);
-#endif
-#if defined(BCHP_USB1_OHCI1_REG_START)
-		ADD_USB(ohci, USB1_OHCI1, OHCI1_1);
-#endif
-
-		for (i = 0; i < devno; i++)
-			platform_device_add(pdevs[i]);
+		brcm_add_usb_hosts();
 	}
 
 	/* Network interfaces */

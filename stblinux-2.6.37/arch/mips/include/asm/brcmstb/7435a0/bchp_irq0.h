@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Jun 13 14:30:06 2011
- *                 MD5 Checksum         a14f8e7f638a7ebe759043ff756befc5
+ * Date:           Generated on         Thu Sep 29 02:26:54 2011
+ *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,7 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7425/rdb/b0/bchp_irq0.h $
- * 
- * Hydra_Software_Devel/3   6/14/11 2:00p vanessah
- * SW7425-715: 7425 B0 RDB resync
+ * $brcm_Log: $
  *
  ***************************************************************************/
 
@@ -55,10 +52,10 @@
 #define BCHP_IRQ0_IRQEN_reserved0_MASK                             0xf8000000
 #define BCHP_IRQ0_IRQEN_reserved0_SHIFT                            27
 
-/* IRQ0 :: IRQEN :: iice_irqen [26:26] */
-#define BCHP_IRQ0_IRQEN_iice_irqen_MASK                            0x04000000
-#define BCHP_IRQ0_IRQEN_iice_irqen_SHIFT                           26
-#define BCHP_IRQ0_IRQEN_iice_irqen_DEFAULT                         0
+/* IRQ0 :: IRQEN :: iica_irqen [26:26] */
+#define BCHP_IRQ0_IRQEN_iica_irqen_MASK                            0x04000000
+#define BCHP_IRQ0_IRQEN_iica_irqen_SHIFT                           26
+#define BCHP_IRQ0_IRQEN_iica_irqen_DEFAULT                         0
 
 /* IRQ0 :: IRQEN :: iicd_irqen [25:25] */
 #define BCHP_IRQ0_IRQEN_iicd_irqen_MASK                            0x02000000
@@ -137,10 +134,10 @@
 #define BCHP_IRQ0_IRQSTAT_reserved0_MASK                           0xf8000000
 #define BCHP_IRQ0_IRQSTAT_reserved0_SHIFT                          27
 
-/* IRQ0 :: IRQSTAT :: iiceirq [26:26] */
-#define BCHP_IRQ0_IRQSTAT_iiceirq_MASK                             0x04000000
-#define BCHP_IRQ0_IRQSTAT_iiceirq_SHIFT                            26
-#define BCHP_IRQ0_IRQSTAT_iiceirq_DEFAULT                          0
+/* IRQ0 :: IRQSTAT :: iicairq [26:26] */
+#define BCHP_IRQ0_IRQSTAT_iicairq_MASK                             0x04000000
+#define BCHP_IRQ0_IRQSTAT_iicairq_SHIFT                            26
+#define BCHP_IRQ0_IRQSTAT_iicairq_DEFAULT                          0
 
 /* IRQ0 :: IRQSTAT :: iicdirq [25:25] */
 #define BCHP_IRQ0_IRQSTAT_iicdirq_MASK                             0x02000000

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue May 31 16:44:41 2011
- *                 MD5 Checksum         0b9cc5de2a03cabbf9a0a767bc10763a
+ * Date:           Generated on         Mon Aug  8 22:03:23 2011
+ *                 MD5 Checksum         311e89d3d4fe94a8e2842dfaef9c3871
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,7 +34,7 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7346/rdb/b0/bchp_sun_top_ctrl.h $
  * 
- * Hydra_Software_Devel/3   5/31/11 5:25p albertl
+ * Hydra_Software_Devel/4   8/9/11 2:40p pntruong
  * SW7346-143: Updated to match RDB.
  *
  ***************************************************************************/
@@ -1352,14 +1352,14 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_slew_SHIFT 16
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_slew_DEFAULT 0
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: sdio_pad_sel [15:14] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_MASK 0x0000c000
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_SHIFT 14
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_DEFAULT 0
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_GMII_CMOS_3P3V 0
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_sdio_pad_sel_HSTL_CLASS1_1P5V 3
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_1_pad_sel_1 [15:14] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_MASK 0x0000c000
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_SHIFT 14
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_DEFAULT 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_GMII_CMOS_3P3V 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_RGMII_CMOS_2P5V 1
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_1_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: mtsif_0_pad_amp_en [13:13] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_amp_en_MASK 0x00002000
@@ -1377,8 +1377,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_1_rx_pad_amp_en [09:09] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_rx_pad_amp_en_MASK 0x00000200
@@ -1395,14 +1395,14 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_slew_SHIFT 7
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_slew_DEFAULT 0
 
-/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_1_pad_sel [06:05] */
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_MASK 0x00000060
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_SHIFT 5
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_DEFAULT 0
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_GMII_CMOS_3P3V 0
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_HSTL_CLASS1_1P5V 3
+/* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_1_pad_sel_0 [06:05] */
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_MASK 0x00000060
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_SHIFT 5
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_DEFAULT 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_GMII_CMOS_3P3V 0
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_RGMII_CMOS_2P5V 1
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_1_pad_sel_0_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_0_rx_pad_amp_en [04:04] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_rx_pad_amp_en_MASK 0x00000010
@@ -1425,8 +1425,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 3
 
 /***************************************************************************
  *GENERAL_CTRL_NO_SCAN_1 - General control register without scan 1

@@ -145,6 +145,7 @@ config BCM7231B0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_USB_CAPS
 	select BRCM_HAS_GENET_0
 	select BRCM_HAS_GENET_1
 	select BRCM_GENET_V2
@@ -249,6 +250,7 @@ config BCM7344B0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_USB_CAPS
 	select BRCM_HAS_GENET_0
 	select BRCM_HAS_MOCA_11_PLUS
 	select BRCM_HAS_MOCA_MIDRF
@@ -302,6 +304,7 @@ config BCM7346B0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_USB_CAPS
 	select BRCM_HAS_GENET_0
 	select BRCM_HAS_MOCA_11_PLUS
 	select BRCM_HAS_MOCA_MIDRF
@@ -466,8 +469,8 @@ config BCM7425B0
 	select BRCM_UARTC_IS_16550
 	select BRCM_HAS_PCIE
 	select BRCM_HAS_GENET_0
-	# select BRCM_HAS_MOCA_20
-	# select BRCM_MOCA_ON_GENET_1
+	select BRCM_HAS_MOCA_20
+	select BRCM_MOCA_ON_GENET_1
 	select BRCM_GENET_V3
 	select BRCM_HAS_NOR
 	select BRCM_HAS_NAND_MAJOR_5
@@ -495,6 +498,7 @@ config BCM7429A0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_USB_CAPS
 	select BRCM_HAS_GENET_0
 	# select BRCM_HAS_MOCA_20
 	# select BRCM_MOCA_ON_GENET_1
@@ -525,6 +529,7 @@ config BCM7435A0
 	select BRCM_UARTA_IS_16550
 	select BRCM_UARTB_IS_16550
 	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_USB_CAPS
 	select BRCM_HAS_PCIE
 	select BRCM_HAS_GENET_0
 	# select BRCM_HAS_MOCA_20
@@ -1268,6 +1273,12 @@ config BRCM_GENET_V2
 config BRCM_GENET_V3
 	bool
 
+config BRCM_GENET_VERSION
+	int
+	default 1 if BRCM_GENET_V1
+	default 2 if BRCM_GENET_V2
+	default 3 if BRCM_GENET_V3
+
 # standalone or MoCA GENET controller
 config BRCM_HAS_GENET
 	bool
@@ -1541,6 +1552,10 @@ config BRCM_PWR_HANDSHAKE_V0
 config BRCM_PWR_HANDSHAKE_V1
 	bool
 	select BRCM_PWR_HANDSHAKE
+
+# USB_CAPS controller enumeration - 40nm
+config BRCM_HAS_USB_CAPS
+	bool
 
 config BRCM_PLATFORM_DEFAULTS
 	bool

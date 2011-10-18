@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
 
 #
-# STB Linux build system v2.0
-# Copyright (C) 2009 Broadcom Corporation
+# STB Linux build system v2.1
+# Copyright (C) 2011 Broadcom Corporation
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,33 +28,35 @@
 #   7335b0_be-small
 #   7335b0-small-nohdd
 #
-
+use strict;
+use warnings;
 use File::Copy;
 use POSIX;
 
-%linux = ( );
-%uclibc = ( );
-%busybox = ( );
-%vendor = ( );
+my %linux = ( );
+my %uclibc = ( );
+my %busybox = ( );
+my %vendor = ( );
 
-$topdir = getcwd();
+my $topdir = getcwd();
 
-$uclibc_defaults = "defaults/config.uClibc";
-$busybox_defaults = "defaults/config.busybox";
-$vendor_defaults = "defaults/config.vendor";
-$arch_defaults_le = "defaults/config.arch-le";
-$arch_defaults_be = "defaults/config.arch-be";
+my $uclibc_defaults = "defaults/config.uClibc";
+my $busybox_defaults = "defaults/config.busybox";
+my $vendor_defaults = "defaults/config.vendor";
+my $arch_defaults_le = "defaults/config.arch-le";
+my $arch_defaults_be = "defaults/config.arch-be";
+my $linux_defaults = "";
 
-$linux_config = "linux-2.6.x/.config";
-$uclibc_config = "lib/uClibc/.config";
-$busybox_config = "user/busybox/.config";
-$vendor_config = "config/.config";
-$arch_config = "config.arch";
+my $linux_config = "linux-2.6.x/.config";
+my $uclibc_config = "lib/uClibc/.config";
+my $busybox_config = "user/busybox/.config";
+my $vendor_config = "config/.config";
+my $arch_config = "config.arch";
 
-@patchlist = ("lttng", "android", "newubi");
-%use_patch = ( );
+my @patchlist = ("lttng", "android", "newubi");
+my %use_patch = ( );
 
-%defsuf = (
+my %defsuf = (
 	"7118"	=> "-docsis",
 	"7125"	=> "-docsis",
 	"7400"	=> "-docsis",
@@ -64,7 +66,7 @@ $arch_config = "config.arch";
 	"7420"	=> "-docsis",
 );
 
-$tgt = $chip = $be = $suffix = $linux_defaults = "";
+my ($tgt, $chip, $be, $suffix) = ("","","","");
 
 sub read_cfg($$)
 {
@@ -112,11 +114,11 @@ sub write_cfg($$$)
 	unlink($out);
 	open(OUT, ">${out}") or die "can't open ${out}: $!";
 
-	foreach $x (@outbuf) {
+	foreach my $x (@outbuf) {
 		print OUT $x;
 	}
 
-	foreach $var (sort { $a cmp $b } keys(%$h)) {
+	foreach my $var (sort { $a cmp $b } keys(%$h)) {
 		my $val = $$h{$var};
 
 		if(! defined($val)) {
@@ -151,7 +153,7 @@ sub whitelist_cfg($$)
 			$$whitelist{$x} = undef;
 		}
 	}
-	foreach $var (sort { $a cmp $b } keys(%$whitelist)) {
+	foreach my $var (sort { $a cmp $b } keys(%$whitelist)) {
 		my $val = $$whitelist{$var};
 
 		if(defined($val)) {
@@ -170,7 +172,7 @@ sub override_cfg($$)
 			$$newcfg{$x} = undef;
 		}
 	}
-	foreach $var (sort { $a cmp $b } keys(%$newcfg)) {
+	foreach my $var (sort { $a cmp $b } keys(%$newcfg)) {
 		my $val = $$newcfg{$var};
 
 		if(defined($val)) {
@@ -210,6 +212,53 @@ sub get_tgt($)
 		print "\n";
 		exit 1;
 	}
+}
+
+################################################
+# sub expand_modifiers($implies, $list)
+#
+# DESCRIPTION:
+#   Expands modifiers according to the rules given
+#   by the %implies.  Eliminates duplicate modifiers.
+# PARAMS:
+#   $implies is a hash ref of implied modifier actions.
+#   $list is a hyphenated string of successive modifiers.
+# RETURNS:
+#   Final hyphenated string of modifiers.
+################################################
+sub expand_modifiers($$)
+{
+	my $implies = shift;
+	my $t = shift;
+	my @a = split /-/, $t;
+	my ($nsubs, $iters, $MAX_ITERS) = (0,0,15);
+
+	# Expand out modifiers.
+	do {
+		$nsubs = 0;
+		for (my $i=$#a; $i>=0; $i--) {
+			my $v = $a[$i];
+			if ($implies->{$v}) {
+				splice(@a,$i,1,@{$implies->{$v}},uc($v));
+				$nsubs++;
+			}
+		}
+	} while ($nsubs && $iters++ < $MAX_ITERS);
+
+	die "Error: modifiers have a mutually recursive definition; fix \%implies!"
+		if ($iters >= $MAX_ITERS);
+
+	# Now we uniquify elements while preserving order from right.
+	my @aa = reverse map { lc } @a;
+	@a = ();
+	my %h;
+	while (@aa) {
+		my $x = shift @aa;
+		next if $h{$x};
+		$h{$x} = 1;
+		unshift @a, $x;
+	}
+	return join('-',@a);
 }
 
 sub get_chiplist()
@@ -274,7 +323,7 @@ sub test_opt($$)
 # MAIN
 #
 
-$cmd = shift @ARGV;
+my $cmd = shift @ARGV;
 if(! defined($cmd)) {
 	die "usage: config.pl <cmd>\n";
 }
@@ -294,6 +343,7 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 		$vendor{"CONFIG_USER_NONFREE_MOCA"} = "y";
 		$vendor{"CONFIG_USER_NONFREE_MOCA_GEN1"} = "n";
 		$vendor{"CONFIG_USER_NONFREE_MOCA_GEN2"} = "n";
+		$vendor{"CONFIG_USER_NONFREE_MOCA_GEN3"} = "n";
 
 		if(defined($linux{"CONFIG_BRCM_HAS_MOCA_11"})) {
 			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN1"} = "y";
@@ -301,6 +351,8 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN1"} = "y";
 		} elsif(defined($linux{"CONFIG_BRCM_HAS_MOCA_11_PLUS"})) {
 			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN2"} = "y";
+		} elsif(defined($linux{"CONFIG_BRCM_HAS_MOCA_20"})) {
+			$vendor{"CONFIG_USER_NONFREE_MOCA_GEN3"} = "y";
 		}
 	}
 
@@ -318,8 +370,25 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 		$suffix = $defsuf{$shortchip}.$suffix;
 	}
 
-	# allow stacking more than one modifier (e.g. -small-nohdd-nousb)
+	# The %implies hash indicates what modifiers imply other modifiers.
+	# If X implies Y-Z, then the modications will be applied in this
+	# order: Y,Z,X.
+	my %implies = ('pal' => 'small-nonet-nousb-nohdd',
+		       'ikos' => 'small-kdebug-nousb-nomtd-nohdd',
+		       'kgdb' => 'kdebug'
+	    );
 
+	# Munge the '%implies' hash so that its values become array refs.
+	map { $_ = [split /-/] } values %implies;
+
+	my $old_suffix = $suffix;
+	$suffix = expand_modifiers(\%implies, $suffix);
+
+	# print "info: '$old_suffix' expanded to '$suffix'.\n";
+
+	my (%vendor_w, %busybox_w, %linux_o, %vendor_o, %busybox_o);
+
+	# allow stacking more than one modifier (e.g. -small-nohdd-nousb)
 	while(defined($suffix) && ($suffix ne "")) {
 		if($suffix !~ m/^-([^-]+)(-\S+)?/) {
 			print "\n";
@@ -327,8 +396,7 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 			print "\n";
 			exit 1;
 		}
-		($mod, $suffix) = ($1, $2);
-		$addmod = "";
+		(my $mod, $suffix) = ($1, $2);
 
 		if($mod eq "small") {
 
@@ -354,8 +422,7 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 		} elsif($mod eq "ikos") {
 
 			# IKOS pre-tapeout emulation (internal Broadcom use)
-
-			$addmod = "-small-kdebug-nousb-nomtd-nohdd";
+			# 'ikos' implies '-small-kdebug-nousb-nomtd-nohdd'
 
 			$linux{"CONFIG_BRCM_DEBUG_OPTIONS"} = "y";
 			$linux{"CONFIG_BRCM_IKOS"} = "y";
@@ -367,8 +434,7 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 		} elsif($mod eq "kgdb") {
 
 			# KGDB debugging (implies -kdebug)
-
-			$addmod = "-kdebug";
+			# 'kgdb' implies '-kdebug'
 
 			$linux{"CONFIG_KGDB"} = "y";
 			$linux{"CONFIG_KGDB_SERIAL_CONSOLE"} = "y";
@@ -524,10 +590,6 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 			print "\n";
 			exit 1;
 		}
-
-		if($addmod ne "") {
-			$suffix = $addmod.(defined($suffix) ? $suffix : "");
-		}
 	}
 
 	# overrides based on endian setting
@@ -594,7 +656,7 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 	my $cwd = getcwd();
 	chdir("linux-2.6.x") or die;
 
-	foreach $x (@patchlist) {
+	foreach my $x (@patchlist) {
 		if(defined($use_patch{$x})) {
 			if(! -e "patch/.applied-$x") {
 				system("patch -p2 < patch/$x.patch");

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Aug  4 13:38:13 2011
- *                 MD5 Checksum         83f408cc25eb2d099cc58e22e4e239e9
+ * Date:           Generated on         Wed Sep  7 23:22:34 2011
+ *                 MD5 Checksum         aff3518aefc2f3a6bc037a41f665574e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7552/rdb/b0/bchp_aon_pm_l2.h $
+ * $brcm_Log: W:/pntruong/views/pntruong_97552_devel_sview/magnum/basemodules/chp/7552/rdb/b0/bchp_aon_pm_l2.h $
  * 
- * Hydra_Software_Devel/1   8/5/11 9:21p albertl
- * SW7552-89: Initial revision.
+ * Hydra_Software_Devel/2   9/8/11 1:00a pntruong
+ * SW7552-89: Synced up with central rdb.
  *
  ***************************************************************************/
 
@@ -80,30 +80,10 @@
 #define BCHP_AON_PM_L2_CPU_STATUS_XPT_PMU_SHIFT                    12
 #define BCHP_AON_PM_L2_CPU_STATUS_XPT_PMU_DEFAULT                  0
 
-/* AON_PM_L2 :: CPU_STATUS :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_STATUS_FTM_MASK                         0x00000800
-#define BCHP_AON_PM_L2_CPU_STATUS_FTM_SHIFT                        11
-#define BCHP_AON_PM_L2_CPU_STATUS_FTM_DEFAULT                      0
-
-/* AON_PM_L2 :: CPU_STATUS :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_AFEC_MASK                   0x00000400
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_AFEC_SHIFT                  10
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_AFEC_DEFAULT                0
-
-/* AON_PM_L2 :: CPU_STATUS :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_TFEC_MASK                   0x00000200
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_TFEC_SHIFT                  9
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_TFEC_DEFAULT                0
-
-/* AON_PM_L2 :: CPU_STATUS :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_1_MASK                 0x00000100
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_1_SHIFT                8
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_1_DEFAULT              0
-
-/* AON_PM_L2 :: CPU_STATUS :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_0_MASK                 0x00000080
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_0_SHIFT                7
-#define BCHP_AON_PM_L2_CPU_STATUS_SDS0_RCVR_0_DEFAULT              0
+/* AON_PM_L2 :: CPU_STATUS :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_STATUS_reserved_for_eco1_MASK           0x00000f80
+#define BCHP_AON_PM_L2_CPU_STATUS_reserved_for_eco1_SHIFT          7
+#define BCHP_AON_PM_L2_CPU_STATUS_reserved_for_eco1_DEFAULT        0
 
 /* AON_PM_L2 :: CPU_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET_MASK                    0x00000040
@@ -162,30 +142,10 @@
 #define BCHP_AON_PM_L2_CPU_SET_XPT_PMU_SHIFT                       12
 #define BCHP_AON_PM_L2_CPU_SET_XPT_PMU_DEFAULT                     0
 
-/* AON_PM_L2 :: CPU_SET :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_SET_FTM_MASK                            0x00000800
-#define BCHP_AON_PM_L2_CPU_SET_FTM_SHIFT                           11
-#define BCHP_AON_PM_L2_CPU_SET_FTM_DEFAULT                         0
-
-/* AON_PM_L2 :: CPU_SET :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_AFEC_MASK                      0x00000400
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_AFEC_SHIFT                     10
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_AFEC_DEFAULT                   0
-
-/* AON_PM_L2 :: CPU_SET :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_TFEC_MASK                      0x00000200
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_TFEC_SHIFT                     9
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_TFEC_DEFAULT                   0
-
-/* AON_PM_L2 :: CPU_SET :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_1_MASK                    0x00000100
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_1_SHIFT                   8
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_1_DEFAULT                 0
-
-/* AON_PM_L2 :: CPU_SET :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_0_MASK                    0x00000080
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_0_SHIFT                   7
-#define BCHP_AON_PM_L2_CPU_SET_SDS0_RCVR_0_DEFAULT                 0
+/* AON_PM_L2 :: CPU_SET :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_SET_reserved_for_eco1_MASK              0x00000f80
+#define BCHP_AON_PM_L2_CPU_SET_reserved_for_eco1_SHIFT             7
+#define BCHP_AON_PM_L2_CPU_SET_reserved_for_eco1_DEFAULT           0
 
 /* AON_PM_L2 :: CPU_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_SET_WOL_ENET_MASK                       0x00000040
@@ -244,30 +204,10 @@
 #define BCHP_AON_PM_L2_CPU_CLEAR_XPT_PMU_SHIFT                     12
 #define BCHP_AON_PM_L2_CPU_CLEAR_XPT_PMU_DEFAULT                   0
 
-/* AON_PM_L2 :: CPU_CLEAR :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_CLEAR_FTM_MASK                          0x00000800
-#define BCHP_AON_PM_L2_CPU_CLEAR_FTM_SHIFT                         11
-#define BCHP_AON_PM_L2_CPU_CLEAR_FTM_DEFAULT                       0
-
-/* AON_PM_L2 :: CPU_CLEAR :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_AFEC_MASK                    0x00000400
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_AFEC_SHIFT                   10
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_AFEC_DEFAULT                 0
-
-/* AON_PM_L2 :: CPU_CLEAR :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_TFEC_MASK                    0x00000200
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_TFEC_SHIFT                   9
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_TFEC_DEFAULT                 0
-
-/* AON_PM_L2 :: CPU_CLEAR :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_1_MASK                  0x00000100
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_1_SHIFT                 8
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_1_DEFAULT               0
-
-/* AON_PM_L2 :: CPU_CLEAR :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_0_MASK                  0x00000080
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_0_SHIFT                 7
-#define BCHP_AON_PM_L2_CPU_CLEAR_SDS0_RCVR_0_DEFAULT               0
+/* AON_PM_L2 :: CPU_CLEAR :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_CLEAR_reserved_for_eco1_MASK            0x00000f80
+#define BCHP_AON_PM_L2_CPU_CLEAR_reserved_for_eco1_SHIFT           7
+#define BCHP_AON_PM_L2_CPU_CLEAR_reserved_for_eco1_DEFAULT         0
 
 /* AON_PM_L2 :: CPU_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_CLEAR_WOL_ENET_MASK                     0x00000040
@@ -326,30 +266,10 @@
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_XPT_PMU_SHIFT               12
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_XPT_PMU_DEFAULT             1
 
-/* AON_PM_L2 :: CPU_MASK_STATUS :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_FTM_MASK                    0x00000800
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_FTM_SHIFT                   11
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_FTM_DEFAULT                 1
-
-/* AON_PM_L2 :: CPU_MASK_STATUS :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_AFEC_MASK              0x00000400
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_AFEC_SHIFT             10
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_AFEC_DEFAULT           1
-
-/* AON_PM_L2 :: CPU_MASK_STATUS :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_TFEC_MASK              0x00000200
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_TFEC_SHIFT             9
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_TFEC_DEFAULT           1
-
-/* AON_PM_L2 :: CPU_MASK_STATUS :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_1_MASK            0x00000100
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_1_SHIFT           8
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_1_DEFAULT         1
-
-/* AON_PM_L2 :: CPU_MASK_STATUS :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_0_MASK            0x00000080
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_0_SHIFT           7
-#define BCHP_AON_PM_L2_CPU_MASK_STATUS_SDS0_RCVR_0_DEFAULT         1
+/* AON_PM_L2 :: CPU_MASK_STATUS :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_reserved_for_eco1_MASK      0x00000f80
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_reserved_for_eco1_SHIFT     7
+#define BCHP_AON_PM_L2_CPU_MASK_STATUS_reserved_for_eco1_DEFAULT   0
 
 /* AON_PM_L2 :: CPU_MASK_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_STATUS_WOL_ENET_MASK               0x00000040
@@ -408,30 +328,10 @@
 #define BCHP_AON_PM_L2_CPU_MASK_SET_XPT_PMU_SHIFT                  12
 #define BCHP_AON_PM_L2_CPU_MASK_SET_XPT_PMU_DEFAULT                1
 
-/* AON_PM_L2 :: CPU_MASK_SET :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_MASK_SET_FTM_MASK                       0x00000800
-#define BCHP_AON_PM_L2_CPU_MASK_SET_FTM_SHIFT                      11
-#define BCHP_AON_PM_L2_CPU_MASK_SET_FTM_DEFAULT                    1
-
-/* AON_PM_L2 :: CPU_MASK_SET :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_AFEC_MASK                 0x00000400
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_AFEC_SHIFT                10
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_AFEC_DEFAULT              1
-
-/* AON_PM_L2 :: CPU_MASK_SET :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_TFEC_MASK                 0x00000200
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_TFEC_SHIFT                9
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_TFEC_DEFAULT              1
-
-/* AON_PM_L2 :: CPU_MASK_SET :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_1_MASK               0x00000100
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_1_SHIFT              8
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_1_DEFAULT            1
-
-/* AON_PM_L2 :: CPU_MASK_SET :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_0_MASK               0x00000080
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_0_SHIFT              7
-#define BCHP_AON_PM_L2_CPU_MASK_SET_SDS0_RCVR_0_DEFAULT            1
+/* AON_PM_L2 :: CPU_MASK_SET :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_MASK_SET_reserved_for_eco1_MASK         0x00000f80
+#define BCHP_AON_PM_L2_CPU_MASK_SET_reserved_for_eco1_SHIFT        7
+#define BCHP_AON_PM_L2_CPU_MASK_SET_reserved_for_eco1_DEFAULT      0
 
 /* AON_PM_L2 :: CPU_MASK_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_SET_WOL_ENET_MASK                  0x00000040
@@ -490,30 +390,10 @@
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_XPT_PMU_SHIFT                12
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_XPT_PMU_DEFAULT              1
 
-/* AON_PM_L2 :: CPU_MASK_CLEAR :: FTM [11:11] */
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_FTM_MASK                     0x00000800
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_FTM_SHIFT                    11
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_FTM_DEFAULT                  1
-
-/* AON_PM_L2 :: CPU_MASK_CLEAR :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_AFEC_MASK               0x00000400
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_AFEC_SHIFT              10
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_AFEC_DEFAULT            1
-
-/* AON_PM_L2 :: CPU_MASK_CLEAR :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_TFEC_MASK               0x00000200
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_TFEC_SHIFT              9
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_TFEC_DEFAULT            1
-
-/* AON_PM_L2 :: CPU_MASK_CLEAR :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_1_MASK             0x00000100
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_1_SHIFT            8
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_1_DEFAULT          1
-
-/* AON_PM_L2 :: CPU_MASK_CLEAR :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_0_MASK             0x00000080
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_0_SHIFT            7
-#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_SDS0_RCVR_0_DEFAULT          1
+/* AON_PM_L2 :: CPU_MASK_CLEAR :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_reserved_for_eco1_MASK       0x00000f80
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_reserved_for_eco1_SHIFT      7
+#define BCHP_AON_PM_L2_CPU_MASK_CLEAR_reserved_for_eco1_DEFAULT    0
 
 /* AON_PM_L2 :: CPU_MASK_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_CPU_MASK_CLEAR_WOL_ENET_MASK                0x00000040
@@ -572,30 +452,10 @@
 #define BCHP_AON_PM_L2_PCI_STATUS_XPT_PMU_SHIFT                    12
 #define BCHP_AON_PM_L2_PCI_STATUS_XPT_PMU_DEFAULT                  0
 
-/* AON_PM_L2 :: PCI_STATUS :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_STATUS_FTM_MASK                         0x00000800
-#define BCHP_AON_PM_L2_PCI_STATUS_FTM_SHIFT                        11
-#define BCHP_AON_PM_L2_PCI_STATUS_FTM_DEFAULT                      0
-
-/* AON_PM_L2 :: PCI_STATUS :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_AFEC_MASK                   0x00000400
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_AFEC_SHIFT                  10
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_AFEC_DEFAULT                0
-
-/* AON_PM_L2 :: PCI_STATUS :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_TFEC_MASK                   0x00000200
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_TFEC_SHIFT                  9
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_TFEC_DEFAULT                0
-
-/* AON_PM_L2 :: PCI_STATUS :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_1_MASK                 0x00000100
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_1_SHIFT                8
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_1_DEFAULT              0
-
-/* AON_PM_L2 :: PCI_STATUS :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_0_MASK                 0x00000080
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_0_SHIFT                7
-#define BCHP_AON_PM_L2_PCI_STATUS_SDS0_RCVR_0_DEFAULT              0
+/* AON_PM_L2 :: PCI_STATUS :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_STATUS_reserved_for_eco1_MASK           0x00000f80
+#define BCHP_AON_PM_L2_PCI_STATUS_reserved_for_eco1_SHIFT          7
+#define BCHP_AON_PM_L2_PCI_STATUS_reserved_for_eco1_DEFAULT        0
 
 /* AON_PM_L2 :: PCI_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_STATUS_WOL_ENET_MASK                    0x00000040
@@ -654,30 +514,10 @@
 #define BCHP_AON_PM_L2_PCI_SET_XPT_PMU_SHIFT                       12
 #define BCHP_AON_PM_L2_PCI_SET_XPT_PMU_DEFAULT                     0
 
-/* AON_PM_L2 :: PCI_SET :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_SET_FTM_MASK                            0x00000800
-#define BCHP_AON_PM_L2_PCI_SET_FTM_SHIFT                           11
-#define BCHP_AON_PM_L2_PCI_SET_FTM_DEFAULT                         0
-
-/* AON_PM_L2 :: PCI_SET :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_AFEC_MASK                      0x00000400
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_AFEC_SHIFT                     10
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_AFEC_DEFAULT                   0
-
-/* AON_PM_L2 :: PCI_SET :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_TFEC_MASK                      0x00000200
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_TFEC_SHIFT                     9
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_TFEC_DEFAULT                   0
-
-/* AON_PM_L2 :: PCI_SET :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_1_MASK                    0x00000100
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_1_SHIFT                   8
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_1_DEFAULT                 0
-
-/* AON_PM_L2 :: PCI_SET :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_0_MASK                    0x00000080
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_0_SHIFT                   7
-#define BCHP_AON_PM_L2_PCI_SET_SDS0_RCVR_0_DEFAULT                 0
+/* AON_PM_L2 :: PCI_SET :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_SET_reserved_for_eco1_MASK              0x00000f80
+#define BCHP_AON_PM_L2_PCI_SET_reserved_for_eco1_SHIFT             7
+#define BCHP_AON_PM_L2_PCI_SET_reserved_for_eco1_DEFAULT           0
 
 /* AON_PM_L2 :: PCI_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_SET_WOL_ENET_MASK                       0x00000040
@@ -736,30 +576,10 @@
 #define BCHP_AON_PM_L2_PCI_CLEAR_XPT_PMU_SHIFT                     12
 #define BCHP_AON_PM_L2_PCI_CLEAR_XPT_PMU_DEFAULT                   0
 
-/* AON_PM_L2 :: PCI_CLEAR :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_CLEAR_FTM_MASK                          0x00000800
-#define BCHP_AON_PM_L2_PCI_CLEAR_FTM_SHIFT                         11
-#define BCHP_AON_PM_L2_PCI_CLEAR_FTM_DEFAULT                       0
-
-/* AON_PM_L2 :: PCI_CLEAR :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_AFEC_MASK                    0x00000400
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_AFEC_SHIFT                   10
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_AFEC_DEFAULT                 0
-
-/* AON_PM_L2 :: PCI_CLEAR :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_TFEC_MASK                    0x00000200
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_TFEC_SHIFT                   9
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_TFEC_DEFAULT                 0
-
-/* AON_PM_L2 :: PCI_CLEAR :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_1_MASK                  0x00000100
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_1_SHIFT                 8
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_1_DEFAULT               0
-
-/* AON_PM_L2 :: PCI_CLEAR :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_0_MASK                  0x00000080
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_0_SHIFT                 7
-#define BCHP_AON_PM_L2_PCI_CLEAR_SDS0_RCVR_0_DEFAULT               0
+/* AON_PM_L2 :: PCI_CLEAR :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_CLEAR_reserved_for_eco1_MASK            0x00000f80
+#define BCHP_AON_PM_L2_PCI_CLEAR_reserved_for_eco1_SHIFT           7
+#define BCHP_AON_PM_L2_PCI_CLEAR_reserved_for_eco1_DEFAULT         0
 
 /* AON_PM_L2 :: PCI_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_CLEAR_WOL_ENET_MASK                     0x00000040
@@ -818,30 +638,10 @@
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_XPT_PMU_SHIFT               12
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_XPT_PMU_DEFAULT             1
 
-/* AON_PM_L2 :: PCI_MASK_STATUS :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_FTM_MASK                    0x00000800
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_FTM_SHIFT                   11
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_FTM_DEFAULT                 1
-
-/* AON_PM_L2 :: PCI_MASK_STATUS :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_AFEC_MASK              0x00000400
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_AFEC_SHIFT             10
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_AFEC_DEFAULT           1
-
-/* AON_PM_L2 :: PCI_MASK_STATUS :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_TFEC_MASK              0x00000200
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_TFEC_SHIFT             9
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_TFEC_DEFAULT           1
-
-/* AON_PM_L2 :: PCI_MASK_STATUS :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_1_MASK            0x00000100
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_1_SHIFT           8
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_1_DEFAULT         1
-
-/* AON_PM_L2 :: PCI_MASK_STATUS :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_0_MASK            0x00000080
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_0_SHIFT           7
-#define BCHP_AON_PM_L2_PCI_MASK_STATUS_SDS0_RCVR_0_DEFAULT         1
+/* AON_PM_L2 :: PCI_MASK_STATUS :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_reserved_for_eco1_MASK      0x00000f80
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_reserved_for_eco1_SHIFT     7
+#define BCHP_AON_PM_L2_PCI_MASK_STATUS_reserved_for_eco1_DEFAULT   0
 
 /* AON_PM_L2 :: PCI_MASK_STATUS :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_STATUS_WOL_ENET_MASK               0x00000040
@@ -900,30 +700,10 @@
 #define BCHP_AON_PM_L2_PCI_MASK_SET_XPT_PMU_SHIFT                  12
 #define BCHP_AON_PM_L2_PCI_MASK_SET_XPT_PMU_DEFAULT                1
 
-/* AON_PM_L2 :: PCI_MASK_SET :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_MASK_SET_FTM_MASK                       0x00000800
-#define BCHP_AON_PM_L2_PCI_MASK_SET_FTM_SHIFT                      11
-#define BCHP_AON_PM_L2_PCI_MASK_SET_FTM_DEFAULT                    1
-
-/* AON_PM_L2 :: PCI_MASK_SET :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_AFEC_MASK                 0x00000400
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_AFEC_SHIFT                10
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_AFEC_DEFAULT              1
-
-/* AON_PM_L2 :: PCI_MASK_SET :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_TFEC_MASK                 0x00000200
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_TFEC_SHIFT                9
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_TFEC_DEFAULT              1
-
-/* AON_PM_L2 :: PCI_MASK_SET :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_1_MASK               0x00000100
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_1_SHIFT              8
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_1_DEFAULT            1
-
-/* AON_PM_L2 :: PCI_MASK_SET :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_0_MASK               0x00000080
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_0_SHIFT              7
-#define BCHP_AON_PM_L2_PCI_MASK_SET_SDS0_RCVR_0_DEFAULT            1
+/* AON_PM_L2 :: PCI_MASK_SET :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_MASK_SET_reserved_for_eco1_MASK         0x00000f80
+#define BCHP_AON_PM_L2_PCI_MASK_SET_reserved_for_eco1_SHIFT        7
+#define BCHP_AON_PM_L2_PCI_MASK_SET_reserved_for_eco1_DEFAULT      0
 
 /* AON_PM_L2 :: PCI_MASK_SET :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_SET_WOL_ENET_MASK                  0x00000040
@@ -982,30 +762,10 @@
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_XPT_PMU_SHIFT                12
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_XPT_PMU_DEFAULT              1
 
-/* AON_PM_L2 :: PCI_MASK_CLEAR :: FTM [11:11] */
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_FTM_MASK                     0x00000800
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_FTM_SHIFT                    11
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_FTM_DEFAULT                  1
-
-/* AON_PM_L2 :: PCI_MASK_CLEAR :: SDS0_AFEC [10:10] */
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_AFEC_MASK               0x00000400
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_AFEC_SHIFT              10
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_AFEC_DEFAULT            1
-
-/* AON_PM_L2 :: PCI_MASK_CLEAR :: SDS0_TFEC [09:09] */
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_TFEC_MASK               0x00000200
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_TFEC_SHIFT              9
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_TFEC_DEFAULT            1
-
-/* AON_PM_L2 :: PCI_MASK_CLEAR :: SDS0_RCVR_1 [08:08] */
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_1_MASK             0x00000100
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_1_SHIFT            8
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_1_DEFAULT          1
-
-/* AON_PM_L2 :: PCI_MASK_CLEAR :: SDS0_RCVR_0 [07:07] */
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_0_MASK             0x00000080
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_0_SHIFT            7
-#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_SDS0_RCVR_0_DEFAULT          1
+/* AON_PM_L2 :: PCI_MASK_CLEAR :: reserved_for_eco1 [11:07] */
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_reserved_for_eco1_MASK       0x00000f80
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_reserved_for_eco1_SHIFT      7
+#define BCHP_AON_PM_L2_PCI_MASK_CLEAR_reserved_for_eco1_DEFAULT    0
 
 /* AON_PM_L2 :: PCI_MASK_CLEAR :: WOL_ENET [06:06] */
 #define BCHP_AON_PM_L2_PCI_MASK_CLEAR_WOL_ENET_MASK                0x00000040

@@ -66,20 +66,6 @@ struct mtd_erase_region_info {
 	unsigned long *lockmap;		/* If keeping bitmap of locks */
 };
 
-/*
- * oob operation modes
- *
- * MTD_OOB_PLACE:	oob data are placed at the given offset
- * MTD_OOB_AUTO:	oob data are automatically placed at the free areas
- *			which are defined by the ecclayout
- * MTD_OOB_RAW:		mode to read oob and data without doing ECC checking
- */
-typedef enum {
-	MTD_OOB_PLACE,
-	MTD_OOB_AUTO,
-	MTD_OOB_RAW,
-} mtd_oob_mode_t;
-
 /**
  * struct mtd_oob_ops - oob operation operands
  * @mode:	operation mode
@@ -91,7 +77,7 @@ typedef enum {
  * @ooblen:	number of oob bytes to write/read
  * @oobretlen:	number of oob bytes written/read
  * @ooboffs:	offset of oob data in the oob area (only relevant when
- *		mode = MTD_OOB_PLACE)
+ *		mode = MTD_OPS_PLACE_OOB or MTD_OPS_RAW)
  * @datbuf:	data buffer - if NULL only oob data are read/written
  * @oobbuf:	oob data buffer
  *
@@ -100,7 +86,7 @@ typedef enum {
  * OOB area.
  */
 struct mtd_oob_ops {
-	mtd_oob_mode_t	mode;
+	unsigned int	mode;
 	size_t		len;
 	size_t		retlen;
 	size_t		ooblen;
@@ -369,5 +355,17 @@ static inline void mtd_erase_callback(struct erase_info *instr)
 	} while(0)
 
 #endif /* CONFIG_MTD_DEBUG */
+
+static inline int mtd_is_bitflip(int err) {
+	return err == -EUCLEAN;
+}
+
+static inline int mtd_is_eccerr(int err) {
+	return err == -EBADMSG;
+}
+
+static inline int mtd_is_bitflip_or_eccerr(int err) {
+	return mtd_is_bitflip(err) || mtd_is_eccerr(err);
+}
 
 #endif /* __MTD_MTD_H__ */

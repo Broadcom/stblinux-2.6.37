@@ -208,17 +208,17 @@ static ssize_t mtd_read(struct file *file, char __user *buf, size_t count,loff_t
 			len = count;
 
 		switch (mfi->mode) {
-		case MTD_MODE_OTP_FACTORY:
+		case MTD_FILE_MODE_OTP_FACTORY:
 			ret = mtd->read_fact_prot_reg(mtd, *ppos, len, &retlen, kbuf);
 			break;
-		case MTD_MODE_OTP_USER:
+		case MTD_FILE_MODE_OTP_USER:
 			ret = mtd->read_user_prot_reg(mtd, *ppos, len, &retlen, kbuf);
 			break;
-		case MTD_MODE_RAW:
+		case MTD_FILE_MODE_RAW:
 		{
 			struct mtd_oob_ops ops;
 
-			ops.mode = MTD_OOB_RAW;
+			ops.mode = MTD_OPS_RAW;
 			ops.datbuf = kbuf;
 			ops.oobbuf = NULL;
 			ops.len = len;
@@ -239,7 +239,7 @@ static ssize_t mtd_read(struct file *file, char __user *buf, size_t count,loff_t
 		 * Userspace software which accesses NAND this way
 		 * must be aware of the fact that it deals with NAND
 		 */
-		if (!ret || (ret == -EUCLEAN) || (ret == -EBADMSG)) {
+		if (!ret || mtd_is_bitflip_or_eccerr(ret)) {
 			*ppos += retlen;
 			if (copy_to_user(buf, kbuf, retlen)) {
 				kfree(kbuf);
@@ -306,10 +306,10 @@ static ssize_t mtd_write(struct file *file, const char __user *buf, size_t count
 		}
 
 		switch (mfi->mode) {
-		case MTD_MODE_OTP_FACTORY:
+		case MTD_FILE_MODE_OTP_FACTORY:
 			ret = -EROFS;
 			break;
-		case MTD_MODE_OTP_USER:
+		case MTD_FILE_MODE_OTP_USER:
 			if (!mtd->write_user_prot_reg) {
 				ret = -EOPNOTSUPP;
 				break;
@@ -317,13 +317,14 @@ static ssize_t mtd_write(struct file *file, const char __user *buf, size_t count
 			ret = mtd->write_user_prot_reg(mtd, *ppos, len, &retlen, kbuf);
 			break;
 
-		case MTD_MODE_RAW:
+		case MTD_FILE_MODE_RAW:
 		{
 			struct mtd_oob_ops ops;
 
-			ops.mode = MTD_OOB_RAW;
+			ops.mode = MTD_OPS_RAW;
 			ops.datbuf = kbuf;
 			ops.oobbuf = NULL;
+			ops.ooboffs = 0;
 			ops.len = len;
 
 			ret = mtd->write_oob(mtd, *ppos, &ops);
@@ -371,13 +372,13 @@ static int otp_select_filemode(struct mtd_file_info *mfi, int mode)
 		if (!mtd->read_fact_prot_reg)
 			ret = -EOPNOTSUPP;
 		else
-			mfi->mode = MTD_MODE_OTP_FACTORY;
+			mfi->mode = MTD_FILE_MODE_OTP_FACTORY;
 		break;
 	case MTD_OTP_USER:
 		if (!mtd->read_fact_prot_reg)
 			ret = -EOPNOTSUPP;
 		else
-			mfi->mode = MTD_MODE_OTP_USER;
+			mfi->mode = MTD_FILE_MODE_OTP_USER;
 		break;
 	default:
 		ret = -EINVAL;
@@ -394,6 +395,7 @@ static int mtd_do_writeoob(struct file *file, struct mtd_info *mtd,
 	uint64_t start, uint32_t length, void __user *ptr,
 	uint32_t __user *retp)
 {
+	struct mtd_file_info *mfi = file->private_data;
 	struct mtd_oob_ops ops;
 	uint32_t retlen;
 	int ret = 0;
@@ -413,9 +415,10 @@ static int mtd_do_writeoob(struct file *file, struct mtd_info *mtd,
 		return ret;
 
 	ops.ooblen = length;
-	ops.ooboffs = start & (mtd->oobsize - 1);
+	ops.ooboffs = start & (mtd->writesize - 1);
 	ops.datbuf = NULL;
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = (mfi->mode == MTD_FILE_MODE_RAW) ? MTD_OPS_RAW :
+		MTD_OPS_PLACE_OOB;
 
 	if (ops.ooboffs && ops.ooblen > (mtd->oobsize - ops.ooboffs))
 		return -EINVAL;
@@ -424,7 +427,7 @@ static int mtd_do_writeoob(struct file *file, struct mtd_info *mtd,
 	if (IS_ERR(ops.oobbuf))
 		return PTR_ERR(ops.oobbuf);
 
-	start &= ~((uint64_t)mtd->oobsize - 1);
+	start &= ~((uint64_t)mtd->writesize - 1);
 	ret = mtd->write_oob(mtd, start, &ops);
 
 	if (ops.oobretlen > 0xFFFFFFFFU)
@@ -437,9 +440,11 @@ static int mtd_do_writeoob(struct file *file, struct mtd_info *mtd,
 	return ret;
 }
 
-static int mtd_do_readoob(struct mtd_info *mtd, uint64_t start,
-	uint32_t length, void __user *ptr, uint32_t __user *retp)
+static int mtd_do_readoob(struct file *file, struct mtd_info *mtd,
+	uint64_t start, uint32_t length, void __user *ptr,
+	uint32_t __user *retp)
 {
+	struct mtd_file_info *mfi = file->private_data;
 	struct mtd_oob_ops ops;
 	int ret = 0;
 
@@ -455,9 +460,10 @@ static int mtd_do_readoob(struct mtd_info *mtd, uint64_t start,
 		return ret;
 
 	ops.ooblen = length;
-	ops.ooboffs = start & (mtd->oobsize - 1);
+	ops.ooboffs = start & (mtd->writesize - 1);
 	ops.datbuf = NULL;
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = (mfi->mode == MTD_FILE_MODE_RAW) ? MTD_OPS_RAW :
+		MTD_OPS_PLACE_OOB;
 
 	if (ops.ooboffs && ops.ooblen > (mtd->oobsize - ops.ooboffs))
 		return -EINVAL;
@@ -466,7 +472,7 @@ static int mtd_do_readoob(struct mtd_info *mtd, uint64_t start,
 	if (!ops.oobbuf)
 		return -ENOMEM;
 
-	start &= ~((uint64_t)mtd->oobsize - 1);
+	start &= ~((uint64_t)mtd->writesize - 1);
 	ret = mtd->read_oob(mtd, start, &ops);
 
 	if (put_user(ops.oobretlen, retp))
@@ -476,6 +482,22 @@ static int mtd_do_readoob(struct mtd_info *mtd, uint64_t start,
 		ret = -EFAULT;
 
 	kfree(ops.oobbuf);
+
+	/*
+	 * NAND returns -EBADMSG on ECC errors, but it returns the OOB
+	 * data. For our userspace tools it is important to dump areas
+	 * with ECC errors!
+	 * For kernel internal usage it also might return -EUCLEAN
+	 * to signal the caller that a bitflip has occured and has
+	 * been corrected by the ECC algorithm.
+	 *
+	 * Note: currently the standard NAND function, nand_read_oob_std,
+	 * does not calculate ECC for the OOB area, so do not rely on
+	 * this behavior unless you have replaced it with your own.
+	 */
+	if (mtd_is_bitflip_or_eccerr(ret))
+		return 0;
+
 	return ret;
 }
 
@@ -522,10 +544,6 @@ static int mtd_blkpg_ioctl(struct mtd_info *mtd,
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
-	/* Only master mtd device must be used to control partitions */
-	if (!mtd_is_master(mtd))
-		return -EINVAL;
-
 	if (copy_from_user(&a, arg, sizeof(struct blkpg_ioctl_arg)))
 		return -EFAULT;
 
@@ -534,6 +552,10 @@ static int mtd_blkpg_ioctl(struct mtd_info *mtd,
 
 	switch (a.op) {
 	case BLKPG_ADD_PARTITION:
+
+		/* Only master mtd device must be used to add partitions */
+		if (mtd_is_partition(mtd))
+			return -EINVAL;
 
 		return mtd_add_partition(mtd, p.devname, p.start, p.length);
 
@@ -550,6 +572,55 @@ static int mtd_blkpg_ioctl(struct mtd_info *mtd,
 }
 #endif
 
+
+static int mtd_write_ioctl(struct mtd_info *mtd,
+		struct mtd_write_req __user *argp)
+{
+	struct mtd_write_req req;
+	struct mtd_oob_ops ops;
+	void __user *usr_data, *usr_oob;
+	int ret;
+
+	if (copy_from_user(&req, argp, sizeof(req)) ||
+			!access_ok(VERIFY_READ, req.usr_data, req.len) ||
+			!access_ok(VERIFY_READ, req.usr_oob, req.ooblen))
+		return -EFAULT;
+	if (!mtd->write_oob)
+		return -EOPNOTSUPP;
+
+	ops.mode = req.mode;
+	ops.len = (size_t)req.len;
+	ops.ooblen = (size_t)req.ooblen;
+	ops.ooboffs = 0;
+
+	usr_data = (void __user *)(uintptr_t)req.usr_data;
+	usr_oob = (void __user *)(uintptr_t)req.usr_oob;
+
+	if (req.usr_data) {
+		ops.datbuf = memdup_user(usr_data, ops.len);
+		if (IS_ERR(ops.datbuf))
+			return PTR_ERR(ops.datbuf);
+	} else {
+		ops.datbuf = NULL;
+	}
+
+	if (req.usr_oob) {
+		ops.oobbuf = memdup_user(usr_oob, ops.ooblen);
+		if (IS_ERR(ops.oobbuf)) {
+			kfree(ops.datbuf);
+			return PTR_ERR(ops.oobbuf);
+		}
+	} else {
+		ops.oobbuf = NULL;
+	}
+
+	ret = mtd->write_oob(mtd, (loff_t)req.start, &ops);
+
+	kfree(ops.datbuf);
+	kfree(ops.oobbuf);
+
+	return ret;
+}
 
 static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 {
@@ -601,15 +672,15 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 	}
 
 	case MEMGETINFO:
+		memset(&info, 0, sizeof(info));
 		info.type	= mtd->type;
 		info.flags	= mtd->flags;
 		info.size	= mtd->size;
 		info.erasesize	= mtd->erasesize;
 		info.writesize	= mtd->writesize;
 		info.oobsize	= mtd->oobsize;
-		/* The below fields are obsolete */
-		info.ecctype	= -1;
-		info.eccsize	= 0;
+		/* The below field is obsolete */
+		info.padding	= 0;
 		if (copy_to_user(argp, &info, sizeof(struct mtd_info_user)))
 			return -EFAULT;
 		break;
@@ -705,7 +776,7 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 		if (copy_from_user(&buf, argp, sizeof(buf)))
 			ret = -EFAULT;
 		else
-			ret = mtd_do_readoob(mtd, buf.start, buf.length,
+			ret = mtd_do_readoob(file, mtd, buf.start, buf.length,
 				buf.ptr, &buf_user->start);
 		break;
 	}
@@ -732,9 +803,16 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 		if (copy_from_user(&buf, argp, sizeof(buf)))
 			ret = -EFAULT;
 		else
-			ret = mtd_do_readoob(mtd, buf.start, buf.length,
+			ret = mtd_do_readoob(file, mtd, buf.start, buf.length,
 				(void __user *)(uintptr_t)buf.usr_ptr,
 				&buf_user->length);
+		break;
+	}
+
+	case MEMWRITE:
+	{
+		ret = mtd_write_ioctl(mtd,
+		      (struct mtd_write_req __user *)arg);
 		break;
 	}
 
@@ -834,7 +912,7 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 		if (copy_from_user(&mode, argp, sizeof(int)))
 			return -EFAULT;
 
-		mfi->mode = MTD_MODE_NORMAL;
+		mfi->mode = MTD_FILE_MODE_NORMAL;
 
 		ret = otp_select_filemode(mfi, mode);
 
@@ -850,11 +928,11 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 			return -ENOMEM;
 		ret = -EOPNOTSUPP;
 		switch (mfi->mode) {
-		case MTD_MODE_OTP_FACTORY:
+		case MTD_FILE_MODE_OTP_FACTORY:
 			if (mtd->get_fact_prot_info)
 				ret = mtd->get_fact_prot_info(mtd, buf, 4096);
 			break;
-		case MTD_MODE_OTP_USER:
+		case MTD_FILE_MODE_OTP_USER:
 			if (mtd->get_user_prot_info)
 				ret = mtd->get_user_prot_info(mtd, buf, 4096);
 			break;
@@ -878,7 +956,7 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 	{
 		struct otp_info oinfo;
 
-		if (mfi->mode != MTD_MODE_OTP_USER)
+		if (mfi->mode != MTD_FILE_MODE_OTP_USER)
 			return -EINVAL;
 		if (copy_from_user(&oinfo, argp, sizeof(oinfo)))
 			return -EFAULT;
@@ -922,17 +1000,17 @@ static int mtd_ioctl(struct file *file, u_int cmd, u_long arg)
 		mfi->mode = 0;
 
 		switch(arg) {
-		case MTD_MODE_OTP_FACTORY:
-		case MTD_MODE_OTP_USER:
+		case MTD_FILE_MODE_OTP_FACTORY:
+		case MTD_FILE_MODE_OTP_USER:
 			ret = otp_select_filemode(mfi, arg);
 			break;
 
-		case MTD_MODE_RAW:
+		case MTD_FILE_MODE_RAW:
 			if (!mtd->read_oob || !mtd->write_oob)
 				return -EOPNOTSUPP;
 			mfi->mode = arg;
 
-		case MTD_MODE_NORMAL:
+		case MTD_FILE_MODE_NORMAL:
 			break;
 		default:
 			ret = -EINVAL;
@@ -1020,7 +1098,7 @@ static long mtd_compat_ioctl(struct file *file, unsigned int cmd,
 		if (copy_from_user(&buf, argp, sizeof(buf)))
 			ret = -EFAULT;
 		else
-			ret = mtd_do_readoob(mtd, buf.start,
+			ret = mtd_do_readoob(file, mtd, buf.start,
 				buf.length, compat_ptr(buf.ptr),
 				&buf_user->start);
 		break;

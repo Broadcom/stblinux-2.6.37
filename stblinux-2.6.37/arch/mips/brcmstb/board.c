@@ -317,15 +317,44 @@ void board_pinmux_setup(void)
 	PINMUX(18, uart_txdb, 0);	/* UARTB TX */
 #else
 	PINMUX(17, uart_txdb, 0);	/* UARTB TX */
+
+	PINMUX(0, gpio_68, 3);		/* SDIO */
+	PINMUX(0, gpio_69, 3);
+	PINMUX(0, gpio_70, 3);
+	PINMUX(0, gpio_71, 2);
+	PINMUX(0, gpio_72, 2);
+	PINMUX(0, gpio_73, 2);
+	PINMUX(0, gpio_74, 2);
+	PINMUX(0, gpio_75, 2);
+	PINMUX(1, gpio_76, 2);
+	PINMUX(1, gpio_77, 2);
+
+	/* enable pullup on SDIO lines */
+	PADCTRL(0, gpio_68_pad_ctrl, 2);
+	PADCTRL(0, gpio_69_pad_ctrl, 2);
+	PADCTRL(0, gpio_70_pad_ctrl, 2);
+	PADCTRL(0, gpio_71_pad_ctrl, 2);
+	PADCTRL(0, gpio_72_pad_ctrl, 2);
+	PADCTRL(0, gpio_73_pad_ctrl, 2);
+	PADCTRL(0, gpio_74_pad_ctrl, 2);
+	PADCTRL(0, gpio_75_pad_ctrl, 2);
+	PADCTRL(0, gpio_76_pad_ctrl, 2);
+	PADCTRL(0, gpio_77_pad_ctrl, 2);
 #endif
 
 	AON_PINMUX(0, aon_gpio_00, 3);	/* UARTC RX (NC) */
 	AON_PINMUX(0, aon_gpio_01, 3);	/* UARTC TX (NC) */
 
+#ifdef CONFIG_BCM7344A0
 	/* NOTE: this is buggy in A0 */
 	AON_PINMUX(2, aon_sgpio_00, 1);	/* MoCA I2C */
 	AON_PINMUX(2, aon_sgpio_01, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCC_REG_START);
+#else
+	PINMUX(16, sgpio_04, 1);	/* MoCA I2C */
+	PINMUX(16, sgpio_05, 1);
+	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCD_REG_START);
+#endif
 
 #if defined(CONFIG_BCMGENET_0_GPHY)
 	/* select MAC0 for RGMII */
@@ -566,8 +595,11 @@ void board_pinmux_setup(void)
 			gpio_081_pad_ctrl, 2);
 
 		/* always use 3.3V (SDIO0_LOW_V_SEL_N=1) */
+		/* V00 boards or A0 parts */
 		BDEV_UNSET(BCHP_GIO_AON_IODIR_LO, 1 << 4);
 		BDEV_SET(BCHP_GIO_AON_DATA_LO, 1 << 4);
+		/* V10 boards with B0 parts use SDIO0_VOLT signal */
+		AON_PINMUX(2, gpio_100, 5);
 	}
 
 	PINMUX(18, sgpio_00, 1);	/* MoCA I2C */

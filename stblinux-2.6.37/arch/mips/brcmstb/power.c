@@ -961,7 +961,8 @@ int brcm_pm_wakeup_register(struct brcm_wakeup_ops *ops, void* ref, char* name)
 	spin_unlock_irqrestore(&bwc.lock, flags);
 
 	return 0;
-	}
+}
+EXPORT_SYMBOL(brcm_pm_wakeup_register);
 
 /* This function is called with bwc lock held*/
 static void brcm_pm_wakeup_cleanup(struct kref *kref)
@@ -2834,10 +2835,6 @@ BDEV_WR_F_RB(CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_MEMORY_STANDBY_ENABLE_A,
 		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
 		    0x2180); /* 0x2980 */
 	} else {
-		BDEV_SET(
-		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_DISABLE,
-		    0xC);
-
 		BDEV_UNSET(
 		    BCHP_CLKGEN_DUAL_GENET_TOP_DUAL_RGMII_INST_CLOCK_ENABLE,
 		    0x3F80);
@@ -3240,7 +3237,11 @@ static void bcm7344_pm_genet1_disable(u32 flags)
 /*	SRAM_OFF_3(DUAL_GENET_TOP_RGMII_INST, GENET1, _B); */
 
 	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_DISABLE, 0x1C);
+#if defined(CONFIG_BCM7344A0)
 	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_ENABLE, 0x3F80);
+#else
+	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_ENABLE, 0x1F80);
+#endif
 }
 
 static void bcm7344_pm_genet1_enable(u32 flags)
@@ -3255,7 +3256,11 @@ static void bcm7344_pm_genet1_enable(u32 flags)
 /*	SRAM_ON_3(DUAL_GENET_TOP_RGMII_INST, GENET1, _B); */
 
 	BDEV_UNSET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_DISABLE, 0x1C);
+#if defined(CONFIG_BCM7344A0)
 	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_ENABLE, 0x3F80);
+#else
+	BDEV_SET(BCHP_CLKGEN_DUAL_GENET_TOP_RGMII_INST_CLOCK_ENABLE, 0x1F80);
+#endif
 }
 
 static void bcm7344_pm_usb_disable(u32 flags)
@@ -4089,6 +4094,7 @@ void brcm_pm_wakeup_source_enable(u32 mask, int enable)
 	}
 #endif
 }
+EXPORT_SYMBOL(brcm_pm_wakeup_source_enable);
 
 int brcm_pm_wakeup_get_status(u32 mask)
 {
@@ -4100,6 +4106,7 @@ int brcm_pm_wakeup_get_status(u32 mask)
 		   & mask);
 #endif
 }
+EXPORT_SYMBOL(brcm_pm_wakeup_get_status);
 
 static u32 brcm_pm_wakeup_get_mask(void)
 {
@@ -4161,9 +4168,7 @@ static void brcm_pm_clear_alarm(void)
 	BDEV_WR_RB(BCHP_WKTMR_EVENT, 1);
 }
 
-#if     defined(CONFIG_BCM7468) || \
-	defined(CONFIG_BCM7552A0) || \
-	defined(CONFIG_BCM7358A0)
+#if defined(CONFIG_BCM7468) || defined(CONFIG_BCM7550)
 #define NON_RELOCATABLE_VEC
 #endif
 static int brcm_pm_standby(int mode)
@@ -4171,6 +4176,8 @@ static int brcm_pm_standby(int mode)
 	int ret = 0, valid_event = 1;
 	u32 l2_mask;
 	unsigned long restart_vec = BRCM_WARM_RESTART_VEC;
+	unsigned long restart_vec_size = brcm_tp1_int_vec_end -
+		brcm_tp1_int_vec;
 
 	DBG("%s:%d\n", __func__, __LINE__);
 
@@ -4328,7 +4335,8 @@ static int brcm_pm_standby(int mode)
 #endif
 			ret = brcm_pm_standby_asm(
 				current_cpu_data.icache.linesz,
-				restart_vec, brcm_pm_standby_flags);
+				restart_vec, restart_vec_size,
+				brcm_pm_standby_flags);
 		brcm_system_early_resume();
 		brcm_pm_clear_alarm();
 		valid_event = brcm_pm_wakeup_poll(l2_mask);

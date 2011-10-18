@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Aug  4 13:37:50 2011
- *                 MD5 Checksum         83f408cc25eb2d099cc58e22e4e239e9
+ * Date:           Generated on         Wed Sep  7 23:22:11 2011
+ *                 MD5 Checksum         aff3518aefc2f3a6bc037a41f665574e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7552/rdb/b0/bchp_common.h $
+ * $brcm_Log: W:/pntruong/views/pntruong_97552_devel_sview/magnum/basemodules/chp/7552/rdb/b0/bchp_common.h $
  * 
- * Hydra_Software_Devel/1   8/5/11 9:34p albertl
- * SW7552-89: Initial revision.
+ * Hydra_Software_Devel/2   9/8/11 1:01a pntruong
+ * SW7552-89: Synced up with central rdb.
  *
  ***************************************************************************/
 
@@ -382,7 +382,7 @@
 #define BCHP_USB_OHCI_REG_START                            0x00480400
 #define BCHP_USB_OHCI_REG_END                              0x00480458
 #define BCHP_BOOTROM_REG_START                             0x00500000
-#define BCHP_BOOTROM_REG_END                               0x00503ffc
+#define BCHP_BOOTROM_REG_END                               0x00500ffc
 #define BCHP_MFD_0_REG_START                               0x00600000
 #define BCHP_MFD_0_REG_END                                 0x006001fc
 #define BCHP_VFD_0_REG_START                               0x00601000

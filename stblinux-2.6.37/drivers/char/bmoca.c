@@ -36,7 +36,7 @@
 #include <linux/io.h>
 
 #define DRV_VERSION		0x00040000
-#define DRV_BUILD_NUMBER	0x20110616
+#define DRV_BUILD_NUMBER	0x20110831
 
 #if defined(CONFIG_BRCMSTB)
 #define MOCA6816		0
@@ -59,51 +59,40 @@
 #define MOCA_ENABLE		1
 #define MOCA_DISABLE		0
 
-/* offsets from the start of the MoCA core */
-#define OFF_DATA_MEM		0x00000000
-
-#define OFF_CNTL_MEM_11_PLUS	0x00040000
-#define OFF_CNTL_MEM_11		0x0004c000
-
 #define OFF_PKT_REINIT_MEM	0x00a08000
-#define OFF_M2M_SRC		0x000a2000
-#define OFF_M2M_DST		0x000a2004
-#define OFF_M2M_CMD		0x000a2008
-#define OFF_M2M_STATUS		0x000a200c
-
-#define OFF_SW_RESET		0x000a2040
-#define OFF_LED_CTRL		0x000a204c
-
-#define OFF_GP0			0x000a2050
-#define OFF_GP1			0x000a2054
-#define OFF_RINGBELL		0x000a2060
-
-#define OFF_L2_STATUS		0x000a2080
-#define OFF_L2_CLEAR		0x000a2088
-#define OFF_L2_MASK_SET		0x000a2090
-#define OFF_L2_MASK_CLEAR	0x000a2094
-
-/* region size */
-#define DATA_MEM_SIZE_11_LITE	(96 * 1024)
-#define DATA_MEM_SIZE_11	(256 * 1024)
-
-#define CNTL_MEM_SIZE_11_PLUS	(128 * 1024)
-#define CNTL_MEM_SIZE_11	(80 * 1024)
-
 #define PKT_REINIT_MEM_SIZE	(32 * 1024)
 #define PKT_REINIT_MEM_END	(OFF_PKT_REINIT_MEM  + PKT_REINIT_MEM_SIZE)
 
-/* mailbox layout */
-#define HOST_REQ_SIZE		304
-#define HOST_RESP_SIZE		256
-#define CORE_REQ_SIZE		400
-#define CORE_RESP_SIZE		64
+/* The mailbox layout is different for MoCA 2.0 compared to
+   MoCA 1.1 */
 
-/* offsets from the mailbox pointer */
-#define HOST_REQ_OFFSET		0
-#define HOST_RESP_OFFSET	(HOST_REQ_OFFSET + HOST_REQ_SIZE)
-#define CORE_REQ_OFFSET		(HOST_RESP_OFFSET + HOST_RESP_SIZE)
-#define CORE_RESP_OFFSET	(CORE_REQ_OFFSET + CORE_REQ_SIZE)
+/* MoCA 1.1 mailbox layout */
+#define HOST_REQ_SIZE_11        304
+#define HOST_RESP_SIZE_11       256
+#define CORE_REQ_SIZE_11        400
+#define CORE_RESP_SIZE_11       64
+
+/* MoCA 1.1 offsets from the mailbox pointer */
+#define HOST_REQ_OFFSET_11      0
+#define HOST_RESP_OFFSET_11     (HOST_REQ_OFFSET_11 + HOST_REQ_SIZE_11)
+#define CORE_REQ_OFFSET_11      (HOST_RESP_OFFSET_11 + HOST_RESP_SIZE_11)
+#define CORE_RESP_OFFSET_11     (CORE_REQ_OFFSET_11 + CORE_REQ_SIZE_11)
+
+/* MoCA 2.0 mailbox layout */
+#define HOST_REQ_SIZE_20        512
+#define HOST_RESP_SIZE_20       512
+#define CORE_REQ_SIZE_20        512
+#define CORE_RESP_SIZE_20       512
+
+/* MoCA 2.0 offsets from the mailbox pointer */
+#define HOST_REQ_OFFSET_20      0
+#define HOST_RESP_OFFSET_20     (HOST_REQ_OFFSET_20 + 0)
+#define CORE_REQ_OFFSET_20      (HOST_RESP_OFFSET_20 + HOST_RESP_SIZE_20)
+#define CORE_RESP_OFFSET_20     (CORE_REQ_OFFSET_20 + 0)
+
+#define HOST_REQ_SIZE_MAX       HOST_REQ_SIZE_20
+#define CORE_REQ_SIZE_MAX       CORE_REQ_SIZE_20
+#define CORE_RESP_SIZE_MAX      CORE_RESP_SIZE_20
 
 /* local H2M, M2H buffers */
 #define NUM_CORE_MSG		16
@@ -111,7 +100,7 @@
 
 #define FW_CHUNK_SIZE		4096
 #define MAX_BL_CHUNKS		8
-#define MAX_FW_SIZE		(256 * 1024)
+#define MAX_FW_SIZE		(1024 * 1024)
 #define MAX_FW_PAGES		((MAX_FW_SIZE >> PAGE_SHIFT) + 1)
 #define MAX_LAB_PRINTF		104
 
@@ -134,13 +123,13 @@
 #define __DMA_ALIGN__		__attribute__((__aligned__(L1_CACHE_BYTES)))
 
 struct moca_host_msg {
-	u32			data[HOST_REQ_SIZE / 4] __DMA_ALIGN__;
+	u32			data[HOST_REQ_SIZE_MAX / 4] __DMA_ALIGN__;
 	struct list_head	chain __DMA_ALIGN__;
 	u32			len;
 };
 
 struct moca_core_msg {
-	u32			data[CORE_REQ_SIZE / 4] __DMA_ALIGN__;
+	u32			data[CORE_REQ_SIZE_MAX / 4] __DMA_ALIGN__;
 	struct list_head	chain __DMA_ALIGN__;
 	u32			len;
 };
@@ -168,7 +157,8 @@ struct moca_priv_data {
 
 	struct list_head	core_msg_free_list;
 	struct list_head	core_msg_pend_list;
-	u32			core_resp_buf[CORE_RESP_SIZE / 4] __DMA_ALIGN__;
+	u32			core_resp_buf[CORE_RESP_SIZE_MAX / 4]
+					__DMA_ALIGN__;
 	struct moca_core_msg	core_msg_queue[NUM_CORE_MSG] __DMA_ALIGN__;
 	struct moca_core_msg	core_msg_temp __DMA_ALIGN__;
 	wait_queue_head_t	core_msg_wq;
@@ -191,19 +181,52 @@ struct moca_priv_data {
 
 	int			refcount;
 	unsigned long		start_time;
-	int			continuous_power_tx_mode;
 	dma_addr_t		tpcapBufPhys;
 
+	unsigned int		continuous_power_tx_mode;
+
+	unsigned int		hw_rev;
+
+	unsigned int		data_mem_offset;
 	unsigned int		data_mem_size;
 	unsigned int		cntl_mem_size;
 	unsigned int		cntl_mem_offset;
+	unsigned int		gp0_offset;
+	unsigned int		gp1_offset;
+	unsigned int		ringbell_offset;
+	unsigned int		l2_status_offset;
+	unsigned int		l2_clear_offset;
+	unsigned int		l2_mask_set_offset;
+	unsigned int		l2_mask_clear_offset;
+	unsigned int		sw_reset_offset;
+	unsigned int		led_ctrl_offset;
+	unsigned int		m2m_src_offset;
+	unsigned int		m2m_dst_offset;
+	unsigned int		m2m_cmd_offset;
+	unsigned int		m2m_status_offset;
+	unsigned int		moca2host_mmp_inbox_0_offset;
+	unsigned int		moca2host_mmp_inbox_1_offset;
+	unsigned int		h2m_resp_bit;
+	unsigned int		h2m_req_bit;
+
+	/* MMP Parameters */
+	unsigned int		mmp_20;
+	unsigned int		host_req_size;
+	unsigned int		host_resp_size;
+	unsigned int		core_req_size;
+	unsigned int		core_resp_size;
+	unsigned int		host_req_offset;
+	unsigned int		host_resp_offset;
+	unsigned int		core_req_offset;
+	unsigned int		core_resp_offset;
 };
 
 #define MOCA_FW_MAGIC		0x4d6f4341
 
 struct moca_fw_hdr {
 	uint32_t		jump[2];
-	uint32_t		res0[2];
+	uint32_t		length;
+	uint32_t		cpuid;
 	uint32_t		magic;
 	uint32_t		hw_rev;
 	uint32_t		bl_chunks;
@@ -230,15 +253,13 @@ static struct class *moca_class;
 #define MOCA_MAJOR		234
 #define MOCA_CLASS		"bmoca"
 
-/* interrupt bits */
-#define H2M_RESP		0x1
-#define H2M_REQ			0x2
-
 #define M2H_RESP		(1 << 0)
 #define M2H_REQ			(1 << 1)
 #define M2H_ASSERT		(1 << 2)
 #define M2H_NEXTCHUNK		(1 << 3)
-#define M2H_WDT			(1 << 10)
+#define M2H_NEXTCHUNK_CPU1		(1<<4)
+#define M2H_WDT_CPU1			(1 << 10)
+#define M2H_WDT_CPU0			(1 << 6)
 #define M2H_DMA			(1 << 11)
 
 /* does this word contain a NIL byte (i.e. end of string)? */
@@ -256,6 +277,7 @@ static struct class *moca_class;
 
 static void moca_3450_write_i2c(struct moca_priv_data *priv, u8 addr, u32 data);
 static u32 moca_3450_read_i2c(struct moca_priv_data *priv, u8 addr);
+static int moca_get_mbx_offset(struct moca_priv_data *priv);
 
 #define INRANGE(x, a, b)	(((x) >= (a)) && ((x) < (b)))
 
@@ -268,20 +290,47 @@ static inline int moca_range_ok(struct moca_priv_data *priv,
 		return -EINVAL;
 
 	if (INRANGE(offset, priv->cntl_mem_offset,
-		    priv->cntl_mem_offset + priv->cntl_mem_size) &&
-	    INRANGE(lastad, priv->cntl_mem_offset,
-		    priv->cntl_mem_offset + priv->cntl_mem_size))
+		priv->cntl_mem_offset+priv->cntl_mem_size) &&
+		INRANGE(lastad, priv->cntl_mem_offset,
+		priv->cntl_mem_offset+priv->cntl_mem_size))
 		return 0;
 
-	if (INRANGE(offset, OFF_DATA_MEM, OFF_DATA_MEM + priv->data_mem_size) &&
-	    INRANGE(lastad, OFF_DATA_MEM, OFF_DATA_MEM + priv->data_mem_size))
+	if (INRANGE(offset, priv->data_mem_offset,
+			priv->data_mem_offset + priv->data_mem_size) &&
+		INRANGE(lastad, priv->data_mem_offset,
+			priv->data_mem_offset + priv->data_mem_size))
 		return 0;
 
 	if (INRANGE(offset, OFF_PKT_REINIT_MEM, PKT_REINIT_MEM_END) &&
-	    INRANGE(lastad, OFF_PKT_REINIT_MEM, PKT_REINIT_MEM_END))
+		INRANGE(lastad, OFF_PKT_REINIT_MEM, PKT_REINIT_MEM_END))
 		return 0;
 
 	return -EINVAL;
+}
+
+static void moca_mmp_init(struct moca_priv_data *priv, int is20)
+{
+	if (is20) {
+		priv->host_req_size    = HOST_REQ_SIZE_20;
+		priv->host_resp_size   = HOST_RESP_SIZE_20;
+		priv->core_req_size    = CORE_REQ_SIZE_20;
+		priv->core_resp_size   = CORE_RESP_SIZE_20;
+		priv->host_req_offset  = HOST_REQ_OFFSET_20;
+		priv->host_resp_offset = HOST_RESP_OFFSET_20;
+		priv->core_req_offset  = CORE_REQ_OFFSET_20;
+		priv->core_resp_offset = CORE_RESP_OFFSET_20;
+		priv->mmp_20 = 1;
+	} else {
+		priv->host_req_size    = HOST_REQ_SIZE_11;
+		priv->host_resp_size   = HOST_RESP_SIZE_11;
+		priv->core_req_size    = CORE_REQ_SIZE_11;
+		priv->core_resp_size   = CORE_RESP_SIZE_11;
+		priv->host_req_offset  = HOST_REQ_OFFSET_11;
+		priv->host_resp_offset = HOST_RESP_OFFSET_11;
+		priv->core_req_offset  = CORE_REQ_OFFSET_11;
+		priv->core_resp_offset = CORE_RESP_OFFSET_11;
+		priv->mmp_20 = 0;
+	}
 }
 
 #ifdef CONFIG_BRCM_MOCA_BUILTIN_FW
@@ -303,29 +352,33 @@ static const char *bmoca_fw_image;
 static void moca_hw_reset(struct moca_priv_data *priv)
 {
 	/* disable and clear all interrupts */
-	MOCA_WR(priv->base + OFF_L2_MASK_SET, 0xffffffff);
-	MOCA_RD(priv->base + OFF_L2_MASK_SET);
+	MOCA_WR(priv->base + priv->l2_mask_set_offset, 0xffffffff);
+	MOCA_RD(priv->base + priv->l2_mask_set_offset);
 
 	/* assert resets */
 
-	/* reset cpu first */
-	MOCA_SET(priv->base + OFF_SW_RESET, 1);
-	MOCA_RD(priv->base + OFF_SW_RESET);
+	/* reset CPU first, both CPUs for MoCA 20 HW */
+	if (priv->hw_rev == HWREV_MOCA_20)
+		MOCA_SET(priv->base + priv->sw_reset_offset, 5);
+	else
+		MOCA_SET(priv->base + priv->sw_reset_offset, 1);
+
+	MOCA_RD(priv->base + priv->sw_reset_offset);
 
 	udelay(20);
 
 	/* reset everything else except clocks */
-	MOCA_SET(priv->base + OFF_SW_RESET, ~((1 << 3) | (1 << 7)));
-	MOCA_RD(priv->base + OFF_SW_RESET);
+	MOCA_SET(priv->base + priv->sw_reset_offset, ~((1 << 3) | (1 << 7)));
+	MOCA_RD(priv->base + priv->sw_reset_offset);
 
 	udelay(20);
 
 	/* disable clocks */
-	MOCA_SET(priv->base + OFF_SW_RESET, ~(1 << 3));
-	MOCA_RD(priv->base + OFF_SW_RESET);
+	MOCA_SET(priv->base + priv->sw_reset_offset, ~(1 << 3));
+	MOCA_RD(priv->base + priv->sw_reset_offset);
 
-	MOCA_WR(priv->base + OFF_L2_CLEAR, 0xffffffff);
-	MOCA_RD(priv->base + OFF_L2_CLEAR);
+	MOCA_WR(priv->base + priv->l2_clear_offset, 0xffffffff);
+	MOCA_RD(priv->base + priv->l2_clear_offset);
 }
 
 /* called any time we start/restart/stop MoCA */
@@ -345,21 +398,24 @@ static void moca_hw_init(struct moca_priv_data *priv, int action)
 
 	if (action == MOCA_ENABLE) {
 		/* deassert moca_sys_reset and clock */
-		MOCA_UNSET(priv->base + OFF_SW_RESET, (1 << 1) | (1 << 7));
-		MOCA_RD(priv->base + OFF_SW_RESET);
+		MOCA_UNSET(priv->base + priv->sw_reset_offset,
+			(1 << 1) | (1 << 7));
+		MOCA_RD(priv->base + priv->sw_reset_offset);
 	}
 
-	/* clear junk out of GP0/GP1 */
-	MOCA_WR(priv->base + OFF_GP0, 0xffffffff);
-	MOCA_WR(priv->base + OFF_GP1, 0x0);
+	if (priv->hw_rev != HWREV_MOCA_20) {
+		/* clear junk out of GP0/GP1 */
+		MOCA_WR(priv->base + priv->gp0_offset, 0xffffffff);
+		MOCA_WR(priv->base + priv->gp1_offset, 0x0);
+		/* set up activity LED for 50% duty cycle */
+		MOCA_WR(priv->base + priv->led_ctrl_offset,
+			0x40004000);
+	}
 
 	/* enable DMA completion interrupts */
-	MOCA_WR(priv->base + OFF_RINGBELL, 0);
-	MOCA_WR(priv->base + OFF_L2_MASK_CLEAR, M2H_DMA);
-	MOCA_RD(priv->base + OFF_L2_MASK_CLEAR);
-
-	/* set up activity LED for 50% duty cycle */
-	MOCA_WR(priv->base + OFF_LED_CTRL, 0x40004000);
+	MOCA_WR(priv->base + priv->ringbell_offset, 0);
+	MOCA_WR(priv->base + priv->l2_mask_clear_offset, M2H_DMA);
+	MOCA_RD(priv->base + priv->l2_mask_clear_offset);
 
 	if (action == MOCA_DISABLE && priv->enabled) {
 		priv->enabled = 0;
@@ -369,26 +425,31 @@ static void moca_hw_init(struct moca_priv_data *priv, int action)
 
 static void moca_ringbell(struct moca_priv_data *priv, u32 mask)
 {
-	MOCA_WR(priv->base + OFF_RINGBELL, mask);
-	MOCA_RD(priv->base);
+	MOCA_WR(priv->base + priv->ringbell_offset, mask);
+	MOCA_RD(priv->base + priv->ringbell_offset);
 }
 
 static u32 moca_irq_status(struct moca_priv_data *priv, int flush)
 {
-	u32 stat = MOCA_RD(priv->base + OFF_L2_STATUS);
+	u32 stat = MOCA_RD(priv->base + priv->l2_status_offset);
+	u32 dma_mask = M2H_DMA | M2H_NEXTCHUNK;
+
+	if (priv->hw_rev == HWREV_MOCA_20)
+		dma_mask |= M2H_NEXTCHUNK_CPU1;
+
 	if (flush == FLUSH_IRQ) {
-		MOCA_WR(priv->base + OFF_L2_CLEAR, stat);
-		MOCA_RD(priv->base + OFF_L2_CLEAR);
+		MOCA_WR(priv->base + priv->l2_clear_offset, stat);
+		MOCA_RD(priv->base + priv->l2_clear_offset);
 	}
 	if (flush == FLUSH_DMA_ONLY) {
-		MOCA_WR(priv->base + OFF_L2_CLEAR,
-			stat & (M2H_DMA | M2H_NEXTCHUNK));
-		MOCA_RD(priv->base + OFF_L2_CLEAR);
+		MOCA_WR(priv->base + priv->l2_clear_offset,
+			stat & dma_mask);
+		MOCA_RD(priv->base + priv->l2_clear_offset);
 	}
 	if (flush == FLUSH_REQRESP_ONLY) {
-		MOCA_WR(priv->base + OFF_L2_CLEAR,
+		MOCA_WR(priv->base + priv->l2_clear_offset,
 			stat & (M2H_RESP | M2H_REQ));
-		MOCA_RD(priv->base + OFF_L2_CLEAR);
+		MOCA_RD(priv->base + priv->l2_clear_offset);
 	}
 	return stat;
 }
@@ -396,24 +457,43 @@ static u32 moca_irq_status(struct moca_priv_data *priv, int flush)
 static void moca_enable_irq(struct moca_priv_data *priv)
 {
 	/* unmask everything */
-	MOCA_WR(priv->base + OFF_L2_MASK_CLEAR,
-		M2H_REQ | M2H_RESP | M2H_ASSERT | M2H_WDT |
-		M2H_NEXTCHUNK | M2H_DMA);
-	MOCA_RD(priv->base + OFF_L2_MASK_CLEAR);
+	u32 mask = M2H_REQ | M2H_RESP | M2H_ASSERT | M2H_WDT_CPU1 |
+		M2H_NEXTCHUNK | M2H_DMA;
+
+	if (priv->hw_rev == HWREV_MOCA_20)
+		mask |= M2H_WDT_CPU0 | M2H_NEXTCHUNK_CPU1;
+
+	MOCA_WR(priv->base + priv->l2_mask_clear_offset, mask);
+	MOCA_RD(priv->base + priv->l2_mask_clear_offset);
 }
 
 static void moca_disable_irq(struct moca_priv_data *priv)
 {
 	/* mask everything except DMA completions */
-	MOCA_WR(priv->base + OFF_L2_MASK_SET,
-		M2H_REQ | M2H_RESP | M2H_ASSERT | M2H_WDT | M2H_NEXTCHUNK);
-	MOCA_RD(priv->base + OFF_L2_MASK_SET);
+	u32 mask = M2H_REQ | M2H_RESP | M2H_ASSERT | M2H_WDT_CPU1 |
+		M2H_NEXTCHUNK;
+
+	if (priv->hw_rev == HWREV_MOCA_20)
+		mask |= M2H_WDT_CPU0 | M2H_NEXTCHUNK_CPU1;
+
+	MOCA_WR(priv->base + priv->l2_mask_set_offset, mask);
+	MOCA_RD(priv->base + priv->l2_mask_set_offset);
 }
 
-static u32 moca_start_mips(struct moca_priv_data *priv)
+static u32 moca_start_mips(struct moca_priv_data *priv, u32 cpu)
 {
-	MOCA_UNSET(priv->base + OFF_SW_RESET, (1 << 0));
-	MOCA_RD(priv->base + OFF_SW_RESET);
+	if (priv->hw_rev == HWREV_MOCA_20) {
+		if (cpu == 1)
+			MOCA_UNSET(priv->base + priv->sw_reset_offset,
+				(1 << 0));
+		else {
+			moca_mmp_init(priv, 1);
+			MOCA_UNSET(priv->base + priv->sw_reset_offset,
+				(1 << 2));
+		}
+	} else
+		MOCA_UNSET(priv->base + priv->sw_reset_offset, (1 << 0));
+	MOCA_RD(priv->base + priv->sw_reset_offset);
 	return 0;
 }
 
@@ -422,18 +502,19 @@ static void moca_m2m_xfer(struct moca_priv_data *priv,
 {
 	u32 status;
 
-	MOCA_WR(priv->base + OFF_M2M_SRC, src);
-	MOCA_WR(priv->base + OFF_M2M_DST, dst);
-	MOCA_WR(priv->base + OFF_M2M_STATUS, 0);
-	MOCA_RD(priv->base + OFF_M2M_STATUS);
-	MOCA_WR(priv->base + OFF_M2M_CMD, ctl);
+	MOCA_WR(priv->base + priv->m2m_src_offset, src);
+	MOCA_WR(priv->base + priv->m2m_dst_offset, dst);
+	MOCA_WR(priv->base + priv->m2m_status_offset, 0);
+	MOCA_RD(priv->base + priv->m2m_status_offset);
+	MOCA_WR(priv->base + priv->m2m_cmd_offset, ctl);
 
 	if (wait_for_completion_timeout(&priv->copy_complete,
 		1000 * M2M_TIMEOUT_MS) <= 0) {
 		printk(KERN_WARNING "%s: DMA interrupt timed out, status %x\n",
 			__func__, moca_irq_status(priv, NO_FLUSH_IRQ));
 	}
-	status = MOCA_RD(priv->base + OFF_M2M_STATUS);
+
+	status = MOCA_RD(priv->base + priv->m2m_status_offset);
 
 	if (status & (3 << 29))
 		printk(KERN_WARNING "%s: bad status %08x "
@@ -453,7 +534,7 @@ static void moca_write_mem(struct moca_priv_data *priv,
 	}
 
 	pa = dma_map_single(&priv->pdev->dev, src, len, DMA_TO_DEVICE);
-	moca_m2m_xfer(priv, dst_offset + OFF_DATA_MEM, (u32)pa,
+	moca_m2m_xfer(priv, dst_offset + priv->data_mem_offset, (u32)pa,
 		len | M2M_WRITE);
 	dma_unmap_single(&priv->pdev->dev, pa, len, DMA_TO_DEVICE);
 }
@@ -471,14 +552,15 @@ static void moca_read_mem(struct moca_priv_data *priv,
 
 	for (i = 0; i < len; i += 4)
 		DEV_WR(dst + i, cpu_to_be32(
-			MOCA_RD(priv->base + src_offset + OFF_DATA_MEM + i)));
+			MOCA_RD(priv->base + src_offset +
+				priv->data_mem_offset + i)));
 }
 
 static void moca_write_sg(struct moca_priv_data *priv,
 	u32 dst_offset, struct scatterlist *sg, int nents)
 {
 	int j;
-	uintptr_t addr = OFF_DATA_MEM + dst_offset;
+	uintptr_t addr = priv->data_mem_offset + dst_offset;
 
 	dma_map_sg(&priv->pdev->dev, sg, nents, DMA_TO_DEVICE);
 
@@ -496,7 +578,7 @@ static inline void moca_read_sg(struct moca_priv_data *priv,
 	u32 src_offset, struct scatterlist *sg, int nents)
 {
 	int j;
-	uintptr_t addr = OFF_DATA_MEM + src_offset;
+	uintptr_t addr = priv->data_mem_offset + src_offset;
 
 	dma_map_sg(&priv->pdev->dev, sg, nents, DMA_FROM_DEVICE);
 
@@ -593,7 +675,7 @@ static int moca_write_img(struct moca_priv_data *priv, struct moca_xfer *x)
 	/* write the first two chunks, then start the MIPS */
 	moca_write_sg(priv, 0, &priv->fw_sg[0], bl_chunks + 1);
 	moca_enable_irq(priv);
-	moca_start_mips(priv);
+	moca_start_mips(priv, be32_to_cpu(hdr.cpuid));
 	ret = 0;
 
 	/* wait for an ACK, then write each successive chunk */
@@ -606,7 +688,8 @@ static int moca_write_img(struct moca_priv_data *priv, struct moca_xfer *x)
 			ret = -EIO;
 			break;
 		}
-		moca_write_sg(priv, OFF_DATA_MEM + FW_CHUNK_SIZE * bl_chunks,
+		moca_write_sg(priv,
+			priv->data_mem_offset + FW_CHUNK_SIZE * bl_chunks,
 			&priv->fw_sg[i], 1);
 	}
 
@@ -619,6 +702,41 @@ out:
  * MESSAGE AND LIST HANDLING
  */
 
+static void moca_handle_lab_printf(struct moca_priv_data *priv,
+	struct moca_core_msg *m)
+{
+	u32 str_len;
+	u32 str_addr;
+
+	if (priv->mmp_20) {
+		str_len = (be32_to_cpu(m->data[4]) + 3) & ~3;
+		str_addr = be32_to_cpu(m->data[3]) & 0x1fffffff;
+
+		if ((be32_to_cpu(m->data[0]) == 0x3) &&
+		    (be32_to_cpu(m->data[1]) == 12) &&
+		    ((be32_to_cpu(m->data[2]) & 0xffffff) == 0x090801) &&
+		    (be32_to_cpu(m->data[4]) <= MAX_LAB_PRINTF)) {
+			m->len = 3 + str_len;
+			moca_read_mem(priv, &m->data[3], str_addr, str_len);
+
+			m->data[1] = cpu_to_be32(m->len - 8);
+		}
+	} else {
+		str_len = (be32_to_cpu(m->data[3]) + 3) & ~3;
+		str_addr = be32_to_cpu(m->data[2]) & 0x1fffffff;
+
+		if ((be32_to_cpu(m->data[0]) & 0xff0000ff) == 0x09000001 &&
+			be32_to_cpu(m->data[1]) == 0x600b0008 &&
+			(be32_to_cpu(m->data[3]) <= MAX_LAB_PRINTF)) {
+
+			m->len = 8 + str_len;
+			moca_read_mem(priv, &m->data[2], str_addr, str_len);
+
+			m->data[1] = cpu_to_be32((MOCA_IE_DRV_PRINTF << 16) +
+				m->len - 8);
+		}
+	}
+}
 static void moca_msg_reset(struct moca_priv_data *priv)
 {
 	int i;
@@ -688,17 +806,34 @@ static int moca_recvmsg(struct moca_priv_data *priv, uintptr_t offset,
 	m = &priv->core_msg_temp;
 
 	BUG_ON((uintptr_t)m->data & (L1_CACHE_BYTES - 1));
+
+	/* make sure we have the mailbox offset before using it */
+	moca_get_mbx_offset(priv);
+
 	moca_read_mem(priv, m->data, offset + priv->mbx_offset, max_size);
 
 	data = be32_to_cpu(m->data[0]);
 
-	num_ies = data & 0xffff;
+	if (priv->mmp_20) {
+		/* In MoCA 2.0, there is only 1 IE per message */
+		num_ies = 1;
+	} else {
+		num_ies = data & 0xffff;
+	}
 
 	if (reply_offset) {
-		/* ACK + seq number + number of IEs */
-		reply[0] = cpu_to_be32((data & 0x00ff0000) | 0x04000000 |
-			num_ies);
-		rw = 1;
+		if (priv->mmp_20) {
+			/* In MoCA 2.0, the ACK is to simply set the
+			   MSB in the incoming message and send it
+			   back */
+			reply[0] = cpu_to_be32(data | 0x80000000);
+			rw = 1;
+		} else {
+			/* ACK + seq number + number of IEs */
+			reply[0] = cpu_to_be32((data & 0x00ff0000) |
+				0x04000000 | num_ies);
+			rw = 1;
+		}
 	}
 
 	err = -EINVAL;
@@ -712,12 +847,12 @@ static int moca_recvmsg(struct moca_priv_data *priv, uintptr_t offset,
 
 		data = be32_to_cpu(m->data[w++]);
 
-		if (reply_offset) {
+		if (reply_offset && !priv->mmp_20) {
 			/*
 			 * ACK each IE in the original message;
 			 * return code is always 0
 			 */
-			if ((rw << 2) >= CORE_RESP_SIZE)
+			if ((rw << 2) >= priv->core_resp_size)
 				printk(KERN_WARNING "%s: Core ack buffer "
 					"overflowed\n", __func__);
 			else {
@@ -743,65 +878,56 @@ static int moca_recvmsg(struct moca_priv_data *priv, uintptr_t offset,
 	m->len = w << 2;
 
 	/* special case for lab_printf traps */
-	if ((be32_to_cpu(m->data[0]) & 0xff0000ff) == 0x09000001 &&
-		be32_to_cpu(m->data[1]) == 0x600b0008 &&
-		(be32_to_cpu(m->data[3]) <= MAX_LAB_PRINTF)) {
-
-		u32 str_len = (be32_to_cpu(m->data[3]) + 3) & ~3;
-		u32 str_addr = be32_to_cpu(m->data[2]) & 0x1fffffff;
-
-		m->len = 8 + str_len;
-		moca_read_mem(priv, &m->data[2], str_addr, str_len);
-
-		m->data[1] = cpu_to_be32((MOCA_IE_DRV_PRINTF << 16) +
-			m->len - 8);
-	}
+	moca_handle_lab_printf(priv, m);
 
 	/*
 	 * Check to see if we can add this new message to the current queue.
 	 * The result will be a single message with multiple IEs.
 	 */
-	spin_lock_bh(&priv->list_lock);
-	if (!list_empty(&priv->core_msg_pend_list)) {
-		ml = priv->core_msg_pend_list.prev;
-		m = list_entry(ml, struct moca_core_msg, chain);
+	if (!priv->mmp_20) {
+		spin_lock_bh(&priv->list_lock);
+		if (!list_empty(&priv->core_msg_pend_list)) {
+			ml = priv->core_msg_pend_list.prev;
+			m = list_entry(ml, struct moca_core_msg, chain);
 
-		if (m->len + priv->core_msg_temp.len > max_size)
-			ml = NULL;
-		else {
-			u32 d0 = be32_to_cpu(priv->core_msg_temp.data[0]);
-
-			/* Only concatenate traps from the core */
-			if (((be32_to_cpu(m->data[0]) & 0xff000000) !=
-				0x09000000) ||
-				((d0 & 0xff000000) != 0x09000000))
+			if (m->len + priv->core_msg_temp.len > max_size)
 				ml = NULL;
 			else {
-				/*
-				 * We can add the message to the previous one.
-				 * Update the num of IEs, update the length
-				 * and copy the data.
-				 */
-				data = be32_to_cpu(m->data[0]);
-				num_ies = data & 0xffff;
-				num_ies += d0 & 0xffff;
-				data &= 0xffff0000;
-				data |= num_ies;
-				m->data[0] = cpu_to_be32(data);
+				u32 d0 = be32_to_cpu(
+						priv->core_msg_temp.data[0]);
 
-				/*
-				 * Subtract 4 bytes from length for message
-				 * header
-				 */
-				memcpy(&m->data[m->len >> 2],
-					&priv->core_msg_temp.data[1],
-					priv->core_msg_temp.len - 4);
-				m->len += priv->core_msg_temp.len - 4;
-				attach = 0;
+				/* Only concatenate traps from the core */
+				if (((be32_to_cpu(m->data[0]) & 0xff000000) !=
+					0x09000000) ||
+					((d0 & 0xff000000) != 0x09000000))
+					ml = NULL;
+				else {
+					/*
+					 * We can add the message to the
+					 * previous one. Update the num of IEs,
+					 * update the length and copy the data.
+					 */
+					data = be32_to_cpu(m->data[0]);
+					num_ies = data & 0xffff;
+					num_ies += d0 & 0xffff;
+					data &= 0xffff0000;
+					data |= num_ies;
+					m->data[0] = cpu_to_be32(data);
+
+					/*
+					 * Subtract 4 bytes from length for
+					   message header
+					 */
+					memcpy(&m->data[m->len >> 2],
+						&priv->core_msg_temp.data[1],
+						priv->core_msg_temp.len - 4);
+					m->len += priv->core_msg_temp.len - 4;
+					attach = 0;
+				}
 			}
 		}
+		spin_unlock_bh(&priv->list_lock);
 	}
-	spin_unlock_bh(&priv->list_lock);
 
 	if (ml == NULL) {
 		ml = moca_detach_head(priv, &priv->core_msg_free_list);
@@ -826,7 +952,7 @@ static int moca_recvmsg(struct moca_priv_data *priv, uintptr_t offset,
 		}
 		moca_write_mem(priv, reply_offset + priv->mbx_offset,
 			reply, rw << 2);
-		moca_ringbell(priv, H2M_RESP);
+		moca_ringbell(priv, priv->h2m_resp_bit);
 	}
 
 	if (attach) {
@@ -845,27 +971,38 @@ bad:
 	return err;
 }
 
-static int moca_h2m_sanity_check(struct moca_host_msg *m)
+static int moca_h2m_sanity_check(struct moca_priv_data *priv,
+	struct moca_host_msg *m)
 {
 	unsigned int w, num_ies;
 	u32 data;
 
-	data = be32_to_cpu(m->data[0]);
-	num_ies = data & 0xffff;
-
-	w = 1;
-	while (num_ies) {
-		if (w >= (m->len << 2))
+	if (priv->mmp_20) {
+		/* The length is stored in data[1]
+		   plus 8 extra header bytes */
+		data = be32_to_cpu(m->data[1]) + 8;
+		if (data > priv->host_req_size)
 			return -1;
+		else
+			return (int)data;
+	} else {
+		data = be32_to_cpu(m->data[0]);
+		num_ies = data & 0xffff;
 
-		data = be32_to_cpu(m->data[w++]);
+		w = 1;
+		while (num_ies) {
+			if (w >= (m->len << 2))
+				return -1;
 
-		if (data & 3)
-			return -1;
-		w += (data & 0xffff) >> 2;
-		num_ies--;
+			data = be32_to_cpu(m->data[w++]);
+
+			if (data & 3)
+				return -1;
+			w += (data & 0xffff) >> 2;
+			num_ies--;
+		}
+		return w << 2;
 	}
-	return w << 2;
 }
 
 /* Must have dev_mutex when calling this function */
@@ -882,10 +1019,10 @@ static int moca_sendmsg(struct moca_priv_data *priv)
 		return -EAGAIN;
 	m = list_entry(ml, struct moca_host_msg, chain);
 
-	moca_write_mem(priv, priv->mbx_offset + HOST_REQ_OFFSET,
+	moca_write_mem(priv, priv->mbx_offset + priv->host_req_offset,
 		m->data, m->len);
 
-	moca_ringbell(priv, H2M_REQ);
+	moca_ringbell(priv, priv->h2m_req_bit);
 	moca_attach_tail(priv, ml, &priv->host_msg_free_list);
 	wake_up(&priv->host_msg_wq);
 
@@ -893,7 +1030,7 @@ static int moca_sendmsg(struct moca_priv_data *priv)
 }
 
 /* Must have dev_mutex when calling this function */
-static int moca_wdt(struct moca_priv_data *priv)
+static int moca_wdt(struct moca_priv_data *priv, u32 cpu)
 {
 	struct list_head *ml = NULL;
 	struct moca_core_msg *m;
@@ -906,15 +1043,29 @@ static int moca_wdt(struct moca_priv_data *priv)
 		return -ENOMEM;
 	}
 
-	/*
-	 * generate phony wdt message to pass to the user
-	 * type = 0x09 (trap)
-	 * IE type = 0xff01 (wdt), zero length
-	 */
-	m = list_entry(ml, struct moca_core_msg, chain);
-	m->data[0] = cpu_to_be32(0x09000001);
-	m->data[1] = cpu_to_be32(MOCA_IE_WDT << 16);
-	m->len = 8;
+	if (priv->mmp_20) {
+		/*
+		 * generate phony wdt message to pass to the user
+		 * type = 0x03 (trap)
+		 * IE type = 0x11003 (wdt), 4 bytes length
+		 */
+		m = list_entry(ml, struct moca_core_msg, chain);
+		m->data[0] = cpu_to_be32(0x3);
+		m->data[1] = cpu_to_be32(4);
+		m->data[2] = cpu_to_be32(0x11003);
+		m->len = 12;
+	} else {
+		/*
+		 * generate phony wdt message to pass to the user
+		 * type = 0x09 (trap)
+		 * IE type = 0xff01 (wdt), 4 bytes length
+		 */
+		m = list_entry(ml, struct moca_core_msg, chain);
+		m->data[0] = cpu_to_be32(0x09000001);
+		m->data[1] = cpu_to_be32((MOCA_IE_WDT << 16) | 4);
+		m->data[2] = cpu_to_be32(cpu);
+		m->len = 12;
+	}
 
 	moca_attach_tail(priv, ml, &priv->core_msg_pend_list);
 	wake_up(&priv->core_msg_wq);
@@ -925,10 +1076,19 @@ static int moca_wdt(struct moca_priv_data *priv)
 static int moca_get_mbx_offset(struct moca_priv_data *priv)
 {
 	if (priv->mbx_offset == -1) {
-		uintptr_t base = MOCA_RD(priv->base + OFF_GP0) & 0x1fffffff;
+		uintptr_t base;
 
-		if ((base == 0) || (base & 0x07) ||
-		    (base >= priv->cntl_mem_size + priv->cntl_mem_offset)) {
+		if (priv->hw_rev == HWREV_MOCA_20)
+			base = MOCA_RD(priv->base +
+				priv->moca2host_mmp_inbox_0_offset) &
+				0x1fffffff;
+		else
+			base = MOCA_RD(priv->base + priv->gp0_offset) &
+				0x1fffffff;
+
+		if ((base == 0) ||
+			(base >= priv->cntl_mem_size + priv->cntl_mem_offset) ||
+			(base & 0x07)) {
 			printk(KERN_WARNING "%s: can't get mailbox base\n",
 				__func__);
 			return -1;
@@ -962,6 +1122,12 @@ static void moca_work_handler(struct work_struct *work)
 			complete(&priv->chunk_complete);
 		}
 
+		if ((priv->hw_rev == HWREV_MOCA_20) &&
+			(mask & M2H_NEXTCHUNK_CPU1)) {
+			mask &= ~M2H_NEXTCHUNK_CPU1;
+			complete(&priv->chunk_complete);
+		}
+
 		if (mask == 0) {
 			moca_enable_irq(priv);
 			return;
@@ -969,7 +1135,7 @@ static void moca_work_handler(struct work_struct *work)
 
 		if (mask & (M2H_REQ | M2H_RESP)) {
 			if (moca_get_mbx_offset(priv)) {
-				/* got mbx interrupt but mbx_offset is bogus? */
+				/* mbx interrupt but mbx_offset is bogus?? */
 				moca_enable_irq(priv);
 				return;
 			}
@@ -984,15 +1150,23 @@ static void moca_work_handler(struct work_struct *work)
 	} else {
 		/* fatal events */
 		if (mask & M2H_ASSERT) {
-			ret = moca_recvmsg(priv, CORE_REQ_OFFSET,
-				CORE_REQ_SIZE, 0);
+			ret = moca_recvmsg(priv, priv->core_req_offset,
+				priv->core_req_size, 0);
 			if (ret == -ENOMEM)
 				priv->assert_pending = 1;
 		}
-		if (mask & M2H_WDT) {
-			ret = moca_wdt(priv);
+		/* M2H_WDT_CPU1 is mapped to the only CPU for MoCA11 HW */
+		if (mask & M2H_WDT_CPU1) {
+			ret = moca_wdt(priv, 2);
 			if (ret == -ENOMEM)
-				priv->wdt_pending = 1;
+				priv->wdt_pending |= (1 << 1);
+			stopped = 1;
+		}
+		if ((priv->hw_rev == HWREV_MOCA_20) &&
+			(mask & M2H_WDT_CPU0)) {
+			ret = moca_wdt(priv, 1);
+			if (ret == -ENOMEM)
+				priv->wdt_pending |= (1 << 0);
 			stopped = 1;
 		}
 	}
@@ -1008,13 +1182,14 @@ static void moca_work_handler(struct work_struct *work)
 
 	/* normal events */
 	if (mask & M2H_REQ) {
-		ret = moca_recvmsg(priv, CORE_REQ_OFFSET,
-			CORE_REQ_SIZE, CORE_RESP_OFFSET);
+		ret = moca_recvmsg(priv, priv->core_req_offset,
+			priv->core_req_size, priv->core_resp_offset);
 		if (ret == -ENOMEM)
 			priv->core_req_pending = 1;
 	}
 	if (mask & M2H_RESP) {
-		ret = moca_recvmsg(priv, HOST_RESP_OFFSET, HOST_RESP_SIZE, 0);
+		ret = moca_recvmsg(priv, priv->host_resp_offset,
+			priv->host_resp_size, 0);
 		if (ret == -ENOMEM)
 			priv->host_resp_pending = 1;
 		if (ret == 0) {
@@ -1256,7 +1431,12 @@ static int moca_ioctl_get_drv_info_v2(struct moca_priv_data *priv,
 
 	info.uptime = (jiffies - priv->start_time) / HZ;
 	info.refcount = priv->refcount;
-	info.gp1 = priv->running ? MOCA_RD(priv->base + OFF_GP1) : 0;
+	if (priv->hw_rev == HWREV_MOCA_20)
+		info.gp1 = priv->running ? MOCA_RD(priv->base +
+			priv->moca2host_mmp_inbox_1_offset) : 0;
+	else
+		info.gp1 = priv->running ?
+			MOCA_RD(priv->base + priv->gp1_offset) : 0;
 
 	memcpy(info.enet_name, pd->enet_name, MOCA_IFNAMSIZ);
 
@@ -1285,7 +1465,12 @@ static int moca_ioctl_get_drv_info(struct moca_priv_data *priv,
 
 	info.uptime = (jiffies - priv->start_time) / HZ;
 	info.refcount = priv->refcount;
-	info.gp1 = priv->running ? MOCA_RD(priv->base + OFF_GP1) : 0;
+	if (priv->hw_rev == HWREV_MOCA_20)
+		info.gp1 = priv->running ? MOCA_RD(priv->base +
+			priv->moca2host_mmp_inbox_1_offset) : 0;
+	else
+		info.gp1 = priv->running ?
+			MOCA_RD(priv->base + priv->gp1_offset) : 0;
 
 	memcpy(info.enet_name, pd->enet_name, MOCA_IFNAMSIZ);
 
@@ -1319,13 +1504,14 @@ static int moca_ioctl_check_for_data(struct moca_priv_data *priv,
 	mask = moca_irq_status(priv, FLUSH_REQRESP_ONLY);
 
 	if (mask & M2H_REQ) {
-		ret = moca_recvmsg(priv, CORE_REQ_OFFSET,
-			CORE_REQ_SIZE, CORE_RESP_OFFSET);
+		ret = moca_recvmsg(priv, priv->core_req_offset,
+			priv->core_req_size, priv->core_resp_offset);
 		if (ret == -ENOMEM)
 			priv->core_req_pending = 1;
 	}
 	if (mask & M2H_RESP) {
-		ret = moca_recvmsg(priv, HOST_RESP_OFFSET, HOST_RESP_SIZE, 0);
+		ret = moca_recvmsg(priv, priv->host_resp_offset,
+			priv->host_resp_size, 0);
 		if (ret == -ENOMEM)
 			priv->host_resp_pending = 1;
 		if (ret == 0) {
@@ -1363,12 +1549,15 @@ static long moca_file_ioctl(struct file *file, unsigned int cmd,
 			ret = -EFAULT;
 
 		if (ret >= 0) {
-			moca_msg_reset(priv);
+			if (!priv->enabled) {
+				moca_msg_reset(priv);
+				moca_hw_init(priv, MOCA_ENABLE);
+				moca_3450_init(priv, MOCA_ENABLE);
+				moca_irq_status(priv, FLUSH_IRQ);
+				moca_mmp_init(priv, 0);
+			}
 			priv->continuous_power_tx_mode =
 				start.continuous_power_tx_mode;
-			moca_hw_init(priv, MOCA_ENABLE);
-			moca_3450_init(priv, MOCA_ENABLE);
-			moca_irq_status(priv, FLUSH_IRQ);
 			ret = moca_write_img(priv, &start.x);
 			if (ret >= 0)
 				priv->running = 1;
@@ -1422,7 +1611,7 @@ static ssize_t moca_file_read(struct file *file, char __user *buf,
 	ssize_t ret;
 	int empty_free_list = 0;
 
-	if (count < CORE_REQ_SIZE)
+	if (count < priv->core_req_size)
 		return -EINVAL;
 
 	add_wait_queue(&priv->core_msg_wq, &wait);
@@ -1475,27 +1664,28 @@ static ssize_t moca_file_read(struct file *file, char __user *buf,
 		}
 
 		if (priv->assert_pending) {
-			if (moca_recvmsg(priv, CORE_REQ_OFFSET, CORE_REQ_SIZE,
-				0) != -ENOMEM)
+			if (moca_recvmsg(priv, priv->core_req_offset,
+				priv->core_req_size, 0) != -ENOMEM)
 				priv->assert_pending = 0;
 			else
 				printk(KERN_WARNING "%s: moca_recvmsg "
 					"assert failed\n", __func__);
 		}
 		if (priv->wdt_pending)
-			if (moca_wdt(priv) != -ENOMEM)
+			if (moca_wdt(priv, priv->wdt_pending) != -ENOMEM)
 				priv->wdt_pending = 0;
 		if (priv->core_req_pending) {
-			if (moca_recvmsg(priv, CORE_REQ_OFFSET,
-				CORE_REQ_SIZE, CORE_RESP_OFFSET) != -ENOMEM)
+			if (moca_recvmsg(priv, priv->core_req_offset,
+				priv->core_req_size, priv->core_resp_offset)
+				!= -ENOMEM)
 				priv->core_req_pending = 0;
 			else
 				printk(KERN_WARNING "%s: moca_recvmsg "
 					"core_req failed\n", __func__);
 		}
 		if (priv->host_resp_pending) {
-			if (moca_recvmsg(priv, HOST_RESP_OFFSET,
-				HOST_RESP_SIZE, 0) != -ENOMEM)
+			if (moca_recvmsg(priv, priv->host_resp_offset,
+				priv->host_resp_size, 0) != -ENOMEM)
 				priv->host_resp_pending = 0;
 			else
 				printk(KERN_WARNING "%s: moca_recvmsg "
@@ -1516,7 +1706,7 @@ static ssize_t moca_file_write(struct file *file, const char __user *buf,
 	struct moca_host_msg *m = NULL;
 	ssize_t ret;
 
-	if (count > HOST_REQ_SIZE)
+	if (count > priv->host_req_size)
 		return -EINVAL;
 
 	add_wait_queue(&priv->host_msg_wq, &wait);
@@ -1551,7 +1741,8 @@ static ssize_t moca_file_write(struct file *file, const char __user *buf,
 		ret = -EFAULT;
 		goto bad;
 	}
-	ret = moca_h2m_sanity_check(m);
+
+	ret = moca_h2m_sanity_check(priv, m);
 	if (ret < 0) {
 		ret = -EINVAL;
 		goto bad;
@@ -1627,18 +1818,98 @@ static int moca_probe(struct platform_device *pdev)
 
 	priv->clk = clk_get(&pdev->dev, "moca");
 
-	if (pd->hw_rev == HWREV_MOCA_11_PLUS) {
-		priv->cntl_mem_offset = OFF_CNTL_MEM_11_PLUS;
-		priv->cntl_mem_size = CNTL_MEM_SIZE_11_PLUS;
-	} else {
-		priv->cntl_mem_offset = OFF_CNTL_MEM_11;
-		priv->cntl_mem_size = CNTL_MEM_SIZE_11;
-	}
+	priv->hw_rev = pd->hw_rev;
 
-	if (pd->hw_rev == HWREV_MOCA_11_LITE)
-		priv->data_mem_size = DATA_MEM_SIZE_11_LITE;
-	else
-		priv->data_mem_size = DATA_MEM_SIZE_11;
+	if (pd->hw_rev == HWREV_MOCA_11_PLUS) {
+		priv->data_mem_offset = 0;
+		priv->data_mem_size = (256 * 1024);
+		priv->cntl_mem_offset = 0x00040000;
+		priv->cntl_mem_size = (128 * 1024);
+		priv->gp0_offset = 0x000a2050;
+		priv->gp1_offset = 0x000a2054;
+		priv->ringbell_offset = 0x000a2060;
+		priv->l2_status_offset = 0x000a2080;
+		priv->l2_clear_offset = 0x000a2088;
+		priv->l2_mask_set_offset = 0x000a2090;
+		priv->l2_mask_clear_offset = 0x000a2094;
+		priv->sw_reset_offset = 0x000a2040;
+		priv->led_ctrl_offset = 0x000a204c;
+		priv->led_ctrl_offset = 0x000a204c;
+		priv->m2m_src_offset = 0x000a2000;
+		priv->m2m_dst_offset = 0x000a2004;
+		priv->m2m_cmd_offset = 0x000a2008;
+		priv->m2m_status_offset = 0x000a200c;
+		priv->h2m_resp_bit = 0x1;
+		priv->h2m_req_bit = 0x2;
+	} else if (pd->hw_rev == HWREV_MOCA_11_LITE) {
+		priv->data_mem_offset = 0;
+		priv->data_mem_size = (96 * 1024);
+		priv->cntl_mem_offset = 0x0004c000;
+		priv->cntl_mem_size = (80 * 1024);
+		priv->gp0_offset = 0x000a2050;
+		priv->gp1_offset = 0x000a2054;
+		priv->ringbell_offset = 0x000a2060;
+		priv->l2_status_offset = 0x000a2080;
+		priv->l2_clear_offset = 0x000a2088;
+		priv->l2_mask_set_offset = 0x000a2090;
+		priv->l2_mask_clear_offset = 0x000a2094;
+		priv->sw_reset_offset = 0x000a2040;
+		priv->led_ctrl_offset = 0x000a204c;
+		priv->led_ctrl_offset = 0x000a204c;
+		priv->m2m_src_offset = 0x000a2000;
+		priv->m2m_dst_offset = 0x000a2004;
+		priv->m2m_cmd_offset = 0x000a2008;
+		priv->m2m_status_offset = 0x000a200c;
+		priv->h2m_resp_bit = 0x1;
+		priv->h2m_req_bit = 0x2;
+	} else if (pd->hw_rev == HWREV_MOCA_11) {
+		priv->data_mem_offset = 0;
+		priv->data_mem_size = (256 * 1024);
+		priv->cntl_mem_offset = 0x0004c000;
+		priv->cntl_mem_size = (80 * 1024);
+		priv->gp0_offset = 0x000a2050;
+		priv->gp1_offset = 0x000a2054;
+		priv->ringbell_offset = 0x000a2060;
+		priv->l2_status_offset = 0x000a2080;
+		priv->l2_clear_offset = 0x000a2088;
+		priv->l2_mask_set_offset = 0x000a2090;
+		priv->l2_mask_clear_offset = 0x000a2094;
+		priv->sw_reset_offset = 0x000a2040;
+		priv->led_ctrl_offset = 0x000a204c;
+		priv->m2m_src_offset = 0x000a2000;
+		priv->m2m_dst_offset = 0x000a2004;
+		priv->m2m_cmd_offset = 0x000a2008;
+		priv->m2m_status_offset = 0x000a200c;
+		priv->h2m_resp_bit = 0x1;
+		priv->h2m_req_bit = 0x2;
+	} else if (pd->hw_rev == HWREV_MOCA_20) {
+		priv->data_mem_offset = 0;
+		priv->data_mem_size = (288 * 1024);
+		priv->cntl_mem_offset = 0x00120000;
+		priv->cntl_mem_size = (384 * 1024);
+		priv->gp0_offset = 0;
+		priv->gp1_offset = 0;
+		priv->ringbell_offset = 0x001ffd0c;
+		priv->l2_status_offset = 0x001ffc40;
+		priv->l2_clear_offset = 0x001ffc48;
+		priv->l2_mask_set_offset = 0x001ffc50;
+		priv->l2_mask_clear_offset = 0x001ffc54;
+		priv->sw_reset_offset = 0x001ffd00;
+		priv->led_ctrl_offset = 0;
+		priv->m2m_src_offset = 0x001ffc00;
+		priv->m2m_dst_offset = 0x001ffc04;
+		priv->m2m_cmd_offset = 0x001ffc08;
+		priv->m2m_status_offset = 0x001ffc0c;
+		priv->moca2host_mmp_inbox_0_offset = 0x001ffd58;
+		priv->moca2host_mmp_inbox_1_offset = 0x001ffd5c;
+		priv->h2m_resp_bit = 0x10;
+		priv->h2m_req_bit = 0x20;
+	} else {
+		printk(KERN_ERR "%s: unsupported MoCA HWREV: %x\n",
+			__func__, pd->hw_rev);
+		err = -EINVAL;
+		goto bad;
+	}
 
 	init_waitqueue_head(&priv->host_msg_wq);
 	init_waitqueue_head(&priv->core_msg_wq);
@@ -1782,7 +2053,7 @@ static int moca_resume(struct device *dev)
 	return 0;
 }
 
-static struct dev_pm_ops moca_pm_ops = {
+static const struct dev_pm_ops moca_pm_ops = {
 	.suspend		= moca_suspend,
 	.resume			= moca_resume,
 };
@@ -1848,3 +2119,4 @@ module_exit(moca_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Broadcom Corporation");
 MODULE_DESCRIPTION("MoCA messaging driver");
+

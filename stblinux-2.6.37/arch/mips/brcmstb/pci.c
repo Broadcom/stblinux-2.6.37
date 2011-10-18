@@ -477,7 +477,7 @@ void brcm_early_pcie_setup(void)
 #endif
 }
 
-static inline void brcm_setup_pcie_bridge(void)
+void brcm_setup_pcie_bridge(void)
 {
 #if defined(CONFIG_BRCM_HAS_PCIE)
 
@@ -487,6 +487,7 @@ static inline void brcm_setup_pcie_bridge(void)
 
 	if (!PCIE_LINK_UP()) {
 		struct clk *clk = clk_get(NULL, "pcie");
+		brcm_pcie_enabled = 0;
 		if (clk)
 			clk_disable(clk);
 		printk(KERN_INFO "PCI: PCIe link down\n");

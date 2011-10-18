@@ -154,7 +154,7 @@ int inftl_read_oob(struct mtd_info *mtd, loff_t offs, size_t len,
 	struct mtd_oob_ops ops;
 	int res;
 
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.ooboffs = offs & (mtd->writesize - 1);
 	ops.ooblen = len;
 	ops.oobbuf = buf;
@@ -174,7 +174,7 @@ int inftl_write_oob(struct mtd_info *mtd, loff_t offs, size_t len,
 	struct mtd_oob_ops ops;
 	int res;
 
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.ooboffs = offs & (mtd->writesize - 1);
 	ops.ooblen = len;
 	ops.oobbuf = buf;
@@ -194,7 +194,7 @@ static int inftl_write(struct mtd_info *mtd, loff_t offs, size_t len,
 	struct mtd_oob_ops ops;
 	int res;
 
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.ooboffs = offs;
 	ops.ooblen = mtd->oobsize;
 	ops.oobbuf = oob;
@@ -349,7 +349,7 @@ static u16 INFTL_foldchain(struct INFTLrecord *inftl, unsigned thisVUC, unsigned
 		ret = mtd->read(mtd, (inftl->EraseSize * BlockMap[block]) +
 				(block * SECTORSIZE), SECTORSIZE, &retlen,
 				movebuf);
-		if (ret < 0 && ret != -EUCLEAN) {
+		if (ret < 0 && !mtd_is_bitflip(ret)) {
 			ret = mtd->read(mtd,
 					(inftl->EraseSize * BlockMap[block]) +
 					(block * SECTORSIZE), SECTORSIZE,
@@ -922,7 +922,7 @@ foundit:
 		int ret = mtd->read(mtd, ptr, SECTORSIZE, &retlen, buffer);
 
 		/* Handle corrected bit flips gracefully */
-		if (ret < 0 && ret != -EUCLEAN)
+		if (ret < 0 && !mtd_is_bitflip(ret))
 			return -EIO;
 	}
 	return 0;

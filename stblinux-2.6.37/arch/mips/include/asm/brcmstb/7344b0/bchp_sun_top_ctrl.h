@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue May 31 14:12:22 2011
- *                 MD5 Checksum         b0a0062767e487fe78d25d07b5b21b78
+ * Date:           Generated on         Mon Aug  8 20:14:25 2011
+ *                 MD5 Checksum         bdb30c5d18c5d13008bcd4430a6d3384
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7344/rdb/b0/bchp_sun_top_ctrl.h $
  * 
- * Hydra_Software_Devel/2   5/31/11 3:22p albertl
- * SW7344-40: Updated to match RDB.
+ * Hydra_Software_Devel/3   8/9/11 11:21a pntruong
+ * SW7344-144: Synced with central RDB.
  *
  ***************************************************************************/
 
@@ -1311,8 +1311,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_mtsif_0_pad_sel_HSTL_CLASS1_1P8V 3
 
 /* SUN_TOP_CTRL :: GENERAL_CTRL_NO_SCAN_0 :: rgmii_0_rx_pad_amp_en [04:04] */
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_rx_pad_amp_en_MASK 0x00000010
@@ -1335,8 +1335,8 @@
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_DEFAULT 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_GMII_CMOS_3P3V 0
 #define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_RGMII_CMOS_2P5V 1
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 2
-#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 3
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P5V 2
+#define BCHP_SUN_TOP_CTRL_GENERAL_CTRL_NO_SCAN_0_rgmii_0_pad_sel_HSTL_CLASS1_1P8V 3
 
 /***************************************************************************
  *GENERAL_CTRL_NO_SCAN_1 - General control register without scan 1

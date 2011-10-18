@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon May 16 21:00:59 2011
- *                 MD5 Checksum         f5f09b2bf7ad40890d2e5dc57d4789b6
+ * Date:           Generated on         Wed Sep  7 23:30:02 2011
+ *                 MD5 Checksum         aff3518aefc2f3a6bc037a41f665574e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,10 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: /magnum/basemodules/chp/7552/rdb/a0/bchp_hif_top_ctrl.h $
+ * $brcm_Log: W:/pntruong/views/pntruong_97552_devel_sview/magnum/basemodules/chp/7552/rdb/b0/bchp_hif_top_ctrl.h $
  * 
- * Hydra_Software_Devel/3   5/18/11 3:22p xhuang
- * SW7552-2: update with central RDB
+ * Hydra_Software_Devel/2   9/8/11 1:01a pntruong
+ * SW7552-89: Synced up with central rdb.
  *
  ***************************************************************************/
 
@@ -486,7 +486,10 @@
 /* HIF_TOP_CTRL :: FLASH_TYPE :: FLASH_TYPE [01:00] */
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_MASK               0x00000003
 #define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_SHIFT              0
-#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_DEFAULT            0
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_ParallelNOR        0
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_Nand               1
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_SerialNOR          2
+#define BCHP_HIF_TOP_CTRL_FLASH_TYPE_FLASH_TYPE_UnSupport          3
 
 /***************************************************************************
  *SPI_DBG_SEL - SPI test port select register

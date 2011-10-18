@@ -65,8 +65,6 @@ static unsigned int bmem_disabled;
  * MEMC1 handling
  ***********************************************************************/
 
-#if defined(CONFIG_BRCM_HAS_1GB_MEMC1)
-
 static int __init brcm_memc1_bmem(void)
 {
 	struct bmem_region *r = NULL;
@@ -75,18 +73,17 @@ static int __init brcm_memc1_bmem(void)
 			brcm_dram1_size_mb > brcm_dram1_linux_mb &&
 			n_bmem_regions < MAX_BMEM_REGIONS) {
 		r = &bmem_regions[n_bmem_regions++];
-		r->addr = MEMC1_START + (brcm_dram1_linux_mb << 20);
+		r->addr = brcm_dram1_start + (brcm_dram1_linux_mb << 20);
 		r->size = (brcm_dram1_size_mb - brcm_dram1_linux_mb) << 20;
 		r->valid = 1;
-		printk(KERN_INFO "memc1: adding %lu MB RESERVED region at "
-			"%lu MB\n", r->size >> 20, r->addr >> 20);
+		printk(KERN_INFO "bmem: adding extra %lu MB RESERVED region at "
+			"%lu MB (0x%08lx@0x%08lx)\n", r->size >> 20,
+			r->addr >> 20, r->size, r->addr);
 	}
 	return 0;
 }
 
 core_initcall(brcm_memc1_bmem);
-
-#endif /* defined(CONFIG_BRCM_HAS_1GB_MEMC1) */
 
 /***********************************************************************
  * BMEM (reserved A/V buffer memory) support

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Aug 22 02:31:52 2011
- *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
+ * Date:           Generated on         Thu Sep 29 02:45:59 2011
+ *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -71,10 +71,9 @@
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_SDCD_N_TEST_LEV_SHIFT      30
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_SDCD_N_TEST_LEV_DEFAULT    1
 
-/* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: CFG_RESERVED [29:29] */
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_CFG_RESERVED_MASK          0x20000000
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_CFG_RESERVED_SHIFT         29
-#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_CFG_RESERVED_DEFAULT       0
+/* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: reserved0 [29:29] */
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_reserved0_MASK             0x20000000
+#define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_reserved0_SHIFT            29
 
 /* SDIO_0_CFG :: SDIO_EMMC_CTRL1 :: RETUNING_REQ [28:28] */
 #define BCHP_SDIO_0_CFG_SDIO_EMMC_CTRL1_RETUNING_REQ_MASK          0x10000000
@@ -414,13 +413,18 @@
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_SEL_SHIFT       31
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_SEL_DEFAULT     1
 
-/* SDIO_0_CFG :: SD_CLOCK_DELAY :: INPUT_CLOCK_DELAY_OVERRIDE [30:30] */
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_OVERRIDE_MASK 0x40000000
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_OVERRIDE_SHIFT 30
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_OVERRIDE_DEFAULT 0
+/* SDIO_0_CFG :: SD_CLOCK_DELAY :: CLOCK_DELAY_OVERRIDE [30:30] */
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_CLOCK_DELAY_OVERRIDE_MASK   0x40000000
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_CLOCK_DELAY_OVERRIDE_SHIFT  30
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_CLOCK_DELAY_OVERRIDE_DEFAULT 1
 
-/* SDIO_0_CFG :: SD_CLOCK_DELAY :: reserved0 [29:12] */
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_reserved0_MASK              0x3ffff000
+/* SDIO_0_CFG :: SD_CLOCK_DELAY :: INPUT_CLOCK_FB_EN [29:29] */
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_FB_EN_MASK      0x20000000
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_FB_EN_SHIFT     29
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_FB_EN_DEFAULT   0
+
+/* SDIO_0_CFG :: SD_CLOCK_DELAY :: reserved0 [28:12] */
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_reserved0_MASK              0x1ffff000
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_reserved0_SHIFT             12
 
 /* SDIO_0_CFG :: SD_CLOCK_DELAY :: OUTPUT_CLOCK_DELAY [11:08] */
@@ -431,12 +435,12 @@
 /* SDIO_0_CFG :: SD_CLOCK_DELAY :: INTERNAL_CLOCK_DELAY [07:04] */
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INTERNAL_CLOCK_DELAY_MASK   0x000000f0
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INTERNAL_CLOCK_DELAY_SHIFT  4
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INTERNAL_CLOCK_DELAY_DEFAULT 0
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INTERNAL_CLOCK_DELAY_DEFAULT 15
 
 /* SDIO_0_CFG :: SD_CLOCK_DELAY :: INPUT_CLOCK_DELAY [03:00] */
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_MASK      0x0000000f
 #define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_SHIFT     0
-#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_DEFAULT   0
+#define BCHP_SDIO_0_CFG_SD_CLOCK_DELAY_INPUT_CLOCK_DELAY_DEFAULT   15
 
 /***************************************************************************
  *SD_PAD_DRV - SDIO Clock delay register
@@ -506,10 +510,15 @@
 /* SDIO_0_CFG :: IP_DLY :: IP_TAP_EN [31:31] */
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_MASK                      0x80000000
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_SHIFT                     31
-#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_DEFAULT                   0
+#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_EN_DEFAULT                   1
 
-/* SDIO_0_CFG :: IP_DLY :: reserved0 [30:18] */
-#define BCHP_SDIO_0_CFG_IP_DLY_reserved0_MASK                      0x7ffc0000
+/* SDIO_0_CFG :: IP_DLY :: FORCE_USE_IP_TUNE_CLK [30:30] */
+#define BCHP_SDIO_0_CFG_IP_DLY_FORCE_USE_IP_TUNE_CLK_MASK          0x40000000
+#define BCHP_SDIO_0_CFG_IP_DLY_FORCE_USE_IP_TUNE_CLK_SHIFT         30
+#define BCHP_SDIO_0_CFG_IP_DLY_FORCE_USE_IP_TUNE_CLK_DEFAULT       0
+
+/* SDIO_0_CFG :: IP_DLY :: reserved0 [29:18] */
+#define BCHP_SDIO_0_CFG_IP_DLY_reserved0_MASK                      0x3ffc0000
 #define BCHP_SDIO_0_CFG_IP_DLY_reserved0_SHIFT                     18
 
 /* SDIO_0_CFG :: IP_DLY :: IP_DELAY_CTRL [17:16] */
@@ -524,7 +533,7 @@
 /* SDIO_0_CFG :: IP_DLY :: IP_TAP_DELAY [05:00] */
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_MASK                   0x0000003f
 #define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_SHIFT                  0
-#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_DEFAULT                0
+#define BCHP_SDIO_0_CFG_IP_DLY_IP_TAP_DELAY_DEFAULT                40
 
 /***************************************************************************
  *OP_DLY - SDIO Host output delay register
@@ -541,7 +550,7 @@
 /* SDIO_0_CFG :: OP_DLY :: OP_DELAY_CTRL [17:16] */
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_DELAY_CTRL_MASK                  0x00030000
 #define BCHP_SDIO_0_CFG_OP_DLY_OP_DELAY_CTRL_SHIFT                 16
-#define BCHP_SDIO_0_CFG_OP_DLY_OP_DELAY_CTRL_DEFAULT               3
+#define BCHP_SDIO_0_CFG_OP_DLY_OP_DELAY_CTRL_DEFAULT               0
 
 /* SDIO_0_CFG :: OP_DLY :: reserved1 [15:04] */
 #define BCHP_SDIO_0_CFG_OP_DLY_reserved1_MASK                      0x0000fff0
@@ -615,7 +624,7 @@
 /* SDIO_0_CFG :: VERSION :: REV [15:08] */
 #define BCHP_SDIO_0_CFG_VERSION_REV_MASK                           0x0000ff00
 #define BCHP_SDIO_0_CFG_VERSION_REV_SHIFT                          8
-#define BCHP_SDIO_0_CFG_VERSION_REV_DEFAULT                        167
+#define BCHP_SDIO_0_CFG_VERSION_REV_DEFAULT                        169
 
 /* SDIO_0_CFG :: VERSION :: A2S_VER [07:00] */
 #define BCHP_SDIO_0_CFG_VERSION_A2S_VER_MASK                       0x000000ff

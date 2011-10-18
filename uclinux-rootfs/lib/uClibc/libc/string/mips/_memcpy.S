@@ -114,7 +114,7 @@ L(chk8w):
 	sw	t0,  0(a0)
 L(lop8w):
 	lw	t1,  0x10(a1)
-	pref	31,  0x10(a0)
+	pref	30,  0x10(a0)
 	lw	t2,  0x4(a1)
 	lw	t3,  0x8(a1)
 	lw	t4, 0xc(a1)

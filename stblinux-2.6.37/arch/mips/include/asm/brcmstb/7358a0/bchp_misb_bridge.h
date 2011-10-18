@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2010, Broadcom Corporation
+ *     Copyright (c) 1999-2011, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue Nov  2 15:33:28 2010
- *                 MD5 Checksum         d5654099cee13d096484a8849c56a604
+ * Date:           Generated on         Mon Sep 19 21:48:30 2011
+ *                 MD5 Checksum         e020a976c1177b900eff0f3d00f22e40
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7358/rdb/a0/bchp_misb_bridge.h $
  * 
- * Hydra_Software_Devel/2   11/2/10 5:39p pntruong
- * SW7358-2: Synced up with central RDB.
+ * Hydra_Software_Devel/3   9/20/11 12:05p pntruong
+ * SW7358-127: Added a1 and synced with central rdb.
  *
  ***************************************************************************/
 
@@ -61,10 +61,12 @@
 /* MISB_BRIDGE :: CORE_REV_ID :: MAJOR [15:08] */
 #define BCHP_MISB_BRIDGE_CORE_REV_ID_MAJOR_MASK                    0x0000ff00
 #define BCHP_MISB_BRIDGE_CORE_REV_ID_MAJOR_SHIFT                   8
+#define BCHP_MISB_BRIDGE_CORE_REV_ID_MAJOR_DEFAULT                 0
 
 /* MISB_BRIDGE :: CORE_REV_ID :: MINOR [07:00] */
 #define BCHP_MISB_BRIDGE_CORE_REV_ID_MINOR_MASK                    0x000000ff
 #define BCHP_MISB_BRIDGE_CORE_REV_ID_MINOR_SHIFT                   0
+#define BCHP_MISB_BRIDGE_CORE_REV_ID_MINOR_DEFAULT                 4
 
 /***************************************************************************
  *EXCEPTION_VECTOR_OFFSET - "Exception Vector Offset Address"
@@ -72,6 +74,7 @@
 /* MISB_BRIDGE :: EXCEPTION_VECTOR_OFFSET :: ADDRS [31:00] */
 #define BCHP_MISB_BRIDGE_EXCEPTION_VECTOR_OFFSET_ADDRS_MASK        0xffffffff
 #define BCHP_MISB_BRIDGE_EXCEPTION_VECTOR_OFFSET_ADDRS_SHIFT       0
+#define BCHP_MISB_BRIDGE_EXCEPTION_VECTOR_OFFSET_ADDRS_DEFAULT     0
 
 /***************************************************************************
  *PROCESSOR_ID - Processor ID Register.
@@ -94,6 +97,7 @@
 /* MISB_BRIDGE :: WG_MODE_N_TIMEOUT :: MODE [09:08] */
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_MASK               0x00000300
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_SHIFT              8
+#define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_DEFAULT            0
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_MODE_0             0
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_MODE_1             1
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_MODE_MODE_2             2
@@ -101,6 +105,7 @@
 /* MISB_BRIDGE :: WG_MODE_N_TIMEOUT :: TIMEOUT [07:00] */
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_TIMEOUT_MASK            0x000000ff
 #define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_TIMEOUT_SHIFT           0
+#define BCHP_MISB_BRIDGE_WG_MODE_N_TIMEOUT_TIMEOUT_DEFAULT         100
 
 /***************************************************************************
  *MISB_SPLIT_MODE - MISB Split Mode
@@ -112,6 +117,7 @@
 /* MISB_BRIDGE :: MISB_SPLIT_MODE :: SPLIT_MODE [00:00] */
 #define BCHP_MISB_BRIDGE_MISB_SPLIT_MODE_SPLIT_MODE_MASK           0x00000001
 #define BCHP_MISB_BRIDGE_MISB_SPLIT_MODE_SPLIT_MODE_SHIFT          0
+#define BCHP_MISB_BRIDGE_MISB_SPLIT_MODE_SPLIT_MODE_DEFAULT        0
 #define BCHP_MISB_BRIDGE_MISB_SPLIT_MODE_SPLIT_MODE_ENABLE         1
 #define BCHP_MISB_BRIDGE_MISB_SPLIT_MODE_SPLIT_MODE_DISABLE        0
 

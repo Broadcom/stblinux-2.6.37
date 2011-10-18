@@ -218,27 +218,15 @@ typedef enum {
 #define NAND_CHIPOPTIONS_MSK	(0x0000ffff & ~NAND_NO_AUTOINCR)
 
 /* Non chip related options */
-/*
- * Use a flash based bad block table. OOB identifier is saved in OOB area.
- * This option is passed to the default bad block table function.
- */
-#define NAND_USE_FLASH_BBT	0x00010000
 /* This option skips the bbt scan during initialization. */
-#define NAND_SKIP_BBTSCAN	0x00020000
+#define NAND_SKIP_BBTSCAN	0x00010000
 /*
  * This option is defined if the board driver allocates its own buffers
  * (e.g. because it needs them DMA-coherent).
  */
-#define NAND_OWN_BUFFERS	0x00040000
+#define NAND_OWN_BUFFERS	0x00020000
 /* Chip may not exist, so silence any errors in scan */
-#define NAND_SCAN_SILENT_NODEV	0x00080000
-/*
- * If passed additionally to NAND_USE_FLASH_BBT then BBT code will not touch
- * the OOB area.
- */
-#define NAND_USE_FLASH_BBT_NO_OOB	0x00800000
-/* Create an empty BBT with no vendor information if the BBT is available */
-#define NAND_CREATE_EMPTY_BBT		0x01000000
+#define NAND_SCAN_SILENT_NODEV	0x00040000
 
 /* Options set by nand scan */
 /* Nand scan has allocated controller struct */
@@ -350,6 +338,8 @@ struct nand_hw_control {
  * @read_subpage:	function to read parts of the page covered by ECC.
  * @write_page:	function to write a page according to the ecc generator
  *		requirements.
+ * @write_oob_raw:	function to write chip OOB data without ECC
+ * @read_oob_raw:	function to read chip OOB data without ECC
  * @read_oob:	function to read chip OOB data
  * @write_oob:	function to write chip OOB data
  */
@@ -377,6 +367,10 @@ struct nand_ecc_ctrl {
 			uint32_t offs, uint32_t len, uint8_t *buf);
 	void (*write_page)(struct mtd_info *mtd, struct nand_chip *chip,
 			const uint8_t *buf);
+	int (*write_oob_raw)(struct mtd_info *mtd, struct nand_chip *chip,
+			int page);
+	int (*read_oob_raw)(struct mtd_info *mtd, struct nand_chip *chip,
+			int page, int sndcmd);
 	int (*read_oob)(struct mtd_info *mtd, struct nand_chip *chip, int page,
 			int sndcmd);
 	int (*write_oob)(struct mtd_info *mtd, struct nand_chip *chip,
@@ -430,14 +424,14 @@ struct nand_buffers {
  * @ecc:		[BOARDSPECIFIC] ecc control ctructure
  * @buffers:		buffer structure for read/write
  * @hwcontrol:		platform-specific hardware control structure
- * @ops:		oob operation operands
  * @erase_cmd:		[INTERN] erase command write function, selectable due
  *			to AND support.
  * @scan_bbt:		[REPLACEABLE] function to scan bad block table
  * @chip_delay:		[BOARDSPECIFIC] chip dependent delay for transfering
  *			data from array to read regs (tR).
  * @state:		[INTERN] the current state of the NAND device
- * @oob_poi:		poison value buffer
+ * @oob_poi:		"poison value buffer," used for laying out OOB data
+ *			before writing
  * @page_shift:		[INTERN] number of address bits in a page (column
  *			address bits).
  * @phys_erase_shift:	[INTERN] number of address bits in a physical eraseblock
@@ -446,6 +440,9 @@ struct nand_buffers {
  * @options:		[BOARDSPECIFIC] various chip options. They can partly
  *			be set to inform nand_scan about special functionality.
  *			See the defines for further explanation.
+ * @bbt_options:	[INTERN] bad block specific options. All options used
+ *			here must come from bbm.h. By default, these options
+ *			will be copied to the appropriate nand_bbt_descr's.
  * @badblockpos:	[INTERN] position of the bad block marker in the oob
  *			area.
  * @cellinfo:		[INTERN] MLC/multichip data from chip ident
@@ -504,6 +501,7 @@ struct nand_chip {
 
 	int chip_delay;
 	unsigned int options;
+	unsigned int bbt_options;
 
 	int page_shift;
 	int phys_erase_shift;
@@ -530,8 +528,6 @@ struct nand_chip {
 	struct nand_ecc_ctrl ecc;
 	struct nand_buffers *buffers;
 	struct nand_hw_control hwcontrol;
-
-	struct mtd_oob_ops ops;
 
 	uint8_t *bbt;
 	struct nand_bbt_descr *bbt_td;
@@ -606,6 +602,7 @@ extern int nand_do_read(struct mtd_info *mtd, loff_t from, size_t len,
  * @partitions:		mtd partition list
  * @chip_delay:		R/B delay value in us
  * @options:		Option flags, e.g. 16bit buswidth
+ * @bbt_options:	BBT option flags, e.g. NAND_BBT_USE_FLASH
  * @ecclayout:		ecc layout info structure
  * @part_probe_types:	NULL-terminated array of probe types
  * @set_parts:		platform specific function to set partitions
@@ -619,6 +616,7 @@ struct platform_nand_chip {
 	struct nand_ecclayout *ecclayout;
 	int chip_delay;
 	unsigned int options;
+	unsigned int bbt_options;
 	const char **part_probe_types;
 	void (*set_parts)(uint64_t size, struct platform_nand_chip *chip);
 	void *priv;

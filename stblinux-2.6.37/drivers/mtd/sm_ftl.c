@@ -240,7 +240,7 @@ static int sm_read_sector(struct sm_ftl *ftl,
 	if (!oob)
 		oob = &tmp_oob;
 
-	ops.mode = ftl->smallpagenand ? MTD_OOB_RAW : MTD_OOB_PLACE;
+	ops.mode = ftl->smallpagenand ? MTD_OPS_RAW : MTD_OPS_PLACE_OOB;
 	ops.ooboffs = 0;
 	ops.ooblen = SM_OOB_SIZE;
 	ops.oobbuf = (void *)oob;
@@ -265,7 +265,7 @@ again:
 	ret = mtd->read_oob(mtd, sm_mkoffset(ftl, zone, block, boffset), &ops);
 
 	/* Test for unknown errors */
-	if (ret != 0 && ret != -EUCLEAN && ret != -EBADMSG) {
+	if (ret != 0 && !mtd_is_bitflip_or_eccerr(ret)) {
 		dbg("read of block %d at zone %d, failed due to error (%d)",
 			block, zone, ret);
 		goto again;
@@ -290,7 +290,7 @@ again:
 	}
 
 	/* Test ECC*/
-	if (ret == -EBADMSG ||
+	if (mtd_is_eccerr(ret) ||
 		(ftl->smallpagenand && sm_correct_sector(buffer, oob))) {
 
 		dbg("read of block %d at zone %d, failed due to ECC error",
@@ -320,7 +320,7 @@ static int sm_write_sector(struct sm_ftl *ftl,
 	if (ftl->unstable)
 		return -EIO;
 
-	ops.mode = ftl->smallpagenand ? MTD_OOB_RAW : MTD_OOB_PLACE;
+	ops.mode = ftl->smallpagenand ? MTD_OPS_RAW : MTD_OPS_PLACE_OOB;
 	ops.len = SM_SECTOR_SIZE;
 	ops.datbuf = buffer;
 	ops.ooboffs = 0;

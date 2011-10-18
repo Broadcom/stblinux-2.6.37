@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Aug 22 02:20:16 2011
- *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
+ * Date:           Generated on         Tue Oct 11 08:31:06 2011
+ *                 MD5 Checksum         12f5dd38e0ec050efd2afb0b1c62e9d9
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -182,7 +182,7 @@
 /* USB_CTRL :: PLL_CTL :: PLL_Ka [26:24] */
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Ka_MASK                          0x07000000
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Ka_SHIFT                         24
-#define BCHP_USB_CTRL_PLL_CTL_PLL_Ka_DEFAULT                       3
+#define BCHP_USB_CTRL_PLL_CTL_PLL_Ka_DEFAULT                       1
 
 /* USB_CTRL :: PLL_CTL :: PLLCTL_SPARE3 [23:23] */
 #define BCHP_USB_CTRL_PLL_CTL_PLLCTL_SPARE3_MASK                   0x00800000
@@ -192,12 +192,12 @@
 /* USB_CTRL :: PLL_CTL :: PLL_Ki [22:20] */
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Ki_MASK                          0x00700000
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Ki_SHIFT                         20
-#define BCHP_USB_CTRL_PLL_CTL_PLL_Ki_DEFAULT                       3
+#define BCHP_USB_CTRL_PLL_CTL_PLL_Ki_DEFAULT                       2
 
 /* USB_CTRL :: PLL_CTL :: PLL_Kp [19:16] */
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Kp_MASK                          0x000f0000
 #define BCHP_USB_CTRL_PLL_CTL_PLL_Kp_SHIFT                         16
-#define BCHP_USB_CTRL_PLL_CTL_PLL_Kp_DEFAULT                       10
+#define BCHP_USB_CTRL_PLL_CTL_PLL_Kp_DEFAULT                       7
 
 /* USB_CTRL :: PLL_CTL :: PLLCTL_SPARE2 [15:15] */
 #define BCHP_USB_CTRL_PLL_CTL_PLLCTL_SPARE2_MASK                   0x00008000
@@ -217,7 +217,7 @@
 /* USB_CTRL :: PLL_CTL :: PLL_ndiv [09:00] */
 #define BCHP_USB_CTRL_PLL_CTL_PLL_ndiv_MASK                        0x000003ff
 #define BCHP_USB_CTRL_PLL_CTL_PLL_ndiv_SHIFT                       0
-#define BCHP_USB_CTRL_PLL_CTL_PLL_ndiv_DEFAULT                     40
+#define BCHP_USB_CTRL_PLL_CTL_PLL_ndiv_DEFAULT                     80
 
 /***************************************************************************
  *FLADJ_VALUE - Frame Adjust Value

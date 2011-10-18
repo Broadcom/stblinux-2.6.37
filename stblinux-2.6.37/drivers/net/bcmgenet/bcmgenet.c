@@ -59,7 +59,7 @@
 
 #ifdef CONFIG_NET_SCH_MULTIQ
 
-#if defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION == 1
 #error "This version of GENET doesn't support tx multi queue"
 #endif
 /* Default # of tx queues for multi queue support */
@@ -525,6 +525,8 @@ static int bcmgenet_open(struct net_device *dev)
 
 	bcmgenet_clock_enable(pDevCtrl);
 
+	GENET_RBUF_FLUSH_CTRL(pDevCtrl) = 0;
+
 	/* disable ethernet MAC while updating its registers */
 	pDevCtrl->umac->cmd &= ~(CMD_TX_EN | CMD_RX_EN);
 
@@ -929,7 +931,7 @@ struct sk_buff *bcmgenet_alloc_txring_skb(struct net_device *dev, int index)
 	return skb;
 }
 EXPORT_SYMBOL(bcmgenet_alloc_txring_skb);
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 /* --------------------------------------------------------------------------
 Name: netif_any_subqueue_stopped
 Purpose: return 1 if any subqueue is stopped
@@ -953,7 +955,7 @@ static struct Enet_CB *bcmgenet_get_txcb(struct net_device *dev,
 {
 	struct BcmEnet_devctrl *pDevCtrl = netdev_priv(dev);
 	struct Enet_CB *txCBPtr = NULL;
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		txCBPtr = pDevCtrl->txCbs;
 		txCBPtr += (*pos - GENET_MQ_CNT*GENET_MQ_BD_CNT);
@@ -1000,7 +1002,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 	c_index = pDevCtrl->txDma->tDmaRings[index].tdma_consumer_index;
 
 
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		lastCIndex = pDevCtrl->txLastCIndex;
 		nrTxBds = GENET_DEFAULT_BD_CNT;
@@ -1058,7 +1060,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 		else
 			lastCIndex++;
 	}
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		if (pDevCtrl->txFreeBds > (MAX_SKB_FRAGS + 1)
 			&& __netif_subqueue_stopped(dev, 0)) {
@@ -1115,7 +1117,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		spin_unlock_irqrestore(&pDevCtrl->lock, flags);
 		return NETDEV_TX_OK;
 	}
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (skb) {
 		index = skb_get_queue_mapping(skb);
 		/*
@@ -1252,7 +1254,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 				16, 1, skb->data, skb->len, 0);
 #endif
 		/* Decrement total BD count and advance our write pointer */
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 		if (index == DESC_INDEX)
 			pDevCtrl->txFreeBds -= 1;
 		else
@@ -1293,7 +1295,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 				16, 1, skb->data, skb_headlen(skb), 0);
 #endif
 		/* Decrement total BD count and advance our write pointer */
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 		if (index == DESC_INDEX)
 			pDevCtrl->txFreeBds -= 1;
 		else
@@ -1342,7 +1344,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 			if (i == nr_frags - 1)
 				txCBPtr->BdAddr->length_status |= DMA_EOP;
 
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 			if (index == DESC_INDEX)
 				pDevCtrl->txFreeBds -= 1;
 			else
@@ -1359,7 +1361,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		dev->stats.tx_packets++;
 	}
 
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (index == DESC_INDEX) {
 		if (pDevCtrl->txFreeBds <= (MAX_SKB_FRAGS + 1))
 			netif_stop_subqueue(dev, 0);
@@ -2379,7 +2381,7 @@ static void init_edma(struct BcmEnet_devctrl *pDevCtrl)
 	tDma_desc->tdma_mbuf_done_threshold = 0;
 	/* Disable rate control for now */
 	tDma_desc->tdma_flow_period = 0;
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	/* Unclassified traffic goes to ring 16 */
 	tDma_desc->tdma_ring_buf_size = ((GENET_DEFAULT_BD_CNT <<
 				DMA_RING_SIZE_SHIFT) | RX_BUF_LENGTH);
@@ -2624,7 +2626,7 @@ int bcmgenet_uninit_ringbuf(struct net_device *dev, int direction,
 	return 0;
 }
 EXPORT_SYMBOL(bcmgenet_uninit_ringbuf);
-#if !defined(CONFIG_BRCM_GENET_V1) && defined(CONFIG_NET_SCH_MULTIQ)
+#if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 /*
  * init multi xmit queues, only available for GENET2
  * the queue is partitioned as follows:
@@ -2708,7 +2710,7 @@ static int bcmgenet_init_dev(struct BcmEnet_devctrl *pDevCtrl)
 	pDevCtrl->sys = (struct SysRegs *)(base);
 	pDevCtrl->grb = (struct GrBridgeRegs *)(base + GENET_GR_BRIDGE_OFF);
 	pDevCtrl->ext = (struct ExtRegs *)(base + GENET_EXT_OFF);
-#if defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION == 1
 	/* SWLINUX-1813: EXT block is not available on MOCA_GENET */
 #if !defined(CONFIG_BCM7125)
 	if (pDevCtrl->devnum == 1)
@@ -2723,7 +2725,7 @@ static int bcmgenet_init_dev(struct BcmEnet_devctrl *pDevCtrl)
 	pDevCtrl->txDma = (struct tDmaRegs *)(base + GENET_TDMA_REG_OFF);
 	pDevCtrl->rxDma = (struct rDmaRegs *)(base + GENET_RDMA_REG_OFF);
 
-#if !defined(CONFIG_BRCM_GENET_V1)
+#if CONFIG_BRCM_GENET_VERSION > 1
 	pDevCtrl->tbuf = (struct tbufRegs *)(base + GENET_TBUF_OFF);
 	pDevCtrl->hfbReg = (struct hfbRegs *)(base + GENET_HFB_REG_OFF);
 #endif
@@ -2835,6 +2837,44 @@ static void bcmgenet_uninit_dev(struct BcmEnet_devctrl *pDevCtrl)
 		clk_put(pDevCtrl->clk);
 	}
 }
+
+#define FILTER_POS(i)	(((HFB_NUM_FLTRS-i-1)>>2))
+#define SET_HFB_FILTER_LEN(dev, i, len) \
+do { \
+	u32 tmp = GENET_HFB_FLTR_LEN(dev, FILTER_POS(i)); \
+	tmp &= ~(RBUF_FLTR_LEN_MASK << (RBUF_FLTR_LEN_SHIFT * (i & 0x03))); \
+	tmp |= (len << (RBUF_FLTR_LEN_SHIFT * (i & 0x03))); \
+	GENET_HFB_FLTR_LEN(dev, FILTER_POS(i)) = tmp; \
+} while (0)
+
+#define GET_HFB_FILTER_LEN(dev, i) \
+	((GENET_HFB_FLTR_LEN(dev, FILTER_POS(i)) >> \
+		(RBUF_FLTR_LEN_SHIFT * (i & 0x03))) & RBUF_FLTR_LEN_MASK)
+
+#if CONFIG_BRCM_GENET_VERSION >= 3
+/* The order of GENET_x_HFB_FLT_ENBLE_0/1 is reversed !!! */
+#define	GET_HFB_FILTER_EN(dev, i) \
+	(dev->hfbReg->hfb_flt_enable[i < 32] & (1 << (i % 32)))
+#define HFB_FILTER_ENABLE(dev, i) \
+	(dev->hfbReg->hfb_flt_enable[i < 32] |= (1 << (i % 32)))
+#define HFB_FILTER_DISABLE(dev, i) \
+	(dev->hfbReg->hfb_flt_enable[i < 32] &= ~(1 << (i % 32)))
+#define	HFB_FILTER_DISABLE_ALL(dev) \
+	do { \
+		dev->hfbReg->hfb_flt_enable[0] = 0; \
+		dev->hfbReg->hfb_flt_enable[1] = 0; \
+	} while (0)
+#else
+#define GET_HFB_FILTER_EN(dev, i) \
+	((GENET_HFB_CTRL(dev) >> (i + RBUF_HFB_FILTER_EN_SHIFT)) & 0x01)
+#define HFB_FILTER_ENABLE(dev, i) \
+	(GENET_HFB_CTRL(dev) |= 1 << (i + RBUF_HFB_FILTER_EN_SHIFT))
+#define HFB_FILTER_DISABLE(dev, i) \
+	(GENET_HFB_CTRL(dev) &= ~(1 << (i + RBUF_HFB_FILTER_EN_SHIFT)))
+#define	HFB_FILTER_DISABLE_ALL(dev) \
+	(GENET_HFB_CTRL(dev) &= ~(0xffff << (RBUF_HFB_FILTER_EN_SHIFT)))
+#endif
+
 /*
  * Program ACPI pattern into HFB. Return filter index if succesful.
  * if user == 1, the data will be copied from user space.
@@ -2847,21 +2887,22 @@ int bcmgenet_update_hfb(struct net_device *dev, unsigned int *data,
 	unsigned int *tmp;
 
 	TRACE(("Updating HFB len=0x%d\n", len));
+
+	count = HFB_NUM_FLTRS;
+	offset = 128;
 	if (GENET_HFB_CTRL(pDevCtrl) & RBUF_HFB_256B) {
-		if (len > 256)
-			return -EINVAL;
-		count = 8;
+#if CONFIG_BRCM_GENET_VERSION < 3
+		count >>= 1;
+#endif
 		offset = 256;
-	} else {
-		if (len > 128)
-			return -EINVAL;
-		count = 16;
-		offset = 128;
 	}
+
+	if (len > offset)
+		return -EINVAL;
+
 	/* find next unused filter */
 	for (filter = 0; filter < count; filter++) {
-		if (!((GENET_HFB_CTRL(pDevCtrl) >>
-				(filter + RBUF_HFB_FILTER_EN_SHIFT)) & 0x01))
+		if (!GET_HFB_FILTER_EN(pDevCtrl, filter))
 			break;
 	}
 	if (filter == count) {
@@ -2895,11 +2936,10 @@ int bcmgenet_update_hfb(struct net_device *dev, unsigned int *data,
 		kfree(tmp);
 
 	/* set the filter length*/
-	GENET_HFB_FLTR_LEN(pDevCtrl, 3-(filter>>2)) |=
-		(len*2 << (RBUF_FLTR_LEN_SHIFT * (filter&0x03)));
+	SET_HFB_FILTER_LEN(pDevCtrl, filter, len*2);
 
 	/*enable this filter.*/
-	GENET_HFB_CTRL(pDevCtrl) |= (1 << (RBUF_HFB_FILTER_EN_SHIFT + filter));
+	HFB_FILTER_ENABLE(pDevCtrl, filter);
 
 	return filter;
 
@@ -2918,27 +2958,26 @@ static int bcmgenet_read_hfb(struct net_device *dev, struct acpi_data * u_data)
 		return -EFAULT;
 	}
 
+	count = HFB_NUM_FLTRS;
+	offset = 128;
 	if (GENET_HFB_CTRL(pDevCtrl) & RBUF_HFB_256B) {
-		count = 8;
+#if CONFIG_BRCM_GENET_VERSION < 3
+		count >>= 1;
+#endif
 		offset = 256;
-	} else {
-		count = 16;
-		offset = 128;
 	}
+
 	if (filter > count)
 		return -EINVAL;
 
 	/* see if this filter is enabled, if not, return length 0 */
-	if ((GENET_HFB_CTRL(pDevCtrl) &
-			(1 << (filter + RBUF_HFB_FILTER_EN_SHIFT))) == 0) {
+	if (!GET_HFB_FILTER_EN(pDevCtrl, filter)) {
 		len = 0;
 		put_user(len , &u_data->count);
 		return 0;
 	}
 	/* check the filter length, in bytes */
-	len = GENET_HFB_FLTR_LEN(pDevCtrl, filter>>2) >>
-		(RBUF_FLTR_LEN_SHIFT * (filter & 0x3));
-	len &= RBUF_FLTR_LEN_MASK;
+	len = GET_HFB_FILTER_LEN(pDevCtrl, filter);
 	if (u_data->count < len)
 		return -EINVAL;
 	/* copy pattern data */
@@ -2956,24 +2995,14 @@ static int bcmgenet_read_hfb(struct net_device *dev, struct acpi_data * u_data)
 static inline void bcmgenet_clear_hfb(struct BcmEnet_devctrl *pDevCtrl,
 		int filter)
 {
-	int offset;
-
-	if (GENET_HFB_CTRL(pDevCtrl) & RBUF_HFB_256B)
-		offset = 256;
-	else
-		offset = 128;
-
 	if (filter == CLEAR_ALL_HFB) {
-		GENET_HFB_CTRL(pDevCtrl) &=
-			~(0xffff << (RBUF_HFB_FILTER_EN_SHIFT));
+		HFB_FILTER_DISABLE_ALL(pDevCtrl);
 		GENET_HFB_CTRL(pDevCtrl) &= ~RBUF_HFB_EN;
 	} else {
 		/* disable this filter */
-		GENET_HFB_CTRL(pDevCtrl) &=
-			~(1 << (RBUF_HFB_FILTER_EN_SHIFT + filter));
+		HFB_FILTER_DISABLE(pDevCtrl, filter);
 		/* clear filter length register */
-		GENET_HFB_FLTR_LEN(pDevCtrl, (3-(filter>>2))) &=
-			~(0xff << (RBUF_FLTR_LEN_SHIFT * (filter & 0x03)));
+		SET_HFB_FILTER_LEN(pDevCtrl, filter, 0);
 	}
 
 }

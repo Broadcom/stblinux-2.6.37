@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Sat Jun 18 02:46:53 2011
- *                 MD5 Checksum         ddacd647a9c3fb40ade5d5be5cb8334a
+ * Date:           Generated on         Mon Sep 19 15:59:54 2011
+ *                 MD5 Checksum         f84a7991a99ffcf5cce3ba6b166ba0af
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -97,7 +97,7 @@
 /* GIO :: IODIR_LO :: iodir [31:00] */
 #define BCHP_GIO_IODIR_LO_iodir_MASK                               0xffffffff
 #define BCHP_GIO_IODIR_LO_iodir_SHIFT                              0
-#define BCHP_GIO_IODIR_LO_iodir_DEFAULT                            -1
+#define BCHP_GIO_IODIR_LO_iodir_DEFAULT                            4294967295
 
 /***************************************************************************
  *EC_LO - GENERAL PURPOSE I/O EDGE CONFIGURATION [31:0]
@@ -225,7 +225,7 @@
 /* GIO :: IODIR_EXT :: iodir [31:00] */
 #define BCHP_GIO_IODIR_EXT_iodir_MASK                              0xffffffff
 #define BCHP_GIO_IODIR_EXT_iodir_SHIFT                             0
-#define BCHP_GIO_IODIR_EXT_iodir_DEFAULT                           -1
+#define BCHP_GIO_IODIR_EXT_iodir_DEFAULT                           4294967295
 
 /***************************************************************************
  *EC_EXT - GENERAL PURPOSE I/O EDGE CONFIGURATION [95:64] (GPIO[89:64], SGPIO[5:0])

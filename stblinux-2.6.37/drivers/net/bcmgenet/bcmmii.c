@@ -105,7 +105,7 @@ int mii_probe(struct net_device *dev, void *p)
 		pDevCtrl->ext->ext_pwr_mgmt |= (EXT_PWR_DOWN_PHY |
 			EXT_PWR_DOWN_DLL | EXT_PWR_DOWN_BIAS);
 
-	for (i = 0; i < 32; i++) {
+	for (i = 31; i >= 0; i--) {
 		if (mii_read(dev, i, MII_BMSR) != 0) {
 			pDevCtrl->phyAddr = i;
 			if (i == 1)
