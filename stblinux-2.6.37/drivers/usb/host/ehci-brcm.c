@@ -35,8 +35,13 @@ static int ehci_brcm_reset(struct usb_hcd *hcd)
 	ehci->big_endian_mmio = 1;
 
 	ehci->caps = (struct ehci_caps *) hcd->regs;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+	ehci->regs = (struct ehci_regs *) (hcd->regs +
+		HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase)));
+#else
 	ehci->regs = (struct ehci_regs *) (hcd->regs +
 		HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase)));
+#endif
 	dbg_hcs_params(ehci, "reset");
 	dbg_hcc_params(ehci, "reset");
 

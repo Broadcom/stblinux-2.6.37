@@ -22,19 +22,22 @@
 #include <asm/mipsregs.h>
 #include <asm/brcmstb/brcmstb.h>
 #include <asm/tlbflush.h>
+#include <asm/sections.h>
 
 #define MAX_GP_REGS	16
 #define MAX_CP0_REGS	32
 #define MAX_IO_REGS	(256 - MAX_GP_REGS - MAX_CP0_REGS)
 
 #if 0
-#define DBG(...)	printk(KERN_DEBUG __VA_ARGS__)
+#define DBG		printk
 #else
 #define DBG(...)	do { } while (0)
 #endif
 
 #define CALCULATE_MEM_HASH		(1)
-#define VERIFY_HASH			(1)
+#define VERIFY_HASH			(0)
+#define WARM_BOOT_MAGIC_WORD		(0x5AFEB007)
+
 struct cp0_value {
 	u32	value;
 	u32	index;
@@ -51,6 +54,7 @@ struct brcm_pm_s3_context s3_context;
 
 asmlinkage int brcm_pm_s3_standby_asm(unsigned long options,
 	void (*dram_encoder_start)(void));
+extern int s3_reentry;
 
 extern void brcmstb_enable_xks01(void);
 
@@ -170,15 +174,14 @@ static void brcm_pm_dump_context(struct brcm_pm_s3_context *cxt)
  * to a temporary buffer, overwriting previous data on every block write.
  * Upon encoding final block, last 16 bytes are stored into AON, then
  * entire temporary buffer is wiped out
- * Test code will repeat encoding immediately after fake S3 suspend to see
- * if hash value remains the same. Different hash would indicate that encoded
- * area has been written to since M2M DMA pass.
+ * Bootloader will repeat encoding immediately after S3 wakeup to see
+ * if hash value matches.
  * brcm_pm_s3_tmpbuf - temporary buffer
  * hash_pointer - pointer to location in memory where hash value is located
  * after encoding
  */
 static char __section(.s3_enc_tmpbuf) brcm_pm_s3_tmpbuf[PAGE_SIZE];
-static char *hash_pointer;
+static u32 *hash_pointer;
 
 #define MEM_ENCRYPTED_START_ADDR	(0x80000000)
 #define MEM_ENCRYPTED_LEN		(1*1024*1024)
@@ -244,18 +247,21 @@ static void brcm_pm_dram_encoder_free_area(struct brcm_mem_transfer *xfer)
 	kfree(xfer);
 }
 
-#define AON_CTRL_HASH_START_INDEX	(20)
+#define CFE_PARAMETER_BLOCK		(0)
+#define AON_CTRL_HASH_START_INDEX	(CFE_PARAMETER_BLOCK+5)
+#define AON_SAVE_CPB(idx, val) \
+	BDEV_WR_RB(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2), val);
+#define AON_READ_CPB(idx) \
+	BDEV_RD(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2));
 #define AON_SAVE_HASH(idx, val) \
-	BDEV_WR_RB(AON_RAM_BASE + \
-	((AON_CTRL_HASH_START_INDEX+idx)<<2), val);
+	BDEV_WR_RB(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2), val);
 #define AON_READ_HASH(idx) \
-	BDEV_RD(AON_RAM_BASE + \
-	((AON_CTRL_HASH_START_INDEX+idx)<<2));
+	BDEV_RD(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2));
 
 /* TODO: rewrite in assembly to avoid memory writes after encoding started */
 static void brcm_pm_dram_encode(void)
 {
-	u32 *hp = (u32 *)hash_pointer;
+	u32 *hp = hash_pointer;
 	/* clear temporary buffer */
 	memset(brcm_pm_s3_tmpbuf, 0, sizeof(brcm_pm_s3_tmpbuf));
 	_dma_cache_wback_inv(0, ~0);
@@ -282,9 +288,14 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 #if CALCULATE_MEM_HASH
 	struct brcm_mem_transfer *xfer;
 	u32 outlen = PAGE_SIZE;
+	/* TODO: This is what we want to hash, but this requires CFE support
+	u32 region_size = brcm_pm_s3_tmpbuf - _text;
+	*/
+	u32 region_size = __end_rodata - _text;
 #if VERIFY_HASH
 	u32 old_hash[S3_HASH_LEN/4], new_hash[S3_HASH_LEN/4];
 #endif
+
 	/*
 	 * We are using bi-directional mapping to avoid synchronizing cache
 	 * after encoding
@@ -292,22 +303,50 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	dma_addr_t pa_dst = dma_map_single(NULL, brcm_pm_s3_tmpbuf, PAGE_SIZE,
 		DMA_BIDIRECTIONAL);
 
-	if (dma_mapping_error(NULL, pa_dst))
+	if (dma_mapping_error(NULL, pa_dst)) {
+		printk(KERN_ERR "%s: cannot remap temp buffer\n", __func__);
 		return -1;
+	}
 
-	xfer = brcm_pm_dram_encoder_set_area((void *)MEM_ENCRYPTED_START_ADDR,
-		MEM_ENCRYPTED_LEN, pa_dst, &outlen);
-	hash_pointer = brcm_pm_s3_tmpbuf + outlen - S3_HASH_LEN;
+	if (region_size < brcm_min_auth_region_size)
+		region_size = brcm_min_auth_region_size;
 
-	if (!xfer)
+	printk(KERN_DEBUG "Hashing memory 0x%08x-0x%08x (0x%08x)\n",
+	       (u32)_text, (u32)_text + region_size, region_size);
+	printk(KERN_DEBUG "Output buffer  0x%08x-0x%08x (0x%08x)\n",
+	       (u32)brcm_pm_s3_tmpbuf, (u32)brcm_pm_s3_tmpbuf + outlen, outlen);
+
+	xfer = brcm_pm_dram_encoder_set_area((void *)_text,
+		region_size, pa_dst, &outlen);
+
+	if (!xfer) {
+		dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
+		printk(KERN_ERR "%s: cannot setup M2M DMA\n", __func__);
 		return -1;
+	}
 
 	if (brcm_pm_dram_encoder_prepare(xfer)) {
+		printk(KERN_ERR "%s: cannot initialize M2M DMA\n", __func__);
 		brcm_pm_dram_encoder_free_area(xfer);
 		dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
 		return -1;
 	}
+
+	hash_pointer = (u32 *)(brcm_pm_s3_tmpbuf +
+		(outlen - S3_HASH_LEN + PAGE_SIZE) % PAGE_SIZE);
+
+	/* M2M DMA descriptor address */
+	AON_SAVE_CPB(2, BDEV_RD(BCHP_MEM_DMA_0_FIRST_DESC));
+	/* Encryption key slot */
+	AON_SAVE_CPB(3, AES_CBC_ENCRYPTION_KEY_SLOT);
+	/* Length of encoded region */
+	AON_SAVE_CPB(4, region_size);
 #endif
+
+	/* Warm Boot Magic Word */
+	AON_SAVE_CPB(0, WARM_BOOT_MAGIC_WORD);
+	/* Kernel Reentry Address */
+	AON_SAVE_CPB(1, s3_reentry);
 
 	/* clear RESET_HISTORY */
 	BDEV_WR_F_RB(AON_CTRL_RESET_CTRL, clear_reset_history, 1);
@@ -384,29 +423,35 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 #endif
 
 #if CALCULATE_MEM_HASH
+
 	brcm_pm_dram_encoder_complete(xfer);
 	brcm_pm_dram_encoder_free_area(xfer);
 	dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
 
 #if VERIFY_HASH
 	{
-		int ii;
-		unsigned char *hp;
+		int failed;
 		new_hash[0] = AON_READ_HASH(0);
 		new_hash[1] = AON_READ_HASH(1);
 		new_hash[2] = AON_READ_HASH(2);
 		new_hash[3] = AON_READ_HASH(3);
-		if (memcmp(new_hash, old_hash, S3_HASH_LEN))
-			DBG("Hash mismatch!\n");
-		DBG("Old hash: ");
-		hp = (unsigned char *)old_hash;
-		for (ii = 0; ii < S3_HASH_LEN; ii++)
-			DBG("%02x ", *hp++);
-		DBG("\nNew hash: ");
-		hp = (unsigned char *)new_hash;
-		for (ii = 0; ii < S3_HASH_LEN; ii++)
-			DBG("%02x ", *hp++);
-		DBG("\n");
+		failed = memcmp(new_hash, old_hash, S3_HASH_LEN);
+		if (failed)
+			DBG(KERN_ERR "Hash mismatch!\n");
+
+		if (failed || !new_hash[0]) {
+			int ii;
+			unsigned char *hp;
+			DBG(KERN_INFO "Old hash: ");
+			hp = (unsigned char *)old_hash;
+			for (ii = 0; ii < S3_HASH_LEN; ii++)
+				DBG(KERN_CONT "%02x ", *hp++);
+			DBG(KERN_INFO "New hash: ");
+			hp = (unsigned char *)new_hash;
+			for (ii = 0; ii < S3_HASH_LEN; ii++)
+				DBG(KERN_CONT "%02x ", *hp++);
+			DBG(KERN_INFO "\n");
+		}
 	}
 #endif
 #endif

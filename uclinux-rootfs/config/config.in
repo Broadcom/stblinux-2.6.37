@@ -97,6 +97,10 @@ bool 'Build libusb'		CONFIG_LIB_LIBUSB_FORCE
 bool 'Install libstdc++'	CONFIG_LIB_LIBSTDCXX_FORCE
 bool 'Install libgcc_s'		CONFIG_LIB_LIBGCC_FORCE
 
+# copy uClibc utils
+bool 'Install ldd'			CONFIG_LIB_UCLIBC_LDD
+bool 'Install ldconfig'		CONFIG_LIB_UCLIBC_LDCONFIG
+
 comment 'Library Configuration'
 bool 'Support time zones'	CONFIG_LIB_UC_LIBC_TIMEZONE
 if [ "$CONFIG_LIB_UC_LIBC_TIMEZONE" = "y" ]; then

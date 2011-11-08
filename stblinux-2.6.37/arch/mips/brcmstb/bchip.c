@@ -24,6 +24,8 @@
 #include <linux/bitops.h>
 #include <linux/module.h>
 #include <linux/version.h>
+#include <linux/compiler.h>
+#include <linux/mmc/sdhci-pltfm.h>
 
 #include <asm/mipsregs.h>
 #include <asm/barrier.h>
@@ -36,6 +38,8 @@
 #include <asm/cpu-features.h>
 #include <asm/brcmstb/brcmstb.h>
 #include <dma-coherence.h>
+
+#include "../drivers/mmc/host/sdhci.h"
 
 /* chip features */
 int brcm_sata_enabled;
@@ -374,27 +378,41 @@ void bchip_moca_init(void)
 }
 #endif
 
-#if defined(CONFIG_BRCM_HAS_SDIO)
+#if defined(CONFIG_BRCM_SDIO)
+
+/* Use custom I/O accessors to avoid readl/readw byte swapping in BE mode */
+
+static u32 sdhci_brcm_readl(struct sdhci_host *host, int reg)
+{
+	return __raw_readl(host->ioaddr + reg);
+}
+
+static u16 sdhci_brcm_readw(struct sdhci_host *host, int reg)
+{
+	return __raw_readw(host->ioaddr + reg);
+}
+
+static void sdhci_brcm_writel(struct sdhci_host *host, u32 val, int reg)
+{
+	__raw_writel(val, host->ioaddr + reg);
+}
+
+static void sdhci_brcm_writew(struct sdhci_host *host, u16 val, int reg)
+{
+	__raw_writew(val, host->ioaddr + reg);
+}
+
+static struct sdhci_ops __maybe_unused sdhci_be_ops = {
+	.read_l			= sdhci_brcm_readl,
+	.read_w			= sdhci_brcm_readw,
+	.write_l		= sdhci_brcm_writel,
+	.write_w		= sdhci_brcm_writew,
+};
+
+struct sdhci_pltfm_data sdhci_brcm_pdata = { };
+
 int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 {
-#ifdef BCHP_HIF_TOP_CTRL_SDIO_CTRL
-	/* HIF_TOP_CTRL_SDIO_CTRL only exists for V0 controllers */
-#ifdef CONFIG_CPU_LITTLE_ENDIAN
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, WORD_ABO, 0);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, FRAME_NBO, 0);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, FRAME_NHW, 1);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, BUFFER_ABO, 1);
-#else
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, WORD_ABO, 1);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, FRAME_NBO, 1);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, FRAME_NHW, 1);
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, BUFFER_ABO, 0);
-#endif
-	BDEV_WR_F_RB(HIF_TOP_CTRL_SDIO_CTRL, SCB_SEQ_EN, 0);
-#endif /* BCHP_HIF_TOP_CTRL_SDIO_CTRL */
-
-#ifdef CONFIG_BRCM_HAS_SDIO_V1
-
 #define SDIO_REG(x, y)		(x + BCHP_SDIO_0_CFG_##y - \
 				 BCHP_SDIO_0_CFG_REG_START)
 
@@ -417,10 +435,19 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 #else
 	/* WORD_ABO | FRAME_NBO | FRAME_NHW */
 	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL1), 0xe000);
-	/* address + data swap on byte/halfword accesses */
-	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL2), 0x005f);
+	/* address swap only */
+	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL2), 0x0050);
+	sdhci_brcm_pdata.ops = &sdhci_be_ops;
 #endif
-#endif /* CONFIG_BRCM_HAS_SDIO_V1 */
+
+#if defined(CONFIG_BCM7231B0) || defined(CONFIG_BCM7346B0)
+	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
+#endif
+
+#if defined(CONFIG_BCM7344B0)
+	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(19));	/* Highspd=0 */
+	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
+#endif
 
 #if defined(CONFIG_BCM7425A0) || defined(CONFIG_BCM7231A0)
 
@@ -449,7 +476,7 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 
 	return 0;
 }
-#endif
+#endif /* defined(CONFIG_BRCM_SDIO) */
 
 void __init bchip_set_features(void)
 {

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-2.3pre Kernel Configuration
-# Sat Aug 27 13:05:42 2011
+# Linux/mips 2.6.37-2.5pre Kernel Configuration
+# Wed Oct 19 15:47:00 2011
 #
 CONFIG_MIPS=y
 
@@ -142,6 +142,7 @@ CONFIG_BRCM_UARTC_IS_16550=y
 CONFIG_BRCM_HAS_PCI23=y
 CONFIG_BRCM_HAS_PCIE=y
 CONFIG_BRCM_GENET_V1=y
+CONFIG_BRCM_GENET_VERSION=1
 CONFIG_BRCM_HAS_GENET=y
 CONFIG_BRCM_HAS_GENET_0=y
 CONFIG_BRCM_HAS_GENET_1=y

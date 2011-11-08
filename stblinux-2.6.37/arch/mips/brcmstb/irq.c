@@ -24,6 +24,7 @@
 #include <linux/smp.h>
 #include <linux/io.h>
 #include <linux/bitops.h>
+#include <linux/version.h>
 
 #include <asm/irq.h>
 #include <asm/mipsregs.h>
@@ -87,8 +88,9 @@ static int next_cpu[NR_IRQS] = { [0 ... NR_IRQS-1] = 0 };
  * INTC (aka L1 interrupt) functions
  ***********************************************************************/
 
-static void brcm_intc_enable(unsigned int irq)
+static void brcm_intc_enable(struct irq_data *d)
 {
+	unsigned int irq = d->irq;
 	unsigned int shift;
 	unsigned long base = NEXT_CPU(irq) ? TP1_BASE : TP0_BASE;
 
@@ -105,8 +107,9 @@ static void brcm_intc_enable(unsigned int irq)
 		BUG();
 }
 
-static void brcm_intc_disable(unsigned int irq)
+static void brcm_intc_disable(struct irq_data *d)
 {
+	unsigned int irq = d->irq;
 	unsigned int shift;
 
 	if (irq > 0 && irq <= 32) {
@@ -123,8 +126,10 @@ static void brcm_intc_disable(unsigned int irq)
 }
 
 #ifdef CONFIG_SMP
-static int brcm_intc_set_affinity(unsigned int irq, const struct cpumask *dest)
+static int brcm_intc_set_affinity(struct irq_data *d,
+	const struct cpumask *dest, bool force)
 {
+	unsigned int irq = d->irq;
 	unsigned int shift;
 	unsigned long flags;
 
@@ -178,12 +183,12 @@ static int brcm_intc_set_affinity(unsigned int irq, const struct cpumask *dest)
  */
 static struct irq_chip brcm_intc_type = {
 	.name			= "BRCM L1",
-	.ack			= brcm_intc_disable,
-	.mask			= brcm_intc_disable,
-	.mask_ack		= brcm_intc_disable,
-	.unmask			= brcm_intc_enable,
+	.irq_ack		= brcm_intc_disable,
+	.irq_mask		= brcm_intc_disable,
+	.irq_mask_ack		= brcm_intc_disable,
+	.irq_unmask		= brcm_intc_enable,
 #ifdef CONFIG_SMP
-	.set_affinity		= brcm_intc_set_affinity,
+	.irq_set_affinity	= brcm_intc_set_affinity,
 #endif /* CONFIG_SMP */
 	NULL
 };
@@ -206,7 +211,7 @@ static void flip_tp(int irq)
 		remote_lev1 = TP0_BASE;
 	}
 
-	if (cpumask_test_cpu(tp ^ 1, irq_desc[irq].affinity)) {
+	if (cpumask_test_cpu(tp ^ 1, irq_desc[irq].irq_data.affinity)) {
 		next_cpu[irq] = tp ^ 1;
 		if (irq >= 1 && irq <= 32) {
 			L1_WR_W0(local_lev1, MASK_SET, mask);
@@ -287,8 +292,13 @@ void __init arch_init_irq(void)
 
 	/* Set up all L1 IRQs */
 	for (irq = 1; irq < BRCM_VIRTIRQ_BASE; irq++)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
+		irq_set_chip_and_handler(irq, &brcm_intc_type,
+			handle_level_irq);
+#else
 		set_irq_chip_and_handler(irq, &brcm_intc_type,
 			handle_level_irq);
+#endif
 
 #if defined(CONFIG_SMP) && defined(CONFIG_GENERIC_HARDIRQS)
 	/* default affinity: 1 (TP0 only) */

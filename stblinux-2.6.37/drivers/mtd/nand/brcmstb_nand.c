@@ -118,6 +118,16 @@ module_param(wp_on, int, 0444);
 #define CORR_ERROR_COUNT (BDEV_RD(BCHP_NAND_CORR_ERROR_COUNT))
 #define UNCORR_ERROR_COUNT (BDEV_RD(BCHP_NAND_UNCORR_ERROR_COUNT))
 
+#define WR_CORR_THRESH(cs, val) do { \
+	u32 contents = BDEV_RD(BCHP_NAND_CORR_STAT_THRESHOLD); \
+	u32 shift = BCHP_NAND_CORR_STAT_THRESHOLD_CORR_STAT_THRESHOLD_CS1_SHIFT * (cs); \
+	contents &= ~(BCHP_NAND_CORR_STAT_THRESHOLD_CORR_STAT_THRESHOLD_CS0_MASK \
+			<< shift); \
+	contents |= ((val) & BCHP_NAND_CORR_STAT_THRESHOLD_CORR_STAT_THRESHOLD_CS0_MASK) \
+			<< shift; \
+	BDEV_WR(BCHP_NAND_CORR_STAT_THRESHOLD, contents); \
+	} while (0);
+
 #else /* CONTROLLER_VER < 60 */
 
 #define REG_ACC_CONTROL(cs) \
@@ -137,6 +147,12 @@ module_param(wp_on, int, 0444);
 
 #define CORR_ERROR_COUNT (1)
 #define UNCORR_ERROR_COUNT (1)
+
+#define WR_CORR_THRESH(cs, val) do { \
+	BDEV_WR(BCHP_NAND_CORR_STAT_THRESHOLD, \
+		((val) & BCHP_NAND_CORR_STAT_THRESHOLD_CORR_STAT_THRESHOLD_MASK) \
+		    << BCHP_NAND_CORR_STAT_THRESHOLD_CORR_STAT_THRESHOLD_SHIFT); \
+	} while (0);
 
 #endif /* CONTROLLER_VER < 60 */
 
@@ -947,8 +963,7 @@ static void brcmstb_nand_set_cfg(struct brcmstb_nand_host *host,
 	WR_CONFIG(host->cs, BLK_ADR_BYTES, cfg->blk_adr_bytes);
 	WR_CONFIG(host->cs, FUL_ADR_BYTES, cfg->ful_adr_bytes);
 
-	WR_ACC_CONTROL(host->cs, SPARE_AREA_SIZE,
-		cfg->spare_area_size >= 27 ? 27 : 16);
+	WR_ACC_CONTROL(host->cs, SPARE_AREA_SIZE, cfg->spare_area_size);
 #if CONTROLLER_VER >= 50
 	WR_ACC_CONTROL(host->cs, SECTOR_SIZE_1K, cfg->sector_size_1k);
 #endif
@@ -1028,6 +1043,8 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 	if (abs(new_cfg.spare_area_size - orig_cfg.spare_area_size) < 2)
 		new_cfg.spare_area_size = orig_cfg.spare_area_size;
 
+	new_cfg.spare_area_size = new_cfg.spare_area_size >= 27 ? 27 : 16;
+
 	if (orig_cfg.device_size != new_cfg.device_size ||
 			orig_cfg.block_size != new_cfg.block_size ||
 			orig_cfg.page_size != new_cfg.page_size ||
@@ -1072,6 +1089,9 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			ecclevel = 8;
 
 		WR_ACC_CONTROL(host->cs, ECC_LEVEL, ecclevel);
+		/* threshold = ceil(BCH-level * 0.75) */
+		WR_CORR_THRESH(host->cs, ((ecclevel << new_cfg.sector_size_1k)
+					* 3 + 2) / 4);
 
 		/* Account for 24-bit per 1024-byte ECC settings */
 		if (new_cfg.sector_size_1k)

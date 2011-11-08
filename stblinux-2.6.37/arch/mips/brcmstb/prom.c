@@ -47,6 +47,7 @@ unsigned long brcm_dram0_size_mb;
 unsigned long brcm_dram1_size_mb;
 unsigned long brcm_dram1_linux_mb;
 unsigned long brcm_dram1_start = MEMC1_START;
+unsigned long brcm_min_auth_region_size = 0x1000;
 
 static u8 brcm_primary_macaddr[6] = { 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef };
 

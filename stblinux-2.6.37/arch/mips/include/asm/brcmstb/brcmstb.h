@@ -25,6 +25,7 @@
 #include <linux/smp.h>
 #include <linux/if_ether.h>
 #include <linux/device.h>
+#include <linux/mmc/sdhci-pltfm.h>
 
 #include <asm/addrspace.h>
 #include <asm/mipsregs.h>
@@ -199,6 +200,7 @@
 #include <asm/brcmstb/7231b0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7231b0/bchp_irq0.h>
 #include <asm/brcmstb/7231b0/bchp_irq1.h>
+#include <asm/brcmstb/7231b0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7231b0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7231b0/bchp_nand.h>
 #include <asm/brcmstb/7231b0/bchp_sata_top_ctrl.h>
@@ -413,6 +415,7 @@
 #include <asm/brcmstb/7346b0/bchp_hif_spi_intr2.h>
 #include <asm/brcmstb/7346b0/bchp_irq0.h>
 #include <asm/brcmstb/7346b0/bchp_irq1.h>
+#include <asm/brcmstb/7346b0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7346b0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7346b0/bchp_moca_hostmisc.h>
 #include <asm/brcmstb/7346b0/bchp_nand.h>
@@ -446,6 +449,7 @@
 #include <asm/brcmstb/7358a0/bchp_hif_top_ctrl.h>
 #include <asm/brcmstb/7358a0/bchp_irq0.h>
 #include <asm/brcmstb/7358a0/bchp_irq1.h>
+#include <asm/brcmstb/7358a0/bchp_mem_dma_0.h>
 #include <asm/brcmstb/7358a0/bchp_memc_ddr_0.h>
 #include <asm/brcmstb/7358a0/bchp_misb_bridge.h>
 #include <asm/brcmstb/7358a0/bchp_nand.h>
@@ -1316,7 +1320,11 @@ void brcm_irq_standby_exit(void);
 #ifdef BCHP_AON_PM_L2_CPU_STATUS_WOL_MOCA_MASK
 #define WOL_MOCA_MASK		BCHP_AON_PM_L2_CPU_STATUS_WOL_MOCA_MASK
 #else
+#ifdef CONFIG_BCM7231B0
+#define WOL_MOCA_MASK		BCHP_AON_PM_L2_CPU_STATUS_WOL_ENET1_MASK
+#else
 #define WOL_MOCA_MASK		(0)
+#endif
 #endif
 #endif
 
@@ -1373,8 +1381,10 @@ extern unsigned long brcm_dram0_size_mb;
 extern unsigned long brcm_dram1_size_mb;
 extern unsigned long brcm_dram1_linux_mb;
 extern unsigned long brcm_dram1_start;
+extern unsigned long brcm_min_auth_region_size;
 
 extern struct plat_smp_ops brcmstb_smp_ops;
+extern struct sdhci_pltfm_data sdhci_brcm_pdata;
 
 /* NMI / TP1 reset vector */
 extern char brcm_reset_nmi_vec[];

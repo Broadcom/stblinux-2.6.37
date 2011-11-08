@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Wed Apr 13 13:27:13 2011
- *                 MD5 Checksum         c1b53a9408066d1e6123c0860dfb8065
+ * Date:           Generated on         Thu Sep 29 16:50:59 2011
+ *                 MD5 Checksum         8155245fdf91c26162667953fda076c2
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -34,8 +34,8 @@
  *
  * $brcm_Log: /magnum/basemodules/chp/7346/rdb/b0/bchp_irq0.h $
  * 
- * Hydra_Software_Devel/1   4/14/11 4:18p albertl
- * SW7346-143: Initial revision.
+ * Hydra_Software_Devel/2   9/30/11 10:50a pntruong
+ * SW7346-170: Resync with central RDB.
  *
  ***************************************************************************/
 
@@ -51,9 +51,14 @@
 /***************************************************************************
  *IRQEN - Interrupt Enable
  ***************************************************************************/
-/* IRQ0 :: IRQEN :: reserved0 [31:27] */
-#define BCHP_IRQ0_IRQEN_reserved0_MASK                             0xf8000000
-#define BCHP_IRQ0_IRQEN_reserved0_SHIFT                            27
+/* IRQ0 :: IRQEN :: reserved0 [31:28] */
+#define BCHP_IRQ0_IRQEN_reserved0_MASK                             0xf0000000
+#define BCHP_IRQ0_IRQEN_reserved0_SHIFT                            28
+
+/* IRQ0 :: IRQEN :: iicd_irqen [27:27] */
+#define BCHP_IRQ0_IRQEN_iicd_irqen_MASK                            0x08000000
+#define BCHP_IRQ0_IRQEN_iicd_irqen_SHIFT                           27
+#define BCHP_IRQ0_IRQEN_iicd_irqen_DEFAULT                         0
 
 /* IRQ0 :: IRQEN :: iicc_irqen [26:26] */
 #define BCHP_IRQ0_IRQEN_iicc_irqen_MASK                            0x04000000
@@ -133,9 +138,14 @@
 /***************************************************************************
  *IRQSTAT - Interrupt Status
  ***************************************************************************/
-/* IRQ0 :: IRQSTAT :: reserved0 [31:27] */
-#define BCHP_IRQ0_IRQSTAT_reserved0_MASK                           0xf8000000
-#define BCHP_IRQ0_IRQSTAT_reserved0_SHIFT                          27
+/* IRQ0 :: IRQSTAT :: reserved0 [31:28] */
+#define BCHP_IRQ0_IRQSTAT_reserved0_MASK                           0xf0000000
+#define BCHP_IRQ0_IRQSTAT_reserved0_SHIFT                          28
+
+/* IRQ0 :: IRQSTAT :: iicdirq [27:27] */
+#define BCHP_IRQ0_IRQSTAT_iicdirq_MASK                             0x08000000
+#define BCHP_IRQ0_IRQSTAT_iicdirq_SHIFT                            27
+#define BCHP_IRQ0_IRQSTAT_iicdirq_DEFAULT                          0
 
 /* IRQ0 :: IRQSTAT :: iiccirq [26:26] */
 #define BCHP_IRQ0_IRQSTAT_iiccirq_MASK                             0x04000000

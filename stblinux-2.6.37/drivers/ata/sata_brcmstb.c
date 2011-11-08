@@ -93,6 +93,7 @@ struct k2_host_priv {
 
 #define K2_AWAKE	0
 #define K2_SLEEPING	1
+#define K2_OFF		2
 
 static int k2_power_on(void *arg);
 
@@ -927,7 +928,7 @@ static int k2_power_off(void *arg)
 	unsigned int retries = 100;
 
 	spin_lock_irqsave(&hp->lock, flags);
-	if (SLEEP_FLAG(host) == K2_SLEEPING) {
+	if (SLEEP_FLAG(host) == K2_SLEEPING || SLEEP_FLAG(host) == K2_OFF) {
 		spin_unlock_irqrestore(&hp->lock, flags);
 		return 0;
 	}
@@ -967,7 +968,7 @@ static int k2_power_off(void *arg)
 	} else {
 		void __iomem *port_base;
 
-		SET_SLEEP_FLAG(host, K2_SLEEPING);
+		SET_SLEEP_FLAG(host, K2_OFF);
 
 		/* put all ports in Slumber mode */
 		for (i = 0; i < host->n_ports; i++) {
@@ -1070,7 +1071,7 @@ static int k2_sata_suspend(struct device *dev)
 
 	spin_lock_irqsave(&hp->lock, flags);
 
-	if (SLEEP_FLAG(host) == K2_SLEEPING) {
+	if (SLEEP_FLAG(host) == K2_SLEEPING || SLEEP_FLAG(host) == K2_OFF) {
 		spin_unlock_irqrestore(&hp->lock, flags);
 		return 0;
 	}
@@ -1108,7 +1109,8 @@ static int k2_sata_resume(struct device *dev)
 	unsigned long flags;
 
 	spin_lock_irqsave(&hp->lock, flags);
-	if (SLEEP_FLAG(host) == K2_AWAKE) {
+
+	if (SLEEP_FLAG(host) == K2_AWAKE || SLEEP_FLAG(host) == K2_OFF) {
 		spin_unlock_irqrestore(&hp->lock, flags);
 		return 0;
 	}

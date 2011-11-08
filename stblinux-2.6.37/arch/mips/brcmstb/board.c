@@ -396,6 +396,25 @@ void board_pinmux_setup(void)
 	PINMUX(16, sgpio_03, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCB_REG_START);
 
+#if !defined(CONFIG_BCM7346A0)
+	/*
+	 * To enable SDIO_LED (activity LED) on the BCM97346 reference boards:
+	 * install R1127, remove R1120, uncomment this line, and don't use MoCA
+	 */
+	/* PINMUX(16, sgpio_02, 3); */
+
+	PINMUX(17, vo_656_5, 2);	/* SDIO_PRES */
+	PINMUX(17, vo_656_4, 1);	/* SDIO_PWR0 */
+	PINMUX(17, vo_656_3, 2);	/* SDIO_DAT3 */
+	PINMUX(17, vo_656_2, 2);	/* SDIO_DAT1 */
+	PINMUX(17, vo_656_1, 2);	/* SDIO_DAT1 */
+	PINMUX(17, vo_656_0, 2);	/* SDIO_DAT0 */
+
+	PINMUX(18, vo_656_clk, 1);	/* SDIO_CLK */
+	PINMUX(18, vo_656_7, 1);	/* SDIO_CMD */
+	PINMUX(18, vo_656_6, 2);	/* SDIO_WPROT */
+#endif
+
 #elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
 
 	PINMUX(11, gpio_89, 1);		/* UARTB TX */

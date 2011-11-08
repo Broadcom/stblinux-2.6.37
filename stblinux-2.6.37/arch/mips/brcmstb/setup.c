@@ -34,8 +34,10 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 #include <linux/time.h>
+#include <linux/version.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/mmc/sdhci-pltfm.h>
 
 #include <asm/serial.h>
 #include <asm/reboot.h>
@@ -178,31 +180,7 @@ static struct platform_device bcmemac_1_plat_dev = {
 };
 #endif /* defined(CONFIG_BRCM_HAS_EMAC_1) */
 
-#if defined(CONFIG_BRCM_HAS_SDIO_V0)
-
-static struct resource sdio_resources[] = {
-	[0] = {
-		.start		= BPHYSADDR(BCHP_SDIO_REG_START),
-		.end		= BPHYSADDR(BCHP_SDIO_REG_END) + 3,
-		.flags		= IORESOURCE_MEM,
-	},
-	[1] = {
-		.start		= BRCM_IRQ_HIF,
-		.end		= BRCM_IRQ_HIF,
-		.flags		= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device sdio_plat_dev = {
-	.name			= "sdhci-brcm",
-	.id			= 0,
-	.num_resources		= ARRAY_SIZE(sdio_resources),
-	.resource		= sdio_resources,
-};
-
-#endif /* defined(CONFIG_BRCM_HAS_SDIO_V0) */
-
-#if defined(CONFIG_BRCM_HAS_SDIO_V1)
+#if defined(CONFIG_BRCM_SDIO)
 
 static void __init brcm_add_sdio_host(int id, uintptr_t cfg_base,
 	uintptr_t host_base, int irq)
@@ -227,10 +205,12 @@ static void __init brcm_add_sdio_host(int id, uintptr_t cfg_base,
 
 	pdev = platform_device_alloc("sdhci", id);
 	platform_device_add_resources(pdev, res, 2);
+	platform_device_add_data(pdev, &sdhci_brcm_pdata,
+		sizeof(sdhci_brcm_pdata));
 	platform_device_add(pdev);
 }
 
-#endif /* defined(CONFIG_BRCM_HAS_SDIO_V1) */
+#endif /* defined(CONFIG_BRCM_SDIO) */
 
 #define CAP_ACTIVE		0x01
 #define CAP_LAST		0x02
@@ -558,12 +538,7 @@ static int __init platform_devices_setup(void)
 	}
 #endif /* defined(CONFIG_BRCM_HAS_GENET) */
 
-#if defined(CONFIG_BRCM_HAS_SDIO_V0)
-	bchip_sdio_init(0, 0);
-	platform_device_register(&sdio_plat_dev);
-#endif
-
-#if defined(CONFIG_BRCM_HAS_SDIO_V1)
+#if defined(CONFIG_BRCM_SDIO)
 	brcm_add_sdio_host(0, BCHP_SDIO_0_CFG_REG_START,
 		BCHP_SDIO_0_HOST_REG_START, BRCM_IRQ_SDIO0);
 
@@ -572,7 +547,7 @@ static int __init platform_devices_setup(void)
 		BCHP_SDIO_1_HOST_REG_START, BRCM_IRQ_SDIO1);
 #endif /* defined(BCHP_SDIO_1_CFG_REG_START) */
 
-#endif /* defined(CONFIG_BRCM_HAS_SDIO_V1) */
+#endif /* defined(CONFIG_BRCM_SDIO) */
 
 	return 0;
 }
@@ -815,7 +790,11 @@ static int __init brcmstb_mtd_setup(void)
 		 */
 		mtd = do_map_probe("map_absent", &brcm_dummy_map);
 		if (mtd)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0)
+			mtd_device_register(mtd, NULL, 0);
+#else
 			add_mtd_device(mtd);
+#endif
 
 		printk(KERN_WARNING
 			"warning: unable to build a flash partition map, "

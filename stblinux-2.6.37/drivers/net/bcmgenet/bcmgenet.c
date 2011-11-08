@@ -707,7 +707,8 @@ static void bcmgenet_timeout(struct net_device *dev)
 	dev->trans_start = jiffies;
 
 	dev->stats.tx_errors++;
-	netif_wake_queue(dev);
+
+	netif_tx_wake_all_queues(dev);
 }
 
 /* --------------------------------------------------------------------------
@@ -1070,7 +1071,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 	} else{
 		if (pDevCtrl->txRingFreeBds[index] > (MAX_SKB_FRAGS + 1)
 			&& __netif_subqueue_stopped(dev, index)) {
-			netif_wake_subqueue(dev, index);
+			netif_wake_subqueue(dev, index+1);
 		}
 		pDevCtrl->txRingCIndex[index] = c_index;
 	}
@@ -1150,7 +1151,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 				return 1;
 			}
 		} else if (pDevCtrl->txRingFreeBds[index] <= nr_frags + 1) {
-			netif_stop_subqueue(dev, index);
+			netif_stop_subqueue(dev, index+1);
 			spin_unlock_irqrestore(&pDevCtrl->lock, flags);
 			printk(KERN_ERR "%s: tx ring %d full when queue awake\n",
 					__func__, index);
@@ -1366,7 +1367,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		if (pDevCtrl->txFreeBds <= (MAX_SKB_FRAGS + 1))
 			netif_stop_subqueue(dev, 0);
 	} else if (pDevCtrl->txRingFreeBds[index] <= (MAX_SKB_FRAGS + 1)) {
-		netif_stop_subqueue(dev, index);
+		netif_stop_subqueue(dev, index+1);
 	}
 	/* Enable Tx bdone/pdone interrupt if any subqueue is stopped*/
 	if (netif_any_subqueue_stopped(dev))
@@ -3442,6 +3443,8 @@ static int bcmgenet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	struct acpi_data *u_data;
 	int val = 0;
 
+	if (!netif_running(dev))
+		return -EINVAL;
 	/* we can add sub-command in ifr_data if we need to in the future */
 	switch (cmd) {
 	case SIOCSACPISET:

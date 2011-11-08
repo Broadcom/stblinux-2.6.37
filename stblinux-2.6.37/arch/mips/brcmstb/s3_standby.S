@@ -25,30 +25,25 @@
 #define REG_OFFSET		(KSEG1 | BCHP_PHYSICAL_OFFSET)
 #define REG(x)			(REG_OFFSET + (x))
 
-
-	.macro dbg_save_val	src
-	li	t1, REG(BCHP_UARTA_SCR);
-	sw	src, 0(t1)
-	.endm
-
 	.macro aon_write_data index reg
 	li	t1, REG(AON_RAM_BASE)
 	sw	\reg, \index(t1)
 	.endm
 
-	.macro aon_read_data index reg
-	li	t1, REG(AON_RAM_BASE)
-	lw	\reg, \index(t1)
-	.endm
-
-/*	AON data map
-	offset		bits
-	0:		0:	0 - cold boot, 1 - warm boot
-	4:		0-31:	reentry address
+/*
+ * Bootloader parameters for warm boot:
+ *	byte offset	value
+ *	0-3:		magic word
+ *	4-7:		reentry address
+ *	8-11:		m2m descriptors PA
+ *	12-15:		encryption slot
+ *	16-19:		address of hash
+ *	20-35:		hash
  */
 	.text
 	.set		noreorder
 	.align		5
+	.global		s3_reentry
 
 #if defined(CONFIG_BMIPS5000)
 #define CACHE_WRITEBACK_CMD	Hit_Writeback_Inv_SD
@@ -93,13 +88,13 @@
 	cache	CACHE_WRITEBACK_CMD, 64(t0)
 	nop
 
+	beqz	a1, skip_dram_encode
+	nop
+
 	/*
 	 * Call DRAM encoder start method if it was installed
 	 * Nobody can modify DRAM content by now.
 	 */
-	beqz	a1, skip_dram_encode
-	nop
-
 	jal	a1
 	nop
 
@@ -110,15 +105,7 @@ skip_dram_encode:
 	sw	t1, 0(t0)
 	lw	zero, 0(t0)
 
-# set 'warm boot' flag
-	li	t0, 1
-	aon_write_data	0, t0
-# reentry point
-	la	t0, s3_reentry
-	aon_write_data  4, t0
-
 # deep power down request
-
 pd_request:
 	li	t0, REG(BCHP_AON_CTRL_PM_CTRL)
 # SET: pm_deep_standby, pm_warm_boot, pm_enable_pll_pwrdn
