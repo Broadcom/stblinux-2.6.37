@@ -51,7 +51,7 @@ static inline void __init init_upg_clocksource(void)
 	BDEV_WR_RB(BCHP_TIMER_TIMER3_CTRL, 0xbfffffff);
 
 	clocksource_upg.rating = 250;
-	clocksource_register_hz(&clocksource_upg, 27000000);
+	clocksource_register_hz(&clocksource_upg, UPGTMR_FREQ);
 }
 
 #ifdef CONFIG_BRCM_HAS_WKTMR
@@ -84,7 +84,7 @@ static struct clocksource clocksource_wktmr = {
 static inline void __init init_wktmr_clocksource(void)
 {
 	clocksource_wktmr.rating = 250;
-	clocksource_register_hz(&clocksource_wktmr, 27000000);
+	clocksource_register_hz(&clocksource_wktmr, WKTMR_FREQ);
 }
 
 /***********************************************************************
@@ -151,7 +151,7 @@ static __init unsigned long brcm_mips_freq(void)
 
 	/* set up for countdown */
 	BDEV_WR(BCHP_TIMER_TIMER0_CTRL, 0xc0000000 |
-		(27000000 / SAMPLE_PERIOD));
+		(UPGTMR_FREQ / SAMPLE_PERIOD));
 	write_c0_count(0);
 
 	while ((BDEV_RD(BCHP_TIMER_TIMER_IS) & 1) == 0)

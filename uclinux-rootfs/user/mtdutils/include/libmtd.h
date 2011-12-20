@@ -35,6 +35,9 @@ extern "C" {
 /* MTD library descriptor */
 typedef void * libmtd_t;
 
+/* Forward decls */
+struct region_info_user;
+
 /**
  * @mtd_dev_cnt: count of MTD devices in system
  * @lowest_mtd_num: lowest MTD device number in system
@@ -174,6 +177,33 @@ int mtd_unlock(const struct mtd_dev_info *mtd, int fd, int eb);
 int mtd_erase(libmtd_t desc, const struct mtd_dev_info *mtd, int fd, int eb);
 
 /**
+ * mtd_regioninfo - get information about an erase region.
+ * @fd: MTD device node file descriptor
+ * @regidx: index of region to look up
+ * @reginfo: the region information is returned here
+ *
+ * This function gets information about an erase region defined by the
+ * @regidx index and saves this information in the @reginfo object.
+ * Returns %0 in case of success and %-1 in case of failure. If the
+ * @regidx is not valid or unavailable, errno is set to @ENODEV.
+ */
+int mtd_regioninfo(int fd, int regidx, struct region_info_user *reginfo);
+
+/**
+ * mtd_is_locked - see if the specified eraseblock is locked.
+ * @mtd: MTD device description object
+ * @fd: MTD device node file descriptor
+ * @eb: eraseblock to check
+ *
+ * This function checks to see if eraseblock @eb of MTD device described
+ * by @fd is locked. Returns %0 if it is unlocked, %1 if it is locked, and
+ * %-1 in case of failure. If the ioctl is not supported (support was added in
+ * Linux kernel 2.6.36) or this particular device does not support it, errno is
+ * set to @ENOTSUPP.
+ */
+int mtd_is_locked(const struct mtd_dev_info *mtd, int fd, int eb);
+
+/**
  * mtd_torture - torture an eraseblock.
  * @desc: MTD library descriptor
  * @mtd: MTD device description object
@@ -225,19 +255,26 @@ int mtd_read(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
 
 /**
  * mtd_write - write data to an MTD device.
+ * @desc: MTD library descriptor
  * @mtd: MTD device description object
  * @fd: MTD device node file descriptor
  * @eb: eraseblock to write to
  * @offs: offset withing the eraseblock to write to
- * @buf: buffer to write
- * @len: how many bytes to write
+ * @data: data buffer to write
+ * @len: how many data bytes to write
+ * @oob: OOB buffer to write
+ * @ooblen: how many OOB bytes to write
+ * @mode: write mode (e.g., %MTD_OOB_PLACE, %MTD_OOB_RAW)
  *
  * This function writes @len bytes of data to eraseblock @eb and offset @offs
  * of the MTD device defined by @mtd. Returns %0 in case of success and %-1 in
  * case of failure.
+ *
+ * Can only write to a single page at a time if writing to OOB.
  */
-int mtd_write(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
-	      void *buf, int len);
+int mtd_write(libmtd_t desc, const struct mtd_dev_info *mtd, int fd, int eb,
+	      int offs, void *data, int len, void *oob, int ooblen,
+	      uint8_t mode);
 
 /**
  * mtd_read_oob - read out-of-band area.

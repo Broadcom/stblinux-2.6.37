@@ -269,16 +269,6 @@ void flush_tlb_all(void)
 	on_each_cpu(flush_tlb_all_ipi, NULL, 1);
 }
 
-static void flush_tlb_all_mm_ipi(void *info)
-{
-	local_flush_tlb_all_mm();
-}
-
-void flush_tlb_all_mm(void)
-{
-	on_each_cpu(flush_tlb_all_mm_ipi, NULL, 1);
-}
-
 static void flush_tlb_mm_ipi(void *mm)
 {
 	local_flush_tlb_mm((struct mm_struct *)mm);

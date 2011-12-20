@@ -16,7 +16,7 @@ export CC CFLAGS
 #
 
 MTD_TARGETS		:= flash_erase nanddump flash_unlock \
-				flash_lock flash_info mtd_debug nandwrite \
+				flash_lock mtd_debug nandwrite \
 				nandtest sumtool
 
 UBI_TARGETS		:= ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo \
@@ -36,8 +36,7 @@ export BUILDDIR PWD
 
 .PHONY: all
 all::
-	$(MAKE) -f Makefile $(MTD_PATHS) subdirs_lib_all
-	$(MAKE) -f Makefile $(MTD_PATHS) subdirs_ubi-utils_all
+	$(MAKE) -f Makefile $(MTD_PATHS) $(UBI_PATHS)
 
 .PHONY: romfs
 romfs::
@@ -46,7 +45,6 @@ romfs::
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_FLASH_ERASE /bin/flash_eraseall
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_FLASH_UNLOCK /bin/flash_unlock
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_FLASH_LOCK /bin/flash_lock
-	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_FLASH_INFO /bin/flash_info
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_NANDDUMP /bin/nanddump
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_NANDTEST /bin/nandtest
 	$(ROMFSINST) -e CONFIG_USER_MTDUTILS_NANDWRITE /bin/nandwrite

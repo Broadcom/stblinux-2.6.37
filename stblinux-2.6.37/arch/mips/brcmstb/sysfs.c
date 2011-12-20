@@ -193,25 +193,7 @@ static ssize_t show_bmips4380_core_regs(struct device *dev,
 
 /* Display secondary cache module settings */
 
-#if defined(CONFIG_BRCM_SCM_L2)
-static u32 read_scm_reg(unsigned long addr)
-{
-	cache_op(Index_Load_Tag_S, addr);
-	ehb();
-	return read_c0_staglo();
-}
-
-static ssize_t show_scm_regs(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE,
-		"0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x\n",
-		read_scm_reg(0x90000000), read_scm_reg(0x90200000),
-		read_scm_reg(0x90400000), read_scm_reg(0x90600000),
-		read_scm_reg(0x90800000), read_scm_reg(0x90a00000),
-		read_scm_reg(0x90c00000), read_scm_reg(0x90e00000));
-}
-#elif defined(CONFIG_BRCM_ZSCM_L2)
+#if defined(CONFIG_BRCM_ZSCM_L2)
 static u32 read_zscm_reg(unsigned long addr)
 {
 	u32 ret;
@@ -273,9 +255,7 @@ static struct device_attribute brcmstb_attr_list[] = {
 #elif defined(CONFIG_BMIPS5000)
 	__ATTR(cp0_brcm_regs, 0444, show_cp0_brcm_regs, NULL),
 #endif
-#if defined(CONFIG_BRCM_SCM_L2)
-	__ATTR(scm_regs, 0444, show_scm_regs, NULL),
-#elif defined(CONFIG_BRCM_ZSCM_L2)
+#if defined(CONFIG_BRCM_ZSCM_L2)
 	__ATTR(zscm_regs, 0444, show_zscm_regs, NULL),
 #endif
 #if defined(CONFIG_BRCM_CPU_DIV)

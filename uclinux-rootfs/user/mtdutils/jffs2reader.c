@@ -64,7 +64,6 @@ BUGS:
 
 #define PROGRAM_NAME "jffs2reader"
 
-#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,23 +73,19 @@ BUGS:
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/param.h>
 #include <dirent.h>
-#include <linux/jffs2.h>
+#include <zlib.h>
+
+#include "mtd/jffs2-user.h"
 #include "common.h"
 
 #define SCRATCH_SIZE (5*1024*1024)
 
-#ifndef MAJOR
-/* FIXME:  I am using illicit insider knowledge of
- * kernel major/minor representation...  */
-#define MAJOR(dev) (((dev)>>8)&0xff)
-#define MINOR(dev) ((dev)&0xff)
-#endif
+/* macro to avoid "lvalue required as left operand of assignment" error */
+#define ADD_BYTES(p, n)		((p) = (typeof(p))((char *)(p) + (n)))
 
-
-#define DIRENT_INO(dirent) ((dirent)!=NULL?(dirent)->ino:0)
-#define DIRENT_PINO(dirent) ((dirent)!=NULL?(dirent)->pino:0)
+#define DIRENT_INO(dirent) ((dirent) !=NULL ? je32_to_cpu((dirent)->ino) : 0)
+#define DIRENT_PINO(dirent) ((dirent) !=NULL ? je32_to_cpu((dirent)->pino) : 0)
 
 struct dir {
 	struct dir *next;
@@ -100,10 +95,12 @@ struct dir {
 	char name[256];
 };
 
+int target_endian = __BYTE_ORDER;
+
 void putblock(char *, size_t, size_t *, struct jffs2_raw_inode *);
 struct dir *putdir(struct dir *, struct jffs2_raw_dirent *);
-void printdir(char *o, size_t size, struct dir *d, char *path,
-		int recurse);
+void printdir(char *o, size_t size, struct dir *d, const char *path,
+		int recurse, int want_ctime);
 void freedir(struct dir *);
 
 struct jffs2_raw_inode *find_raw_inode(char *o, size_t size, uint32_t ino);
@@ -112,12 +109,12 @@ struct jffs2_raw_dirent *resolvedirent(char *, size_t, uint32_t, uint32_t,
 struct jffs2_raw_dirent *resolvename(char *, size_t, uint32_t, char *, uint8_t);
 struct jffs2_raw_dirent *resolveinode(char *, size_t, uint32_t);
 
-struct jffs2_raw_dirent *resolvepath0(char *, size_t, uint32_t, char *,
+struct jffs2_raw_dirent *resolvepath0(char *, size_t, uint32_t, const char *,
 		uint32_t *, int);
-struct jffs2_raw_dirent *resolvepath(char *, size_t, uint32_t, char *,
+struct jffs2_raw_dirent *resolvepath(char *, size_t, uint32_t, const char *,
 		uint32_t *);
 
-void lsdir(char *, size_t, char *, int);
+void lsdir(char *, size_t, const char *, int, int);
 void catfile(char *, size_t, char *, char *, size_t, size_t *);
 
 int main(int, char **);
@@ -135,28 +132,28 @@ int main(int, char **);
 void putblock(char *b, size_t bsize, size_t * rsize,
 		struct jffs2_raw_inode *n)
 {
-	uLongf dlen = n->dsize;
+	uLongf dlen = je32_to_cpu(n->dsize);
 
-	if (n->isize > bsize || (n->offset + dlen) > bsize)
+	if (je32_to_cpu(n->isize) > bsize || (je32_to_cpu(n->offset) + dlen) > bsize)
 		errmsg_die("File does not fit into buffer!");
 
-	if (*rsize < n->isize)
-		bzero(b + *rsize, n->isize - *rsize);
+	if (*rsize < je32_to_cpu(n->isize))
+		bzero(b + *rsize, je32_to_cpu(n->isize) - *rsize);
 
 	switch (n->compr) {
 		case JFFS2_COMPR_ZLIB:
-			uncompress((Bytef *) b + n->offset, &dlen,
+			uncompress((Bytef *) b + je32_to_cpu(n->offset), &dlen,
 					(Bytef *) ((char *) n) + sizeof(struct jffs2_raw_inode),
-					(uLongf) n->csize);
+					(uLongf) je32_to_cpu(n->csize));
 			break;
 
 		case JFFS2_COMPR_NONE:
-			memcpy(b + n->offset,
+			memcpy(b + je32_to_cpu(n->offset),
 					((char *) n) + sizeof(struct jffs2_raw_inode), dlen);
 			break;
 
 		case JFFS2_COMPR_ZERO:
-			bzero(b + n->offset, dlen);
+			bzero(b + je32_to_cpu(n->offset), dlen);
 			break;
 
 			/* [DYN]RUBIN support required! */
@@ -165,7 +162,7 @@ void putblock(char *b, size_t bsize, size_t * rsize,
 			errmsg_die("Unsupported compression method!");
 	}
 
-	*rsize = n->isize;
+	*rsize = je32_to_cpu(n->isize);
 }
 
 /* adds/removes directory node into dir struct. */
@@ -184,13 +181,13 @@ struct dir *putdir(struct dir *dd, struct jffs2_raw_dirent *n)
 
 	o = dd;
 
-	if (n->ino) {
+	if (je32_to_cpu(n->ino)) {
 		if (dd == NULL) {
 			d = xmalloc(sizeof(struct dir));
 			d->type = n->type;
 			memcpy(d->name, n->name, n->nsize);
 			d->nsize = n->nsize;
-			d->ino = n->ino;
+			d->ino = je32_to_cpu(n->ino);
 			d->next = NULL;
 
 			return d;
@@ -200,7 +197,7 @@ struct dir *putdir(struct dir *dd, struct jffs2_raw_dirent *n)
 			if (n->nsize == dd->nsize &&
 					!memcmp(n->name, dd->name, n->nsize)) {
 				dd->type = n->type;
-				dd->ino = n->ino;
+				dd->ino = je32_to_cpu(n->ino);
 
 				return o;
 			}
@@ -210,7 +207,7 @@ struct dir *putdir(struct dir *dd, struct jffs2_raw_dirent *n)
 				dd->next->type = n->type;
 				memcpy(dd->next->name, n->name, n->nsize);
 				dd->next->nsize = n->nsize;
-				dd->next->ino = n->ino;
+				dd->next->ino = je32_to_cpu(n->ino);
 				dd->next->next = NULL;
 
 				return o;
@@ -295,12 +292,14 @@ const char *mode_string(int mode)
    d       - dir struct
  */
 
-void printdir(char *o, size_t size, struct dir *d, char *path, int recurse)
+void printdir(char *o, size_t size, struct dir *d, const char *path, int recurse,
+		int want_ctime)
 {
 	char m;
 	char *filetime;
 	time_t age;
 	struct jffs2_raw_inode *ri;
+	jint32_t mode;
 
 	if (!path)
 		return;
@@ -348,24 +347,27 @@ void printdir(char *o, size_t size, struct dir *d, char *path, int recurse)
 		}
 
 		filetime = ctime((const time_t *) &(ri->ctime));
-		age = time(NULL) - ri->ctime;
-		printf("%s %-4d %-8d %-8d ", mode_string(ri->mode),
-				1, ri->uid, ri->gid);
+		age = time(NULL) - je32_to_cpu(ri->ctime);
+		mode.v32 = ri->mode.m;
+		printf("%s %-4d %-8d %-8d ", mode_string(je32_to_cpu(mode)),
+				1, je16_to_cpu(ri->uid), je16_to_cpu(ri->gid));
 		if ( d->type==DT_BLK || d->type==DT_CHR ) {
 			dev_t rdev;
 			size_t devsize;
 			putblock((char*)&rdev, sizeof(rdev), &devsize, ri);
-			printf("%4d, %3d ", (int)MAJOR(rdev), (int)MINOR(rdev));
+			printf("%4d, %3d ", major(rdev), minor(rdev));
 		} else {
-			printf("%9ld ", (long)ri->dsize);
+			printf("%9ld ", (long)je32_to_cpu(ri->dsize));
 		}
 		d->name[d->nsize]='\0';
-		if (age < 3600L * 24 * 365 / 2 && age > -15 * 60) {
-			/* hh:mm if less than 6 months old */
-			printf("%6.6s %5.5s %s/%s%c", filetime + 4, filetime + 11, path, d->name, m);
-		} else {
-			printf("%6.6s %4.4s %s/%s%c", filetime + 4, filetime + 20, path, d->name, m);
+		if (want_ctime) {
+			if (age < 3600L * 24 * 365 / 2 && age > -15 * 60)
+				/* hh:mm if less than 6 months old */
+				printf("%6.6s %5.5s ", filetime + 4, filetime + 11);
+			else
+				printf("%6.6s %4.4s ", filetime + 4, filetime + 20);
 		}
+		printf("%s/%s%c", path, d->name, m);
 		if (d->type == DT_LNK) {
 			char symbuf[1024];
 			size_t symsize;
@@ -379,7 +381,7 @@ void printdir(char *o, size_t size, struct dir *d, char *path, int recurse)
 			char *tmp;
 			tmp = xmalloc(BUFSIZ);
 			sprintf(tmp, "%s/%s", path, d->name);
-			lsdir(o, size, tmp, recurse);		/* Go recursive */
+			lsdir(o, size, tmp, recurse, want_ctime);	/* Go recursive */
 			free(tmp);
 		}
 
@@ -439,12 +441,12 @@ struct jffs2_raw_inode *find_raw_inode(char *o, size_t size, uint32_t ino)
 	lr = n;
 
 	do {
-		while (n < e && n->u.magic != JFFS2_MAGIC_BITMASK)
-			((char *) n) += 4;
+		while (n < e && je16_to_cpu(n->u.magic) != JFFS2_MAGIC_BITMASK)
+			ADD_BYTES(n, 4);
 
-		if (n < e && n->u.magic == JFFS2_MAGIC_BITMASK) {
-			if (n->u.nodetype == JFFS2_NODETYPE_INODE &&
-					n->i.ino == ino && (v = n->i.version) > vcur) {
+		if (n < e && je16_to_cpu(n->u.magic) == JFFS2_MAGIC_BITMASK) {
+			if (je16_to_cpu(n->u.nodetype) == JFFS2_NODETYPE_INODE &&
+				je32_to_cpu(n->i.ino) == ino && (v = je32_to_cpu(n->i.version)) > vcur) {
 				/* XXX crc check */
 
 				if (vmaxt < v)
@@ -458,7 +460,7 @@ struct jffs2_raw_inode *find_raw_inode(char *o, size_t size, uint32_t ino)
 					return (&(n->i));
 			}
 
-			((char *) n) += ((n->u.totlen + 3) & ~3);
+			ADD_BYTES(n, ((je32_to_cpu(n->u.totlen) + 3) & ~3));
 		} else
 			n = (union jffs2_node_union *) o;	/* we're at the end, rewind to the beginning */
 
@@ -507,12 +509,12 @@ struct dir *collectdir(char *o, size_t size, uint32_t ino, struct dir *d)
 	lr = n;
 
 	do {
-		while (n < e && n->u.magic != JFFS2_MAGIC_BITMASK)
-			((char *) n) += 4;
+		while (n < e && je16_to_cpu(n->u.magic) != JFFS2_MAGIC_BITMASK)
+			ADD_BYTES(n, 4);
 
-		if (n < e && n->u.magic == JFFS2_MAGIC_BITMASK) {
-			if (n->u.nodetype == JFFS2_NODETYPE_DIRENT &&
-					n->d.pino == ino && (v = n->d.version) > vcur) {
+		if (n < e && je16_to_cpu(n->u.magic) == JFFS2_MAGIC_BITMASK) {
+			if (je16_to_cpu(n->u.nodetype) == JFFS2_NODETYPE_DIRENT &&
+				je32_to_cpu(n->d.pino) == ino && (v = je32_to_cpu(n->d.version)) > vcur) {
 				/* XXX crc check */
 
 				if (vmaxt < v)
@@ -531,7 +533,7 @@ struct dir *collectdir(char *o, size_t size, uint32_t ino, struct dir *d)
 				}
 			}
 
-			((char *) n) += ((n->u.totlen + 3) & ~3);
+			ADD_BYTES(n, ((je32_to_cpu(n->u.totlen) + 3) & ~3));
 		} else
 			n = (union jffs2_node_union *) o;	/* we're at the end, rewind to the beginning */
 
@@ -545,7 +547,7 @@ struct dir *collectdir(char *o, size_t size, uint32_t ino, struct dir *d)
 
 				lr = n =
 					(union jffs2_node_union *) (((char *) mp) +
-							((mp->u.totlen + 3) & ~3));
+							((je32_to_cpu(mp->u.totlen) + 3) & ~3));
 
 				vcur = vmin;
 			}
@@ -594,14 +596,14 @@ struct jffs2_raw_dirent *resolvedirent(char *o, size_t size,
 	n = (union jffs2_node_union *) o;
 
 	do {
-		while (n < e && n->u.magic != JFFS2_MAGIC_BITMASK)
-			((char *) n) += 4;
+		while (n < e && je16_to_cpu(n->u.magic) != JFFS2_MAGIC_BITMASK)
+			ADD_BYTES(n, 4);
 
-		if (n < e && n->u.magic == JFFS2_MAGIC_BITMASK) {
-			if (n->u.nodetype == JFFS2_NODETYPE_DIRENT &&
-					(!ino || n->d.ino == ino) &&
-					(v = n->d.version) > vmax &&
-					(!pino || (n->d.pino == pino &&
+		if (n < e && je16_to_cpu(n->u.magic) == JFFS2_MAGIC_BITMASK) {
+			if (je16_to_cpu(n->u.nodetype) == JFFS2_NODETYPE_DIRENT &&
+					(!ino || je32_to_cpu(n->d.ino) == ino) &&
+					(v = je32_to_cpu(n->d.version)) > vmax &&
+					(!pino || (je32_to_cpu(n->d.pino) == pino &&
 							   nsize == n->d.nsize &&
 							   !memcmp(name, n->d.name, nsize)))) {
 				/* XXX crc check */
@@ -612,7 +614,7 @@ struct jffs2_raw_dirent *resolvedirent(char *o, size_t size,
 				}
 			}
 
-			((char *) n) += ((n->u.totlen + 3) & ~3);
+			ADD_BYTES(n, ((je32_to_cpu(n->u.totlen) + 3) & ~3));
 		} else
 			return dd;
 	} while (1);
@@ -672,7 +674,7 @@ struct jffs2_raw_dirent *resolveinode(char *o, size_t size, uint32_t ino)
  */
 
 struct jffs2_raw_dirent *resolvepath0(char *o, size_t size, uint32_t ino,
-		char *p, uint32_t * inos, int recc)
+		const char *p, uint32_t * inos, int recc)
 {
 	struct jffs2_raw_dirent *dir = NULL;
 
@@ -788,7 +790,7 @@ struct jffs2_raw_dirent *resolvepath0(char *o, size_t size, uint32_t ino,
  */
 
 struct jffs2_raw_dirent *resolvepath(char *o, size_t size, uint32_t ino,
-		char *p, uint32_t * inos)
+		const char *p, uint32_t * inos)
 {
 	return resolvepath0(o, size, ino, p, inos, 0);
 }
@@ -801,7 +803,7 @@ struct jffs2_raw_dirent *resolvepath(char *o, size_t size, uint32_t ino,
    p       - path to be resolved
  */
 
-void lsdir(char *o, size_t size, char *path, int recurse)
+void lsdir(char *o, size_t size, const char *path, int recurse, int want_ctime)
 {
 	struct jffs2_raw_dirent *dd;
 	struct dir *d = NULL;
@@ -815,7 +817,7 @@ void lsdir(char *o, size_t size, char *path, int recurse)
 		errmsg_die("%s: No such file or directory", path);
 
 	d = collectdir(o, size, ino, d);
-	printdir(o, size, d, path, recurse);
+	printdir(o, size, d, path, recurse, want_ctime);
 	freedir(d);
 }
 
@@ -855,7 +857,7 @@ void catfile(char *o, size_t size, char *path, char *b, size_t bsize,
 
 int main(int argc, char **argv)
 {
-	int fd, opt, recurse = 0;
+	int fd, opt, recurse = 0, want_ctime = 0;
 	struct stat st;
 
 	char *scratch, *dir = NULL, *file = NULL;
@@ -863,7 +865,7 @@ int main(int argc, char **argv)
 
 	char *buf;
 
-	while ((opt = getopt(argc, argv, "rd:f:")) > 0) {
+	while ((opt = getopt(argc, argv, "rd:f:t")) > 0) {
 		switch (opt) {
 			case 'd':
 				dir = optarg;
@@ -873,6 +875,9 @@ int main(int argc, char **argv)
 				break;
 			case 'r':
 				recurse++;
+				break;
+			case 't':
+				want_ctime++;
 				break;
 			default:
 				fprintf(stderr,
@@ -895,7 +900,7 @@ int main(int argc, char **argv)
 		sys_errmsg_die("%s", argv[optind]);
 
 	if (dir)
-		lsdir(buf, st.st_size, dir, recurse);
+		lsdir(buf, st.st_size, dir, recurse, want_ctime);
 
 	if (file) {
 		scratch = xmalloc(SCRATCH_SIZE);
@@ -905,7 +910,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!dir && !file)
-		lsdir(buf, st.st_size, "/", 1);
+		lsdir(buf, st.st_size, "/", 1, want_ctime);
 
 
 	free(buf);

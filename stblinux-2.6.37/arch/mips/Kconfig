@@ -1074,7 +1074,7 @@ config BOOT_ELF32
 config MIPS_L1_CACHE_SHIFT
 	int
 	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || PMC_MSP4200_EVAL
- 	default "7" if BRCM_SCM_L2 || BRCM_ZSCM_L2
+	default "7" if BRCM_ZSCM_L2
 	default "6" if MIPS_CPU_SCACHE
 	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
  	default "6" if BMIPS4380

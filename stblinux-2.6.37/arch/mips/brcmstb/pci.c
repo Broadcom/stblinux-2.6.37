@@ -32,14 +32,10 @@
 
 /* NOTE: all PHYSICAL addresses */
 
-#if defined(BCHP_PCIX_BRIDGE_GRB_REG_START)
+#if defined(CONFIG_BRCM_HAS_SATA2)
 #define SATA_MEM_START		(BCHP_PCIX_BRIDGE_GRB_REG_START + 0x10010000)
-#elif defined(CONFIG_BRCM_HAS_SATA3)
-#define SATA_MEM_START		BPHYSADDR(BCHP_SATA_AHCI_GHC_REG_START)
-#else
-#define SATA_MEM_START		0x10510000
-#endif
 #define SATA_MEM_SIZE		0x00010000
+#endif
 
 /* internal controller registers for configuration reads/writes */
 #define PCI_CFG_INDEX		0x04
@@ -109,13 +105,17 @@ static int brcm_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 static int brcm_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 	int where, int size, u32 data);
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static int brcm_sata_read_config(struct pci_bus *bus, unsigned int devfn,
 	int where, int size, u32 *data);
 static int brcm_sata_write_config(struct pci_bus *bus, unsigned int devfn,
 	int where, int size, u32 data);
+#endif
 
 static inline int get_busno_pci23(void) { return BRCM_BUSNO_PCI23; }
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static inline int get_busno_sata(void)  { return BRCM_BUSNO_SATA;  }
+#endif
 static inline int get_busno_pcie(void)  { return BRCM_BUSNO_PCIE;  }
 
 static struct pci_ops brcmstb_pci_ops = {
@@ -123,12 +123,14 @@ static struct pci_ops brcmstb_pci_ops = {
 	.write = brcm_pci_write_config,
 };
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static struct pci_ops brcmstb_sata_ops = {
 	.read = brcm_sata_read_config,
 	.write = brcm_sata_write_config,
 };
 
 static u32 sata_pci_reg[] = { [PCI_INTERRUPT_PIN] = 0x01 };
+#endif
 
 /*
  * Notes on PCI IO space:
@@ -156,12 +158,14 @@ static struct resource pci23_mem_resource = {
 	.flags			= IORESOURCE_MEM,
 };
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static struct resource sata_mem_resource = {
 	.name			= "Internal SATA PCI-X MEM",
 	.start			= SATA_MEM_START,
 	.end			= SATA_MEM_START + SATA_MEM_SIZE - 1,
 	.flags			= IORESOURCE_MEM,
 };
+#endif
 
 static struct resource pcie_mem_resource = {
 	.name			= "External PCIe MEM",
@@ -177,12 +181,14 @@ static struct resource pci23_io_resource = {
 	.flags			= IORESOURCE_IO,
 };
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static struct resource sata_io_resource = {
 	.name			= "Internal SATA PCI-X IO (unavailable)",
 	.start			= IO_ADDR_SATA,
 	.end			= IO_ADDR_SATA + SATA_IO_SIZE - 1,
 	.flags			= IORESOURCE_IO,
 };
+#endif
 
 static struct resource pcie_io_resource = {
 	.name			= "External PCIe IO (unavailable)",
@@ -200,6 +206,7 @@ static struct pci_controller brcmstb_pci_controller = {
 	.get_busno		= &get_busno_pci23,
 };
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static struct pci_controller brcmstb_sata_controller = {
 	.pci_ops		= &brcmstb_sata_ops,
 	.io_resource		= &sata_io_resource,
@@ -207,6 +214,7 @@ static struct pci_controller brcmstb_sata_controller = {
 	.get_busno		= &get_busno_sata,
 	.io_map_base		= BOGUS_IO_MAP_BASE,
 };
+#endif
 
 static struct pci_controller brcmstb_pcie_controller = {
 	.pci_ops		= &brcmstb_pci_ops,
@@ -231,8 +239,10 @@ struct brcm_pci_bus {
 static struct brcm_pci_bus brcm_buses[] = {
 	[BRCM_BUSNO_PCI23] = {
 		&brcmstb_pci_controller,  "PCI2.3",  0, 0,  11, 8,  0 },
+#if defined(CONFIG_BRCM_HAS_SATA2)
 	[BRCM_BUSNO_SATA] = {
 		&brcmstb_sata_controller, "SATA",    0, 0,  15, 12, 1 },
+#endif
 	[BRCM_BUSNO_PCIE] = {
 		&brcmstb_pcie_controller, "PCIe",    1, 20, 15, 12, 0 },
 };
@@ -262,43 +272,7 @@ static struct brcm_pci_bus brcm_buses[] = {
 
 static inline void brcm_setup_sata_bridge(void)
 {
-#if defined(CONFIG_BRCM_HAS_SATA1)
-
-	/* Internal PCI SATA bridge setup for 7038, 7401, 7403, 7118, etc. */
-
-	BDEV_SET(BCHP_PCI_BRIDGE_PCI_CTRL,
-		(SATA_MEM_ENABLE|SATA_BUS_MASTER_ENABLE|
-		 SATA_PERR_ENABLE|SATA_SERR_ENABLE));
-
-	/* PCI slave window (SATA access to MIPS memory) */
-	BDEV_WR(BCHP_PCI_BRIDGE_PCI_SLV_MEM_WIN_BASE, 0 | DATA_ENDIAN);
-
-	/* PCI master window (MIPS access to SATA BARs) */
-	BDEV_WR(BCHP_PCI_BRIDGE_CPU_TO_SATA_MEM_WIN_BASE,
-		SATA_MEM_START | MMIO_ENDIAN);
-
-	BDEV_WR(BCHP_PCI_BRIDGE_CPU_TO_SATA_IO_WIN_BASE, 0 | MMIO_ENDIAN);
-
-	/* Set up MMIO BAR in PCI configuration space */
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_INDEX, PCI_BASE_ADDRESS_5);
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_DATA, SATA_MEM_START);
-
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_INDEX, PCI_COMMAND);
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_DATA,
-		PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER);
-
-	/* PCI latency settings */
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_INDEX, PCI_INTERRUPT_LINE);
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_DATA, 0x000f0100);
-
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_INDEX, PCI_CACHE_LINE_SIZE);
-	BDEV_WR_RB(BCHP_PCI_BRIDGE_SATA_CFG_DATA, 0x0080ff00);
-
-	/* Device ID in the emulated PCI configuration registers */
-	sata_pci_reg[PCI_CLASS_REVISION] = 0x01010f00;
-	sata_pci_reg[PCI_VENDOR_ID] = 0x02421166;
-
-#elif defined(CONFIG_BRCM_HAS_SATA2)
+#if defined(CONFIG_BRCM_HAS_SATA2)
 
 	/* Internal PCI-X SATA bridge setup for 7400, 7405, 7335 */
 
@@ -333,15 +307,6 @@ static inline void brcm_setup_sata_bridge(void)
 	/* Device ID in the emulated PCI configuration registers */
 	sata_pci_reg[PCI_CLASS_REVISION] = 0x01010f00;
 	sata_pci_reg[PCI_VENDOR_ID] = 0x860214e4;
-
-#elif defined(CONFIG_BRCM_HAS_SATA3)
-
-	BDEV_WR(BCHP_SATA_TOP_CTRL_BUS_CTRL, (DATA_ENDIAN << 4) |
-		(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
-
-	/* Device ID in the emulated PCI configuration registers */
-	sata_pci_reg[PCI_CLASS_REVISION] = 0x01060100;
-	sata_pci_reg[PCI_VENDOR_ID] = 0x860314e4;
 
 #endif
 }
@@ -558,7 +523,7 @@ static int __init brcmstb_pci_init(void)
 		register_pci_controller(&brcmstb_pci_controller);
 	}
 #endif
-#ifdef CONFIG_BRCM_HAS_SATA
+#if defined(CONFIG_BRCM_HAS_SATA2)
 	if (brcm_sata_enabled) {
 		brcm_setup_sata_bridge();
 		register_pci_controller(&brcmstb_sata_controller);
@@ -659,9 +624,7 @@ static int brcm_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 }
 
 /*
- * SATA3 is just a memory-mapped device; PCI config accesses are spoofed.
- *
- * SATA2/SATA1 have real PCI configuration registers, but they are set up
+ * SATA2 has real PCI configuration registers, but they are set up
  * once at boot time then subsequently emulated because they interfere with
  * power management.  i.e. SATA PCI registers are inaccessible when the
  * SATA core is clock gated.
@@ -670,6 +633,7 @@ static int brcm_pci_read_config(struct pci_bus *bus, unsigned int devfn,
  * only active BAR, on both AHCI and Serverworks "K2" cores.
  */
 
+#if defined(CONFIG_BRCM_HAS_SATA2)
 static int brcm_sata_write_config(struct pci_bus *bus, unsigned int devfn,
 	int where, int size, u32 data)
 {
@@ -693,6 +657,7 @@ static int brcm_sata_read_config(struct pci_bus *bus, unsigned int devfn,
 		*data = 0;
 	return PCIBIOS_SUCCESSFUL;
 }
+#endif
 
 /***********************************************************************
  * PCI slot to IRQ mappings (aka "fixup")
@@ -700,7 +665,7 @@ static int brcm_sata_read_config(struct pci_bus *bus, unsigned int devfn,
 
 int __devinit pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
-#if defined(CONFIG_BRCM_HAS_SATA)
+#if defined(CONFIG_BRCM_HAS_SATA2)
 	if (dev->bus->number == BRCM_BUSNO_SATA)
 		return BRCM_IRQ_SATA;
 #endif
@@ -729,19 +694,7 @@ int __devinit pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 /* Do platform specific device initialization at pci_enable_device() time */
 int pcibios_plat_dev_init(struct pci_dev *dev)
 {
-#if defined(CONFIG_BRCM_HAS_SATA3)
-	if (dev->bus->number == BRCM_BUSNO_SATA)
-		brcm_pm_sata3(1);
-#endif
 	return 0;
-}
-
-void pcibios_disable_device(struct pci_dev *dev)
-{
-#if defined(CONFIG_BRCM_HAS_SATA3)
-	if (dev->bus->number == BRCM_BUSNO_SATA)
-		brcm_pm_sata3(0);
-#endif
 }
 
 

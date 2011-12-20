@@ -14,7 +14,6 @@
  */
 
 #define PROGRAM_NAME "nanddump"
-#define VERSION "$Revision: 1.29 $"
 
 #define _GNU_SOURCE
 #include <ctype.h>
@@ -35,10 +34,6 @@
 #include "common.h"
 #include <libmtd.h>
 
-static struct nand_oobinfo none_oobinfo = {
-	.useecc = MTD_NANDECC_OFF,
-};
-
 static void display_help(void)
 {
 	printf(
@@ -47,17 +42,22 @@ static void display_help(void)
 "\n"
 "           --help               Display this help and exit\n"
 "           --version            Output version information and exit\n"
+"           --bb=METHOD          Choose bad block handling method (see below).\n"
 "-a         --forcebinary        Force printing of binary data to tty\n"
 "-c         --canonicalprint     Print canonical Hex+ASCII dump\n"
 "-f file    --file=file          Dump to file\n"
 "-l length  --length=length      Length\n"
 "-n         --noecc              Read without error correction\n"
-"-N         --noskipbad          Read without bad block skipping\n"
-"-o         --omitoob            Omit oob data\n"
-"-b         --omitbad            Omit bad blocks from the dump\n"
+"           --omitoob            Omit OOB data (default)\n"
+"-o         --oob                Dump OOB data\n"
 "-p         --prettyprint        Print nice (hexdump)\n"
 "-q         --quiet              Don't display progress and status messages\n"
-"-s addr    --startaddress=addr  Start address\n",
+"-s addr    --startaddress=addr  Start address\n"
+"\n"
+"--bb=METHOD, where METHOD can be `padbad', `dumpbad', or `skipbad':\n"
+"    padbad:  dump flash data, substituting 0xFF for any bad blocks\n"
+"    dumpbad: dump flash data, including any bad blocks\n"
+"    skipbad: dump good data, completely skipping any bad blocks (default)\n",
 	PROGRAM_NAME);
 	exit(EXIT_SUCCESS);
 }
@@ -80,37 +80,42 @@ static void display_version(void)
 
 static bool			pretty_print = false;	// print nice
 static bool			noecc = false;		// don't error correct
-static bool			noskipbad = false;	// don't skip bad blocks
-static bool			omitoob = false;	// omit oob data
+static bool			omitoob = true;		// omit oob data
 static long long		start_addr;		// start address
 static long long		length;			// dump length
 static const char		*mtddev;		// mtd device name
 static const char		*dumpfile;		// dump file name
-static bool			omitbad = false;
 static bool			quiet = false;		// suppress diagnostic output
 static bool			canonical = false;	// print nice + ascii
 static bool			forcebinary = false;	// force printing binary to tty
 
+static enum {
+	padbad,   // dump flash data, substituting 0xFF for any bad blocks
+	dumpbad,  // dump flash data, including any bad blocks
+	skipbad,  // dump good data, completely skipping any bad blocks
+} bb_method = skipbad;
+
 static void process_options(int argc, char * const argv[])
 {
 	int error = 0;
+	bool oob_default = true;
 
 	for (;;) {
 		int option_index = 0;
-		static const char *short_options = "bs:f:l:opqnNca";
+		static const char *short_options = "s:f:l:opqnca";
 		static const struct option long_options[] = {
 			{"help", no_argument, 0, 0},
 			{"version", no_argument, 0, 0},
+			{"bb", required_argument, 0, 0},
+			{"omitoob", no_argument, 0, 0},
 			{"forcebinary", no_argument, 0, 'a'},
 			{"canonicalprint", no_argument, 0, 'c'},
 			{"file", required_argument, 0, 'f'},
+			{"oob", no_argument, 0, 'o'},
 			{"prettyprint", no_argument, 0, 'p'},
-			{"omitoob", no_argument, 0, 'o'},
-			{"omitbad", no_argument, 0, 'b'},
 			{"startaddress", required_argument, 0, 's'},
 			{"length", required_argument, 0, 'l'},
 			{"noecc", no_argument, 0, 'n'},
-			{"noskipbad", no_argument, 0, 'N'},
 			{"quiet", no_argument, 0, 'q'},
 			{0, 0, 0, 0},
 		};
@@ -130,10 +135,26 @@ static void process_options(int argc, char * const argv[])
 					case 1:
 						display_version();
 						break;
+					case 2:
+						/* Handle --bb=METHOD */
+						if (!strcmp(optarg, "padbad"))
+							bb_method = padbad;
+						else if (!strcmp(optarg, "dumpbad"))
+							bb_method = dumpbad;
+						else if (!strcmp(optarg, "skipbad"))
+							bb_method = skipbad;
+						else
+							error++;
+						break;
+					case 3: /* --omitoob */
+						if (oob_default) {
+							oob_default = false;
+							omitoob = true;
+						} else {
+							errmsg_die("--oob and --oomitoob are mutually exclusive");
+						}
+						break;
 				}
-				break;
-			case 'b':
-				omitbad = true;
 				break;
 			case 's':
 				start_addr = simple_strtoll(optarg, &error);
@@ -148,7 +169,12 @@ static void process_options(int argc, char * const argv[])
 				length = simple_strtoll(optarg, &error);
 				break;
 			case 'o':
-				omitoob = true;
+				if (oob_default) {
+					oob_default = false;
+					omitoob = false;
+				} else {
+					errmsg_die("--oob and --oomitoob are mutually exclusive");
+				}
 				break;
 			case 'a':
 				forcebinary = true;
@@ -163,9 +189,6 @@ static void process_options(int argc, char * const argv[])
 				break;
 			case 'n':
 				noecc = true;
-				break;
-			case 'N':
-				noskipbad = true;
 				break;
 			case '?':
 				error++;
@@ -282,11 +305,10 @@ int main(int argc, char * const argv[])
 {
 	long long ofs, end_addr = 0;
 	long long blockstart = 1;
-	int ret, i, fd, ofd = 0, bs, badblock = 0;
+	int i, fd, ofd = 0, bs, badblock = 0;
 	struct mtd_dev_info mtd;
 	char pretty_buf[PRETTY_BUF_LEN];
-	int oobinfochanged = 0, firstblock = 1;
-	struct nand_oobinfo old_oobinfo;
+	int firstblock = 1;
 	struct mtd_ecc_stats stat1, stat2;
 	bool eccstats = false;
 	unsigned char *readbuf = NULL, *oobbuf = NULL;
@@ -314,26 +336,9 @@ int main(int argc, char * const argv[])
 	readbuf = xmalloc(sizeof(readbuf) * mtd.min_io_size);
 
 	if (noecc)  {
-		ret = ioctl(fd, MTDFILEMODE, MTD_MODE_RAW);
-		if (ret == 0) {
-			oobinfochanged = 2;
-		} else {
-			switch (errno) {
-			case ENOTTY:
-				if (ioctl(fd, MEMGETOOBSEL, &old_oobinfo) != 0) {
-					perror("MEMGETOOBSEL");
-					goto closeall;
-				}
-				if (ioctl(fd, MEMSETOOBSEL, &none_oobinfo) != 0) {
-					perror("MEMSETOOBSEL");
-					goto closeall;
-				}
-				oobinfochanged = 1;
-				break;
-			default:
+		if (ioctl(fd, MTDFILEMODE, MTD_FILE_MODE_RAW) != 0) {
 				perror("MTDFILEMODE");
 				goto closeall;
-			}
 		}
 	} else {
 		/* check if we can read ecc stats */
@@ -366,11 +371,10 @@ int main(int argc, char * const argv[])
 
 	/* Initialize start/end addresses and block size */
 	if (start_addr & (mtd.min_io_size - 1)) {
-		fprintf(stderr, "WARNING: The start address is not page-aligned !\n"
-				"The pagesize of this NAND Flash is 0x%x.\n"
-				"nandwrite doesn't allow writes starting at this location.\n"
-				"Future versions of nanddump will fail here.\n",
+		fprintf(stderr, "the start address (-s parameter) is not page-aligned!\n"
+				"The pagesize of this NAND Flash is 0x%x.\n",
 				mtd.min_io_size);
+		goto closeall;
 	}
 	if (length)
 		end_addr = start_addr + length;
@@ -391,7 +395,7 @@ int main(int argc, char * const argv[])
 	/* Dump the flash contents */
 	for (ofs = start_addr; ofs < end_addr; ofs += bs) {
 		/* Check for bad block */
-		if (noskipbad) {
+		if (bb_method == dumpbad) {
 			badblock = 0;
 		} else if (blockstart != (ofs & (~mtd.eb_size + 1)) ||
 				firstblock) {
@@ -404,8 +408,14 @@ int main(int argc, char * const argv[])
 		}
 
 		if (badblock) {
-			if (omitbad)
+			/* skip bad block, increase end_addr */
+			if (bb_method == skipbad) {
+				end_addr += mtd.eb_size;
+				ofs += mtd.eb_size - bs;
+				if (end_addr > mtd.size)
+					end_addr = mtd.size;
 				continue;
+			}
 			memset(readbuf, 0xff, bs);
 		} else {
 			/* Read page data and exit on failure */
@@ -466,15 +476,6 @@ int main(int argc, char * const argv[])
 			write(ofd, oobbuf, mtd.oob_size);
 	}
 
-	/* reset oobinfo */
-	if (oobinfochanged == 1) {
-		if (ioctl(fd, MEMSETOOBSEL, &old_oobinfo) != 0) {
-			perror("MEMSETOOBSEL");
-			close(fd);
-			close(ofd);
-			return EXIT_FAILURE;
-		}
-	}
 	/* Close the output file and MTD device, free memory */
 	close(fd);
 	close(ofd);
@@ -485,12 +486,6 @@ int main(int argc, char * const argv[])
 	return EXIT_SUCCESS;
 
 closeall:
-	/* The new mode change is per file descriptor ! */
-	if (oobinfochanged == 1) {
-		if (ioctl(fd, MEMSETOOBSEL, &old_oobinfo) != 0)  {
-			perror("MEMSETOOBSEL");
-		}
-	}
 	close(fd);
 	close(ofd);
 	free(oobbuf);

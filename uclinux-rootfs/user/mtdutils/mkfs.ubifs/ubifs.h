@@ -25,6 +25,9 @@
 #ifndef __UBIFS_H__
 #define __UBIFS_H__
 
+/* Maximum logical eraseblock size in bytes */
+#define UBIFS_MAX_LEB_SZ (2*1024*1024)
+
 /* Minimum amount of data UBIFS writes to the flash */
 #define MIN_WRITE_SZ (UBIFS_DATA_NODE_SZ + 8)
 
@@ -317,6 +320,7 @@ struct ubifs_znode
  * @nhead_lnum: LEB number of LPT head
  * @nhead_offs: offset of LPT head
  * @big_lpt: flag that LPT is too big to write whole during commit
+ * @space_fixup: flag indicating that free space in LEBs needs to be cleaned up
  * @lpt_sz: LPT size
  *
  * @ltab_lnum: LEB number of LPT's own lprops table
@@ -394,6 +398,7 @@ struct ubifs_info
 	int nhead_lnum;
 	int nhead_offs;
 	int big_lpt;
+	int space_fixup;
 	long long lpt_sz;
 
 	int ltab_lnum;

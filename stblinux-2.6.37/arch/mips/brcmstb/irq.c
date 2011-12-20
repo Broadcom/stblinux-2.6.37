@@ -327,11 +327,6 @@ void __init arch_init_irq(void)
 		);
 #endif
 
-#if defined(CONFIG_BRCM_HAS_PCU_UARTS)
-	BDEV_WR(BCHP_TVM_MAIN_INT_CNTL, 0);
-	BDEV_WR_F(TVM_MAIN_INT_CNTL, MAIN_UART1_INT_EN, 1);
-#endif
-
 #if defined(BCHP_HIF_INTR2_CPU_MASK_SET)
 	/* mask and clear all HIF L2 interrupts */
 	BDEV_WR_RB(BCHP_HIF_INTR2_CPU_MASK_SET, 0xffffffff);

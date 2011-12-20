@@ -174,15 +174,23 @@ struct BcmEnet_devctrl {
 
 #define GENET_TBUF_CTRL(pdev)			(pdev->rbuf->tbuf_ctrl)
 #define GENET_TBUF_BP_MC(pdev)			(pdev->rbuf->tbuf_bp_mc)
-#define GENET_TBUF_ENDIAN_CTRL(pdev)	(pdev->rbuf->tbuf_endian_ctrl)
+#define GENET_TBUF_ENDIAN_CTRL(pdev)		(pdev->rbuf->tbuf_endian_ctrl)
 #define GENET_TBUF_FLUSH_CTRL(pdev)		(pdev->rbuf->tbuf_flush_ctrl)
 #define GENET_RBUF_FLUSH_CTRL(pdev)		(pdev->rbuf->rbuf_flush_ctrl)
 #define GENET_RGMII_OOB_CTRL(pdev)		(pdev->rbuf->rgmii_oob_ctrl)
 #define GENET_RGMII_IB_STATUS(pdev)		(pdev->rbuf->rgmii_ib_status)
-#define GENET_RGMII_LED_STATUS(pdev)	(pdev->rbuf->rgmii_led_ctrl)
+#define GENET_RGMII_LED_STATUS(pdev)		(pdev->rbuf->rgmii_led_ctrl)
 #define GENET_HFB_CTRL(pdev)			(pdev->rbuf->rbuf_hfb_ctrl)
 #define GENET_HFB_FLTR_LEN(pdev, i)		(pdev->rbuf->rbuf_fltr_len[i])
 
 #endif /* CONFIG_BRCM_GENET_VERSION > 1 */
+
+#if CONFIG_BRCM_GENET_VERSION < 3
+#define GENET_BP_IN_EN_SHIFT			16
+#define GENET_BP_MASK				0xffff
+#else
+#define GENET_BP_IN_EN_SHIFT			17
+#define GENET_BP_MASK				0x1ffff
+#endif
 
 #endif /* __BCMGENET_H__ */

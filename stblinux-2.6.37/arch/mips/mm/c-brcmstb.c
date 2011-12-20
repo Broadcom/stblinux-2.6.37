@@ -292,7 +292,7 @@ void __cpuinit r4k_cache_init(void)
 int brcm_cacheflush(unsigned long addr, unsigned long bytes,
 	unsigned int cache)
 {
-#if !defined(CONFIG_BRCM_SCM_L2) && !defined(CONFIG_BRCM_ZSCM_L2)
+#if !defined(CONFIG_BRCM_ZSCM_L2)
 	/* partial RAC invalidate is not supported */
 	if (cache == RACACHE) {
 		brcm_inv_prefetch(0, 0);
@@ -354,18 +354,7 @@ void brcm_inv_prefetch(unsigned long addr, unsigned long size)
 	DEV_SET_RB(BMIPS_GET_CBR() + BMIPS_RAC_CONFIG, 0x100);
 #elif defined(CONFIG_BMIPS4380)
 	DEV_SET_RB(BMIPS_GET_CBR() + BMIPS_RAC_CONFIG, 0x100);
-#elif defined(CONFIG_MTI_R5K)
-	unsigned long flags;
-
-	local_irq_save(flags);
-	if (BDEV_RD(BCHP_RAC_MODE) & 0x10) {
-		BDEV_WR(BCHP_RAC_COMMAND, 0x01);
-		while (BDEV_RD(BCHP_RAC_VALID_FWD_STATUS) & 0xffff)
-			;
-		BDEV_WR(BCHP_RAC_COMMAND, 0x00);
-	}
-	local_irq_restore(flags);
-#elif defined(CONFIG_BRCM_SCM_L2) || defined(CONFIG_BRCM_ZSCM_L2)
+#elif defined(CONFIG_BRCM_ZSCM_L2)
 	unsigned int linesz = cpu_scache_line_size();
 	unsigned long addr0 = addr, addr1;
 
@@ -469,11 +458,10 @@ void brcm_get_cache_info(struct brcm_cache_info *info)
 	info->max_writethrough = 0;
 	info->prefetch_enabled = 0;
 
-#if defined(CONFIG_BRCM_SCM_L2) || defined(CONFIG_BRCM_ZSCM_L2)
+#if defined(CONFIG_BRCM_ZSCM_L2)
 	/* chips with prefetching L2 */
 	info->prefetch_enabled = 1;
-#elif defined(CONFIG_MTI_R5K) || defined(CONFIG_BMIPS3300) || \
-	defined(CONFIG_BMIPS4380)
+#elif defined(CONFIG_BMIPS3300) || defined(CONFIG_BMIPS4380)
 	/* chips with write-through RAC */
 	info->max_writethrough = info->max_writeback * 4;
 	info->prefetch_enabled = 1;

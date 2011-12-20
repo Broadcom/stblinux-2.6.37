@@ -21,70 +21,6 @@ choice
 	help
 	  Select the Broadcom chipset you are building for.
 
-config BCM35125C0
-	bool "35125 Cx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM35125
-	select SYS_HAS_CPU_MIPS32_R1
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_HAS_PCU_UARTS
-	select BRCM_SLOW_TVM_CLOCK
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_WKTMR
-	select BRCM_HAS_UPPER_MEMORY
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM35126B0
-	bool "35126 Bx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM35126
-	select BMIPS5000
-	select BRCM_HAS_XI
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_HAS_PCU_UARTS
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_WKTMR
-	select BRCM_HAS_UPPER_MEMORY
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM35230C0
-	bool "35230 Cx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM35230
-	select BMIPS4380
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_HAS_PCU_UARTS
-	select BRCM_SLOW_TVM_CLOCK
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_WKTMR
-	# 35230 has nonstandard SDIO_EMMC_CTRL registers
-	#select BRCM_HAS_SDIO_V1
-	select BRCM_HAS_UPPER_MEMORY
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM35330A0
-	bool "35330 Ax"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM35330
-	select BMIPS5000
-	select BRCM_HAS_XKS01
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_HAS_PCU_UARTS
-	select BRCM_SLOW_TVM_CLOCK
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_WKTMR
-	select BRCM_HAS_SDIO_V1
-	select BRCM_HAS_UPPER_MEMORY
-	select BRCM_HAS_1GB_MEMC0
-
 config BCM7125C0
 	bool "7125 Cx"
 	select BRCM_PLATFORM_DEFAULTS
@@ -181,33 +117,6 @@ config BCM7340B0
 	select BRCM_HAS_NAND_MINOR_3
 	select BRCM_HAS_EDU
 	select BRCM_HAS_BSPI_V3
-	select BRCM_HAS_WKTMR
-	select BRCM_HAS_STANDBY
-	select BRCM_PWR_HANDSHAKE_V0
-	select BRCM_HAS_ANALOG_DDR_PHY
-	select BRCM_HAS_UPPER_MEMORY
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM7342B0
-	bool "7342 Bx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM7342
-	select BMIPS4380
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_UARTC_IS_16550
-	select BRCM_HAS_PCI23
-	select BRCM_HAS_GENET_0
-	select BRCM_HAS_MOCA_11
-	select BRCM_HAS_MOCA_MIDRF
-	select BRCM_MOCA_ON_GENET_1
-	select BRCM_GENET_V1
-	select BRCM_HAS_NOR
-	# missing definitions in bchp_nand.h
-	# select BRCM_HAS_NAND_MAJOR_3
-	# select BRCM_HAS_NAND_MINOR_3
-	select BRCM_HAS_BSPI_V3
-	select BRCM_HAS_SATA2
 	select BRCM_HAS_WKTMR
 	select BRCM_HAS_STANDBY
 	select BRCM_PWR_HANDSHAKE_V0
@@ -649,59 +558,6 @@ config BCM7552B0
 	#select BRCM_PWR_HANDSHAKE_V1
 	#select BRCM_HAS_DIGITAL_DDR_PHY
 
-config BCM7631B0
-	bool "7631 Bx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM7631
-	select MTI_24K
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_UARTC_IS_16550
-	select BRCM_HAS_EMAC_0
-	select BRCM_EMAC_128_DESC
-	select BRCM_HAS_NAND_MAJOR_4
-	select BRCM_HAS_NAND_MINOR_0
-	select BRCM_HAS_EDU
-	select BRCM_HAS_SDIO_V0
-	select BRCM_HAS_DVD
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM7640A0
-	bool "7640 Ax"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM7640
-	select MTI_24K
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_UARTC_IS_16550
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_NOR
-	select BRCM_HAS_NAND_MAJOR_5
-	select BRCM_HAS_NAND_MINOR_0
-	select BRCM_HAS_EDU
-	select BRCM_HAS_SDIO_V0
-	select BRCM_HAS_DVD
-	select BRCM_HAS_1GB_MEMC0
-
-config BCM7640B0
-	bool "7640 Bx"
-	select BRCM_PLATFORM_DEFAULTS
-	select BCM7640
-	select MTI_24K
-	select BRCM_UARTA_IS_16550
-	select BRCM_UARTB_IS_16550
-	select BRCM_UARTC_IS_16550
-	select BRCM_HAS_GENET_0
-	select BRCM_GENET_V2
-	select BRCM_HAS_NOR
-	select BRCM_HAS_NAND_MAJOR_6
-	select BRCM_HAS_NAND_MINOR_0
-	select BRCM_HAS_EDU
-	# select BRCM_HAS_SDIO_V0
-	select BRCM_HAS_DVD
-	select BRCM_HAS_1GB_MEMC0
-
 endchoice
 
 
@@ -898,7 +754,7 @@ config BRCM_MOCA
 config SATA_BRCMSTB
 	tristate "Broadcom STB SATA support"
 	depends on BRCMSTB && PCI && ATA_SFF && !BRCM_IKOS && \
-		(BRCM_HAS_SATA1 || BRCM_HAS_SATA2)
+		BRCM_HAS_SATA2
 	default y
 	help
 	  This option enables support for STB/DVD onchip SATA cores.
@@ -1172,19 +1028,6 @@ config BMIPS5000
 	select SYS_SUPPORTS_HIGHMEM
 	select CPU_SUPPORTS_HIGHMEM
 
-config MTI_R5K
-	bool
-	select SYS_HAS_CPU_MIPS32_R1
-
-config MTI_24K
-	bool
-	select SYS_HAS_CPU_MIPS32_R2
-
-config MTI_34K
-	bool
-	select SYS_HAS_CPU_MIPS32_R2
-	select SYS_SUPPORTS_MULTITHREADING
-
 
 #####################################################################
 # Hidden options: UART
@@ -1195,13 +1038,6 @@ config BRCM_HAS_16550
 	bool
 	select SERIAL_8250
 	select SERIAL_8250_CONSOLE
-
-config BRCM_HAS_PCU_UARTS
-	bool
-
-# old DTV platforms used 54MHz as the UART base clock; new platforms use 216MHz
-config BRCM_SLOW_TVM_CLOCK
-	bool
 
 config BRCM_HAS_UARTA
 	bool
@@ -1332,20 +1168,16 @@ config BRCM_HAS_DVD
 
 config BRCM_HAS_SATA
 	bool
-	select HW_HAS_PCI if !BRCM_IKOS
-
-config BRCM_HAS_SATA1
-	bool
-	select BRCM_HAS_SATA
 
 config BRCM_HAS_SATA2
 	bool
 	select BRCM_HAS_SATA
+	select HW_HAS_PCI if !BRCM_IKOS
 
 config BRCM_HAS_SATA3
 	bool
 	select BRCM_HAS_SATA
-	select HW_HAS_PCI if !BRCM_IKOS
+	select SATA_AHCI_PLATFORM
 
 config BRCM_SATA_75MHZ_PLL
 	bool
@@ -1462,10 +1294,6 @@ config BRCM_HAS_SDIO_V1
 config BRCM_HAS_EMMC
 	bool
 
-config BRCM_SCM_L2
-	bool
-	select MIPS_CPU_SCACHE
-
 config BRCM_ZSCM_L2
 	bool
 	select MIPS_CPU_SCACHE
@@ -1569,18 +1397,6 @@ config BRCM_PLATFORM_DEFAULTS
 #####################################################################
 
 
-config BCM35125
-	bool
-
-config BCM35126
-	bool
-
-config BCM35230
-	bool
-
-config BCM35330
-	bool
-
 config BCM7125
 	bool
 
@@ -1588,9 +1404,6 @@ config BCM7231
 	bool
 
 config BCM7340
-	bool
-
-config BCM7342
 	bool
 
 config BCM7344
@@ -1627,12 +1440,6 @@ config BCM7550
 	bool
 
 config BCM7552
-	bool
-
-config BCM7631
-	bool
-
-config BCM7640
 	bool
 
 endmenu

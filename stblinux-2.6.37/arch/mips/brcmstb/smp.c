@@ -260,8 +260,6 @@ void __ref play_dead(void)
 {
 	idle_task_exit();
 
-	/* Drop all mm context TLB entries on this cpu */
-	local_flush_tlb_all_mm();
 	/* flush data cache */
 	_dma_cache_wback_inv(0, ~0);
 

@@ -31,9 +31,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <mtd/mtd-user.h>
+#include <inttypes.h>
 
+#include <mtd/mtd-user.h>
 #include <libmtd.h>
+
 #include "libmtd_int.h"
 #include "common.h"
 
@@ -75,7 +77,7 @@ static int read_data(const char *file, void *buf, int buf_len)
 {
 	int fd, rd, tmp, tmp1;
 
-	fd = open(file, O_RDONLY);
+	fd = open(file, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return -1;
 
@@ -199,7 +201,7 @@ static int read_hex_ll(const char *file, long long *value)
 	int fd, rd;
 	char buf[50];
 
-	fd = open(file, O_RDONLY);
+	fd = open(file, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return -1;
 
@@ -251,7 +253,7 @@ static int read_pos_ll(const char *file, long long *value)
 	int fd, rd;
 	char buf[50];
 
-	fd = open(file, O_RDONLY);
+	fd = open(file, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return -1;
 
@@ -536,7 +538,7 @@ static int sysfs_is_supported(struct libmtd *lib)
 		return 0;
 
 	sprintf(file, lib->mtd_name, num);
-	fd = open(file, O_RDONLY);
+	fd = open(file, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return 0;
 
@@ -881,6 +883,42 @@ int mtd_erase(libmtd_t desc, const struct mtd_dev_info *mtd, int fd, int eb)
 	return 0;
 }
 
+int mtd_regioninfo(int fd, int regidx, struct region_info_user *reginfo)
+{
+	int ret;
+
+	if (regidx < 0) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	ret = ioctl(fd, MEMGETREGIONINFO, reginfo);
+	if (ret < 0)
+		return sys_errmsg("%s ioctl failed for erase region %d",
+			"MEMGETREGIONINFO", regidx);
+
+	return 0;
+}
+
+int mtd_is_locked(const struct mtd_dev_info *mtd, int fd, int eb)
+{
+	int ret;
+	erase_info_t ei;
+
+	ei.start = eb * mtd->eb_size;
+	ei.length = mtd->eb_size;
+
+	ret = ioctl(fd, MEMISLOCKED, &ei);
+	if (ret < 0) {
+		if (errno != ENOTTY && errno != EOPNOTSUPP)
+			return mtd_ioctl_error(mtd, eb, "MEMISLOCKED");
+		else
+			errno = EOPNOTSUPP;
+	}
+
+	return ret;
+}
+
 /* Patterns to write to a physical eraseblock when torturing it */
 static uint8_t patterns[] = {0xa5, 0x5a, 0x0};
 
@@ -932,7 +970,8 @@ int mtd_torture(libmtd_t desc, const struct mtd_dev_info *mtd, int fd, int eb)
 
 		/* Write a pattern and check it */
 		memset(buf, patterns[i], mtd->eb_size);
-		err = mtd_write(mtd, fd, eb, 0, buf, mtd->eb_size);
+		err = mtd_write(desc, mtd, fd, eb, 0, buf, mtd->eb_size, NULL,
+				0, 0);
 		if (err)
 			goto out;
 
@@ -1032,11 +1071,49 @@ int mtd_read(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
 	return 0;
 }
 
-int mtd_write(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
-	      void *buf, int len)
+static int legacy_auto_oob_layout(const struct mtd_dev_info *mtd, int fd,
+				  int ooblen, void *oob) {
+	struct nand_oobinfo old_oobinfo;
+	int start, len;
+	uint8_t *tmp_buf;
+
+	/* Read the current oob info */
+	if (ioctl(fd, MEMGETOOBSEL, &old_oobinfo))
+		return sys_errmsg("MEMGETOOBSEL failed");
+
+	tmp_buf = malloc(ooblen);
+	memcpy(tmp_buf, oob, ooblen);
+
+	/*
+	 * We use autoplacement and have the oobinfo with the autoplacement
+	 * information from the kernel available
+	 */
+	if (old_oobinfo.useecc == MTD_NANDECC_AUTOPLACE) {
+		int i, tags_pos = 0;
+		for (i = 0; old_oobinfo.oobfree[i][1]; i++) {
+			/* Set the reserved bytes to 0xff */
+			start = old_oobinfo.oobfree[i][0];
+			len = old_oobinfo.oobfree[i][1];
+			memcpy(oob + start, tmp_buf + tags_pos, len);
+			tags_pos += len;
+		}
+	} else {
+		/* Set at least the ecc byte positions to 0xff */
+		start = old_oobinfo.eccbytes;
+		len = mtd->oob_size - start;
+		memcpy(oob + start, tmp_buf + start, len);
+	}
+
+	return 0;
+}
+
+int mtd_write(libmtd_t desc, const struct mtd_dev_info *mtd, int fd, int eb,
+	      int offs, void *data, int len, void *oob, int ooblen,
+	      uint8_t mode)
 {
 	int ret;
 	off_t seek;
+	struct mtd_write_req ops;
 
 	ret = mtd_valid_erase_block(mtd, eb);
 	if (ret)
@@ -1061,16 +1138,41 @@ int mtd_write(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
 		return -1;
 	}
 
-	/* Seek to the beginning of the eraseblock */
+	/* Calculate seek address */
 	seek = (off_t)eb * mtd->eb_size + offs;
-	if (lseek(fd, seek, SEEK_SET) != seek)
-		return sys_errmsg("cannot seek mtd%d to offset %llu",
-				  mtd->mtd_num, (unsigned long long)seek);
 
-	ret = write(fd, buf, len);
-	if (ret != len)
-		return sys_errmsg("cannot write %d bytes to mtd%d (eraseblock %d, offset %d)",
-				  len, mtd->mtd_num, eb, offs);
+	ops.start = seek;
+	ops.len = len;
+	ops.ooblen = ooblen;
+	ops.usr_data = (uint64_t)(unsigned long)data;
+	ops.usr_oob = (uint64_t)(unsigned long)oob;
+	ops.mode = mode;
+
+	ret = ioctl(fd, MEMWRITE, &ops);
+	if (ret == 0)
+		return 0;
+	else if (errno != ENOTTY && errno != EOPNOTSUPP)
+		return mtd_ioctl_error(mtd, eb, "MEMWRITE");
+
+	/* Fall back to old methods if necessary */
+	if (oob) {
+		if (mode == MTD_OPS_AUTO_OOB)
+			if (legacy_auto_oob_layout(mtd, fd, ooblen, oob))
+				return -1;
+		if (mtd_write_oob(desc, mtd, fd, seek, ooblen, oob) < 0)
+			return sys_errmsg("cannot write to OOB");
+	}
+	if (data) {
+		/* Seek to the beginning of the eraseblock */
+		if (lseek(fd, seek, SEEK_SET) != seek)
+			return sys_errmsg("cannot seek mtd%d to offset %llu",
+					mtd->mtd_num, (unsigned long long)seek);
+		ret = write(fd, data, len);
+		if (ret != len)
+			return sys_errmsg("cannot write %d bytes to mtd%d "
+					  "(eraseblock %d, offset %d)",
+					  len, mtd->mtd_num, eb, offs);
+	}
 
 	return 0;
 }
@@ -1079,7 +1181,7 @@ int do_oob_op(libmtd_t desc, const struct mtd_dev_info *mtd, int fd,
 	      uint64_t start, uint64_t length, void *data, unsigned int cmd64,
 	      unsigned int cmd)
 {
-	int ret;
+	int ret, oob_offs;
 	struct mtd_oob_buf64 oob64;
 	struct mtd_oob_buf oob;
 	unsigned long long max_offs;
@@ -1096,16 +1198,16 @@ int do_oob_op(libmtd_t desc, const struct mtd_dev_info *mtd, int fd,
 
 	max_offs = (unsigned long long)mtd->eb_cnt * mtd->eb_size;
 	if (start >= max_offs) {
-		errmsg("bad page address %llu, mtd%d has %d eraseblocks "
-		       "(%llu bytes)", (unsigned long long) start, mtd->mtd_num,
-		       mtd->eb_cnt, max_offs);
+		errmsg("bad page address %" PRIu64 ", mtd%d has %d eraseblocks (%llu bytes)",
+		       start, mtd->mtd_num, mtd->eb_cnt, max_offs);
 		errno = EINVAL;
 		return -1;
 	}
-	if (start % mtd->min_io_size) {
-		errmsg("unaligned address %llu, mtd%d page size is %d",
-		       (unsigned long long)start, mtd->mtd_num,
-		       mtd->min_io_size);
+
+	oob_offs = start & (mtd->min_io_size - 1);
+	if (oob_offs + length > mtd->oob_size || length == 0) {
+		errmsg("Cannot write %" PRIu64 " OOB bytes to address %" PRIu64 " (OOB offset %u) - mtd%d OOB size is only %d bytes",
+		       length, start, oob_offs, mtd->mtd_num,  mtd->oob_size);
 		errno = EINVAL;
 		return -1;
 	}
@@ -1122,10 +1224,8 @@ int do_oob_op(libmtd_t desc, const struct mtd_dev_info *mtd, int fd,
 
 		if (errno != ENOTTY ||
 		    lib->offs64_ioctls != OFFS64_IOCTLS_UNKNOWN) {
-			sys_errmsg("%s ioctl failed for mtd%d, offset %llu "
-				   "(eraseblock %llu)", cmd64_str, mtd->mtd_num,
-				   (unsigned long long)start,
-				   (unsigned long long)start / mtd->eb_size);
+			sys_errmsg("%s ioctl failed for mtd%d, offset %" PRIu64 " (eraseblock %" PRIu64 ")",
+				   cmd64_str, mtd->mtd_num, start, start / mtd->eb_size);
 		}
 
 		/*
@@ -1149,10 +1249,8 @@ int do_oob_op(libmtd_t desc, const struct mtd_dev_info *mtd, int fd,
 
 	ret = ioctl(fd, cmd, &oob);
 	if (ret < 0)
-		sys_errmsg("%s ioctl failed for mtd%d, offset %llu "
-			   "(eraseblock %llu)", cmd_str, mtd->mtd_num,
-			   (unsigned long long)start,
-			   (unsigned long long)start / mtd->eb_size);
+		sys_errmsg("%s ioctl failed for mtd%d, offset %" PRIu64 " (eraseblock %" PRIu64 ")",
+			   cmd_str, mtd->mtd_num, start, start / mtd->eb_size);
 	return ret;
 }
 
@@ -1195,7 +1293,7 @@ int mtd_write_img(const struct mtd_dev_info *mtd, int fd, int eb, int offs,
 		return -1;
 	}
 
-	in_fd = open(img_name, O_RDONLY);
+	in_fd = open(img_name, O_RDONLY | O_CLOEXEC);
 	if (in_fd == -1)
 		return sys_errmsg("cannot open \"%s\"", img_name);
 

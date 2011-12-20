@@ -110,9 +110,7 @@ void __init bchip_check_compat(void)
 	u32 chip_id = BRCM_CHIP_ID(), chip_rev = BRCM_CHIP_REV();
 	u32 kernel_chip_id = 0, kernel_chip_rev = 0;
 
-#if defined(CONFIG_BCM35230)
-	MAIN_CHIP_ID(35230, a0);
-#elif defined(CONFIG_BCM7125)
+#if defined(CONFIG_BCM7125)
 	ALT_CHIP_ID(7019, c0);
 	ALT_CHIP_ID(7025, c0);
 	ALT_CHIP_ID(7116, c0);
@@ -125,9 +123,6 @@ void __init bchip_check_compat(void)
 #elif defined(CONFIG_BCM7340)
 	ALT_CHIP_ID(7350, b0);
 	MAIN_CHIP_ID(7340, b0);
-#elif defined(CONFIG_BCM7342)
-	ALT_CHIP_ID(7352, b0);
-	MAIN_CHIP_ID(7342, b0);
 #elif defined(CONFIG_BCM7344)
 	MAIN_CHIP_ID(7344, a0);
 #elif defined(CONFIG_BCM7346)
@@ -155,10 +150,6 @@ void __init bchip_check_compat(void)
 	MAIN_CHIP_ID(7468, b0);
 #elif defined(CONFIG_BCM7550)
 	MAIN_CHIP_ID(7550, a0);
-#elif defined(CONFIG_BCM7631)
-	MAIN_CHIP_ID(7631, b0);
-#elif defined(CONFIG_BCM7640)
-	MAIN_CHIP_ID(7640, a0);
 #endif
 	if (!kernel_chip_id)
 		return;
@@ -248,17 +239,6 @@ void bchip_mips_setup(void)
 		: : : "$8", "$9");
 	}
 
-#elif defined(CONFIG_MTI_R5K)
-
-	/* Flush and enable RAC */
-	BDEV_WR(BCHP_RAC_COMMAND, 0x01);
-	while (BDEV_RD(BCHP_RAC_VALID_FWD_STATUS) & 0xffff)
-		;
-	BDEV_WR_RB(BCHP_RAC_COMMAND, 0x00);
-
-	BDEV_WR_RB(BCHP_RAC_CACHEABLE_SPACE, 0x0fff0000);
-	BDEV_WR_RB(BCHP_RAC_MODE, 0xd3);
-
 #endif
 }
 
@@ -328,6 +308,11 @@ static void bchip_usb_init_one(int id, uintptr_t base)
 	BDEV_SET(USB_REG(base, EBRIDGE),
 		0x08 << BCHP_USB_CTRL_EBRIDGE_EBR_SCB_SIZE_SHIFT);
 
+#if defined(CONFIG_BRCM_HAS_1GB_MEMC1)
+	/* enable access to SCB1 */
+	BDEV_SET(USB_REG(base, SETUP), BIT(14));
+#endif
+
 #if defined(BCHP_USB_CTRL_GENERIC_CTL_1_PLL_SUSPEND_EN_MASK)
 	BDEV_SET(USB_REG(base, GENERIC_CTL_1),
 		BCHP_USB_CTRL_GENERIC_CTL_1_PLL_SUSPEND_EN_MASK);
@@ -371,8 +356,7 @@ void bchip_moca_init(void)
 #elif defined(CONFIG_BCM7340)
 	BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_ENET_CG_MOCA, 1);
 	BDEV_WR_F_RB(CLKGEN_MISC_CLOCK_SELECTS, CLOCK_SEL_GMII_CG_MOCA, 0);
-#elif defined(CONFIG_BCM7342) || defined(CONFIG_BCM7408) || \
-	defined(CONFIG_BCM7420)
+#elif defined(CONFIG_BCM7408) || defined(CONFIG_BCM7420)
 	BDEV_WR_F_RB(CLK_MISC, MOCA_ENET_GMII_TX_CLK_SEL, 0);
 #endif
 }
@@ -560,11 +544,10 @@ void __init bchip_set_features(void)
 #endif
 
 #if defined(CONFIG_BCM7125) || defined(CONFIG_BCM7340) || \
-	defined(CONFIG_BCM7342) || defined(CONFIG_BCM7420)
+	defined(CONFIG_BCM7420)
 
 	switch (BRCM_CHIP_ID()) {
 	case 0x7340:
-	case 0x7342:
 		if (BDEV_RD_F(SUN_TOP_CTRL_OTP_OPTION_STATUS_0,
 				otp_option_product_id) != 1)
 			break;

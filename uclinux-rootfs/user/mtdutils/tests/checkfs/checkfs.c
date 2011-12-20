@@ -167,11 +167,11 @@ int setupSerial (const char *dev) {
 
     fd = open(dev,O_RDWR | O_NDELAY );
     if (fd < 0) {
-        fprintf(stderr, "%s: %s\n", dev, sys_errlist[errno]);
+        fprintf(stderr, "%s: %s\n", dev, strerror(errno));
         exit(1);
     }
     if (tcgetattr(fd, &tios) < 0) {
-        fprintf(stderr,"Could not get terminal attributes: %s",sys_errlist[errno]);
+        fprintf(stderr, "Could not get terminal attributes: %s", strerror(errno));
         exit(1);
     }
 
@@ -197,7 +197,7 @@ int setupSerial (const char *dev) {
     cfsetispeed (&tios, B9600);
 
     if (tcsetattr(fd, TCSAFLUSH, &tios) < 0) {
-        fprintf(stderr,"Could not set attributes: ,%s",sys_errlist[errno]);
+        fprintf(stderr, "Could not set attributes: ,%s", strerror(errno));
         exit(1);
     }
     return fd;
@@ -414,7 +414,7 @@ void make_new_file(char *filename){
 
     fprintf(stderr, "Creating File:%s. ", filename);
 
-    if((dfd = open(filename, O_RDWR | O_CREAT | O_SYNC)) <= 0)
+    if((dfd = open(filename, O_RDWR | O_CREAT | O_SYNC, S_IRWXU)) <= 0)
     {
         printf("Error! Cannot open file: %s\n",filename);
         perror("Error");
@@ -520,7 +520,7 @@ void processCmdLine(int argc, char **argv)
                 FileSizeMax = (float)atoi(argv[++cnt]);
                 if(FileSizeMax > (MAX_INTS_ALLOW*sizeof(int)))
                 {
-                    printf("Max file size allowd is %i.\n",
+                    printf("Max file size allowed is %zu.\n",
                            MAX_INTS_ALLOW*sizeof(int));
                     exit(0);
                 }
@@ -566,21 +566,15 @@ int main(int argc, char **argv){
     char filename[30];
     short filenameCounter = 0;
     unsigned short counter;
-    unsigned short numberFiles;
-    char error = FALSE;
     short errorCnt = 0;
     time_t timep;
     char * time_string;
     unsigned int seed;
 
-
-    numberFiles = MAX_NUM_FILES;
-
     if(argc >= 1)
     {
         processCmdLine(argc, argv);
     }
-
 
     /*
       First open MAX_NUM_FILES and make sure that the checksum is ok.
@@ -629,7 +623,6 @@ int main(int argc, char **argv){
             fclose(logfp);
             (void)sync();
 
-            error = TRUE;
             errorCnt++;
 
             if(errorCnt > MaxErrAllowed){

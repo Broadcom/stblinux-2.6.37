@@ -82,6 +82,7 @@
 #include <string.h>     /* strcpy, strcmp */
 #include <stdlib.h>     /* exit, atol, atoi */
 #include <sys/time.h>   /* setitimer, settimeofday, gettimeofday */
+#include <time.h>	/* time */
 #include <signal.h>     /* signal */
 #include <sched.h>      /* sched_setscheduler, sched_get_priority_min,*/
 /*   sched_get_priority_max */
@@ -292,7 +293,7 @@ int main(
     }
 
     /*------------------------- Initializations --------------------------*/
-    if((Fd1 = open(OutFileName, O_RDWR|O_CREAT|O_SYNC)) <= 0)
+    if((Fd1 = open(OutFileName, O_RDWR|O_CREAT|O_SYNC, S_IRWXU)) <= 0)
     {
         perror("Cannot open outfile for write:");
         exit(1);
@@ -304,7 +305,7 @@ int main(
     if(DoRead)
     {
 
-        if((Fd2 = open(ReadFile, O_RDWR|O_CREAT|O_SYNC|O_TRUNC)) <= 0)
+        if((Fd2 = open(ReadFile, O_RDWR|O_CREAT|O_SYNC|O_TRUNC, S_IRWXU)) <= 0)
         {
             perror("cannot open read file:");
             exit(1);
@@ -459,7 +460,7 @@ void doGrabKProfile(int jitterusec, char *fileName)
     int readBytes;
     char readBuf[4096];
 
-    if((fdSnapshot = open(fileName, O_WRONLY | O_CREAT)) <= 0)
+    if((fdSnapshot = open(fileName, O_WRONLY | O_CREAT, S_IRWXU)) <= 0)
     {
         fprintf(stderr, "Could not open file %s.\n", fileName);
         perror("Error:");
@@ -475,7 +476,11 @@ void doGrabKProfile(int jitterusec, char *fileName)
 
     while((readBytes = read(fdProfile, readBuf, sizeof(readBuf))) > 0)
     {
-        write(fdSnapshot, readBuf, readBytes);
+	int writeBytes = write(fdSnapshot, readBuf, readBytes);
+	if (writeBytes != readBytes) {
+		perror("write error");
+		break;
+	}
     }
 
     close(fdSnapshot);
@@ -650,7 +655,9 @@ void AlarmHandler(
         if(DoRead)
         {
 
-            read(Fd2, tmpBuf, 1);
+	    cntr = read(Fd2, tmpBuf, 1);
+	    if (cntr < 0)
+		perror("read error");
             lseek(Fd2, 0, SEEK_SET); /* back to start */
         }
 
@@ -1032,7 +1039,7 @@ int Write(int fd, void *buf, size_t bytes, int lineNo)
     if(err < bytes)
     {
 
-        printf("Write Error at line %i! Wanted to write %i bytes, but wrote only %i bytes.\n",
+        printf("Write Error at line %i! Wanted to write %zu bytes, but wrote only %i bytes.\n",
                lineNo, bytes, err);
         perror("Write did not complete. Error. Bye:"); /* show error from errno. */
 	exit(1);

@@ -22,10 +22,9 @@
 #include <asm/addrspace.h>
 #include <asm/brcmstb/brcmstb.h>
 
-#define XTALFREQ		27000000
 #define REG_OFFSET		(KSEG1 | BCHP_PHYSICAL_OFFSET)
 #define REG(x)			(REG_OFFSET + (x))
-#define UPG_USEC_TICKS		(XTALFREQ / 1000000)
+#define UPG_USEC_TICKS		(UPGTMR_FREQ / 1000000)
 
 /* debug output - BRCM_STANDBY_VERBOSE */
 #define UART_BASE		BCHP_UARTA_REG_START
@@ -227,7 +226,7 @@
 	li	a0, 'w'
 
 	li	v1, 4
-1:	li	a0, (27000000 * 30)
+1:	li	a0, (UPGTMR_FREQ * 30)
 	bal	delay
 	addiu	v1, -1
 	bnez	v1, 1b
@@ -294,7 +293,7 @@ wait_loop:
 #if USE_WATCHDOG
 # arm the watchdog timer
 	li	t0, REG(BCHP_TIMER_WDTIMEOUT)
-	li	t1, 3 * 27000000
+	li	t1, 3 * UPGTMR_FREQ
 	sw	t1, 0(t0)
 	lw	t1, 0(t0)
 

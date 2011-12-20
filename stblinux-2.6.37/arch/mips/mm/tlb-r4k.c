@@ -66,18 +66,6 @@ extern void build_tlb_refill_handler(void);
 
 #endif
 
-/* This function will clear all mm contexts on calling cpu
- * To produce desired effect it must be called
- * when mm_cpumask for all mm contexts is cleared
- */
-void local_flush_tlb_all_mm(void)
-{
-	struct task_struct *p;
-	for_each_process(p)
-		if (p->mm)
-			local_flush_tlb_mm(p->mm);
-}
-
 void local_flush_tlb_all(void)
 {
 	unsigned long flags;

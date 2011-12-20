@@ -23,6 +23,7 @@
 #include <linux/delay.h>
 #include <linux/serial_8250.h>
 #include <linux/platform_device.h>
+#include <linux/ahci_platform.h>
 #include <linux/bootmem.h>
 #include <linux/spinlock.h>
 #include <linux/mm.h>
@@ -65,6 +66,77 @@
  * Platform device setup
  ***********************************************************************/
 
+#ifdef CONFIG_BRCM_HAS_SATA3
+
+#define SATA_MEM_START		BPHYSADDR(BCHP_SATA_AHCI_GHC_REG_START)
+#define SATA_MEM_SIZE		0x00010000
+
+#ifdef CONFIG_CPU_BIG_ENDIAN
+#define DATA_ENDIAN		2	/* PCI->DDR inbound accesses */
+#define MMIO_ENDIAN 		2	/* MIPS->PCI outbound accesses */
+#else
+#define DATA_ENDIAN		0
+#define MMIO_ENDIAN		0
+#endif /* CONFIG_CPU_BIG_ENDIAN */
+
+static struct resource brcm_ahci_resource[] = {
+	[0] = {
+		.start	= SATA_MEM_START,
+		.end	= SATA_MEM_START + SATA_MEM_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= BRCM_IRQ_SATA,
+		.end 	= BRCM_IRQ_SATA,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static u64 brcm_ahci_dmamask = DMA_BIT_MASK(32);
+
+static int brcm_ahci_init(struct device *dev, void __iomem *addr)
+{
+	brcm_pm_sata3(1);
+	return 0;
+}
+
+static void brcm_ahci_exit(struct device *dev)
+{
+	brcm_pm_sata3(0);
+}
+
+static int brcm_ahci_suspend(struct device *dev)
+{
+	brcm_pm_sata3(0);
+	return 0;
+}
+
+static int brcm_ahci_resume(struct device *dev)
+{
+	brcm_pm_sata3(1);
+	return 0;
+}
+
+static struct ahci_platform_data brcm_ahci_pdata = {
+	.init = &brcm_ahci_init,
+	.exit = &brcm_ahci_exit,
+	.suspend = &brcm_ahci_suspend,
+	.resume = &brcm_ahci_resume,
+};
+
+static struct platform_device brcm_ahci_pdev = {
+	.name		= "ahci",
+	.id		= 0,
+	.resource	= brcm_ahci_resource,
+	.num_resources	= ARRAY_SIZE(brcm_ahci_resource),
+	.dev		= {
+		.dma_mask		= &brcm_ahci_dmamask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= &brcm_ahci_pdata,
+	},
+};
+#endif /* CONFIG_BRCM_HAS_SATA3 */
+
 #define BRCM_16550_PLAT_DEVICE(uart_addr, uart_irq) \
 	{ \
 		.mapbase = BPHYSADDR(uart_addr), \
@@ -74,11 +146,6 @@
 		.flags = UPF_IOREMAP | UPF_SKIP_TEST | UPF_FIXED_TYPE, \
 		.type = PORT_16550A, \
 	},
-
-#ifdef CONFIG_BRCM_HAS_PCU_UARTS
-#define BCHP_UARTA_REG_START	BCHP_TVM_UART1_RBR
-#define BCHP_UARTB_REG_START	BCHP_PCU_UART2_RBR
-#endif
 
 static struct plat_serial8250_port brcm_16550_ports[] = {
 #ifdef CONFIG_BRCM_UARTA_IS_16550
@@ -291,8 +358,7 @@ static void __init brcm_add_usb_hosts(void)
 				break;
 			}
 #if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7231B0) || \
-	defined(CONFIG_BCM7344B0) || defined(CONFIG_BCM7346B0) || \
-	defined(CONFIG_BCM7640B0) || defined(CONFIG_BCM35126B0)
+	defined(CONFIG_BCM7344B0) || defined(CONFIG_BCM7346B0)
 		/* bug: incorrect CAP_LAST bit on some chips */
 		} while (capp != (caplist[i] + 0x20));
 #else
@@ -549,6 +615,15 @@ static int __init platform_devices_setup(void)
 
 #endif /* defined(CONFIG_BRCM_SDIO) */
 
+	/* AHCI */
+#if defined(CONFIG_BRCM_HAS_SATA3)
+	if (brcm_sata_enabled) {
+		BDEV_WR(BCHP_SATA_TOP_CTRL_BUS_CTRL, (DATA_ENDIAN << 4) |
+				(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
+
+		platform_device_register(&brcm_ahci_pdev);
+	}
+#endif
 	return 0;
 }
 

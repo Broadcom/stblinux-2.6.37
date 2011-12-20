@@ -2411,10 +2411,6 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
 
 	serial_outp(up, UART_LCR, cval);		/* reset DLAB */
 	up->lcr = cval;					/* Save LCR */
-#ifdef CONFIG_BRCM_HAS_PCU_UARTS
-	/* HW35330-373: TX lockups on 35330 during init */
-	serial_outp(up, UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_XMIT);
-#endif
 
 	if (up->port.type != PORT_16750) {
 		if (fcr & UART_FCR_ENABLE_FIFO) {

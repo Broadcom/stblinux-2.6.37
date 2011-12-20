@@ -6,6 +6,7 @@
 # Normal rules
 #
 .*
+*.gdb
 *.o
 *.a
 *.s
@@ -29,6 +30,7 @@
 /ftl_check
 /ftl_format
 /jffs2dump
+/jffs2reader
 /mkfs.jffs2
 /mtd_debug
 /nanddump
@@ -47,8 +49,14 @@
 #
 
 #
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+
+#
 # Generated include files
 #
+/include/version.h
 
 # stgit generated dirs
 patches-*

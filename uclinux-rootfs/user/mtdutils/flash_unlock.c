@@ -1,11 +1,17 @@
 /*
- * FILE flash_unlock.c
+ * flash_{lock,unlock}
  *
- * This utility unlock all sectors of flash device.
- *
+ * utilities for locking/unlocking sectors of flash devices
  */
 
+#ifndef PROGRAM_NAME
 #define PROGRAM_NAME "flash_unlock"
+#define FLASH_MSG    "unlock"
+#define FLASH_UNLOCK 1
+#else
+#define FLASH_MSG    "lock"
+#define FLASH_UNLOCK 0
+#endif
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -16,61 +22,69 @@
 #include <sys/mount.h>
 #include <string.h>
 
+#include "common.h"
 #include <mtd/mtd-user.h>
+
+static void usage(int status)
+{
+	fprintf(status ? stderr : stdout,
+		"Usage: %s <mtd device> [offset] [block count]\n\n"
+		"If offset is not specified, it defaults to 0.\n"
+		"If block count is not specified, it defaults to all blocks.\n",
+		PROGRAM_NAME);
+	exit(status);
+}
 
 int main(int argc, char *argv[])
 {
-	int fd;
+	int fd, request;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdLockInfo;
 	int count;
+	const char *dev;
 
-	/*
-	 * Parse command line options
-	 */
-	if(argc < 2)
-	{
-		fprintf(stderr, "USAGE: %s <mtd device> <offset in hex> <block count in decimal number>\n", PROGRAM_NAME);
-		exit(1);
-	}
-	else if(strncmp(argv[1], "/dev/mtd", 8) != 0)
-	{
-		fprintf(stderr, "'%s' is not a MTD device.  Must specify mtd device: /dev/mtd?\n", argv[1]);
-		exit(1);
-	}
+	/* Parse command line options */
+	if (argc < 2 || argc > 4)
+		usage(1);
+	if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))
+		usage(0);
 
-	fd = open(argv[1], O_RDWR);
-	if(fd < 0)
-	{
-		fprintf(stderr, "Could not open mtd device: %s\n", argv[1]);
-		exit(1);
-	}
+	dev = argv[1];
 
-	if(ioctl(fd, MEMGETINFO, &mtdInfo))
-	{
-		fprintf(stderr, "Could not get MTD device info from %s\n", argv[1]);
-		close(fd);
-		exit(1);
-	}
+	/* Get the device info to compare to command line sizes */
+	fd = open(dev, O_RDWR);
+	if (fd < 0)
+		sys_errmsg_die("could not open: %s", dev);
 
+	if (ioctl(fd, MEMGETINFO, &mtdInfo))
+		sys_errmsg_die("could not get mtd info: %s", dev);
+
+	/* Make sure user options are valid */
 	if (argc > 2)
 		mtdLockInfo.start = strtol(argv[2], NULL, 0);
 	else
 		mtdLockInfo.start = 0;
+	if (mtdLockInfo.start > mtdInfo.size)
+		errmsg_die("%#x is beyond device size %#x",
+			mtdLockInfo.start, mtdInfo.size);
 
 	if (argc > 3) {
 		count = strtol(argv[3], NULL, 0);
-		mtdLockInfo.length = mtdInfo.erasesize * count;
-	} else {
-		mtdLockInfo.length = mtdInfo.size - mtdInfo.erasesize;
-	}
+		if (count == -1)
+			mtdLockInfo.length = mtdInfo.size;
+		else
+			mtdLockInfo.length = mtdInfo.erasesize * count;
+	} else
+		mtdLockInfo.length = mtdInfo.size;
+	if (mtdLockInfo.start + mtdLockInfo.length > mtdInfo.size)
+		errmsg_die("range is more than device supports: %#x + %#x > %#x",
+			mtdLockInfo.start, mtdLockInfo.length, mtdInfo.size);
 
-	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo))
-	{
-		fprintf(stderr, "Could not unlock MTD device: %s\n", argv[1]);
-		close(fd);
-		exit(1);
-	}
+	/* Finally do the operation */
+	request = FLASH_UNLOCK ? MEMUNLOCK : MEMLOCK;
+	if (ioctl(fd, request, &mtdLockInfo))
+		sys_errmsg_die("could not %s device: %s\n",
+			FLASH_MSG, dev);
 
 	return 0;
 }

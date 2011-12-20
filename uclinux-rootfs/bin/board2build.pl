@@ -1,6 +1,33 @@
 #!/usr/bin/perl -w
 
+use strict;
+
 my $board = $ARGV[0];
+my ($chip, $rev, $combo) = ();
+
+# trivial substitutions (no rev change)
+#   chip_family => [ product_id_list ]
+
+my %cheatsheet = (
+	"7405" => [ "7406" ],
+	"7325" => [ "7324" ],
+	"7401" => [ "7402", "7451" ],
+	"7403" => [ "7404", "7452" ],
+	"7125" => [ "7019", "7025", "7116", "7117", "7119" ],
+	"7231" => [ "7229", "7230" ],
+	"7340" => [ "7341", "7350", "7351" ],
+	"7342" => [ "7352" ],
+	"7344" => [ "7354", "7418" ],
+	"7346" => [ "7356" ],
+	"7358" => [ "7301" ],
+	"7420" => [ "3320", "7409", "7410" ],
+	"7425" => [ "3322", "3325", "7421", "7422", "7424" ],
+	"7429" => [ "7241", "7242", "7428" ],
+	"7468" => [ "7208" ],
+	"7550" => [ "7530", "7540", "7560", "7572", "7580" ],
+	"7552" => [ "7531", "7532", "7541", "7542", "7551", "7574", "7581",
+		    "7582", "7591", "7592" ],
+);
 
 if(defined($ARGV[1])) {
 	# grudgingly accept: board2build.pl BOARD REV
@@ -38,6 +65,8 @@ if($board =~ m/^9?([0-9]{4,5})([a-z])([0-9])$/) {
 
 $combo = $chip.$rev;
 
+# old DOCSIS board variants
+
 if($board =~ m/^97455/) {
 	$chip = "7401";
 } elsif($board =~ m/^97456/) {
@@ -47,6 +76,8 @@ if($board =~ m/^97455/) {
 } elsif($board =~ m/^97459/) {
 	$chip = "7405";
 }
+
+# weird mappings involving rev differences
 
 if($chip eq "3549" || $chip eq "3556") {
 	$chip = "3548";
@@ -72,40 +103,31 @@ if($chip eq "3549" || $chip eq "3556") {
 } elsif($chip eq "7336") {
 	$chip = "7335";
 	$rev = "b0";
-} elsif($chip eq "7406") {
-	$chip = "7405";
-} elsif($chip eq "7324") {
-	$chip = "7325";
-} elsif($chip eq "7402" || $chip eq "7451") {
-	$chip = "7401";
-} elsif($chip eq "7404" || $chip eq "7452") {
-	$chip = "7403";
-} elsif($chip eq "3320" || $chip eq "7409" || $chip eq "7410") {
-	$chip = "7420";
-} elsif($chip eq "7208" || $chip eq "7469") {
-	$chip = "7468";
-} elsif($chip eq "7119" || $chip eq "7019" || $chip eq "7116" ||
-		$chip eq "7117") {
-	$chip = "7125";
-} elsif($chip eq "7350") {
-	$chip = "7340";
-} elsif($chip eq "7352") {
-	$chip = "7342";
-} elsif($chip eq "7354") {
-	$chip = "7344";
-} elsif($chip eq "7356") {
-	$chip = "7346";
-} elsif($chip eq "7421" || $chip eq "7422" || $chip eq "74122" ||
-		$chip eq "7424") {
-	$chip = "7425";
 }
+
+# easier stuff
+
+foreach my $famid (keys(%cheatsheet)) {
+	my $prodlist = $cheatsheet{$famid};
+	foreach my $member (@$prodlist) {
+		if($chip eq $member) {
+			$chip = $famid;
+		}
+	}
+}
+
+# backward-compatible revs
 
 if($chip eq "7125" && ($rev eq "d0" || $rev eq "e0")) {
 	$rev = "c0";
 }
 
-if($chip eq "7418" && $rev eq "a0") {
-	$chip = "7344";
+if($chip eq "7325" && ($rev eq "c0" || $rev eq "d0")) {
+	$rev = "b0";
+}
+
+if($chip eq "7420" && $rev eq "d0") {
+	$rev = "c0";
 }
 
 print "${chip}${rev}\n";

@@ -23,7 +23,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <fcntl.h>
 #include <errno.h>
+#include "version.h"
 
 #ifndef PROGRAM_NAME
 # error "You must define PROGRAM_NAME before including this header"
@@ -41,6 +43,10 @@ extern "C" {
 #endif
 #define min(a, b) MIN(a, b) /* glue for linux kernel source */
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 
 /* Verbose messages */
 #define bareverbose(verbose, fmt, ...) do {                        \
@@ -93,6 +99,17 @@ static inline int is_power_of_2(unsigned long long n)
  * simple_strtoX - convert a hex/dec/oct string into a number
  * @snum: buffer to convert
  * @error: set to 1 when buffer isn't fully consumed
+ *
+ * These functions are similar to the standard strtoX() functions, but they are
+ * a little bit easier to use if you want to convert full string of digits into
+ * the binary form. The typical usage:
+ *
+ * int error = 0;
+ * unsigned long num;
+ *
+ * num = simple_strtoul(str, &error);
+ * if (error || ... if needed, your check that num is not out of range ...)
+ * 	error_happened();
  */
 #define simple_strtoX(func, type) \
 static inline type simple_##func(const char *snum, int *error) \
@@ -108,9 +125,15 @@ static inline type simple_##func(const char *snum, int *error) \
 	return ret; \
 }
 simple_strtoX(strtol, long int)
-simple_strtoX(strtoll, long int)
+simple_strtoX(strtoll, long long int)
 simple_strtoX(strtoul, unsigned long int)
-simple_strtoX(strtoull, unsigned long int)
+simple_strtoX(strtoull, unsigned long long int)
+
+/* Simple version-printing for utils */
+#define common_print_version() \
+do { \
+	printf("%s %s\n", PROGRAM_NAME, VERSION); \
+} while (0)
 
 #include "xalloc.h"
 

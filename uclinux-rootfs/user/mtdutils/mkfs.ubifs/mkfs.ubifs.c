@@ -20,10 +20,11 @@
  *          Zoltan Sogor
  */
 
+#define PROGRAM_NAME "mkfs.ubifs"
+
 #include "mkfs.ubifs.h"
 #include <crc32.h>
-
-#define PROGRAM_VERSION "1.4"
+#include "common.h"
 
 /* Size (prime number) of hash table for link counting */
 #define HASH_TABLE_SIZE 10099
@@ -109,7 +110,6 @@ static char *output;
 static int out_fd;
 static int out_ubi;
 static int squash_owner;
-static int squash_rino_perm = -1;
 
 /* The 'head' (position) which nodes are written */
 static int head_lnum;
@@ -132,7 +132,7 @@ static struct inum_mapping **hash_table;
 /* Inode creation sequence number */
 static unsigned long long creat_sqnum;
 
-static const char *optstring = "d:r:m:o:D:h?vVe:c:g:f:p:k:x:X:j:R:l:j:UQq";
+static const char *optstring = "d:r:m:o:D:h?vVe:c:g:f:Fp:k:x:X:j:R:l:j:UQq";
 
 static const struct option longopts[] = {
 	{"root",               1, NULL, 'r'},
@@ -150,12 +150,11 @@ static const struct option longopts[] = {
 	{"compr",              1, NULL, 'x'},
 	{"favor-percent",      1, NULL, 'X'},
 	{"fanout",             1, NULL, 'f'},
+	{"space-fixup",        0, NULL, 'F'},
 	{"keyhash",            1, NULL, 'k'},
 	{"log-lebs",           1, NULL, 'l'},
 	{"orph-lebs",          1, NULL, 'p'},
 	{"squash-uids" ,       0, NULL, 'U'},
-	{"squash-rino-perm",   0, NULL, 'Q'},
-	{"nosquash-rino-perm", 0, NULL, 'q'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -183,6 +182,8 @@ static const char *helptext =
 "                         how many percent better zlib should compress to make\n"
 "                         mkfs.ubifs use zlib instead of LZO (default 20%)\n"
 "-f, --fanout=NUM         fanout NUM (default: 8)\n"
+"-F, --space-fixup        file-system free space has to be fixed up on first mount\n"
+"                         (requires kernel version 3.0 or greater)\n"
 "-k, --keyhash=TYPE       key hash type - \"r5\" or \"test\" (default: \"r5\")\n"
 "-p, --orph-lebs=COUNT    count of erase blocks for orphans (default: 1)\n"
 "-D, --devtable=FILE      use device table FILE\n"
@@ -193,12 +194,6 @@ static const char *helptext =
 "-V, --version            display version information\n"
 "-g, --debug=LEVEL        display debug information (0 - none, 1 - statistics,\n"
 "                         2 - files, 3 - more details)\n"
-"-Q, --squash-rino-perm   ignore permissions of the FS image directory (the one\n"
-"                         specified with --root) and make the UBIFS root inode\n"
-"			  permissions to be {uid=gid=root, u+rwx,go+rx}; this is\n"
-"                         see also the default so far, see explanations below\n"
-"-q, --nosquash-rino-perm for the UBIFS root inode use permissions of the FS\n"
-"                         image directory (the one specified with --root)\n"
 "-h, --help               display this help text\n\n"
 "Note, SIZE is specified in bytes, but it may also be specified in Kilobytes,\n"
 "Megabytes, and Gigabytes if a KiB, MiB, or GiB suffix is used.\n\n"
@@ -210,19 +205,15 @@ static const char *helptext =
 "or more percent better than \"lzo\", mkfs.ubifs chooses \"lzo\", otherwise it chooses\n"
 "\"zlib\". The \"--favor-percent\" may specify arbitrary threshold instead of the\n"
 "default 20%.\n\n"
-"The -R parameter specifies amount of bytes reserved for the super-user.\n\n"
-"Some clarifications about --squash-rino-perm and --nosquash-rino-perm options.\n"
-"Originally, mkfs.ubifs did not have them, and it always set permissions for the UBIFS\n"
-"root inode to be {uid=gid=root, u+rwx,go+rx}. This was a bug which was found too\n"
-"late, when mkfs.ubifs had already been used in production. To fix this bug, 2 new\n"
-"options were introduced: --squash-rino-perm which preserves the old behavior and\n"
-"--nosquash-rino-perm which makes mkfs.ubifs use the right permissions for the root\n"
-"inode. For now --squash-rino-perm is the default, and if neither --squash-rino-perm\n"
-"nor --nosquash-rino-perm are used, mkfs.ubifs prints a warning. The further plan is:\n"
-" o keep the warning for few releases to make sure users start using one of the\n"
-"   options\n"
-" o make --nosquash-rino-perm to be the default, and remove the warning\n"
-" o eventually deprecate both options\n";
+"The -F parameter is used to set the \"fix up free space\" flag in the superblock,\n"
+"which forces UBIFS to \"fixup\" all the free space which it is going to use. This\n"
+"option is useful to work-around the problem of double free space programming: if the\n"
+"flasher program which flashes the UBI image is unable to skip NAND pages containing\n"
+"only 0xFF bytes, the effect is that some NAND pages are written to twice - first time\n"
+"when flashing the image and the second time when UBIFS is mounted and writes useful\n"
+"data there. A proper UBI-aware flasher should skip such NAND pages, though. Note, this\n"
+"flag may make the first mount very slow, because the \"free space fixup\" procedure\n"
+"takes time. This feature is supported by the Linux kernel starting from version 3.0.\n";
 
 /**
  * make_path - make a path name from a directory and a name.
@@ -379,11 +370,6 @@ static long long add_space_overhead(long long size)
         return size / divisor;
 }
 
-static inline int is_power_of_2(unsigned long long n)
-{
-                return (n != 0 && ((n & (n - 1)) == 0));
-}
-
 static int validate_options(void)
 {
 	int tmp;
@@ -404,7 +390,7 @@ static int validate_options(void)
 		return err_msg("LEB should be multiple of min. I/O units");
 	if (c->leb_size % 8)
 		return err_msg("LEB size has to be multiple of 8");
-	if (c->leb_size > 1024*1024)
+	if (c->leb_size > UBIFS_MAX_LEB_SZ)
 		return err_msg("too large LEB size %d", c->leb_size);
 	if (c->max_leb_cnt < UBIFS_MIN_LEB_CNT)
 		return err_msg("too low max. count of LEBs, minimum is %d",
@@ -597,7 +583,7 @@ static int get_options(int argc, char**argv)
 			verbose = 1;
 			break;
 		case 'V':
-			printf("Version " PROGRAM_VERSION "\n");
+			common_print_version();
 			exit(0);
 		case 'g':
 			debug_level = strtol(optarg, &endp, 0);
@@ -610,6 +596,9 @@ static int get_options(int argc, char**argv)
 			c->fanout = strtol(optarg, &endp, 0);
 			if (*endp != '\0' || endp == optarg || c->fanout <= 0)
 				return err_msg("bad fanout %s", optarg);
+			break;
+		case 'F':
+			c->space_fixup = 1;
 			break;
 		case 'l':
 			c->log_lebs = strtol(optarg, &endp, 0);
@@ -664,28 +653,22 @@ static int get_options(int argc, char**argv)
 		case 'U':
 			squash_owner = 1;
 			break;
-		case 'Q':
-			squash_rino_perm = 1;
-			break;
-		case 'q':
-			squash_rino_perm = 0;
-			break;
 		}
 	}
 
 	if (optind != argc && !output)
 		output = strdup(argv[optind]);
-	if (output)
-		out_ubi = !open_ubi(output);
+
+	if (!output)
+		return err_msg("not output device or file specified");
+
+	out_ubi = !open_ubi(output);
 
 	if (out_ubi) {
 		c->min_io_size = c->di.min_io_size;
 		c->leb_size = c->vi.leb_size;
 		c->max_leb_cnt = c->vi.rsvd_lebs;
 	}
-
-	if (!output)
-		return err_msg("not output device or file specified");
 
 	if (c->min_io_size == -1)
 		return err_msg("min. I/O unit was not specified "
@@ -697,10 +680,6 @@ static int get_options(int argc, char**argv)
 	if (c->max_leb_cnt == -1)
 		return err_msg("Maximum count of LEBs was not specified "
 			       "(use -h for help)");
-
-	if (squash_rino_perm != -1 && !root)
-		return err_msg("--squash-rino-perm and nosquash-rino-perm options "
-			       "can be used only with the --root option");
 
 	if (c->max_bud_bytes == -1) {
 		int lebs;
@@ -758,6 +737,7 @@ static int get_options(int argc, char**argv)
 						"r5" : "test");
 		printf("\tfanout:       %d\n", c->fanout);
 		printf("\torph_lebs:    %d\n", c->orph_lebs);
+		printf("\tspace_fixup:  %d\n", c->space_fixup);
 	}
 
 	if (validate_options())
@@ -1670,16 +1650,6 @@ static int write_data(void)
 		if (err)
 			return sys_err_msg("bad root file-system directory '%s'",
 					   root);
-		if (squash_rino_perm == -1) {
-			printf("WARNING: setting root UBIFS inode UID=GID=0 (root) and permissions "
-				 "to u+rwx,go+rx; use --squash-rino-perm or --nosquash-rino-perm "
-				 "to suppress this warning\n");
-			squash_rino_perm = 1;
-		}
-		if (squash_rino_perm) {
-			root_st.st_uid = root_st.st_gid = 0;
-			root_st.st_mode = mode;
-		}
 	} else {
 		root_st.st_mtime = time(NULL);
 		root_st.st_atime = root_st.st_ctime = root_st.st_mtime;
@@ -1762,7 +1732,7 @@ static int write_index(void)
 	struct idx_entry **idx_ptr, **p;
 	struct ubifs_idx_node *idx;
 	struct ubifs_branch *br;
-	int child_cnt, j, level, blnum, boffs, blen, blast_len, err;
+	int child_cnt = 0, j, level, blnum, boffs, blen, blast_len, err;
 
 	dbg_msg(1, "leaf node count: %zd", idx_cnt);
 
@@ -2003,6 +1973,8 @@ static int write_super(void)
 	}
 	if (c->big_lpt)
 		sup.flags |= cpu_to_le32(UBIFS_FLG_BIGLPT);
+	if (c->space_fixup)
+		sup.flags |= cpu_to_le32(UBIFS_FLG_SPACE_FIXUP);
 
 	return write_node(&sup, UBIFS_SB_NODE_SZ, UBIFS_SB_LNUM, UBI_LONGTERM);
 }

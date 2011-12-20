@@ -132,33 +132,7 @@ char irq_tab_brcmstb_docsis[NUM_SLOTS][4] __devinitdata = {
 void board_pinmux_setup(void)
 {
 #if !defined(CONFIG_BRCM_IKOS)
-#if   defined(CONFIG_BCM35230)
-
-#if defined(CONFIG_BCMGENET_0_GPHY)
-	PINMUX(6, i2ssosck_outd, 2);
-	PINMUX(6, i2ssd_outd, 2);
-	PINMUX(6, i2sws_outd, 2);
-	PINMUX(6, i2ssck_outd, 2);
-	PINMUX(6, i2ssosck_outc, 2);
-	PINMUX(6, i2ssd_outc, 2);
-	PINMUX(6, i2sws_outc, 2);
-	PINMUX(6, i2ssck_outc, 2);
-	PINMUX(7, i2ssd_in, 5);
-	PINMUX(7, i2sws_in, 5);
-	PINMUX(7, i2ssck_in, 5);
-	PINMUX(8, gpio_4, 4);
-	PINMUX(9, gpio_74, 3);
-	PINMUX(10, gpio_79, 3);
-	PINMUX(10, gpio_78, 3);
-	PINMUX(10, gpio_77, 3);
-	PINMUX(10, gpio_76, 3);
-	PINMUX(10, gpio_75, 3);
-	PINMUX(11, dint, 2);
-
-	brcm_ext_mii_mode = BRCM_PHY_TYPE_EXT_MII;
-#endif
-
-#elif defined(CONFIG_BCM7125)
+#if defined(CONFIG_BCM7125)
 
 	PINMUX(8, uart_1_rxd, 0);	/* UARTB RX */
 	PINMUX(9, uart_1_txd, 0);	/* UARTB TX */
@@ -288,23 +262,6 @@ void board_pinmux_setup(void)
 	PINMUX(14, sgpio_00, 1);	/* MoCA I2C on BSCA */
 	PINMUX(14, sgpio_01, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCA_REG_START);
-
-#elif defined(CONFIG_BCM7342)
-
-	PINMUX(10, gpio_023, 1);	/* ENET LEDs */
-	PINMUX(11, gpio_024, 1);
-
-	PINMUX(23, vo_656_7, 1);	/* MoCA LEDs */
-	PINMUX(23, vo_656_clk, 1);
-
-	PINMUX(12, gpio_034, 1);	/* UARTB TX */
-	PINMUX(12, gpio_035, 1);	/* UARTB RX */
-	PINMUX(12, gpio_038, 1);	/* UARTC TX */
-	PINMUX(12, gpio_039, 1);	/* UARTC RX */
-
-	PINMUX(21, sgpio_02, 1);	/* MoCA I2C on BSCB */
-	PINMUX(21, sgpio_03, 1);
-	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCB_REG_START);
 
 #elif defined(CONFIG_BCM7344)
 
@@ -666,34 +623,6 @@ void board_pinmux_setup(void)
 	PINMUX(13, gpio_85, 1);		/* UARTB RX */
 	PINMUX(13, gpio_86, 1);		/* UARTC TX */
 	PINMUX(13, gpio_87, 1);		/* UARTC RX */
-
-#elif defined(CONFIG_BCM7640A0)
-	PINMUX(8, gpio_03, 1);		/* UARTB TX */
-	PINMUX(7, gpio_02, 1);		/* UARTB RX */
-
-	PINMUX(12, gpio_36, 1);		/* SDIO */
-	PINMUX(12, gpio_37, 1);
-	PINMUX(12, gpio_38, 1);
-	PINMUX(12, gpio_39, 1);
-	PINMUX(12, gpio_40, 1);
-	PINMUX(12, gpio_41, 1);
-	PINMUX(12, gpio_42, 1);
-	PINMUX(13, gpio_43, 1);
-	PINMUX(13, gpio_44, 1);
-
-#elif defined(CONFIG_BCM7640B0)
-	PINMUX(6, gpio_03, 1);		/* UARTB TX */
-	PINMUX(6, gpio_02, 1);		/* UARTB RX */
-
-	PINMUX(10, gpio_36, 1);		/* SDIO */
-	PINMUX(10, gpio_37, 1);
-	PINMUX(11, gpio_38, 1);
-	PINMUX(11, gpio_39, 1);
-	PINMUX(11, gpio_40, 1);
-	PINMUX(11, gpio_41, 1);
-	PINMUX(11, gpio_42, 1);
-	PINMUX(11, gpio_43, 1);
-	PINMUX(11, gpio_44, 1);
 
 #endif /* chip type */
 #endif /* !defined(CONFIG_BRCM_IKOS) */

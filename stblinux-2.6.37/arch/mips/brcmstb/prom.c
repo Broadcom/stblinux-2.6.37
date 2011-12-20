@@ -51,14 +51,8 @@ unsigned long brcm_min_auth_region_size = 0x1000;
 
 static u8 brcm_primary_macaddr[6] = { 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef };
 
-#if defined(CONFIG_BRCM_HAS_PCU_UARTS)
-/* DTV: early printk is limited to TVM UART1 */
-unsigned long brcm_base_baud0 = BRCM_BASE_BAUD_TVM;	/* TVM UART1 */
-unsigned long brcm_base_baud = BRCM_BASE_BAUD_PCU;	/* PCU UART[23] */
-#else
 unsigned long brcm_base_baud0 = BRCM_BASE_BAUD_STB;	/* UPG UARTA */
 unsigned long brcm_base_baud = BRCM_BASE_BAUD_STB;	/* UPG_UART[BC] */
-#endif
 
 unsigned long __initdata cfe_seal;
 unsigned long __initdata cfe_entry;
@@ -103,6 +97,16 @@ void __init cfe_die(char *fmt, ...)
 
 	if (cfe_seal != CFE_EPTSEAL)
 		goto no_cfe;
+
+	/* disable XKS01 so that CFE can access the registers */
+
+#if defined(CONFIG_BMIPS4380)
+	__write_32bit_c0_register($22, 3,
+		__read_32bit_c0_register($22, 3) & ~BIT(12));
+#elif defined(CONFIG_BMIPS5000)
+	__write_32bit_c0_register($22, 5,
+		__read_32bit_c0_register($22, 5) & ~BIT(8));
+#endif
 
 	handle = cfe_getstdhandle(CFE_STDHANDLE_CONSOLE);
 	if (handle < 0)
@@ -173,7 +177,7 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 
 #if defined(CONFIG_BCM7405)
 	/* autodetect 97459 DOCSIS boards */
-	if (strncmp("BCM9745", buf, 7) == 0)
+	if (strstarts("BCM9745", buf))
 		brcm_docsis_platform = 1;
 #endif
 
@@ -188,27 +192,27 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 			brcm_docsis_platform = 1;
 		}
 	}
-	if (strncmp(buf, "BCM93380SMS", 11) == 0 ||
-	    strncmp(buf, "BCM93380VMS", 11) == 0 ||
-	    strncmp(buf, "BCM97420_MOCA_GN", 16) == 0) {
+	if (strstarts(buf, "BCM93380SMS") ||
+	    strstarts(buf, "BCM93380VMS") ||
+	    strstarts(buf, "BCM97420_MOCA_GN")) {
 		brcm_enet0_force_ext_mii = 1;
 		brcm_enet_no_mdio = 1;
 	}
-	if (strncmp(buf, "BCM97420_MOCA_GN_SAT", 20) == 0)
+	if (strstarts(buf, "BCM97420_MOCA_GN_SAT"))
 		brcm_moca_rf_band = MOCA_BAND_MIDRF;
 #elif defined(CONFIG_BCM7425)
-	if (strncmp(buf, "BCM97425VMS", 11) == 0) {
+	if (strstarts(buf, "BCM97425VMS")) {
 		brcm_enet0_force_ext_mii = 1;
 		brcm_enet_no_mdio = 1;
 	}
 #elif defined(CONFIG_BCM7344)
 	/* 7344 is normally MidRF, but the 7418 variant might not be */
-	if (strncmp(buf, "BCM97418SAT", 11) == 0)
+	if (strstarts(buf, "BCM97418SAT"))
 		brcm_moca_rf_band = MOCA_BAND_MIDRF;
-	else if (strncmp(buf, "BCM97418", 8) == 0)
+	else if (strstarts(buf, "BCM97418"))
 		brcm_moca_rf_band = MOCA_BAND_HIGHRF;
 #elif defined(CONFIG_BCM7408)
-	if (strncmp(buf, "BCM97408SAT", 11) == 0)
+	if (strstarts(buf, "BCM97408SAT"))
 		brcm_moca_rf_band = MOCA_BAND_MIDRF;
 #endif
 
@@ -314,11 +318,6 @@ void prom_putchar(char x)
 		;
 	BDEV_WR(UART_REG(UART_TX), x);
 }
-
-#ifdef CONFIG_BRCM_HAS_PCU_UARTS
-#define BCHP_UARTA_REG_START	BCHP_TVM_UART1_RBR
-#define BCHP_UARTB_REG_START	BCHP_PCU_UART2_RBR
-#endif
 
 static void __init brcm_setup_early_printk(void)
 {

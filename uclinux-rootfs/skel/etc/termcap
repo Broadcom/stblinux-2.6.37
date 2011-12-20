@@ -1263,7 +1263,7 @@ vt100-s-bot|vt100-bot-s|vt100 for use with bottom sysline:\
 # This entry (or vt102-nsgr) is probably the right thing to use for
 # these.  
 vt102|dec vt102:\
-	:mi:\
+	:mi:xn@:\
 	:al=\E[L:dc=\E[P:dl=\E[M:ei=\E[4l:im=\E[4h:tc=vt100:
 vt102-w|dec vt102 in wide mode:\
 	:co#132:\
