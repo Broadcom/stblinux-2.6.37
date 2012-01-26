@@ -65,9 +65,9 @@
 /* Default # of tx queues for multi queue support */
 #define GENET_MQ_CNT		4
 /* Default # of bds for each queue for multi queue support */
-#define GENET_MQ_BD_CNT		48
+#define GENET_MQ_BD_CNT		32
 /* Default highest priority queue for multi queue support */
-#define GENET_Q0_PRIORITY	31
+#define GENET_Q0_PRIORITY	0
 
 #define GENET_DEFAULT_BD_CNT	\
 	(TOTAL_DESC - GENET_MQ_CNT * GENET_MQ_BD_CNT)
@@ -165,6 +165,21 @@ static void restore_state(struct BcmEnet_devctrl *pDevCtrl);
 
 static struct net_device *eth_root_dev;
 static int DmaDescThres = DMA_DESC_THRES;
+
+#ifdef CONFIG_BCM7429A0
+static void bcm7429_ephy_workaround(struct BcmEnet_devctrl *pDevCtrl)
+{
+	int data;
+	data = pDevCtrl->mii.mdio_read(pDevCtrl->dev, pDevCtrl->phyAddr, 0x1f);
+	data |= 0x0004;
+	pDevCtrl->mii.mdio_write(pDevCtrl->dev, pDevCtrl->phyAddr, 0x1f, data);
+	data = 0x7555;
+	pDevCtrl->mii.mdio_write(pDevCtrl->dev, pDevCtrl->phyAddr, 0x13, data);
+	data = pDevCtrl->mii.mdio_read(pDevCtrl->dev, pDevCtrl->phyAddr, 0x1f);
+	data &= ~0x0004;
+	pDevCtrl->mii.mdio_write(pDevCtrl->dev, pDevCtrl->phyAddr, 0x1f, data);
+}
+#endif
 /*
  * HFB data for ARP request.
  * In WoL (Magic Packet or ACPI) mode, we need to response
@@ -1069,7 +1084,7 @@ static void bcmgenet_tx_reclaim(struct net_device *dev, int index)
 		pDevCtrl->txLastCIndex = c_index;
 	} else{
 		if (pDevCtrl->txRingFreeBds[index] > (MAX_SKB_FRAGS + 1)
-			&& __netif_subqueue_stopped(dev, index)) {
+			&& __netif_subqueue_stopped(dev, index+1)) {
 			netif_wake_subqueue(dev, index+1);
 		}
 		pDevCtrl->txRingCIndex[index] = c_index;
@@ -2677,13 +2692,13 @@ static void bcmgenet_init_multiq(struct net_device *dev)
 		/* Configure ring as decriptor ring and setup priority */
 		pDevCtrl->txDma->tdma_ring_cfg |= (1 << i);
 		pDevCtrl->txDma->tdma_priority[0] |=
-			((GENET_Q0_PRIORITY - i) << 5*i);
+			((GENET_Q0_PRIORITY + i) << 5*i);
 		pDevCtrl->txDma->tdma_ctrl |=
 			(1 << (i + DMA_RING_BUF_EN_SHIFT));
 	}
 	/* Set ring #16 priority */
 	pDevCtrl->txDma->tdma_priority[2] |=
-		((GENET_Q0_PRIORITY - 4) << 20);
+		((GENET_Q0_PRIORITY + GENET_MQ_CNT) << 20);
 	if (dma_enable)
 		pDevCtrl->txDma->tdma_ctrl |= DMA_EN;
 }
@@ -3439,6 +3454,10 @@ static void bcmgenet_power_up(struct BcmEnet_devctrl *pDevCtrl, int mode)
 	default:
 		break;
 	}
+#ifdef CONFIG_BCM7429A0
+	if (pDevCtrl->phyType == BRCM_PHY_TYPE_INT)
+		bcm7429_ephy_workaround(pDevCtrl);
+#endif
 }
 /*
  * ioctl handle special commands that are not present in ethtool.

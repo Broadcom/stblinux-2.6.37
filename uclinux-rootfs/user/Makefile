@@ -134,6 +134,7 @@ dir_$(CONFIG_USER_HTTPD_HTTPD)              += httpd
 dir_$(CONFIG_USER_HWCLOCK_HWCLOCK)          += hwclock
 dir_$(CONFIG_USER_IFATTACH_IFATTACH)        += ifattach
 dir_$(CONFIG_USER_INETD_INETD)              += inetd
+dir_$(CONFIG_USER_INETUTILS)                += inetutils
 dir_$(CONFIG_USER_INIT.ORG_INIT)            += init.org
 dir_$(CONFIG_USER_INIT_EXPAND)              += init
 dir_$(CONFIG_USER_INIT_INIT)                += init

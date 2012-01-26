@@ -74,10 +74,6 @@
 	.set	noreorder
 	.align	5
 
-/***********************************************************************
- * Lock code into I$
- ***********************************************************************/
-
 # a0 is icache line size
 # a1 is the interrupt vector (or general exception base)
 # a2 is the interrupt vector size
@@ -1145,6 +1141,8 @@ END(memc_settings_valid)
 
 LEAF(wake_up_memc_0)
 
+	move	s7, ra
+
 #if !defined(CONFIG_BRCM_PWR_HANDSHAKE)
 	li	t0, REG(BCHP_MEMC_DDR_0_SSPD_CMD)
 	li	t1, 0
@@ -1164,7 +1162,12 @@ LEAF(wake_up_memc_0)
 	beqz	t1, 1b
 	nop
 
-	jr	ra
+# 1 ms delay - needed on 7552/7358 for stable recovery
+	li	a0, (27000)
+	bal	delay
+	nop
+
+	jr	s7
 	nop
 
 END(wake_up_memc_0)

@@ -219,6 +219,7 @@ struct brcmstb_nand_cfg {
 	unsigned int		blk_adr_bytes;
 	unsigned int		ful_adr_bytes;
 	unsigned int		sector_size_1k;
+	unsigned int		ecc_level;
 };
 
 struct brcmstb_nand_host {
@@ -398,7 +399,7 @@ static irqreturn_t brcmstb_nand_irq(int irq, void *data)
 			if (ctrl.oob) {
 				if (EDU_CMD_READ == ctrl.edu_cmd) {
 					ctrl.oob += read_oob_from_regs(
-							ctrl.edu_count,
+							ctrl.edu_count + 1,
 							ctrl.oob, ctrl.sas,
 							ctrl.sector_size_1k);
 				} else {
@@ -598,9 +599,10 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	BDEV_WR_RB(BCHP_EDU_EXT_ADDR, ctrl.edu_ext_addr);
 	BDEV_WR_RB(BCHP_EDU_LENGTH, FC_BYTES);
 
+	/* Write OOB regs for first subpage */
 	if (oob && (edu_cmd == EDU_CMD_WRITE)) {
 		BDEV_WR_RB(BCHP_NAND_CMD_ADDRESS, ctrl.edu_ext_addr);
-		ctrl.oob += write_oob_to_regs(0, ctrl.oob, ctrl.sas,
+		ctrl.oob += write_oob_to_regs(trans, ctrl.oob, ctrl.sas,
 				ctrl.sector_size_1k);
 	}
 
@@ -628,6 +630,13 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 #endif
 
 	dma_unmap_single(&host->pdev->dev, pa, len, dir);
+
+	/* Read OOB regs for last subpage */
+	if (oob && edu_cmd == EDU_CMD_READ) {
+		BDEV_WR_RB(BCHP_EDU_DRAM_ADDR, (u32)ctrl.edu_dram_addr);
+		BDEV_WR_RB(BCHP_EDU_EXT_ADDR, ctrl.edu_ext_addr);
+		read_oob_from_regs(1, ctrl.oob, ctrl.sas, ctrl.sector_size_1k);
+	}
 
 	/* Make sure the EDU status is clean */
 	if (BDEV_RD_F(EDU_STATUS, Active))
@@ -746,9 +755,11 @@ static int brcmstb_nand_read_page_raw(struct mtd_info *mtd,
 	int ret;
 
 	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 0);
+	WR_ACC_CONTROL(host->cs, ECC_LEVEL, 0);
 	ret = brcmstb_nand_read(mtd, chip, host->last_addr,
 			mtd->writesize >> FC_SHIFT,
 			(u32 *)buf, (u8 *)chip->oob_poi);
+	WR_ACC_CONTROL(host->cs, ECC_LEVEL, host->hwcfg.ecc_level);
 	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
 	return ret;
 }
@@ -756,7 +767,7 @@ static int brcmstb_nand_read_page_raw(struct mtd_info *mtd,
 static int brcmstb_nand_read_oob(struct mtd_info *mtd,
 	struct nand_chip *chip, int page, int sndcmd)
 {
-	return brcmstb_nand_read(mtd, chip, page << chip->page_shift,
+	return brcmstb_nand_read(mtd, chip, (u64)page << chip->page_shift,
 			mtd->writesize >> FC_SHIFT,
 			NULL, (u8 *)chip->oob_poi);
 }
@@ -767,9 +778,11 @@ static int brcmstb_nand_read_oob_raw(struct mtd_info *mtd,
 	struct brcmstb_nand_host *host = chip->priv;
 
 	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 0);
-	brcmstb_nand_read(mtd, chip, page << chip->page_shift,
+	WR_ACC_CONTROL(host->cs, ECC_LEVEL, 0);
+	brcmstb_nand_read(mtd, chip, (u64)page << chip->page_shift,
 		mtd->writesize >> FC_SHIFT,
 		NULL, (u8 *)chip->oob_poi);
+	WR_ACC_CONTROL(host->cs, ECC_LEVEL, host->hwcfg.ecc_level);
 	WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
 	return 0;
 }
@@ -900,7 +913,7 @@ static void brcmstb_nand_write_page_raw(struct mtd_info *mtd,
 static int brcmstb_nand_write_oob(struct mtd_info *mtd,
 	struct nand_chip *chip, int page)
 {
-	return brcmstb_nand_write(mtd, chip, page << chip->page_shift, NULL,
+	return brcmstb_nand_write(mtd, chip, (u64)page << chip->page_shift, NULL,
 		(u8 *)chip->oob_poi);
 }
 
@@ -910,7 +923,7 @@ static int brcmstb_nand_write_oob_raw(struct mtd_info *mtd,
 	struct brcmstb_nand_host *host = chip->priv;
 
 	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 0);
-	return brcmstb_nand_write(mtd, chip, page << chip->page_shift, NULL,
+	return brcmstb_nand_write(mtd, chip, (u64)page << chip->page_shift, NULL,
 		(u8 *)chip->oob_poi);
 	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);
 }
@@ -967,6 +980,11 @@ static void brcmstb_nand_set_cfg(struct brcmstb_nand_host *host,
 #if CONTROLLER_VER >= 50
 	WR_ACC_CONTROL(host->cs, SECTOR_SIZE_1K, cfg->sector_size_1k);
 #endif
+
+	WR_ACC_CONTROL(host->cs, ECC_LEVEL, cfg->ecc_level);
+	/* threshold = ceil(BCH-level * 0.75) */
+	WR_CORR_THRESH(host->cs, ((cfg->ecc_level << cfg->sector_size_1k)
+				* 3 + 2) / 4);
 }
 
 static void brcmstb_nand_get_cfg(struct brcmstb_nand_host *host,
@@ -985,6 +1003,7 @@ static void brcmstb_nand_get_cfg(struct brcmstb_nand_host *host,
 #else
 	cfg->sector_size_1k = 0;
 #endif
+	cfg->ecc_level = RD_ACC_CONTROL(host->cs, ECC_LEVEL);
 
 	if (cfg->block_size < ARRAY_SIZE(block_sizes))
 		cfg->block_size = block_sizes[cfg->block_size] << 10;
@@ -999,13 +1018,19 @@ static void brcmstb_nand_get_cfg(struct brcmstb_nand_host *host,
 
 static void brcmstb_nand_print_cfg(char *buf, struct brcmstb_nand_cfg *cfg)
 {
-	sprintf(buf,
+	buf += sprintf(buf,
 		"%lluMiB total, %uKiB blocks, %u%s pages, %uB OOB, %u-bit",
 		(unsigned long long)cfg->device_size >> 20,
 		cfg->block_size >> 10,
 		cfg->page_size >= 1024 ? cfg->page_size >> 10 : cfg->page_size,
 		cfg->page_size >= 1024 ? "KiB" : "B",
 		cfg->spare_area_size, cfg->device_width);
+
+	/* Account for 24-bit per 1024-byte ECC settings */
+	if (cfg->sector_size_1k)
+		sprintf(buf, ", BCH-%u (1KiB sector)", cfg->ecc_level << 1);
+	else
+		sprintf(buf, ", BCH-%u\n", cfg->ecc_level);
 }
 
 static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
@@ -1014,7 +1039,6 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 	struct nand_chip *chip = &host->chip;
 	struct brcmstb_nand_cfg orig_cfg, new_cfg;
 	char msg[128];
-	unsigned int ecclevel;
 
 	brcmstb_nand_get_cfg(host, &orig_cfg);
 	host->hwcfg = orig_cfg;
@@ -1039,11 +1063,18 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			new_cfg.blk_adr_bytes = 2;
 	new_cfg.ful_adr_bytes = new_cfg.blk_adr_bytes + new_cfg.col_adr_bytes;
 
-	/* use bootloader spare_area_size if it's "close enough" */
-	if (abs(new_cfg.spare_area_size - orig_cfg.spare_area_size) < 2)
-		new_cfg.spare_area_size = orig_cfg.spare_area_size;
+	if (new_cfg.spare_area_size > MAX_CONTROLLER_OOB)
+		new_cfg.spare_area_size = MAX_CONTROLLER_OOB;
 
-	new_cfg.spare_area_size = new_cfg.spare_area_size >= 27 ? 27 : 16;
+	/* use bootloader spare_area_size if it's "close enough" */
+	if (new_cfg.spare_area_size == orig_cfg.spare_area_size + 1) {
+		new_cfg.spare_area_size = orig_cfg.spare_area_size;
+		/*
+		 * Set oobsize to be consistent with controller's
+		 * spare_area_size. This helps nandwrite testing.
+		 */
+		mtd->oobsize = new_cfg.spare_area_size * (mtd->writesize >> FC_SHIFT);
+	}
 
 	if (orig_cfg.device_size != new_cfg.device_size ||
 			orig_cfg.block_size != new_cfg.block_size ||
@@ -1053,6 +1084,24 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			orig_cfg.col_adr_bytes != new_cfg.col_adr_bytes ||
 			orig_cfg.blk_adr_bytes != new_cfg.blk_adr_bytes ||
 			orig_cfg.ful_adr_bytes != new_cfg.ful_adr_bytes) {
+#if CONTROLLER_VER >= 50
+		/* default to 1K sector size (if page is large enough) */
+		new_cfg.sector_size_1k = (new_cfg.page_size >= 1024) ? 1 : 0;
+#endif
+
+		WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
+		WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);
+
+		if (new_cfg.spare_area_size >= 21)
+			new_cfg.ecc_level = 12;
+		else if (chip->badblockpos == NAND_SMALL_BADBLOCK_POS)
+			new_cfg.ecc_level = 6;
+		else
+			new_cfg.ecc_level = 8;
+
+		brcmstb_nand_set_cfg(host, &new_cfg);
+		host->hwcfg = new_cfg;
+
 		if (BDEV_RD(BCHP_NAND_CS_NAND_SELECT) & (0x100 << host->cs)) {
 			/* bootloader activated this CS */
 			dev_warn(&host->pdev->dev, "overriding bootloader "
@@ -1069,37 +1118,6 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			brcmstb_nand_print_cfg(msg, &new_cfg);
 			dev_info(&host->pdev->dev, "detected %s\n", msg);
 		}
-
-#if CONTROLLER_VER >= 50
-		/* default to 1K sector size (if page is large enough) */
-		new_cfg.sector_size_1k = (new_cfg.page_size >= 1024) ? 1 : 0;
-#endif
-
-		brcmstb_nand_set_cfg(host, &new_cfg);
-		host->hwcfg = new_cfg;
-
-		WR_ACC_CONTROL(host->cs, RD_ECC_EN, 1);
-		WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);
-
-		if (new_cfg.spare_area_size >= 21)
-			ecclevel = 12;
-		else if (chip->badblockpos == NAND_SMALL_BADBLOCK_POS)
-			ecclevel = 6;
-		else
-			ecclevel = 8;
-
-		WR_ACC_CONTROL(host->cs, ECC_LEVEL, ecclevel);
-		/* threshold = ceil(BCH-level * 0.75) */
-		WR_CORR_THRESH(host->cs, ((ecclevel << new_cfg.sector_size_1k)
-					* 3 + 2) / 4);
-
-		/* Account for 24-bit per 1024-byte ECC settings */
-		if (new_cfg.sector_size_1k)
-			dev_info(&host->pdev->dev, "ECC set to BCH-%u (1KiB "
-					"sector)\n", ecclevel << 1);
-		else
-			dev_info(&host->pdev->dev, "ECC set to BCH-%u\n",
-					ecclevel);
 	}
 
 	WR_ACC_CONTROL(host->cs, FAST_PGM_RDIN, 0);

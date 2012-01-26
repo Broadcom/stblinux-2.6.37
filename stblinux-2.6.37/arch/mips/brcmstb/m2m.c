@@ -39,7 +39,7 @@ struct brcm_mem_dma_descr {
 #define DESCR_WORD3     1
 #define DESCR_WORD4     2
 
-#define BRCM_MEM_DMA_TIMEOUT	100 /* msec */
+#define BRCM_MEM_DMA_TIMEOUT	(0)	/* no timeout */
 
 #define BRCM_MEM_DMA_DEBUG	(0)
 

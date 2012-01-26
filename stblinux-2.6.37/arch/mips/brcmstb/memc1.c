@@ -28,7 +28,7 @@
 
 #if defined(CONFIG_BRCM_HAS_STANDBY) && defined(BCHP_MEMC_DDR_1_SSPD_CMD)
 
-#define MAX_CLIENT_INFO_NUM		128
+#define MAX_CLIENT_INFO_NUM		NUM_MEMC_CLIENTS
 #define MAX_DDR_PARAMS_NUM		16
 #define MAX_DDR_APHY_PARAMS_NUM		16
 #define MAX_ARB_PARAMS_NUM		2
@@ -163,24 +163,6 @@ static void brcm_pm_memc1_arb_params(int restore)
 	BUG_ON(ii > MAX_ARB_PARAMS_NUM);
 }
 
-static void brcm_pm_memc1_client_info(int restore)
-{
-	int ii = 0;
-	u32 addr = BCHP_MEMC_ARB_1_REG_START + 4;
-
-	if (restore)
-		for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
-			BDEV_WR_RB(addr, memc1_config.client_info[ii]);
-			addr += 4;
-		}
-	else
-		/* Save MEMC1 configuration */
-		for (ii = 0; ii < MAX_CLIENT_INFO_NUM; ii++) {
-			memc1_config.client_info[ii] = BDEV_RD(addr);
-			addr += 4;
-		}
-}
-
 static int brcm_pm_memc1_clock_running(void)
 {
 	if (memc1_config.clock_active == MEMC_STATE_UNKNOWN) {
@@ -251,7 +233,8 @@ int brcm_pm_memc1_powerdown(void)
 
 	DBG(KERN_DEBUG "%s\n", __func__);
 
-	brcm_pm_memc1_client_info(0);
+	brcm_pm_save_restore_rts(BCHP_MEMC_ARB_1_REG_START,
+		memc1_config.client_info, 0);
 	brcm_pm_memc1_ddr_params(0);
 	brcm_pm_memc1_arb_params(0);
 	__brcm_pm_memc1_powerdown();
@@ -280,7 +263,8 @@ int brcm_pm_memc1_powerup(void)
 	__brcm_pm_memc1_powerup();
 	brcm_pm_memc1_ddr_params(1);
 	brcm_pm_memc1_arb_params(1);
-	brcm_pm_memc1_client_info(1);
+	brcm_pm_save_restore_rts(BCHP_MEMC_ARB_1_REG_START,
+		memc1_config.client_info, 1);
 	brcm_pm_memc1_sspd_control(0);
 
 	return 0;

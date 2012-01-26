@@ -25,11 +25,6 @@
 #define REG_OFFSET		(KSEG1 | BCHP_PHYSICAL_OFFSET)
 #define REG(x)			(REG_OFFSET + (x))
 
-	.macro aon_write_data index reg
-	li	t1, REG(AON_RAM_BASE)
-	sw	\reg, \index(t1)
-	.endm
-
 /*
  * Bootloader parameters for warm boot:
  *	byte offset	value
@@ -58,6 +53,7 @@
  * Parameters:
  *	a0: options
  *	a1: dram encoder start function or NULL if not installed
+ *	a2: d-cache line size
  */
 	LEAF(brcm_pm_s3_standby_asm)
 
@@ -80,13 +76,19 @@
 # save cp0 sr
 	sw	t1, 48(t0)
 
-	/* Write-back gp registers */
-	cache	CACHE_WRITEBACK_CMD, 0(t0)
-	nop
-	cache	CACHE_WRITEBACK_CMD, 32(t0)
-	nop
-	cache	CACHE_WRITEBACK_CMD, 64(t0)
-	nop
+# Write-back gp registers - cache will be gone after wakeup
+# align context area address to the cache line
+	addiu	t1, a2, -1
+	not	t1
+	and	t0, t1
+
+# flush at least 64 bytes
+	addiu	t2, t0, 64
+	and	t2, t1
+
+1:	cache	CACHE_WRITEBACK_CMD, 0(t0)
+	bne	t0, t2, 1b
+	addu	t0, a2
 
 	beqz	a1, skip_dram_encode
 	nop
@@ -97,6 +99,17 @@
 	 */
 	jal	a1
 	nop
+
+/* NOTE: Uncommenting this block will force hash mismatch
+ * if .data segment is in the authentication region.
+ * Use for CFE secure warm boot testing.
+ */
+#	la	t0, secure_s3_dummy_data
+#	lw	t1, 0(t0)
+#	addi	t1, 1
+#	sw	t1, 0(t0)
+#	cache	CACHE_WRITEBACK_CMD, 0(t0)
+#	nop
 
 skip_dram_encode:
 
@@ -140,11 +153,41 @@ wait_loop:
 	nop
 
 s3_reentry:
+
+#ifdef CONFIG_BMIPS5000
+# clear CRS and JTB
+	li	t0, (0x06 << 16)
+	mtc0	t0, $22, 2
+	ssnop
+	ssnop
+	ssnop
+
+	li	t0, (0x04 << 16)
+	mtc0	t0, $22, 2
+	ssnop
+	ssnop
+	ssnop
+#endif
+
+#ifdef CONFIG_BMIPS4380
+# flush 4-entry call/return stack
+	jal	1f
+	nop
+1:	jal	1f
+	nop
+1:	jal	1f
+	nop
+1:	jal	1f
+	nop
+1:
+#endif
+
 # restore sr
 	sync
 	nop
 
 s3_standby_exit:
+#ifdef CONFIG_BRCM_UPPER_768MB
 #if defined(CONFIG_BMIPS4380)
 	mfc0	t0, $22, 3
 	li	t1, 0x1ff0
@@ -161,6 +204,7 @@ s3_standby_exit:
 	xor	t0, t1
 	or	t0, t2
 	mtc0	t0, $22, 5
+#endif
 #endif
 	sync
 	nop
@@ -196,7 +240,12 @@ s3_standby_exit:
 	jr	ra
 	nop
 
+
 	END(brcm_pm_s3_standby_asm)
+
+	.align 4
+	.data
+secure_s3_dummy_data:	.word 0
 
 #define UART_LSR_OFFSET		0x14
 #define UART_LSR_MASK		BCHP_UARTA_LSR_THRE_MASK

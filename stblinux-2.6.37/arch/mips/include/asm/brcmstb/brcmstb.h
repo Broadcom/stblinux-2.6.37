@@ -1161,13 +1161,18 @@ int brcm_pm_wakeup_get_status(u32 mask);
 
 asmlinkage int brcm_pm_standby_asm(int icache_linesz, unsigned long ebase,
 	unsigned int vec_size, unsigned long flags);
-int brcm_pm_s3_standby(unsigned long options);
+int brcm_pm_s3_standby(int dcache_linesz, unsigned long options);
 void brcm_pm_s3_cold_boot(void);
+
+#define NUM_MEMC_CLIENTS		128
+void brcm_pm_save_restore_rts(unsigned long reg_addr, u32 *data, int restore);
 
 #define BRCM_MEM_DMA_SCRAM_NONE		0
 #define BRCM_MEM_DMA_SCRAM_BLOCK	1
 #define BRCM_MEM_DMA_SCRAM_MPEG		2
 #define BRCM_MEM_DMA_SCRAM_DTV		3
+
+extern int brcm_pm_hash_enabled;
 
 struct brcm_mem_transfer;
 

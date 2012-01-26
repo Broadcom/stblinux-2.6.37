@@ -1177,7 +1177,7 @@ config BRCM_HAS_SATA2
 config BRCM_HAS_SATA3
 	bool
 	select BRCM_HAS_SATA
-	select SATA_AHCI_PLATFORM
+	select SATA_AHCI_PLATFORM if ATA
 
 config BRCM_SATA_75MHZ_PLL
 	bool

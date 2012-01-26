@@ -288,6 +288,7 @@ static void __init __maybe_unused cfe_read_configuration(void)
 static unsigned long brcm_early_uart;
 
 #define UART_REG(x)		(brcm_early_uart + ((x) << 2))
+#define BAUD			115200
 
 static void __init init_port(void)
 {
@@ -304,9 +305,9 @@ static void __init init_port(void)
 
 	divisor = (BDEV_RD(UART_REG(UART_DLM)) << 8) |
 		BDEV_RD(UART_REG(UART_DLL));
-	brcm_base_baud0 = divisor * 115200;
+	brcm_base_baud0 = divisor * BAUD;
 #endif
-	divisor = brcm_base_baud0 / 115200;
+	divisor = (brcm_base_baud0 + BAUD/2) / BAUD;
 	BDEV_WR(UART_REG(UART_DLL), divisor & 0xff);
 	BDEV_WR(UART_REG(UART_DLM), (divisor >> 8) & 0xff);
 	BDEV_UNSET(UART_REG(UART_LCR), UART_LCR_DLAB);

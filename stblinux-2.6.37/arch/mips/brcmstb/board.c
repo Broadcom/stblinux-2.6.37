@@ -586,6 +586,75 @@ void board_pinmux_setup(void)
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCA_REG_START);
 #endif
 
+#elif defined(CONFIG_BCM7429)
+
+	PINMUX(11, gpio_094, 1);	/* UARTB TX */
+	PINMUX(11, gpio_095, 1);	/* UARTB RX */
+	PINMUX(12, gpio_096, 1);	/* UARTC TX */
+	PINMUX(12, gpio_097, 1);	/* UARTC RX */
+
+	AON_PINMUX(1, aon_gpio_11, 7);	/* MoCA LEDs */
+	AON_PINMUX(2, aon_gpio_14, 5);
+
+	PINMUX(18, sgpio_00, 1);	/* MoCA I2C */
+	PINMUX(18, sgpio_01, 1);
+	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCD_REG_START);
+
+	/* Bootloader indicates the availability of SDIO_0 in SCRATCH reg */
+	if ((BDEV_RD(BCHP_SDIO_0_CFG_SCRATCH) & 0x01) == 0) {
+		/*
+		 * 7241 uses GPIO_092 for UART_TX0 instead of SDIO0_VCTL so
+		 * leave it alone. We don't need SDIO0_VCTL because the board
+		 * is 3.3V only and doesn't use it.
+		 */
+		if (BRCM_PROD_ID() != 0x7241)
+			PINMUX(11, gpio_092, 5);
+		PINMUX(14, gpio_122, 1);
+		PINMUX(14, gpio_123, 1);
+		PINMUX(14, gpio_124, 1);
+		PINMUX(15, gpio_125, 1);
+		PINMUX(15, gpio_126, 1);
+		PINMUX(15, gpio_127, 1);
+		PINMUX(15, gpio_128, 1);
+		PINMUX(15, gpio_129, 1);
+		PINMUX(15, gpio_131, 1);
+		/*
+		 * 7428a0 board uses GPIO_93 for SDIO0_PRES
+		 * 7429a0 board uses GPIO_130 for SDIO0_PRES
+		 */
+		if (BRCM_PROD_ID() == 0x7428) {
+			PINMUX(11, gpio_093, 5);
+			BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_6,
+						 gpio_093_pad_ctrl, 0);
+		} else
+			PINMUX(15, gpio_130, 1);
+
+		/* enable internal pullups */
+		if (BRCM_PROD_ID() != 0x7241)
+			BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_6,
+						 gpio_092_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_122_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_123_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_124_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_125_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_126_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_127_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_128_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_8,
+			gpio_129_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9,
+			gpio_130_pad_ctrl, 2);
+		BDEV_WR_F_RB(SUN_TOP_CTRL_PIN_MUX_PAD_CTRL_9,
+			gpio_131_pad_ctrl, 2);
+	}
+
 #elif defined(CONFIG_BCM7468)
 
 	/* NOTE: R1022 and R1023 must be installed to use UARTB */

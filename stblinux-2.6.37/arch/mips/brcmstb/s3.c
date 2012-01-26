@@ -34,9 +34,20 @@
 #define DBG(...)	do { } while (0)
 #endif
 
-#define CALCULATE_MEM_HASH		(1)
-#define VERIFY_HASH			(0)
+#define CALCULATE_MEM_HASH		(0)
 #define WARM_BOOT_MAGIC_WORD		(0x5AFEB007)
+#define CFE_PARAMETER_BLOCK		(0)
+#define AUTHENTICATION_REGION_SIZE	(16*1024*1024)
+
+#define AON_CTRL_HASH_START_INDEX	(CFE_PARAMETER_BLOCK+5)
+#define AON_SAVE_CPB(idx, val) \
+	BDEV_WR_RB(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2), val)
+#define AON_READ_CPB(idx) \
+	BDEV_RD(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2))
+#define AON_SAVE_HASH(idx, val) \
+	BDEV_WR_RB(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2), val)
+#define AON_READ_HASH(idx) \
+	BDEV_RD(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2))
 
 struct cp0_value {
 	u32	value;
@@ -48,12 +59,13 @@ struct	brcm_pm_s3_context {
 	u32			gp_regs[MAX_GP_REGS];
 	struct cp0_value	cp0_regs[MAX_CP0_REGS];
 	int			cp0_regs_idx;
+	u32			memc0_rts[NUM_MEMC_CLIENTS];
 };
 
 struct brcm_pm_s3_context s3_context;
 
 asmlinkage int brcm_pm_s3_standby_asm(unsigned long options,
-	void (*dram_encoder_start)(void));
+	void (*dram_encoder_start)(void), int dcache_linesz);
 extern int s3_reentry;
 
 extern void brcmstb_enable_xks01(void);
@@ -115,7 +127,6 @@ static __maybe_unused void brcm_pm_restore_cp0_context(
 	write_c0_reg(4, 0, cxt->cp0_regs[--ci].value); /* context */
 
 }
-
 
 static __maybe_unused void brcm_pm_cmp_context(
 		struct brcm_pm_s3_context *cxt,
@@ -180,7 +191,7 @@ static void brcm_pm_dump_context(struct brcm_pm_s3_context *cxt)
  * hash_pointer - pointer to location in memory where hash value is located
  * after encoding
  */
-static char __section(.s3_enc_tmpbuf) brcm_pm_s3_tmpbuf[PAGE_SIZE];
+static char __section(.s3_enc_tmpbuf) brcm_pm_s3_tmpbuf[PAGE_SIZE*16];
 static u32 *hash_pointer;
 
 #define MEM_ENCRYPTED_START_ADDR	(0x80000000)
@@ -201,7 +212,8 @@ static u32 *hash_pointer;
  * can be used as an offset into the outbuf to extract hash
  */
 static struct brcm_mem_transfer *brcm_pm_dram_encoder_set_area(void *_begin,
-	u32 len, dma_addr_t outbuf, u32 *out_len)
+	u32 len, dma_addr_t outbuf, u32 *out_len,
+	struct brcm_mem_transfer *next)
 {
 	int num_descr = (len + *out_len - 1) / *out_len;
 	struct brcm_mem_transfer *xfer, *x, *last_x;
@@ -237,7 +249,7 @@ static struct brcm_mem_transfer *brcm_pm_dram_encoder_set_area(void *_begin,
 		x++;
 		_begin += *out_len;
 	}
-	last_x->next = NULL;
+	last_x->next = next;
 
 	return xfer;
 }
@@ -247,21 +259,13 @@ static void brcm_pm_dram_encoder_free_area(struct brcm_mem_transfer *xfer)
 	kfree(xfer);
 }
 
-#define CFE_PARAMETER_BLOCK		(0)
-#define AON_CTRL_HASH_START_INDEX	(CFE_PARAMETER_BLOCK+5)
-#define AON_SAVE_CPB(idx, val) \
-	BDEV_WR_RB(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2), val);
-#define AON_READ_CPB(idx) \
-	BDEV_RD(AON_RAM_BASE + ((CFE_PARAMETER_BLOCK+idx)<<2));
-#define AON_SAVE_HASH(idx, val) \
-	BDEV_WR_RB(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2), val);
-#define AON_READ_HASH(idx) \
-	BDEV_RD(AON_RAM_BASE + ((AON_CTRL_HASH_START_INDEX+idx)<<2));
-
-/* TODO: rewrite in assembly to avoid memory writes after encoding started */
-static void brcm_pm_dram_encode(void)
+/* Memory region over which M2M DMA calculates MAC cannot be modified
+   after a call to brcm_pm_dram_encoder_start() */
+void brcm_pm_dram_encode(void)
 {
 	u32 *hp = hash_pointer;
+	u32 outbuflen = sizeof(brcm_pm_s3_tmpbuf);
+	uint32_t tmp0, tmp1;
 	/* clear temporary buffer */
 	memset(brcm_pm_s3_tmpbuf, 0, sizeof(brcm_pm_s3_tmpbuf));
 	_dma_cache_wback_inv(0, ~0);
@@ -273,35 +277,43 @@ static void brcm_pm_dram_encode(void)
 	AON_SAVE_HASH(2, *hp++);
 	AON_SAVE_HASH(3, *hp++);
 
-	/* clear temporary buffer */
-	memset(brcm_pm_s3_tmpbuf, 0, sizeof(brcm_pm_s3_tmpbuf));
+	/* clear temporary buffer
+	 * cannot use library function because it will use memory (stack) */
+	__asm__ __volatile__(
+	"	.set	noreorder\n"
+	"	la	%0, brcm_pm_s3_tmpbuf\n"
+	"	move	%1, $0\n"
+	"1:	sw	$0, 0(%0)\n"
+	"	addi	%0, 4\n"
+	"	addi	%1, 4\n"
+	"	bne	%2, %1, 1b\n"
+	"	nop\n"
+	: "=&r" (tmp0), "=&r" (tmp1)
+	: "r" (outbuflen));
 }
 #else
 #define brcm_pm_dram_encode	NULL
 #endif
 
-int __ref brcm_pm_s3_standby(unsigned long options)
+int __ref brcm_pm_s3_standby(int dcache_linesz, unsigned long options)
 {
 	int retval = 0;
 	unsigned long flags;
-
 #if CALCULATE_MEM_HASH
-	struct brcm_mem_transfer *xfer;
-	u32 outlen = PAGE_SIZE;
-	/* TODO: This is what we want to hash, but this requires CFE support
-	u32 region_size = brcm_pm_s3_tmpbuf - _text;
-	*/
-	u32 region_size = __end_rodata - _text;
-#if VERIFY_HASH
-	u32 old_hash[S3_HASH_LEN/4], new_hash[S3_HASH_LEN/4];
-#endif
+	int r1_len, r2_len, total_len;
+	struct brcm_mem_transfer *xfer[3] = {0};
+	u32 outlen = sizeof(brcm_pm_s3_tmpbuf);
+	u32 outbuflen = outlen, tmp, ii;
+	u32 region_size = AUTHENTICATION_REGION_SIZE;
+	void *src;
+	u32 hash[4];
 
 	/*
 	 * We are using bi-directional mapping to avoid synchronizing cache
 	 * after encoding
 	 */
-	dma_addr_t pa_dst = dma_map_single(NULL, brcm_pm_s3_tmpbuf, PAGE_SIZE,
-		DMA_BIDIRECTIONAL);
+	dma_addr_t pa_dst = dma_map_single(NULL, brcm_pm_s3_tmpbuf,
+		outbuflen, DMA_BIDIRECTIONAL);
 
 	if (dma_mapping_error(NULL, pa_dst)) {
 		printk(KERN_ERR "%s: cannot remap temp buffer\n", __func__);
@@ -311,42 +323,100 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	if (region_size < brcm_min_auth_region_size)
 		region_size = brcm_min_auth_region_size;
 
-	printk(KERN_DEBUG "Hashing memory 0x%08x-0x%08x (0x%08x)\n",
-	       (u32)_text, (u32)_text + region_size, region_size);
-	printk(KERN_DEBUG "Output buffer  0x%08x-0x%08x (0x%08x)\n",
-	       (u32)brcm_pm_s3_tmpbuf, (u32)brcm_pm_s3_tmpbuf + outlen, outlen);
+	printk(KERN_DEBUG "Authentication region size: 0x%08x\n", region_size);
+	printk(KERN_DEBUG "Output buffer  : 0x%08x-0x%08x (0x%08x)\n",
+	       (u32)brcm_pm_s3_tmpbuf,
+	       (u32)brcm_pm_s3_tmpbuf + outlen, outlen);
 
-	xfer = brcm_pm_dram_encoder_set_area((void *)_text,
-		region_size, pa_dst, &outlen);
+	/* We add areas to the head of the list - in reverse order
+	 * of M2M DMA execution */
 
-	if (!xfer) {
-		dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
-		printk(KERN_ERR "%s: cannot setup M2M DMA\n", __func__);
-		return -1;
+	/* This region starts from _text and bypasses temporary
+	 * output buffer */
+	src = _text;
+	/* check if in/out regions overlap */
+	if (brcm_pm_s3_tmpbuf >= (char *)(src + region_size) ||
+	    brcm_pm_s3_tmpbuf + outlen <= (char *)src) {
+		/* non-overlapping case */
+		r1_len = region_size;
+		r2_len = 0;
+	} else {
+		/* need to cut out the output buffer */
+		r1_len = (int)(brcm_pm_s3_tmpbuf - (char *)src);
+		r2_len = region_size - r1_len;
+	}
+	total_len = r1_len + r2_len;
+
+	xfer[0] = brcm_pm_dram_encoder_set_area((void *)src, r1_len,
+		pa_dst, &outlen, NULL);
+	if (!xfer[0]) {
+		printk(KERN_ERR "%s: cannot setup M2M DMA [0]\n", __func__);
+		goto _failed;
 	}
 
-	if (brcm_pm_dram_encoder_prepare(xfer)) {
+	printk(KERN_DEBUG "Region 0       : 0x%08x-0x%08x (0x%08x)\n",
+		(u32)src, (u32)src + r1_len, r1_len);
+
+	if (r2_len > 0) {
+		outlen = outbuflen;
+		src = (void *)((u32)(brcm_pm_s3_tmpbuf + outbuflen));
+		xfer[1] = xfer[0];
+		xfer[0] = brcm_pm_dram_encoder_set_area(src, r2_len,
+			pa_dst, &outlen, xfer[1]);
+		if (!xfer[0]) {
+			printk(KERN_ERR "%s: cannot setup M2M DMA [1]\n",
+			       __func__);
+			goto _failed;
+		}
+		printk(KERN_DEBUG "Region 1       : 0x%08x-0x%08x (0x%08x)\n",
+			(u32)src, (u32)(src + r2_len), r2_len);
+	}
+
+	/* First descriptor must include kernel reentry point
+	 * We are processing one output buffer worth of data */
+	src = (void *)((u32)(&s3_reentry) & ~(PAGE_SIZE-1));
+	tmp = outbuflen;
+	xfer[2] = brcm_pm_dram_encoder_set_area((void *)src, outbuflen,
+		pa_dst, &tmp, xfer[0]);
+	if (!xfer[2]) {
+		printk(KERN_ERR "%s: cannot setup M2M DMA [2]\n", __func__);
+		goto _failed;
+	}
+	printk(KERN_DEBUG "Region 2       : 0x%08x-0x%08x (0x%08x)\n",
+		(u32)src, (u32)src + outbuflen, outbuflen);
+	total_len += outbuflen;
+	if (brcm_pm_dram_encoder_prepare(xfer[2])) {
 		printk(KERN_ERR "%s: cannot initialize M2M DMA\n", __func__);
-		brcm_pm_dram_encoder_free_area(xfer);
-		dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
-		return -1;
+		goto _failed;
 	}
 
 	hash_pointer = (u32 *)(brcm_pm_s3_tmpbuf +
-		(outlen - S3_HASH_LEN + PAGE_SIZE) % PAGE_SIZE);
+		(outlen - S3_HASH_LEN + outbuflen) % outbuflen);
 
 	/* M2M DMA descriptor address */
-	AON_SAVE_CPB(2, BDEV_RD(BCHP_MEM_DMA_0_FIRST_DESC));
+	if (brcm_pm_hash_enabled)
+		AON_SAVE_CPB(2, BDEV_RD(BCHP_MEM_DMA_0_FIRST_DESC));
+	else
+		AON_SAVE_CPB(2, 0);
 	/* Encryption key slot */
 	AON_SAVE_CPB(3, AES_CBC_ENCRYPTION_KEY_SLOT);
-	/* Length of encoded region */
-	AON_SAVE_CPB(4, region_size);
+	/* Address of hash */
+	AON_SAVE_CPB(4, (u32)hash_pointer);
+	/* Total authentication region size */
+	AON_SAVE_CPB(9, total_len);
+	printk(KERN_DEBUG "Encryption slot: %d\n",
+	       AES_CBC_ENCRYPTION_KEY_SLOT);
+	printk(KERN_DEBUG "Hash pointer   : 0x%p\n", hash_pointer);
+	printk(KERN_DEBUG "Total length   : 0x%08x\n", (u32)total_len);
+	printk(KERN_DEBUG "Reentry point  : 0x%p\n", &s3_reentry);
+#else
+	AON_SAVE_CPB(2, 0);
 #endif
 
 	/* Warm Boot Magic Word */
 	AON_SAVE_CPB(0, WARM_BOOT_MAGIC_WORD);
 	/* Kernel Reentry Address */
-	AON_SAVE_CPB(1, s3_reentry);
+	AON_SAVE_CPB(1, (u32)&s3_reentry);
 
 	/* clear RESET_HISTORY */
 	BDEV_WR_F_RB(AON_CTRL_RESET_CTRL, clear_reset_history, 1);
@@ -356,34 +426,29 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	brcm_pm_init_cp0_context(&s3_context);
 	brcm_pm_save_cp0_context(&s3_context);
 
+	/* inhibit DDR_RSTb pulse */
+	BDEV_UNSET(BCHP_DDR40_PHY_CONTROL_REGS_0_STANDBY_CONTROL, 0x0f);
+	BDEV_SET(BCHP_DDR40_PHY_CONTROL_REGS_0_STANDBY_CONTROL, BIT(5) | 0x05);
+
+	/* save RTS */
+	brcm_pm_save_restore_rts(BCHP_MEMC_ARB_0_REG_START,
+		s3_context.memc0_rts, 0);
+
 	/* save I/O context */
 
 	local_flush_tlb_all();
 	_dma_cache_wback_inv(0, ~0);
 
-	retval = brcm_pm_s3_standby_asm(options, brcm_pm_dram_encode);
-
-#if CALCULATE_MEM_HASH && VERIFY_HASH
-	/*
-	 * Test assumes memory has not changed since previous encryption.
-	 * This is why we cannot run the hash calculation over entire
-	 * memory. In real life bootloader will be doing this at the early
-	 * stages of warm boot
-	 */
-	/* save for comparison */
-	old_hash[0] = AON_READ_HASH(0);
-	old_hash[1] = AON_READ_HASH(1);
-	old_hash[2] = AON_READ_HASH(2);
-	old_hash[3] = AON_READ_HASH(3);
-	/* Calculate hash again */
-	brcm_pm_dram_encoder_complete(xfer);
-	brcm_pm_dram_encoder_prepare(xfer);
-	brcm_pm_dram_encode();
-#endif
+	retval = brcm_pm_s3_standby_asm(options, brcm_pm_dram_encode,
+		dcache_linesz);
 
 	/* CPU reconfiguration */
 	bchip_mips_setup();
 	brcm_setup_ebase();
+
+	/* restore RTS */
+	brcm_pm_save_restore_rts(BCHP_MEMC_ARB_0_REG_START,
+		s3_context.memc0_rts, 1);
 
 	/* restore I/O context */
 	board_pinmux_setup();
@@ -414,48 +479,24 @@ int __ref brcm_pm_s3_standby(unsigned long options)
 	BDEV_WR_F_RB(WKTMR_PRESCALER, wktmr_prescaler, WKTMR_FREQ);
 
 	if (brcm_pcie_enabled) {
-		BDEV_WR_F_RB(SUN_TOP_CTRL_SW_INIT_0_SET, pcie_sw_init, 1);
-		BDEV_WR_F_RB(SUN_TOP_CTRL_SW_INIT_0_CLEAR, pcie_sw_init, 1);
-
 		brcm_early_pcie_setup();
 		brcm_setup_pcie_bridge();
 	}
 #endif
 
 #if CALCULATE_MEM_HASH
+	for (ii = 0; ii < 4; ii++)
+		hash[ii] = AON_READ_HASH(ii);
+	printk(KERN_DEBUG "hash: %08x:%08x:%08x:%08x\n",
+	       hash[0], hash[1], hash[2], hash[3]);
 
-	brcm_pm_dram_encoder_complete(xfer);
-	brcm_pm_dram_encoder_free_area(xfer);
-	dma_unmap_single(NULL, pa_dst, PAGE_SIZE, DMA_BIDIRECTIONAL);
+	brcm_pm_dram_encoder_complete(xfer[0]);
+_failed:
+	for (ii = 0; ii < 3; ii++)
+		brcm_pm_dram_encoder_free_area(xfer[ii]);
+	dma_unmap_single(NULL, pa_dst, outbuflen, DMA_BIDIRECTIONAL);
 
-#if VERIFY_HASH
-	{
-		int failed;
-		new_hash[0] = AON_READ_HASH(0);
-		new_hash[1] = AON_READ_HASH(1);
-		new_hash[2] = AON_READ_HASH(2);
-		new_hash[3] = AON_READ_HASH(3);
-		failed = memcmp(new_hash, old_hash, S3_HASH_LEN);
-		if (failed)
-			DBG(KERN_ERR "Hash mismatch!\n");
-
-		if (failed || !new_hash[0]) {
-			int ii;
-			unsigned char *hp;
-			DBG(KERN_INFO "Old hash: ");
-			hp = (unsigned char *)old_hash;
-			for (ii = 0; ii < S3_HASH_LEN; ii++)
-				DBG(KERN_CONT "%02x ", *hp++);
-			DBG(KERN_INFO "New hash: ");
-			hp = (unsigned char *)new_hash;
-			for (ii = 0; ii < S3_HASH_LEN; ii++)
-				DBG(KERN_CONT "%02x ", *hp++);
-			DBG(KERN_INFO "\n");
-		}
-	}
 #endif
-#endif
-
 	return retval;
 }
 

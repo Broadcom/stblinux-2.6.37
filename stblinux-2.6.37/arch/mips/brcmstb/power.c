@@ -59,10 +59,10 @@
  */
 static int fixed_counter_freq;
 
-#if defined(CONFIG_BCM7425) || defined(CONFIG_BCM7346B0)
-#define	BRCM_MIPS_PLL_REPROGRAM
-#define BRCM_CPU_FULL_FREQ	1305
-#define BRCM_CPU_HALF_FREQ	702
+#if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7344B0) || \
+	defined(CONFIG_BCM7346B0)
+/* SWLINUX-2063: MIPS cannot enter divide-by-N mode */
+#define	BROKEN_MIPS_DIVIDER
 #endif
 
 /* TODO - 7344B0, 35126, 35330 use entirely different set of registers to
@@ -117,93 +117,6 @@ struct spd_change {
 	int			new_base;
 };
 
-#if defined(BRCM_MIPS_PLL_REPROGRAM)
-/* Delay function used in MIPS PLL bypass mode, when udelay_val is invalid */
-static void __bypass_delay(unsigned long ms)
-{
-	unsigned long count_delay = ms * 216000 / 8, end_delay, count;
-	count = read_c0_count();
-	end_delay = count + count_delay;
-	if (end_delay < count)
-		while (read_c0_count() > end_delay)
-			;
-
-	while (read_c0_count() < end_delay)
-		;
-}
-
-#define _DELAY __bypass_delay(1)
-
-/* glitchless MIPS PLL frequency change */
-static void brcm_change_cpu_pll_freq(int half)
-{
-	int freq_index = half ? 6 : 0;
-	unsigned long count, compare, delta;
-	signed long sdelta;
-
-	/* MIPS clock is switched to 216 MHz */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, BYPASS_PLL_RQ, 1);
-	_DELAY;
-
-	/* disable MIPS PLL */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
-		POST_DIVIDER_HOLD_CH0, 1);
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
-		CLOCK_DIS_CH0, 1);
-
-	/* Set PLL mode override */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL,
-		bypassed_PLL_mode_OVERRIDE_CPU_FREQ_PIN_STRAP, 1);
-	_DELAY;
-
-	/* change MIPS clock frequency */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_CPU_FREQ,
-		freq_index);
-	_DELAY;
-
-	/* assert digital and analog resets of PLL */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_A_RST_PLL, 1);
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_D_RST_PLL, 1);
-	_DELAY;
-
-	/* de-assert digital and analog resets of PLL */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_A_RST_PLL, 0);
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, bypassed_PLL_mode_D_RST_PLL, 0);
-	_DELAY;
-
-	/* wait for PLL lock */
-	while (!BDEV_RD_F(CLKGEN_PLL_MIPS_PLL_LOCK_STATUS, LOCK))
-		;
-
-	/* enable MIPS PLL */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
-		POST_DIVIDER_HOLD_CH0, 0);
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_PLL_CHANNEL_CTRL_CH_0,
-		CLOCK_DIS_CH0, 0);
-
-	/* MIPS clock is switched back from 216 MHz */
-	BDEV_WR_F_RB(CLKGEN_PLL_MIPS_CTRL, BYPASS_PLL_RQ, 0);
-	_DELAY;
-
-	count = read_c0_count();
-	compare = read_c0_compare();
-
-	sdelta = (long)compare - (long)count;
-	if (sdelta > 0) {
-		delta = (((unsigned long)sdelta << 16) / BRCM_CPU_FULL_FREQ) *
-			BRCM_CPU_HALF_FREQ;
-		delta >>= 16;
-		write_c0_compare(read_c0_count() + delta);
-		printk(KERN_DEBUG "cnt=%lu->%lu cmp=%lu->%lu delta=%lu\n",
-			count,
-			(long unsigned)read_c0_count(),
-			compare,
-			(long unsigned)read_c0_compare(),
-			delta);
-	}
-}
-#endif
-
 void brcm_set_cpu_speed(void *arg)
 {
 	struct spd_change *c = arg;
@@ -216,26 +129,6 @@ void brcm_set_cpu_speed(void *arg)
 	/* scale udelay_val */
 	if (!orig_udelay_val[cpu])
 		orig_udelay_val[cpu] = current_cpu_data.udelay_val;
-
-#if defined(BRCM_MIPS_PLL_REPROGRAM)
-	/* TP1 must be stopped while MIPS PLL frequency is being changed !!! */
-	BUG_ON(cpu);
-	/* Valid divisors are only 1 and 2 */
-	if (new_div == 2) {
-		brcm_change_cpu_pll_freq(1);
-		cpu_data[cpu].udelay_val =
-			((unsigned long long)orig_udelay_val[cpu]
-			 / BRCM_CPU_FULL_FREQ) * BRCM_CPU_HALF_FREQ;
-		fixup_ticks_ratio = (BRCM_CPU_HALF_FREQ << 16) /
-			BRCM_CPU_FULL_FREQ;
-	} else {
-		brcm_change_cpu_pll_freq(0);
-		cpu_data[cpu].udelay_val =
-			(unsigned long long)orig_udelay_val[cpu];
-		fixup_ticks_ratio = 0;
-	}
-	return;
-#endif
 
 	if (c->new_base == brcm_cpu_khz)
 		current_cpu_data.udelay_val = orig_udelay_val[cpu] / new_div;
@@ -390,11 +283,8 @@ ssize_t brcm_pm_store_cpu_div(struct device *dev,
 			)
 		return -EINVAL;
 
-#if defined(BRCM_MIPS_PLL_REPROGRAM)
-	if (cpu_div == val)
-		return count;
-	if (val != 1 && val != 2)
-		return -EINVAL;
+#if defined(BROKEN_MIPS_DIVIDER)
+	return val == 1 ? count : -EINVAL;
 #endif
 
 	chg.old_div = cpu_div;
@@ -790,6 +680,16 @@ static int nopm_setup(char *str)
 }
 
 __setup("nopm", nopm_setup);
+
+int brcm_pm_hash_enabled = 1;
+
+static int nohash_setup(char *str)
+{
+	brcm_pm_hash_enabled = 0;
+	return 0;
+}
+
+__setup("nohash", nohash_setup);
 
 /***********************************************************************
  * USB / ENET / GENET / MoCA / SATA PM external API
@@ -4092,6 +3992,7 @@ static int brcm_pm_standby(int mode)
 #ifdef CONFIG_BRCM_HAS_AON
 		if (mode)
 			ret = brcm_pm_s3_standby(
+				current_cpu_data.dcache.linesz,
 				brcm_pm_standby_flags);
 		else
 #endif
@@ -4282,4 +4183,22 @@ void brcm_pm_sata3(int enable)
 	struct clk *clk = brcm_pm_clk_find("sata");
 	if (clk)
 		enable ? clk_enable(clk) : clk_disable(clk);
+}
+
+void brcm_pm_save_restore_rts(unsigned long reg_addr, u32 *data, int restore)
+{
+	int ii = 0;
+
+	reg_addr += 4;		/* skip debug register */
+	if (restore)
+		for (ii = 0; ii < NUM_MEMC_CLIENTS; ii++) {
+			BDEV_WR_RB(reg_addr, data[ii]);
+			reg_addr += 4;
+		}
+	else
+		/* Save MEMC1 configuration */
+		for (ii = 0; ii < NUM_MEMC_CLIENTS; ii++) {
+			data[ii] = BDEV_RD(reg_addr);
+			reg_addr += 4;
+		}
 }

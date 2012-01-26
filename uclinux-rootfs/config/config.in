@@ -323,6 +323,12 @@ bool 'ifconfig'			CONFIG_USER_ROUTE_IFCONFIG
 
 
 bool 'inetd'			CONFIG_USER_INETD_INETD
+bool 'inetutils'		CONFIG_USER_INETUTILS
+
+if [ "$CONFIG_USER_INETUTILS" = "y" ]; then
+	bool 'syslogd'		CONFIG_USER_INETUTILS_SYSLOGD
+fi
+
 bool 'ipchains'			CONFIG_USER_IPCHAINS_IPCHAINS
 bool 'iperf'			CONFIG_USER_IPERF
 if [ "$CONFIG_USER_IPERF" = "y" ]; then

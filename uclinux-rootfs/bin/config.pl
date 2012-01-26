@@ -375,7 +375,8 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 	# order: Y,Z,X.
 	my %implies = ('pal' => 'small-nonet-nousb-nohdd',
 		       'ikos' => 'small-kdebug-nousb-nomtd-nohdd',
-		       'kgdb' => 'kdebug'
+		       'kgdb' => 'kdebug',
+		       'android' => 'ipv6',
 	    );
 
 	# Munge the '%implies' hash so that its values become array refs.
