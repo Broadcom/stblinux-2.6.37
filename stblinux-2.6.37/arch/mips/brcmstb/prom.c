@@ -416,13 +416,6 @@ void __init prom_init(void)
 			break;
 
 #ifdef CONFIG_BRCM_UPPER_MEMORY
-#if defined(CONFIG_BCM7425A0)
-		/* HW7425-451: broken in A0, fixed in A1 */
-		if (BRCM_CHIP_REV() == 0x00) {
-			mb = min(dram0_mb, 512UL);
-			dram0_mb = mb;
-		} else
-#endif
 		mb = min(dram0_mb, BRCM_MAX_UPPER_MB);
 		dram0_mb -= mb;
 

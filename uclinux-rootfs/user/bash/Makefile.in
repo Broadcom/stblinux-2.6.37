@@ -686,8 +686,9 @@ config.status:	$(srcdir)/configure
 	$(SHELL) ./config.status --recheck
 
 # comment out for distribution
-$(srcdir)/configure:	$(srcdir)/configure.in $(srcdir)/aclocal.m4 $(srcdir)/config.h.in
-	cd $(srcdir) && autoconf
+# Modified by Broadcom 2012/01/25
+# $(srcdir)/configure:	$(srcdir)/configure.in $(srcdir)/aclocal.m4 $(srcdir)/config.h.in
+#	cd $(srcdir) && autoconf
 
 # for chet
 reconfig: force

@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Thu Sep 29 02:08:55 2011
- *                 MD5 Checksum         14efb8cde02ea45d042c0a9b9a3e1191
+ * Date:           Generated on         Tue Dec  6 18:45:16 2011
+ *                 MD5 Checksum         d41d8cd98f00b204e9800998ecf8427e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7435/rdb/a0/bchp_moca_hostmisc.h $
+ * 
+ * Hydra_Software_Devel/2   12/7/11 3:17p mward
+ * SW7435-3: Synced up with central rdb.
  *
  ***************************************************************************/
 
@@ -87,47 +90,47 @@
 /* MOCA_HOSTMISC :: MISC_CTRL :: spare_ctrl [31:15] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_ctrl_MASK               0xffff8000
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_ctrl_SHIFT              15
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_ctrl_DEFAULT            131071
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_ctrl_DEFAULT            0x0001ffff
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: spare_status [14:10] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_status_MASK             0x00007c00
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_status_SHIFT            10
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_status_DEFAULT          31
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_status_DEFAULT          0x0000001f
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: spare_reset2 [09:08] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset2_MASK             0x00000300
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset2_SHIFT            8
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset2_DEFAULT          3
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset2_DEFAULT          0x00000003
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: moca_disable_clocks [07:07] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_disable_clocks_MASK      0x00000080
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_disable_clocks_SHIFT     7
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_disable_clocks_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_disable_clocks_DEFAULT   0x00000000
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: spare_reset [06:04] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset_MASK              0x00000070
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset_SHIFT             4
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset_DEFAULT           7
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_spare_reset_DEFAULT           0x00000007
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: moca_gmii_sw_init [03:03] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_gmii_sw_init_MASK        0x00000008
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_gmii_sw_init_SHIFT       3
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_gmii_sw_init_DEFAULT     0
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_gmii_sw_init_DEFAULT     0x00000000
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: moca_cpu_l_reset [02:02] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_l_reset_MASK         0x00000004
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_l_reset_SHIFT        2
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_l_reset_DEFAULT      1
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_l_reset_DEFAULT      0x00000001
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: moca_sys_reset [01:01] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_sys_reset_MASK           0x00000002
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_sys_reset_SHIFT          1
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_sys_reset_DEFAULT        1
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_sys_reset_DEFAULT        0x00000001
 
 /* MOCA_HOSTMISC :: MISC_CTRL :: moca_cpu_h_reset [00:00] */
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_h_reset_MASK         0x00000001
 #define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_h_reset_SHIFT        0
-#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_h_reset_DEFAULT      1
+#define BCHP_MOCA_HOSTMISC_MISC_CTRL_moca_cpu_h_reset_DEFAULT      0x00000001
 
 /***************************************************************************
  *SCRATCH - Moca Scratch Register
@@ -135,7 +138,7 @@
 /* MOCA_HOSTMISC :: SCRATCH :: value [31:00] */
 #define BCHP_MOCA_HOSTMISC_SCRATCH_value_MASK                      0xffffffff
 #define BCHP_MOCA_HOSTMISC_SCRATCH_value_SHIFT                     0
-#define BCHP_MOCA_HOSTMISC_SCRATCH_value_DEFAULT                   0
+#define BCHP_MOCA_HOSTMISC_SCRATCH_value_DEFAULT                   0x00000000
 
 /***************************************************************************
  *VERSION - MoCA version register
@@ -143,27 +146,27 @@
 /* MOCA_HOSTMISC :: VERSION :: moca_id [31:16] */
 #define BCHP_MOCA_HOSTMISC_VERSION_moca_id_MASK                    0xffff0000
 #define BCHP_MOCA_HOSTMISC_VERSION_moca_id_SHIFT                   16
-#define BCHP_MOCA_HOSTMISC_VERSION_moca_id_DEFAULT                 26146
+#define BCHP_MOCA_HOSTMISC_VERSION_moca_id_DEFAULT                 0x00006622
 
 /* MOCA_HOSTMISC :: VERSION :: moca_spec_ver [15:12] */
 #define BCHP_MOCA_HOSTMISC_VERSION_moca_spec_ver_MASK              0x0000f000
 #define BCHP_MOCA_HOSTMISC_VERSION_moca_spec_ver_SHIFT             12
-#define BCHP_MOCA_HOSTMISC_VERSION_moca_spec_ver_DEFAULT           2
+#define BCHP_MOCA_HOSTMISC_VERSION_moca_spec_ver_DEFAULT           0x00000002
 
 /* MOCA_HOSTMISC :: VERSION :: core_version [11:08] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_version_MASK               0x00000f00
 #define BCHP_MOCA_HOSTMISC_VERSION_core_version_SHIFT              8
-#define BCHP_MOCA_HOSTMISC_VERSION_core_version_DEFAULT            3
+#define BCHP_MOCA_HOSTMISC_VERSION_core_version_DEFAULT            0x00000003
 
 /* MOCA_HOSTMISC :: VERSION :: core_revision [07:04] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_revision_MASK              0x000000f0
 #define BCHP_MOCA_HOSTMISC_VERSION_core_revision_SHIFT             4
-#define BCHP_MOCA_HOSTMISC_VERSION_core_revision_DEFAULT           0
+#define BCHP_MOCA_HOSTMISC_VERSION_core_revision_DEFAULT           0x00000000
 
 /* MOCA_HOSTMISC :: VERSION :: core_mask [03:00] */
 #define BCHP_MOCA_HOSTMISC_VERSION_core_mask_MASK                  0x0000000f
 #define BCHP_MOCA_HOSTMISC_VERSION_core_mask_SHIFT                 0
-#define BCHP_MOCA_HOSTMISC_VERSION_core_mask_DEFAULT               0
+#define BCHP_MOCA_HOSTMISC_VERSION_core_mask_DEFAULT               0x00000000
 
 /***************************************************************************
  *H2M_INT_TRIG - Host-to-MoCA Interrupt Trigger
@@ -175,7 +178,7 @@
 /* MOCA_HOSTMISC :: H2M_INT_TRIG :: INT_TRIG [07:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_INT_TRIG_INT_TRIG_MASK              0x000000ff
 #define BCHP_MOCA_HOSTMISC_H2M_INT_TRIG_INT_TRIG_SHIFT             0
-#define BCHP_MOCA_HOSTMISC_H2M_INT_TRIG_INT_TRIG_DEFAULT           0
+#define BCHP_MOCA_HOSTMISC_H2M_INT_TRIG_INT_TRIG_DEFAULT           0x00000000
 
 /***************************************************************************
  *WAKEUP - Host-to-MoCA Wakeup Interrupt
@@ -187,12 +190,12 @@
 /* MOCA_HOSTMISC :: WAKEUP :: cpu_l_wakeup_int [01:01] */
 #define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_l_wakeup_int_MASK            0x00000002
 #define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_l_wakeup_int_SHIFT           1
-#define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_l_wakeup_int_DEFAULT         0
+#define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_l_wakeup_int_DEFAULT         0x00000000
 
 /* MOCA_HOSTMISC :: WAKEUP :: cpu_h_wakeup_int [00:00] */
 #define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_h_wakeup_int_MASK            0x00000001
 #define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_h_wakeup_int_SHIFT           0
-#define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_h_wakeup_int_DEFAULT         0
+#define BCHP_MOCA_HOSTMISC_WAKEUP_cpu_h_wakeup_int_DEFAULT         0x00000000
 
 /***************************************************************************
  *SUBSYS_CFG - Moca Subsystem configuration
@@ -200,27 +203,27 @@
 /* MOCA_HOSTMISC :: SUBSYS_CFG :: spare_cfg [31:10] */
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_spare_cfg_MASK               0xfffffc00
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_spare_cfg_SHIFT              10
-#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_spare_cfg_DEFAULT            0
+#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_spare_cfg_DEFAULT            0x00000000
 
 /* MOCA_HOSTMISC :: SUBSYS_CFG :: moca_ctl_mem_split_reg [09:07] */
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_ctl_mem_split_reg_MASK  0x00000380
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_ctl_mem_split_reg_SHIFT 7
-#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_ctl_mem_split_reg_DEFAULT 4
+#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_ctl_mem_split_reg_DEFAULT 0x00000004
 
 /* MOCA_HOSTMISC :: SUBSYS_CFG :: moca_cpu_dmem_split_reg [06:04] */
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_dmem_split_reg_MASK 0x00000070
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_dmem_split_reg_SHIFT 4
-#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_dmem_split_reg_DEFAULT 2
+#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_dmem_split_reg_DEFAULT 0x00000002
 
 /* MOCA_HOSTMISC :: SUBSYS_CFG :: moca_cpu_imem_split_reg [03:01] */
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_imem_split_reg_MASK 0x0000000e
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_imem_split_reg_SHIFT 1
-#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_imem_split_reg_DEFAULT 2
+#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_cpu_imem_split_reg_DEFAULT 0x00000002
 
 /* MOCA_HOSTMISC :: SUBSYS_CFG :: moca_arb_rr_sel [00:00] */
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_arb_rr_sel_MASK         0x00000001
 #define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_arb_rr_sel_SHIFT        0
-#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_arb_rr_sel_DEFAULT      1
+#define BCHP_MOCA_HOSTMISC_SUBSYS_CFG_moca_arb_rr_sel_DEFAULT      0x00000001
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_0 - Host to MoCA MMP outbox registes , register set index 0.
@@ -228,7 +231,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_0 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_0_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_0_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_0_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_0_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_1 - Host to MoCA MMP outbox registes , register set index 1.
@@ -236,7 +239,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_1 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_1_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_1_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_1_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_1_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_2 - Host to MoCA MMP outbox registes , register set index 2.
@@ -244,7 +247,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_2 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_2_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_2_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_2_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_2_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_3 - Host to MoCA MMP outbox registes , register set index 3.
@@ -252,7 +255,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_3 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_3_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_3_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_3_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_3_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_4 - Host to MoCA MMP outbox registes , register set index 4.
@@ -260,7 +263,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_4 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_4_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_4_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_4_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_4_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_5 - Host to MoCA MMP outbox registes , register set index 5.
@@ -268,7 +271,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_5 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_5_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_5_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_5_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_5_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_6 - Host to MoCA MMP outbox registes , register set index 6.
@@ -276,7 +279,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_6 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_6_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_6_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_6_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_6_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_7 - Host to MoCA MMP outbox registes , register set index 7.
@@ -284,7 +287,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_7 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_7_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_7_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_7_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_7_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_8 - Host to MoCA MMP outbox registes , register set index 8.
@@ -292,7 +295,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_8 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_8_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_8_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_8_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_8_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_9 - Host to MoCA MMP outbox registes , register set index 9.
@@ -300,7 +303,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_9 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_9_m2h_mmp_outbox_MASK    0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_9_m2h_mmp_outbox_SHIFT   0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_9_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_9_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_10 - Host to MoCA MMP outbox registes , register set index 10.
@@ -308,7 +311,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_10 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_10_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_10_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_10_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_10_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_11 - Host to MoCA MMP outbox registes , register set index 11.
@@ -316,7 +319,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_11 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_11_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_11_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_11_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_11_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_12 - Host to MoCA MMP outbox registes , register set index 12.
@@ -324,7 +327,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_12 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_12_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_12_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_12_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_12_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_13 - Host to MoCA MMP outbox registes , register set index 13.
@@ -332,7 +335,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_13 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_13_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_13_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_13_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_13_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_14 - Host to MoCA MMP outbox registes , register set index 14.
@@ -340,7 +343,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_14 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_14_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_14_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_14_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_14_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *H2M_MMP_OUTBOX_15 - Host to MoCA MMP outbox registes , register set index 15.
@@ -348,7 +351,7 @@
 /* MOCA_HOSTMISC :: H2M_MMP_OUTBOX_15 :: m2h_mmp_outbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_15_m2h_mmp_outbox_MASK   0xffffffff
 #define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_15_m2h_mmp_outbox_SHIFT  0
-#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_15_m2h_mmp_outbox_DEFAULT 0
+#define BCHP_MOCA_HOSTMISC_H2M_MMP_OUTBOX_15_m2h_mmp_outbox_DEFAULT 0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_0 - MoCA to Host MMP inbox registers , register set index 0.
@@ -356,7 +359,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_0 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_0_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_0_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_0_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_0_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_1 - MoCA to Host MMP inbox registers , register set index 1.
@@ -364,7 +367,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_1 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_1_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_1_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_1_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_1_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_2 - MoCA to Host MMP inbox registers , register set index 2.
@@ -372,7 +375,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_2 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_2_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_2_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_2_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_2_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_3 - MoCA to Host MMP inbox registers , register set index 3.
@@ -380,7 +383,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_3 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_3_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_3_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_3_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_3_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_4 - MoCA to Host MMP inbox registers , register set index 4.
@@ -388,7 +391,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_4 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_4_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_4_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_4_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_4_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_5 - MoCA to Host MMP inbox registers , register set index 5.
@@ -396,7 +399,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_5 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_5_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_5_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_5_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_5_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_6 - MoCA to Host MMP inbox registers , register set index 6.
@@ -404,7 +407,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_6 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_6_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_6_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_6_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_6_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_7 - MoCA to Host MMP inbox registers , register set index 7.
@@ -412,7 +415,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_7 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_7_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_7_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_7_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_7_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_8 - MoCA to Host MMP inbox registers , register set index 8.
@@ -420,7 +423,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_8 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_8_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_8_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_8_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_8_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_9 - MoCA to Host MMP inbox registers , register set index 9.
@@ -428,7 +431,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_9 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_9_h2m_mmp_inbox_MASK      0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_9_h2m_mmp_inbox_SHIFT     0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_9_h2m_mmp_inbox_DEFAULT   0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_9_h2m_mmp_inbox_DEFAULT   0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_10 - MoCA to Host MMP inbox registers , register set index 10.
@@ -436,7 +439,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_10 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_10_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_10_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_10_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_10_h2m_mmp_inbox_DEFAULT  0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_11 - MoCA to Host MMP inbox registers , register set index 11.
@@ -444,7 +447,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_11 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_11_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_11_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_11_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_11_h2m_mmp_inbox_DEFAULT  0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_12 - MoCA to Host MMP inbox registers , register set index 12.
@@ -452,7 +455,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_12 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_12_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_12_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_12_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_12_h2m_mmp_inbox_DEFAULT  0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_13 - MoCA to Host MMP inbox registers , register set index 13.
@@ -460,7 +463,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_13 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_13_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_13_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_13_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_13_h2m_mmp_inbox_DEFAULT  0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_14 - MoCA to Host MMP inbox registers , register set index 14.
@@ -468,7 +471,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_14 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_14_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_14_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_14_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_14_h2m_mmp_inbox_DEFAULT  0x00000000
 
 /***************************************************************************
  *M2H_MMP_INBOX_15 - MoCA to Host MMP inbox registers , register set index 15.
@@ -476,7 +479,7 @@
 /* MOCA_HOSTMISC :: M2H_MMP_INBOX_15 :: h2m_mmp_inbox [31:00] */
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_15_h2m_mmp_inbox_MASK     0xffffffff
 #define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_15_h2m_mmp_inbox_SHIFT    0
-#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_15_h2m_mmp_inbox_DEFAULT  0
+#define BCHP_MOCA_HOSTMISC_M2H_MMP_INBOX_15_h2m_mmp_inbox_DEFAULT  0x00000000
 
 #endif /* #ifndef BCHP_MOCA_HOSTMISC_H__ */
 

@@ -23,7 +23,8 @@ export CC CFLAGS
 .PHONY: all
 all::
 	cp -f _makenames.sh libcap/_makenames
-	$(MAKE) -f Makefile CC=$(CC) BUILD_CC=true LIBATTR=no -C libcap libcap.a
+	$(MAKE) -f Makefile CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) BUILD_CC=true \
+		LIBATTR=no -C libcap libcap.a
 
 .PHONY: romfs
 romfs::

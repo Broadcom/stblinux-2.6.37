@@ -246,6 +246,89 @@ void bchip_mips_setup(void)
  * Common operations for all chips
  ***********************************************************************/
 
+#ifdef CONFIG_BRCM_HAS_SATA3
+
+#ifdef CONFIG_CPU_BIG_ENDIAN
+#define DATA_ENDIAN             2       /* AHCI->DDR inbound accesses */
+#define MMIO_ENDIAN             2       /* MIPS->AHCI outbound accesses */
+#else
+#define DATA_ENDIAN             0
+#define MMIO_ENDIAN             0
+#endif /* CONFIG_CPU_BIG_ENDIAN */
+
+static int sata3_enable_ssc;
+
+#define SATA3_MDIO_TXPMD_0_REG_BANK	0x1A0
+#define SATA3_MDIO_BRIDGE_BASE		(BCHP_SATA_GRB_REG_START + 0x100)
+#define SATA3_MDIO_BASE_REG_ADDR	(SATA3_MDIO_BRIDGE_BASE + 0x8F * 4)
+
+#define SATA_AHCI_GHC_PORTS_IMPLEMENTED	(BCHP_SATA_AHCI_GHC_REG_START + 0xC)
+
+#define SATA3_TXPMD_CONTROL1			0x81
+#define SATA3_TXPMD_TX_FREQ_CTRL_CONTROL1	0x82
+#define SATA3_TXPMD_TX_FREQ_CTRL_CONTROL2	0x83
+#define SATA3_TXPMD_TX_FREQ_CTRL_CONTROL3	0x84
+
+static inline void brcm_sata3_mdio_wr_reg(u32 bank, unsigned int ofs, u32 msk,
+		u32 enable)
+{
+	u32 tmp;
+	BDEV_WR(SATA3_MDIO_BASE_REG_ADDR, bank);
+	/* Read, mask, enable */
+	tmp = BDEV_RD(ofs * 4 + SATA3_MDIO_BRIDGE_BASE);
+	tmp = (tmp & msk) | enable;
+	/* Write */
+	BDEV_WR(ofs * 4 + SATA3_MDIO_BRIDGE_BASE, tmp);
+}
+
+static void brcm_sata3_init_freq(int port, int ssc_enable)
+{
+	u32 bank = SATA3_MDIO_TXPMD_0_REG_BANK + port * 0x10;
+
+	/* TXPMD_control1 - enable SSC force */
+	brcm_sata3_mdio_wr_reg(bank, SATA3_TXPMD_CONTROL1, 0xFFFFFFFC,
+			0x00000003);
+
+	/* TXPMD_tx_freq_ctrl_control2 - set fixed min freq */
+	brcm_sata3_mdio_wr_reg(bank, SATA3_TXPMD_TX_FREQ_CTRL_CONTROL2,
+			0xFFFFFC00, 0x000003DF);
+
+	/*
+	 * TXPMD_tx_freq_ctrl_control3 - set fixed max freq
+	 *  If ssc_enable == 0, center frequencies
+	 *  Otherwise, spread spectrum frequencies
+	 */
+	if (ssc_enable)
+		brcm_sata3_mdio_wr_reg(bank, SATA3_TXPMD_TX_FREQ_CTRL_CONTROL3,
+				0xFFFFFC00, 0x00000083);
+	else
+		brcm_sata3_mdio_wr_reg(bank, SATA3_TXPMD_TX_FREQ_CTRL_CONTROL3,
+				0xFFFFFC00, 0x000003DF);
+}
+
+static int __init sata3_ssc_setup(char *str)
+{
+	sata3_enable_ssc = 1;
+	return 0;
+}
+
+__setup("sata3_ssc", sata3_ssc_setup);
+
+#endif /* CONFIG_BRCM_HAS_SATA3 */
+
+void bchip_sata3_init(void)
+{
+#ifdef CONFIG_BRCM_HAS_SATA3
+	int i, ports = fls(BDEV_RD(SATA_AHCI_GHC_PORTS_IMPLEMENTED));
+
+	BDEV_WR(BCHP_SATA_TOP_CTRL_BUS_CTRL, (DATA_ENDIAN << 4) |
+			(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
+
+	for (i = 0; i < ports; i++)
+		brcm_sata3_init_freq(i, sata3_enable_ssc);
+#endif
+}
+
 #ifdef CONFIG_CPU_LITTLE_ENDIAN
 #define USB_ENDIAN		0x03 /* !WABO !FNBO FNHW BABO */
 #else
@@ -395,11 +478,25 @@ static struct sdhci_ops __maybe_unused sdhci_be_ops = {
 
 struct sdhci_pltfm_data sdhci_brcm_pdata = { };
 
+static int nommc;
+
+static int __init nommc_setup(char *str)
+{
+	nommc = 1;
+	return 0;
+}
+
+__setup("nommc", nommc_setup);
+
 int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 {
 #define SDIO_REG(x, y)		(x + BCHP_SDIO_0_CFG_##y - \
 				 BCHP_SDIO_0_CFG_REG_START)
 
+	if (nommc) {
+		printk(KERN_INFO "SDIO_%d: disabled via command line\n", id);
+		return -ENODEV;
+	}
 	if (BDEV_RD(SDIO_REG(cfg_base, SCRATCH)) & 0x01) {
 		printk(KERN_INFO "SDIO_%d: disabled by bootloader\n", id);
 		return -ENODEV;
@@ -431,31 +528,6 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 #if defined(CONFIG_BCM7344B0)
 	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(19));	/* Highspd=0 */
 	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
-#endif
-
-#if defined(CONFIG_BCM7425A0) || defined(CONFIG_BCM7231A0)
-
-	/* Disable SDHCI capabilities that are broken in A0 silicon */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(18));	/* ADMA=0 */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(24));	/* 1.8V=0 */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG1), BIT(7));	/* Tuning=0 */
-	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
-
-	/* Use better defaults for timing */
-	BDEV_WR(SDIO_REG(cfg_base, IP_DLY), 0);
-	BDEV_WR(SDIO_REG(cfg_base, OP_DLY), 0);
-#endif
-
-#if defined(CONFIG_BCM7552A0)
-
-	/* Disable SDHCI capabilities that are broken in A0 silicon */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(24));	/* 1.8V=0 */
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG1), BIT(7));	/* Tuning=0 */
-	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
-
-	/* Use better defaults for timing */
-	BDEV_WR(SDIO_REG(cfg_base, IP_DLY), 0);
-	BDEV_WR(SDIO_REG(cfg_base, OP_DLY), 0);
 #endif
 
 	return 0;

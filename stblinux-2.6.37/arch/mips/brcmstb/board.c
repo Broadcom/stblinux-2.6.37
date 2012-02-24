@@ -269,10 +269,6 @@ void board_pinmux_setup(void)
 	PINMUX(15, gpio_80, 1);		/* MoCA activity */
 
 	PINMUX(17, uart_rxdb, 0);	/* UARTB RX */
-
-#ifdef CONFIG_BCM7344A0
-	PINMUX(18, uart_txdb, 0);	/* UARTB TX */
-#else
 	PINMUX(17, uart_txdb, 0);	/* UARTB TX */
 
 	PINMUX(0, gpio_68, 3);		/* SDIO */
@@ -297,21 +293,13 @@ void board_pinmux_setup(void)
 	PADCTRL(0, gpio_75_pad_ctrl, 2);
 	PADCTRL(0, gpio_76_pad_ctrl, 2);
 	PADCTRL(0, gpio_77_pad_ctrl, 2);
-#endif
 
 	AON_PINMUX(0, aon_gpio_00, 3);	/* UARTC RX (NC) */
 	AON_PINMUX(0, aon_gpio_01, 3);	/* UARTC TX (NC) */
 
-#ifdef CONFIG_BCM7344A0
-	/* NOTE: this is buggy in A0 */
-	AON_PINMUX(2, aon_sgpio_00, 1);	/* MoCA I2C */
-	AON_PINMUX(2, aon_sgpio_01, 1);
-	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCC_REG_START);
-#else
 	PINMUX(16, sgpio_04, 1);	/* MoCA I2C */
 	PINMUX(16, sgpio_05, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCD_REG_START);
-#endif
 
 #if defined(CONFIG_BCMGENET_0_GPHY)
 	/* select MAC0 for RGMII */
@@ -353,7 +341,6 @@ void board_pinmux_setup(void)
 	PINMUX(16, sgpio_03, 1);
 	brcm_moca_i2c_base = BPHYSADDR(BCHP_BSCB_REG_START);
 
-#if !defined(CONFIG_BCM7346A0)
 	/*
 	 * To enable SDIO_LED (activity LED) on the BCM97346 reference boards:
 	 * install R1127, remove R1120, uncomment this line, and don't use MoCA
@@ -370,7 +357,6 @@ void board_pinmux_setup(void)
 	PINMUX(18, vo_656_clk, 1);	/* SDIO_CLK */
 	PINMUX(18, vo_656_7, 1);	/* SDIO_CMD */
 	PINMUX(18, vo_656_6, 2);	/* SDIO_WPROT */
-#endif
 
 #elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
 
@@ -390,17 +376,17 @@ void board_pinmux_setup(void)
 	AON_PINMUX(2, aon_gpio_19, 5);
 	AON_PINMUX(2, aon_gpio_20, 5);
 
-	/* disable pulldowns */
-	AON_PADCTRL(0, aon_gpio_08_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_12_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_13_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_14_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_15_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_16_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_17_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_18_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_19_pad_ctrl, 0);
-	AON_PADCTRL(1, aon_gpio_20_pad_ctrl, 0);
+	/* enable SDIO pullups */
+	AON_PADCTRL(0, aon_gpio_08_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_12_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_13_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_14_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_15_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_16_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_17_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_18_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_19_pad_ctrl, 2);
+	AON_PADCTRL(1, aon_gpio_20_pad_ctrl, 2);
 
 #if defined(CONFIG_BCMGENET_0_GPHY)
 	/* set RGMII lines to 2.5V */

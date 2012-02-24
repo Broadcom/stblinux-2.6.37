@@ -1118,6 +1118,9 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			brcmstb_nand_print_cfg(msg, &new_cfg);
 			dev_info(&host->pdev->dev, "detected %s\n", msg);
 		}
+	} else {
+		brcmstb_nand_print_cfg(msg, &orig_cfg);
+		dev_info(&host->pdev->dev, "%s\n", msg);
 	}
 
 	WR_ACC_CONTROL(host->cs, FAST_PGM_RDIN, 0);

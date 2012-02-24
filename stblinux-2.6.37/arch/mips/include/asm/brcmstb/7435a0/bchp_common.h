@@ -1,5 +1,5 @@
 /***************************************************************************
- *     Copyright (c) 1999-2011, Broadcom Corporation
+ *     Copyright (c) 1999-2012, Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Tue Oct 11 07:49:24 2011
- *                 MD5 Checksum         12f5dd38e0ec050efd2afb0b1c62e9d9
+ * Date:           Generated on         Tue Jan  3 16:25:26 2012
+ *                 MD5 Checksum         d41d8cd98f00b204e9800998ecf8427e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7435/rdb/a0/bchp_common.h $
+ * 
+ * Hydra_Software_Devel/10   1/3/12 4:56p pntruong
+ * SW7435-3:  Sync with central RDB.
  *
  ***************************************************************************/
 
@@ -285,7 +288,7 @@
 #define BCHP_IRB_REG_START                                 0x00406000
 #define BCHP_IRB_REG_END                                   0x00406138
 #define BCHP_PM_REG_START                                  0x00406180
-#define BCHP_PM_REG_END                                    0x00406188
+#define BCHP_PM_REG_END                                    0x0040618c
 #define BCHP_BSCC_REG_START                                0x00406200
 #define BCHP_BSCC_REG_END                                  0x00406254
 #define BCHP_BSCD_REG_START                                0x00406280
@@ -557,7 +560,7 @@
 #define BCHP_AVS_RO_REGISTERS_0_REG_START                  0x00433300
 #define BCHP_AVS_RO_REGISTERS_0_REG_END                    0x004333dc
 #define BCHP_AVS_RO_REGISTERS_1_REG_START                  0x00433400
-#define BCHP_AVS_RO_REGISTERS_1_REG_END                    0x004334a4
+#define BCHP_AVS_RO_REGISTERS_1_REG_END                    0x004334ac
 #define BCHP_AVS_ROSC_THRESHOLD_1_REG_START                0x00433500
 #define BCHP_AVS_ROSC_THRESHOLD_1_REG_END                  0x004335e4
 #define BCHP_AVS_ROSC_THRESHOLD_2_REG_START                0x00433600
@@ -857,13 +860,13 @@
 #define BCHP_VIDEO_ENC_TPG_0_REG_START                     0x006b6500
 #define BCHP_VIDEO_ENC_TPG_0_REG_END                       0x006b6518
 #define BCHP_VIDEO_ENC_STG_0_REG_START                     0x006b6600
-#define BCHP_VIDEO_ENC_STG_0_REG_END                       0x006b6640
+#define BCHP_VIDEO_ENC_STG_0_REG_END                       0x006b6648
 #define BCHP_VIDEO_ENC_STG_1_REG_START                     0x006b6700
-#define BCHP_VIDEO_ENC_STG_1_REG_END                       0x006b6740
+#define BCHP_VIDEO_ENC_STG_1_REG_END                       0x006b6748
 #define BCHP_VIDEO_ENC_STG_2_REG_START                     0x006b6800
-#define BCHP_VIDEO_ENC_STG_2_REG_END                       0x006b6840
+#define BCHP_VIDEO_ENC_STG_2_REG_END                       0x006b6848
 #define BCHP_VIDEO_ENC_STG_3_REG_START                     0x006b6900
-#define BCHP_VIDEO_ENC_STG_3_REG_END                       0x006b6940
+#define BCHP_VIDEO_ENC_STG_3_REG_END                       0x006b6948
 #define BCHP_DSCL_0_REG_START                              0x006b7000
 #define BCHP_DSCL_0_REG_END                                0x006b73fc
 #define BCHP_VIDEO_ENC_DECIM_0_REG_START                   0x006b7800
@@ -952,62 +955,62 @@
 #define BCHP_DVP_HR_TMR_REG_END                            0x006cacfc
 #define BCHP_BVN_RGR_REG_START                             0x006ce000
 #define BCHP_BVN_RGR_REG_END                               0x006ce010
-#define BCHP_VICE2_CME_0_REG_START                         0x00700800
-#define BCHP_VICE2_CME_0_REG_END                           0x0070089c
-#define BCHP_VICE2_FME_0_REG_START                         0x00700c00
-#define BCHP_VICE2_FME_0_REG_END                           0x00700c80
-#define BCHP_VICE2_MC_0_REG_START                          0x00701000
-#define BCHP_VICE2_MC_0_REG_END                            0x00701080
-#define BCHP_VICE2_MAU_0_REG_START                         0x00701400
-#define BCHP_VICE2_MAU_0_REG_END                           0x007014f4
-#define BCHP_VICE2_IMD_0_REG_START                         0x00701800
-#define BCHP_VICE2_IMD_0_REG_END                           0x0070187c
-#define BCHP_VICE2_CABAC_0_REG_START                       0x00701c00
-#define BCHP_VICE2_CABAC_0_REG_END                         0x00701cec
-#define BCHP_VICE2_HA_0_REG_START                          0x00702000
-#define BCHP_VICE2_HA_0_REG_END                            0x00702088
-#define BCHP_VICE2_SG_0_REG_START                          0x00702400
-#define BCHP_VICE2_SG_0_REG_END                            0x00702474
-#define BCHP_VICE2_DBLK_0_REG_START                        0x00702800
-#define BCHP_VICE2_DBLK_0_REG_END                          0x00702888
-#define BCHP_VICE2_VIP_0_REG_START                         0x00703000
-#define BCHP_VICE2_VIP_0_REG_END                           0x00703224
-#define BCHP_VICE2_VIP1_0_REG_START                        0x00703800
-#define BCHP_VICE2_VIP1_0_REG_END                          0x00703a24
-#define BCHP_VICE2_XQ_0_REG_START                          0x00704000
-#define BCHP_VICE2_XQ_0_REG_END                            0x00706198
-#define BCHP_VICE2_ARCSS_ESS_CTRL_0_REG_START              0x00710000
-#define BCHP_VICE2_ARCSS_ESS_CTRL_0_REG_END                0x007100a0
-#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_0_REG_START        0x00710400
-#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_0_REG_END          0x0071042c
-#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_0_REG_START          0x00710600
-#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_0_REG_END            0x0071062c
-#define BCHP_VICE2_ARCSS_ESS_HOSTIF_0_REG_START            0x00712000
-#define BCHP_VICE2_ARCSS_ESS_HOSTIF_0_REG_END              0x007133fc
-#define BCHP_VICE2_ARCSS_ESS_DCCM_0_REG_START              0x00714000
-#define BCHP_VICE2_ARCSS_ESS_DCCM_0_REG_END                0x00717ffc
-#define BCHP_VICE2_ARCSS_ESS_ADI_0_REG_START               0x00718000
-#define BCHP_VICE2_ARCSS_ESS_ADI_0_REG_END                 0x007182ac
-#define BCHP_VICE2_ARCSS_ESS_CTRL_1_REG_START              0x00750000
-#define BCHP_VICE2_ARCSS_ESS_CTRL_1_REG_END                0x007500a0
-#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_1_REG_START        0x00750400
-#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_1_REG_END          0x0075042c
-#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_1_REG_START          0x00750600
-#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_1_REG_END            0x0075062c
-#define BCHP_VICE2_ARCSS_ESS_HOSTIF_1_REG_START            0x00752000
-#define BCHP_VICE2_ARCSS_ESS_HOSTIF_1_REG_END              0x007533fc
-#define BCHP_VICE2_ARCSS_ESS_DCCM_1_REG_START              0x00754000
-#define BCHP_VICE2_ARCSS_ESS_DCCM_1_REG_END                0x00757ffc
-#define BCHP_VICE2_ARCSS_ESS_ADI_1_REG_START               0x00758000
-#define BCHP_VICE2_ARCSS_ESS_ADI_1_REG_END                 0x007582a4
-#define BCHP_VICE2_RGR_REG_START                           0x00780000
-#define BCHP_VICE2_RGR_REG_END                             0x0078000c
-#define BCHP_VICE2_MISC_REG_START                          0x00781000
-#define BCHP_VICE2_MISC_REG_END                            0x00781020
-#define BCHP_VICE2_L2_REG_START                            0x00781100
-#define BCHP_VICE2_L2_REG_END                              0x0078112c
-#define BCHP_VICE2_ARCSS_MISC_REG_START                    0x00782000
-#define BCHP_VICE2_ARCSS_MISC_REG_END                      0x00782030
+#define BCHP_VICE2_CME_0_0_REG_START                       0x00700800
+#define BCHP_VICE2_CME_0_0_REG_END                         0x0070089c
+#define BCHP_VICE2_FME_0_0_REG_START                       0x00700c00
+#define BCHP_VICE2_FME_0_0_REG_END                         0x00700c80
+#define BCHP_VICE2_MC_0_0_REG_START                        0x00701000
+#define BCHP_VICE2_MC_0_0_REG_END                          0x00701080
+#define BCHP_VICE2_MAU_0_0_REG_START                       0x00701400
+#define BCHP_VICE2_MAU_0_0_REG_END                         0x007014f4
+#define BCHP_VICE2_IMD_0_0_REG_START                       0x00701800
+#define BCHP_VICE2_IMD_0_0_REG_END                         0x0070187c
+#define BCHP_VICE2_CABAC_0_0_REG_START                     0x00701c00
+#define BCHP_VICE2_CABAC_0_0_REG_END                       0x00701cec
+#define BCHP_VICE2_HA_0_0_REG_START                        0x00702000
+#define BCHP_VICE2_HA_0_0_REG_END                          0x00702088
+#define BCHP_VICE2_SG_0_0_REG_START                        0x00702400
+#define BCHP_VICE2_SG_0_0_REG_END                          0x00702474
+#define BCHP_VICE2_DBLK_0_0_REG_START                      0x00702800
+#define BCHP_VICE2_DBLK_0_0_REG_END                        0x00702888
+#define BCHP_VICE2_VIP_0_0_REG_START                       0x00703000
+#define BCHP_VICE2_VIP_0_0_REG_END                         0x00703224
+#define BCHP_VICE2_VIP1_0_0_REG_START                      0x00703800
+#define BCHP_VICE2_VIP1_0_0_REG_END                        0x00703a24
+#define BCHP_VICE2_XQ_0_0_REG_START                        0x00704000
+#define BCHP_VICE2_XQ_0_0_REG_END                          0x00706198
+#define BCHP_VICE2_ARCSS_ESS_CTRL_0_0_REG_START            0x00710000
+#define BCHP_VICE2_ARCSS_ESS_CTRL_0_0_REG_END              0x007100a0
+#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_0_0_REG_START      0x00710400
+#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_0_0_REG_END        0x0071042c
+#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_0_0_REG_START        0x00710600
+#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_0_0_REG_END          0x0071062c
+#define BCHP_VICE2_ARCSS_ESS_HOSTIF_0_0_REG_START          0x00712000
+#define BCHP_VICE2_ARCSS_ESS_HOSTIF_0_0_REG_END            0x007133fc
+#define BCHP_VICE2_ARCSS_ESS_DCCM_0_0_REG_START            0x00714000
+#define BCHP_VICE2_ARCSS_ESS_DCCM_0_0_REG_END              0x00717ffc
+#define BCHP_VICE2_ARCSS_ESS_ADI_0_0_REG_START             0x00718000
+#define BCHP_VICE2_ARCSS_ESS_ADI_0_0_REG_END               0x007182ac
+#define BCHP_VICE2_ARCSS_ESS_CTRL_1_0_REG_START            0x00750000
+#define BCHP_VICE2_ARCSS_ESS_CTRL_1_0_REG_END              0x007500a0
+#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_1_0_REG_START      0x00750400
+#define BCHP_VICE2_ARCSS_ESS_FLAG_INTR2_1_0_REG_END        0x0075042c
+#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_1_0_REG_START        0x00750600
+#define BCHP_VICE2_ARCSS_ESS_P1_INTR2_1_0_REG_END          0x0075062c
+#define BCHP_VICE2_ARCSS_ESS_HOSTIF_1_0_REG_START          0x00752000
+#define BCHP_VICE2_ARCSS_ESS_HOSTIF_1_0_REG_END            0x007533fc
+#define BCHP_VICE2_ARCSS_ESS_DCCM_1_0_REG_START            0x00754000
+#define BCHP_VICE2_ARCSS_ESS_DCCM_1_0_REG_END              0x00757ffc
+#define BCHP_VICE2_ARCSS_ESS_ADI_1_0_REG_START             0x00758000
+#define BCHP_VICE2_ARCSS_ESS_ADI_1_0_REG_END               0x007582a4
+#define BCHP_VICE2_RGR_0_REG_START                         0x00780000
+#define BCHP_VICE2_RGR_0_REG_END                           0x0078000c
+#define BCHP_VICE2_MISC_0_REG_START                        0x00781000
+#define BCHP_VICE2_MISC_0_REG_END                          0x00781020
+#define BCHP_VICE2_L2_0_REG_START                          0x00781100
+#define BCHP_VICE2_L2_0_REG_END                            0x0078112c
+#define BCHP_VICE2_ARCSS_MISC_0_REG_START                  0x00782000
+#define BCHP_VICE2_ARCSS_MISC_0_REG_END                    0x00782030
 #define BCHP_VICE2_CME_0_1_REG_START                       0x00800800
 #define BCHP_VICE2_CME_0_1_REG_END                         0x0080089c
 #define BCHP_VICE2_FME_0_1_REG_START                       0x00800c00
@@ -1064,8 +1067,8 @@
 #define BCHP_VICE2_L2_1_REG_END                            0x0088112c
 #define BCHP_VICE2_ARCSS_MISC_1_REG_START                  0x00882000
 #define BCHP_VICE2_ARCSS_MISC_1_REG_END                    0x00882030
-#define BCHP_VICE2_SEC_CTRL_REG_START                      0x00900000
-#define BCHP_VICE2_SEC_CTRL_REG_END                        0x00900080
+#define BCHP_VICE2_SEC_CTRL_0_REG_START                    0x00900000
+#define BCHP_VICE2_SEC_CTRL_0_REG_END                      0x00900080
 #define BCHP_VICE2_SEC_CTRL_1_REG_START                    0x00901000
 #define BCHP_VICE2_SEC_CTRL_1_REG_END                      0x00901080
 #define BCHP_XPT_BUS_IF_REG_START                          0x00940000
@@ -1428,14 +1431,18 @@
 #define BCHP_SID_L2_REG_END                                0x00be012c
 #define BCHP_SICH_REG_START                                0x00be2000
 #define BCHP_SICH_REG_END                                  0x00be203c
-#define BCHP_M2MC0_REG_START                               0x00be4000
-#define BCHP_M2MC0_REG_END                                 0x00be47fc
-#define BCHP_M2MC1_REG_START                               0x00be5000
-#define BCHP_M2MC1_REG_END                                 0x00be57fc
-#define BCHP_GFX_L2_REG_START                              0x00be6000
-#define BCHP_GFX_L2_REG_END                                0x00be602c
-#define BCHP_GFX_GR_REG_START                              0x00be7000
-#define BCHP_GFX_GR_REG_END                                0x00be700c
+#define BCHP_M2MC_REG_START                                0x00be4000
+#define BCHP_M2MC_REG_END                                  0x00be47fc
+#define BCHP_M2MC_L2_REG_START                             0x00be5000
+#define BCHP_M2MC_L2_REG_END                               0x00be502c
+#define BCHP_M2MC_GR_REG_START                             0x00be5800
+#define BCHP_M2MC_GR_REG_END                               0x00be580c
+#define BCHP_M2MC1_REG_START                               0x00be6000
+#define BCHP_M2MC1_REG_END                                 0x00be67fc
+#define BCHP_M2MC1_L2_REG_START                            0x00be7000
+#define BCHP_M2MC1_L2_REG_END                              0x00be702c
+#define BCHP_M2MC1_GR_REG_START                            0x00be7800
+#define BCHP_M2MC1_GR_REG_END                              0x00be780c
 #define BCHP_V3D_CTL_REG_START                             0x00bea000
 #define BCHP_V3D_CTL_REG_END                               0x00bea040
 #define BCHP_V3D_CLE_REG_START                             0x00bea100
@@ -3346,7 +3353,7 @@
 /* VICE2_REGSET_MISC :: DCCM :: REVISION [15:00] */
 #define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_MASK                  0x0000ffff
 #define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_SHIFT                 0
-#define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_ID                    0
+#define BCHP_VICE2_REGSET_MISC_DCCM_REVISION_ID                    1
 
 /***************************************************************************
  *DWORD_00_BVB_PIC_SIZE - BVB Picture Size
@@ -3385,31 +3392,27 @@
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_SRC_PIC_TYPE_P    2
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_SRC_PIC_TYPE_B    3
 
-/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: CHANNEL_ID [11:08] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_CHANNEL_ID_MASK   0x00000f00
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_CHANNEL_ID_SHIFT  8
-
-/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: POLARITY [07:06] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_MASK     0x000000c0
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_SHIFT    6
+/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: POLARITY [11:10] */
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_MASK     0x00000c00
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_SHIFT    10
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_TOP      0
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_BOT      1
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_POLARITY_FRAME    2
 
-/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: REPEAT [05:05] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_MASK       0x00000020
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_SHIFT      5
+/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: REPEAT [09:09] */
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_MASK       0x00000200
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_SHIFT      9
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_DISABLE    0
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_REPEAT_ENABLE     1
 
-/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: IGNORE [04:04] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_MASK       0x00000010
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_SHIFT      4
+/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: IGNORE [08:08] */
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_MASK       0x00000100
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_SHIFT      8
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_DISABLE    0
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_IGNORE_ENABLE     1
 
-/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: reserved0 [03:00] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_reserved0_MASK    0x0000000f
+/* VICE2_REGSET_MISC :: DWORD_02_PIC_INFO :: reserved0 [07:00] */
+#define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_reserved0_MASK    0x000000ff
 #define BCHP_VICE2_REGSET_MISC_DWORD_02_PIC_INFO_reserved0_SHIFT   0
 
 /***************************************************************************
@@ -3420,11 +3423,11 @@
 #define BCHP_VICE2_REGSET_MISC_DWORD_03_ORIGINAL_PTS_VAL_SHIFT     0
 
 /***************************************************************************
- *DWORD_04_PICTURE_ID - Picture ID
+ *DWORD_04_STG_PICTURE_ID - STG Picture ID
  ***************************************************************************/
-/* VICE2_REGSET_MISC :: DWORD_04_PICTURE_ID :: VAL [31:00] */
-#define BCHP_VICE2_REGSET_MISC_DWORD_04_PICTURE_ID_VAL_MASK        0xffffffff
-#define BCHP_VICE2_REGSET_MISC_DWORD_04_PICTURE_ID_VAL_SHIFT       0
+/* VICE2_REGSET_MISC :: DWORD_04_STG_PICTURE_ID :: VAL [31:00] */
+#define BCHP_VICE2_REGSET_MISC_DWORD_04_STG_PICTURE_ID_VAL_MASK    0xffffffff
+#define BCHP_VICE2_REGSET_MISC_DWORD_04_STG_PICTURE_ID_VAL_SHIFT   0
 
 /***************************************************************************
  *MBOX - MBOX registers interface address offset.
@@ -3436,13 +3439,13 @@
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_01_SAMPLE_ASPECT_RATIO_OFFSET 4
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_02_PIC_INFO_OFFSET 8
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_03_ORIGINAL_PTS_OFFSET 12
-#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_04_PICTURE_ID_OFFSET 16
+#define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_DWORD_04_STG_PICTURE_ID_OFFSET 16
 #define BCHP_VICE2_REGSET_MISC_MBOX_INTERFACE_SIZE                 5
 
 /* VICE2_REGSET_MISC :: MBOX :: REVISION [15:00] */
 #define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_MASK                  0x0000ffff
 #define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_SHIFT                 0
-#define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_ID                    0
+#define BCHP_VICE2_REGSET_MISC_MBOX_REVISION_ID                    2
 
 /***************************************************************************
  *XPT_PB

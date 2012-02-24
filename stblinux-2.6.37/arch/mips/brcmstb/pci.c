@@ -75,7 +75,7 @@
 
 #endif /* defined(CONFIG_BCM7420) */
 
-#if defined(CONFIG_BCM7420) || defined(CONFIG_BCM7425A0)
+#if defined(CONFIG_BCM7420)
 	/*
 	 * legacy interface - this can be combined with the 7420 code above,
 	 * once 7425a0/a1 (both non-production revs) reach EOL
@@ -87,7 +87,7 @@
 	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_HI, 0); \
 	} while (0)
 
-#else /* defined(CONFIG_BCM7420) || defined(CONFIG_BCM7425A0) */
+#else /* defined(CONFIG_BCM7420) */
 
 #define PCIE_OUTBOUND_WIN(win, start, len) do { \
 	BDEV_WR(BCHP_PCIE_MISC_CPU_2_PCIE_MEM_WIN##win##_LO, \

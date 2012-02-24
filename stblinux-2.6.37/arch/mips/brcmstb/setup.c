@@ -71,14 +71,6 @@
 #define SATA_MEM_START		BPHYSADDR(BCHP_SATA_AHCI_GHC_REG_START)
 #define SATA_MEM_SIZE		0x00010000
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
-#define DATA_ENDIAN		2	/* PCI->DDR inbound accesses */
-#define MMIO_ENDIAN 		2	/* MIPS->PCI outbound accesses */
-#else
-#define DATA_ENDIAN		0
-#define MMIO_ENDIAN		0
-#endif /* CONFIG_CPU_BIG_ENDIAN */
-
 static struct resource brcm_ahci_resource[] = {
 	[0] = {
 		.start	= SATA_MEM_START,
@@ -97,6 +89,7 @@ static u64 brcm_ahci_dmamask = DMA_BIT_MASK(32);
 static int brcm_ahci_init(struct device *dev, void __iomem *addr)
 {
 	brcm_pm_sata3(1);
+	bchip_sata3_init();
 	return 0;
 }
 
@@ -114,6 +107,7 @@ static int brcm_ahci_suspend(struct device *dev)
 static int brcm_ahci_resume(struct device *dev)
 {
 	brcm_pm_sata3(1);
+	bchip_sata3_init();
 	return 0;
 }
 
@@ -135,6 +129,7 @@ static struct platform_device brcm_ahci_pdev = {
 		.platform_data		= &brcm_ahci_pdata,
 	},
 };
+
 #endif /* CONFIG_BRCM_HAS_SATA3 */
 
 #define BRCM_16550_PLAT_DEVICE(uart_addr, uart_irq) \
@@ -388,11 +383,6 @@ static void __init brcm_add_usb_hosts(void)
 #if defined(BCHP_USB_OHCI2_REG_START)
 	brcm_add_usb_host(CAP_TYPE_OHCI, 2, USB_BASE(USB_OHCI2));
 #endif
-#if defined(CONFIG_BCM7231A0) || defined(CONFIG_BCM7344A0)
-	/* 7230, 7418 do not have USB1 clocks connected on the substrate */
-	if (BRCM_PROD_ID() == 0x7230 || BRCM_PROD_ID() == 0x7418)
-		return;
-#endif
 #if defined(BCHP_USB1_EHCI_REG_START)
 	brcm_add_usb_host(CAP_TYPE_EHCI, 2, USB_BASE(USB1_EHCI));
 #endif
@@ -617,12 +607,8 @@ static int __init platform_devices_setup(void)
 
 	/* AHCI */
 #if defined(CONFIG_BRCM_HAS_SATA3)
-	if (brcm_sata_enabled) {
-		BDEV_WR(BCHP_SATA_TOP_CTRL_BUS_CTRL, (DATA_ENDIAN << 4) |
-				(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
-
+	if (brcm_sata_enabled)
 		platform_device_register(&brcm_ahci_pdev);
-	}
 #endif
 	return 0;
 }

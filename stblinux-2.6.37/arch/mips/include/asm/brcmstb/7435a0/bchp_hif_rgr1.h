@@ -21,8 +21,8 @@
  * file. You must edit the source file for changes to be made to this file.
  *
  *
- * Date:           Generated on         Mon Aug 22 01:52:53 2011
- *                 MD5 Checksum         cff4b903fffc3d251005cd00d6aa35d2
+ * Date:           Generated on         Tue Dec  6 18:45:12 2011
+ *                 MD5 Checksum         d41d8cd98f00b204e9800998ecf8427e
  *
  * Compiled with:  RDB Utility          combo_header.pl
  *                 RDB Parser           3.0
@@ -32,7 +32,10 @@
  *
  * Revision History:
  *
- * $brcm_Log: $
+ * $brcm_Log: /magnum/basemodules/chp/7435/rdb/a0/bchp_hif_rgr1.h $
+ * 
+ * Hydra_Software_Devel/2   12/7/11 2:36p mward
+ * SW7435-3: Synced up with central rdb.
  *
  ***************************************************************************/
 
@@ -58,12 +61,12 @@
 /* HIF_RGR1 :: REVISION :: MAJOR [15:08] */
 #define BCHP_HIF_RGR1_REVISION_MAJOR_MASK                          0x0000ff00
 #define BCHP_HIF_RGR1_REVISION_MAJOR_SHIFT                         8
-#define BCHP_HIF_RGR1_REVISION_MAJOR_DEFAULT                       2
+#define BCHP_HIF_RGR1_REVISION_MAJOR_DEFAULT                       0x00000002
 
 /* HIF_RGR1 :: REVISION :: MINOR [07:00] */
 #define BCHP_HIF_RGR1_REVISION_MINOR_MASK                          0x000000ff
 #define BCHP_HIF_RGR1_REVISION_MINOR_SHIFT                         0
-#define BCHP_HIF_RGR1_REVISION_MINOR_DEFAULT                       0
+#define BCHP_HIF_RGR1_REVISION_MINOR_DEFAULT                       0x00000000
 
 /***************************************************************************
  *CTRL - RGR Bridge Control Register
@@ -75,14 +78,14 @@
 /* HIF_RGR1 :: CTRL :: rbus_error_intr [01:01] */
 #define BCHP_HIF_RGR1_CTRL_rbus_error_intr_MASK                    0x00000002
 #define BCHP_HIF_RGR1_CTRL_rbus_error_intr_SHIFT                   1
-#define BCHP_HIF_RGR1_CTRL_rbus_error_intr_DEFAULT                 0
+#define BCHP_HIF_RGR1_CTRL_rbus_error_intr_DEFAULT                 0x00000000
 #define BCHP_HIF_RGR1_CTRL_rbus_error_intr_INTR_DISABLE            0
 #define BCHP_HIF_RGR1_CTRL_rbus_error_intr_INTR_ENABLE             1
 
 /* HIF_RGR1 :: CTRL :: gisb_error_intr [00:00] */
 #define BCHP_HIF_RGR1_CTRL_gisb_error_intr_MASK                    0x00000001
 #define BCHP_HIF_RGR1_CTRL_gisb_error_intr_SHIFT                   0
-#define BCHP_HIF_RGR1_CTRL_gisb_error_intr_DEFAULT                 0
+#define BCHP_HIF_RGR1_CTRL_gisb_error_intr_DEFAULT                 0x00000000
 #define BCHP_HIF_RGR1_CTRL_gisb_error_intr_INTR_DISABLE            0
 #define BCHP_HIF_RGR1_CTRL_gisb_error_intr_INTR_ENABLE             1
 
@@ -92,7 +95,7 @@
 /* HIF_RGR1 :: RBUS_TIMER :: timer_value [31:00] */
 #define BCHP_HIF_RGR1_RBUS_TIMER_timer_value_MASK                  0xffffffff
 #define BCHP_HIF_RGR1_RBUS_TIMER_timer_value_SHIFT                 0
-#define BCHP_HIF_RGR1_RBUS_TIMER_timer_value_DEFAULT               237600000
+#define BCHP_HIF_RGR1_RBUS_TIMER_timer_value_DEFAULT               0x0e297d00
 
 /***************************************************************************
  *SW_INIT_0 - RGR Bridge Software Reset 0 Register
@@ -104,7 +107,7 @@
 /* HIF_RGR1 :: SW_INIT_0 :: SPARE_SW_INIT [00:00] */
 #define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_MASK                 0x00000001
 #define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_SHIFT                0
-#define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_DEFAULT              0
+#define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_DEFAULT              0x00000000
 #define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_DEASSERT             0
 #define BCHP_HIF_RGR1_SW_INIT_0_SPARE_SW_INIT_ASSERT               1
 
@@ -118,14 +121,14 @@
 /* HIF_RGR1 :: SW_INIT_1 :: PCIE_BRIDGE_SW_INIT [01:01] */
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_MASK           0x00000002
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_SHIFT          1
-#define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_DEFAULT        1
+#define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_DEFAULT        0x00000001
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_DEASSERT       0
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_BRIDGE_SW_INIT_ASSERT         1
 
 /* HIF_RGR1 :: SW_INIT_1 :: PCIE_SW_PERST [00:00] */
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_MASK                 0x00000001
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_SHIFT                0
-#define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_DEFAULT              1
+#define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_DEFAULT              0x00000001
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_DEASSERT             0
 #define BCHP_HIF_RGR1_SW_INIT_1_PCIE_SW_PERST_ASSERT               1
 

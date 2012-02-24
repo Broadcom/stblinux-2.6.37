@@ -2110,7 +2110,6 @@ EXPORT_SYMBOL_GPL(ahci_print_info);
 void ahci_set_em_messages(struct ahci_host_priv *hpriv,
 			  struct ata_port_info *pi)
 {
-#if !defined(CONFIG_BRCM_HAS_SATA3)
 	u8 messages;
 	void __iomem *mmio = hpriv->mmio;
 	u32 em_loc = readl(mmio + HOST_EM_LOC);
@@ -2130,7 +2129,6 @@ void ahci_set_em_messages(struct ahci_host_priv *hpriv,
 		if (!(em_ctl & EM_CTL_ALHD))
 			pi->flags |= ATA_FLAG_SW_ACTIVITY;
 	}
-#endif
 }
 EXPORT_SYMBOL_GPL(ahci_set_em_messages);
 
