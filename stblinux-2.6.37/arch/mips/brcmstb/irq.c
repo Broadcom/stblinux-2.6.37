@@ -33,7 +33,7 @@
 #include <asm/brcmstb/brcmstb.h>
 
 #ifdef CONFIG_SMP
-static int next_cpu[NR_IRQS] = { [0 ... NR_IRQS-1] = 0 };
+static int next_cpu[NR_IRQS + 1] = { [0 ... NR_IRQS] = 0 };
 #define NEXT_CPU(irq) next_cpu[irq]
 
 #define TP0_BASE BCHP_HIF_CPU_INTR1_REG_START
@@ -80,6 +80,19 @@ static int next_cpu[NR_IRQS] = { [0 ... NR_IRQS-1] = 0 };
 #define L1_WR_W2(base, reg, val) do { } while (0)
 #endif
 
+#if defined(BCHP_HIF_CPU_INTR1_INTR_W3_STATUS)
+
+#define L1_RD_W3(base, reg) \
+	BDEV_RD(L1_REG(base, BCHP_HIF_CPU_INTR1_INTR_W3_##reg))
+#define L1_WR_W3(base, reg, val) \
+	BDEV_WR_RB(L1_REG(base, BCHP_HIF_CPU_INTR1_INTR_W3_##reg), val)
+
+#else
+/* nop on chips with only 96 L1 interrupts */
+#define L1_RD_W3(base, reg)	0
+#define L1_WR_W3(base, reg, val) do { } while (0)
+#endif
+
 /*
  * For interrupt map, see include/asm-mips/brcmstb/<plat>/bcmintrnum.h
  */
@@ -103,6 +116,9 @@ static void brcm_intc_enable(struct irq_data *d)
 	} else if (irq > 64 && irq <= 32+32+32) {
 		shift = irq - 64 - 1;
 		L1_WR_W2(base, MASK_CLEAR, (1UL << shift));
+	} else if (irq > 96 && irq <= 32+32+32+32) {
+		shift = irq - 96 - 1;
+		L1_WR_W3(base, MASK_CLEAR, (1UL << shift));
 	} else
 		BUG();
 }
@@ -121,6 +137,9 @@ static void brcm_intc_disable(struct irq_data *d)
 	} else if (irq > 64 && irq <= 32+32+32) {
 		shift = irq - 64 - 1;
 		L1_WR_ALL(W2, MASK_SET, (1UL << shift));
+	} else if (irq > 96 && irq <= 32+32+32+32) {
+		shift = irq - 96 - 1;
+		L1_WR_ALL(W3, MASK_SET, (1UL << shift));
 	} else
 		BUG();
 }
@@ -172,6 +191,19 @@ static int brcm_intc_set_affinity(struct irq_data *d,
 			L1_WR_W2(TP1_BASE, MASK_CLEAR, (1UL << shift));
 			next_cpu[irq] = 1;
 		}
+	} else if (irq > 96 && irq <= 128) {
+		shift = irq - 96 - 1;
+		next_cpu[irq] = 0;
+
+		if (cpu_isset(0, *dest)) {
+			L1_WR_W3(TP1_BASE, MASK_SET, (1UL << shift));
+			L1_WR_W3(TP0_BASE, MASK_CLEAR, (1UL << shift));
+			next_cpu[irq] = 0;
+		} else {
+			L1_WR_W3(TP0_BASE, MASK_SET, (1UL << shift));
+			L1_WR_W3(TP1_BASE, MASK_CLEAR, (1UL << shift));
+			next_cpu[irq] = 1;
+		}
 	}
 	local_irq_restore(flags);
 	return 0;
@@ -213,17 +245,21 @@ static void flip_tp(int irq)
 
 	if (cpumask_test_cpu(tp ^ 1, irq_desc[irq].irq_data.affinity)) {
 		next_cpu[irq] = tp ^ 1;
-		if (irq >= 1 && irq <= 32) {
+		if (irq > 0 && irq <= 32) {
 			L1_WR_W0(local_lev1, MASK_SET, mask);
 			L1_WR_W0(remote_lev1, MASK_CLEAR, mask);
 		}
-		if (irq >= 33 && irq <= 64) {
+		if (irq > 32 && irq <= 64) {
 			L1_WR_W1(local_lev1, MASK_SET, mask);
 			L1_WR_W1(remote_lev1, MASK_CLEAR, mask);
 		}
-		if (irq >= 65 && irq <= 96) {
+		if (irq > 64 && irq <= 96) {
 			L1_WR_W2(local_lev1, MASK_SET, mask);
 			L1_WR_W2(remote_lev1, MASK_CLEAR, mask);
+		}
+		if (irq > 96 && irq <= 128) {
+			L1_WR_W3(local_lev1, MASK_SET, mask);
+			L1_WR_W3(remote_lev1, MASK_CLEAR, mask);
 		}
 	}
 #endif /* CONFIG_SMP */
@@ -251,6 +287,13 @@ static void brcm_intc_dispatch(struct pt_regs *regs, unsigned long base)
 	while ((shift = ffs(pend)) != 0) {
 		pend ^= (1 << (shift - 1));
 		shift += 64;
+		do_IRQ(shift);
+		flip_tp(shift);
+	}
+	pend = L1_RD_W3(base, STATUS) & ~L1_RD_W3(base, MASK_STATUS);
+	while ((shift = ffs(pend)) != 0) {
+		pend ^= (1 << (shift - 1));
+		shift += 96;
 		do_IRQ(shift);
 		flip_tp(shift);
 	}
@@ -287,6 +330,7 @@ void __init arch_init_irq(void)
 	L1_WR_ALL(W0, MASK_SET, 0xffffffff);
 	L1_WR_ALL(W1, MASK_SET, 0xffffffff);
 	L1_WR_ALL(W2, MASK_SET, 0xffffffff);
+	L1_WR_ALL(W3, MASK_SET, 0xffffffff);
 
 	clear_c0_status(ST0_IE | ST0_IM);
 
@@ -357,7 +401,7 @@ asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
  * Power management
  ***********************************************************************/
 
-static unsigned long brcm_irq_state[3];
+static unsigned long brcm_irq_state[NR_IRQS / 32];
 
 void brcm_irq_standby_enter(int wake_irq)
 {
@@ -368,6 +412,8 @@ void brcm_irq_standby_enter(int wake_irq)
 	L1_WR_W1(TP0_BASE, MASK_SET, 0xffffffff);
 	brcm_irq_state[2] = L1_RD_W2(TP0_BASE, MASK_STATUS);
 	L1_WR_W2(TP0_BASE, MASK_SET, 0xffffffff);
+	brcm_irq_state[3] = L1_RD_W3(TP0_BASE, MASK_STATUS);
+	L1_WR_W3(TP0_BASE, MASK_SET, 0xffffffff);
 
 	/* unmask the wakeup IRQ */
 	if (wake_irq > 0 && wake_irq <= 32)
@@ -376,6 +422,8 @@ void brcm_irq_standby_enter(int wake_irq)
 		L1_WR_W1(TP0_BASE, MASK_CLEAR, 1 << (wake_irq - 33));
 	else if (wake_irq > 64 && wake_irq <= 96)
 		L1_WR_W2(TP0_BASE, MASK_CLEAR, 1 << (wake_irq - 65));
+	else if (wake_irq > 96 && wake_irq <= 128)
+		L1_WR_W3(TP0_BASE, MASK_CLEAR, 1 << (wake_irq - 97));
 }
 
 void brcm_irq_standby_exit(void)
@@ -387,4 +435,6 @@ void brcm_irq_standby_exit(void)
 	L1_WR_W1(TP0_BASE, MASK_CLEAR, ~brcm_irq_state[1]);
 	L1_WR_W2(TP0_BASE, MASK_SET, 0xffffffff);
 	L1_WR_W2(TP0_BASE, MASK_CLEAR, ~brcm_irq_state[2]);
+	L1_WR_W3(TP0_BASE, MASK_SET, 0xffffffff);
+	L1_WR_W3(TP0_BASE, MASK_CLEAR, ~brcm_irq_state[3]);
 }

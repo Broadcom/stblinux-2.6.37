@@ -256,7 +256,8 @@ void bchip_mips_setup(void)
 #define MMIO_ENDIAN             0
 #endif /* CONFIG_CPU_BIG_ENDIAN */
 
-static int sata3_enable_ssc;
+/* SATA3 SSC per-port bitfield */
+static u32 sata3_enable_ssc;
 
 #define SATA3_MDIO_TXPMD_0_REG_BANK	0x1A0
 #define SATA3_MDIO_BRIDGE_BASE		(BCHP_SATA_GRB_REG_START + 0x100)
@@ -285,6 +286,9 @@ static void brcm_sata3_init_freq(int port, int ssc_enable)
 {
 	u32 bank = SATA3_MDIO_TXPMD_0_REG_BANK + port * 0x10;
 
+	if (ssc_enable)
+		pr_info("SATA3: enabling SSC on port %d\n", port);
+
 	/* TXPMD_control1 - enable SSC force */
 	brcm_sata3_mdio_wr_reg(bank, SATA3_TXPMD_CONTROL1, 0xFFFFFFFC,
 			0x00000003);
@@ -306,9 +310,32 @@ static void brcm_sata3_init_freq(int port, int ssc_enable)
 				0xFFFFFC00, 0x000003DF);
 }
 
+/* Check up to 32 ports, although we typically only have 2 */
+#define SATA_MAX_CHECK_PORTS	32
+
+/*
+ * Check commandline for 'sata3_ssc' options. They can be specified in 2 ways:
+ *  (1) 'sata3_ssc'     -> enable SSC on all ports
+ *  (2) 'sata3_ssc=x,y' -> enable SSC on specific port(s), given a comma-
+ *                         separated list of port numbers
+ */
 static int __init sata3_ssc_setup(char *str)
 {
-	sata3_enable_ssc = 1;
+	int opts[SATA_MAX_CHECK_PORTS + 1], i;
+
+	if (*str == '\0') {
+		/* enable SSC on all ports */
+		sata3_enable_ssc = ~0;
+		return 0;
+	}
+	get_options(str + 1, SATA_MAX_CHECK_PORTS, opts);
+
+	for (i = 0; i < opts[0]; i++) {
+		int port = opts[i + 1];
+		if ((port >= 0) && (port < SATA_MAX_CHECK_PORTS))
+			sata3_enable_ssc |= 1 << port;
+	}
+
 	return 0;
 }
 
@@ -325,7 +352,7 @@ void bchip_sata3_init(void)
 			(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
 
 	for (i = 0; i < ports; i++)
-		brcm_sata3_init_freq(i, sata3_enable_ssc);
+		brcm_sata3_init_freq(i, sata3_enable_ssc & (1 << i));
 #endif
 }
 

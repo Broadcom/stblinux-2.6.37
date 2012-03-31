@@ -175,6 +175,26 @@ config BCM7358A0
 	select BRCM_PWR_HANDSHAKE_V0
 	select BRCM_HAS_DIGITAL_DDR_PHY
 
+config BCM7360A0
+	bool "7360 Ax"
+	select BRCM_PLATFORM_DEFAULTS
+	select BCM7360
+	select BMIPS3300
+	select BRCM_UARTA_IS_16550
+	select BRCM_UARTB_IS_16550
+	select BRCM_UARTC_IS_16550
+	select BRCM_HAS_GENET_0
+	select BRCM_GENET_V2
+	select BRCM_HAS_NOR
+	select BRCM_HAS_NAND_MAJOR_5
+	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_BSPI_V4
+	select BRCM_HAS_SATA3
+	select BRCM_HAS_WKTMR
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V0
+	select BRCM_HAS_DIGITAL_DDR_PHY
+
 config BCM7405B0
 	bool "7405/97459 Bx"
 	select BRCM_PLATFORM_DEFAULTS
@@ -340,7 +360,7 @@ config BCM7435A0
 	select BRCM_GENET_V3
 	select BRCM_HAS_NOR
 	select BRCM_HAS_NAND_MAJOR_6
-	select BRCM_HAS_NAND_MINOR_0
+	select BRCM_HAS_NAND_MINOR_2
 	select BRCM_HAS_EDU
 	select BRCM_HAS_BSPI_V4
 	select BRCM_HAS_SDIO_V1
@@ -428,9 +448,9 @@ config BCM7552B0
 	select BRCM_HAS_BSPI_V4
 	select BRCM_HAS_SDIO_V1
 	select BRCM_HAS_WKTMR
-	#select BRCM_HAS_AON
-	#select BRCM_PWR_HANDSHAKE_V1
-	#select BRCM_HAS_DIGITAL_DDR_PHY
+	select BRCM_HAS_AON
+	select BRCM_PWR_HANDSHAKE_V1
+	select BRCM_HAS_DIGITAL_DDR_PHY
 
 endchoice
 
@@ -1287,6 +1307,9 @@ config BCM7346
 	bool
 
 config BCM7358
+	bool
+
+config BCM7360
 	bool
 
 config BCM7405

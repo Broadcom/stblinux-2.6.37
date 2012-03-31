@@ -207,7 +207,7 @@ static inline int __init parse_boardname(const char *buf, void *slop)
 	}
 #elif defined(CONFIG_BCM7344)
 	/* 7344 is normally MidRF, but the 7418 variant might not be */
-	if (strstarts(buf, "BCM97418SAT"))
+	if (strstarts(buf, "BCM97418SAT") || strstarts(buf, "BCM97418SFF_RVU"))
 		brcm_moca_rf_band = MOCA_BAND_MIDRF;
 	else if (strstarts(buf, "BCM97418"))
 		brcm_moca_rf_band = MOCA_BAND_HIGHRF;

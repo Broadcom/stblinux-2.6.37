@@ -23,10 +23,8 @@
  * See also: asm/brcmstb/brcmstb.h
  */
 
-#define BRCM_INTR_W0_BASE	(1 + 0)
-#define BRCM_INTR_W1_BASE	(1 + 32)
-#define	BRCM_INTR_W2_BASE	(1 + 64)
-#define BRCM_VIRTIRQ_BASE	(1 + 96)
+/* IRQs 1-128 are used for HIF L1 */
+#define BRCM_VIRTIRQ_BASE	(1 + 128)
 
 /* virtual (non-L1) IRQs */
 
@@ -52,7 +50,7 @@
 
 #define BRCM_IRQ_PERF		(BRCM_OTHERIRQ_BASE + 0)
 
-#define NR_IRQS			128
+#define NR_IRQS			160
 #define MIPS_CPU_IRQ_BASE	BRCM_CPUIRQ_BASE
 
 #endif /* __ASM_MACH_BRCMSTB_IRQ_H */

@@ -340,7 +340,7 @@ static int nand_verify_buf16(struct mtd_info *mtd, const uint8_t *buf, int len)
  */
 static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
 {
-	int page, chipnr, res = 0;
+	int page, chipnr, res = 0, i = 0;
 	struct nand_chip *chip = mtd->priv;
 	u16 bad;
 
@@ -358,23 +358,29 @@ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
 		chip->select_chip(mtd, chipnr);
 	}
 
-	if (chip->options & NAND_BUSWIDTH_16) {
-		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos & 0xFE,
-			      page);
-		bad = cpu_to_le16(chip->read_word(mtd));
-		if (chip->badblockpos & 0x1)
-			bad >>= 8;
-		else
-			bad &= 0xFF;
-	} else {
-		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
-		bad = chip->read_byte(mtd);
-	}
+	do {
+		if (chip->options & NAND_BUSWIDTH_16) {
+			chip->cmdfunc(mtd, NAND_CMD_READOOB,
+					chip->badblockpos & 0xFE, page);
+			bad = cpu_to_le16(chip->read_word(mtd));
+			if (chip->badblockpos & 0x1)
+				bad >>= 8;
+			else
+				bad &= 0xFF;
+		} else {
+			chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos,
+					page);
+			bad = chip->read_byte(mtd);
+		}
 
-	if (likely(chip->badblockbits == 8))
-		res = bad != 0xFF;
-	else
-		res = hweight8(bad) < chip->badblockbits;
+		if (likely(chip->badblockbits == 8))
+			res = bad != 0xFF;
+		else
+			res = hweight8(bad) < chip->badblockbits;
+		ofs += mtd->writesize;
+		page = (int)(ofs >> chip->page_shift) & chip->pagemask;
+		i++;
+	} while (!res && i < 2 && (chip->bbt_options & NAND_BBT_SCAN2NDPAGE));
 
 	if (getchip)
 		nand_release_device(mtd);
@@ -388,51 +394,79 @@ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
  * @ofs: offset from device start
  *
  * This is the default implementation, which can be overridden by a hardware
- * specific driver.
+ * specific driver. We try operations in the following order, according to our
+ * bbt_options (NAND_BBT_NO_OOB_BBM and NAND_BBT_USE_FLASH):
+ *  (1) erase the affected block, to allow OOB marker to be written cleanly
+ *  (2) update in-memory BBT
+ *  (3) write bad block marker to OOB area of affected block
+ *  (4) update flash-based BBT
+ * Note that we retain the first error encountered in (3) or (4), finish the
+ * procedures, and dump the error in the end.
 */
 static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	struct nand_chip *chip = mtd->priv;
 	uint8_t buf[2] = { 0, 0 };
-	int block, ret, i = 0;
+	int block, res, ret = 0, i = 0;
+	int write_oob = !(chip->bbt_options & NAND_BBT_NO_OOB_BBM);
 
-	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
-		ofs += mtd->erasesize - mtd->writesize;
+	if (write_oob) {
+		struct erase_info einfo;
+
+		/* Attempt erase before marking OOB */
+		memset(&einfo, 0, sizeof(einfo));
+		einfo.mtd = mtd;
+		einfo.addr = ofs;
+		einfo.len = 1 << chip->phys_erase_shift;
+		nand_erase_nand(mtd, &einfo, 0);
+	}
 
 	/* Get block number */
 	block = (int)(ofs >> chip->bbt_erase_shift);
+	/* Mark block bad in memory-based BBT */
 	if (chip->bbt)
 		chip->bbt[block >> 2] |= 0x01 << ((block & 0x03) << 1);
 
-	/* Do we have a flash based bad block table? */
-	if (chip->bbt_options & NAND_BBT_USE_FLASH)
-		ret = nand_update_bbt(mtd, ofs);
-	else {
+	/* Write bad block marker to OOB */
+	if (write_oob) {
 		struct mtd_oob_ops ops;
+		loff_t wr_ofs = ofs;
 
 		nand_get_device(chip, mtd, FL_WRITING);
 
-		/*
-		 * Write to first two pages if necessary. If we write to more
-		 * than one location, the first error encountered quits the
-		 * procedure. We write two bytes per location, so we dont have
-		 * to mess with 16 bit access.
-		 */
-		ops.len = ops.ooblen = 2;
 		ops.datbuf = NULL;
 		ops.oobbuf = buf;
-		ops.ooboffs = chip->badblockpos & ~0x01;
+		ops.ooboffs = chip->badblockpos;
+		if (chip->options & NAND_BUSWIDTH_16) {
+			ops.ooboffs &= ~0x01;
+			ops.len = ops.ooblen = 2;
+		} else {
+			ops.len = ops.ooblen = 1;
+		}
 		ops.mode = MTD_OPS_PLACE_OOB;
+
+		/* Write to first/last page(s) if necessary */
+		if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
+			wr_ofs += mtd->erasesize - mtd->writesize;
 		do {
-			ret = nand_do_write_oob(mtd, ofs, &ops);
+			res = nand_do_write_oob(mtd, wr_ofs, &ops);
+			if (!ret)
+				ret = res;
 
 			i++;
-			ofs += mtd->writesize;
-		} while (!ret && (chip->bbt_options & NAND_BBT_SCAN2NDPAGE) &&
-				i < 2);
+			wr_ofs += mtd->writesize;
+		} while ((chip->bbt_options & NAND_BBT_SCAN2NDPAGE) && i < 2);
 
 		nand_release_device(mtd);
 	}
+
+	/* Update flash-based bad block table */
+	if (chip->bbt_options & NAND_BBT_USE_FLASH) {
+		res = nand_update_bbt(mtd, ofs);
+		if (!ret)
+			ret = res;
+	}
+
 	if (!ret)
 		mtd->ecc_stats.badblocks++;
 
@@ -3248,6 +3282,10 @@ int nand_scan_tail(struct mtd_info *mtd)
 {
 	int i;
 	struct nand_chip *chip = mtd->priv;
+
+	/* New bad blocks should be marked in OOB, flash-based BBT, or both */
+	BUG_ON((chip->bbt_options & NAND_BBT_NO_OOB_BBM) &&
+			!(chip->bbt_options & NAND_BBT_USE_FLASH));
 
 	if (!(chip->options & NAND_OWN_BUFFERS))
 		chip->buffers = kmalloc(sizeof(*chip->buffers), GFP_KERNEL);

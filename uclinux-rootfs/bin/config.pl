@@ -585,6 +585,16 @@ if($cmd eq "defaults" || $cmd eq "quickdefaults") {
 			$busybox{"CONFIG_GETOPT"} = "y";
 			$busybox{"CONFIG_FEATURE_GETOPT_LONG"} = "y";
 			$busybox{"CONFIG_ID"} = "y";
+		} elsif($mod eq "xfs") {
+
+			# Enable XFS file system
+
+			$linux{"CONFIG_XFS_FS"} = "y";
+			$linux{"CONFIG_XFS_QUOTA"} = "n";
+			$linux{"CONFIG_XFS_POSIX_ACL"} = "y";
+			$linux{"CONFIG_XFS_RT"} = "y";
+			$linux{"CONFIG_XFS_DEBUG"} = "n";
+			$vendor{"CONFIG_USER_XFS_XFSPROGS"} = "y";
 		} else {
 			print "\n";
 			print "ERROR: Unrecognized suffix '$mod' in '$tgt'\n";

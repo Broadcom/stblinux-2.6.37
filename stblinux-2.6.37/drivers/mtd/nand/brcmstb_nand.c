@@ -431,7 +431,7 @@ static void brcmstb_nand_send_cmd(int cmd)
 	BUG_ON(ctrl.cmd_pending != 0);
 	ctrl.cmd_pending = cmd;
 	mb();
-	BDEV_WR(BCHP_NAND_CMD_START, cmd << 24);
+	BDEV_WR(BCHP_NAND_CMD_START, cmd << BCHP_NAND_CMD_START_OPCODE_SHIFT);
 }
 
 /***********************************************************************
@@ -454,7 +454,8 @@ static int brcmstb_nand_waitfunc(struct mtd_info *mtd, struct nand_chip *this)
 			wait_for_completion_timeout(&ctrl.done, HZ / 10) <= 0) {
 		dev_err(&host->pdev->dev,
 			"timeout waiting for command %u (%ld)\n",
-			host->last_cmd, BDEV_RD(BCHP_NAND_CMD_START) >> 24);
+			host->last_cmd, BDEV_RD(BCHP_NAND_CMD_START) >>
+			BCHP_NAND_CMD_START_OPCODE_SHIFT);
 		dev_err(&host->pdev->dev,
 			"irq status %08lx, intfc status %08lx\n",
 			BDEV_RD(BCHP_HIF_INTR2_CPU_STATUS),
@@ -611,12 +612,6 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 	mb();
 	BDEV_WR_RB(BCHP_EDU_CMD, ctrl.edu_cmd);
 
-#if CONTROLLER_VER >= 60
-	/* Enable prefetching when handling multiple consecutive transfers */
-	if (trans > 1)
-		WR_ACC_CONTROL(host->cs, PREFETCH_EN, 1);
-#endif
-
 	/* wait for completion, then (for program page) check NAND status */
 	if ((brcmstb_nand_waitfunc(mtd, chip) & NAND_STATUS_FAIL) &&
 			edu_cmd == EDU_CMD_WRITE) {
@@ -624,10 +619,6 @@ static int brcmstb_nand_edu_trans(struct brcmstb_nand_host *host, u64 addr,
 			(unsigned long long)addr);
 		ret = -EIO;
 	}
-
-#if CONTROLLER_VER >= 60
-	WR_ACC_CONTROL(host->cs, PREFETCH_EN, 0);
-#endif
 
 	dma_unmap_single(&host->pdev->dev, pa, len, dir);
 
