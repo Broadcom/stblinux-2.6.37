@@ -12,7 +12,7 @@ CFLAGS-libubacktrace := -DNOT_IN_libc -DIS_IN_libubacktrace $(SSP_ALL_CFLAGS)
 
 LDFLAGS-libubacktrace.so := $(LDFLAGS) $(top_builddir)lib/libdl-$(VERSION).so
 
-ifeq ($(CONFIG_ARM_EABI),y)
+ifeq ($(UCLIBC_HAS_BACKTRACE)$(CONFIG_ARM_EABI),yy)
 LIBGCC += $(shell $(CC) -print-file-name=libgcc_eh.a)
 endif
 
@@ -71,5 +71,4 @@ $(top_builddir)lib/libubacktrace.a: $(libubacktrace-a-y)
 	$(do_ar)
 
 CLEAN_libubacktrace:
-	$(do_rm) $(addprefix $(libubacktrace_OUT)/*., o os oS a) \
-	 $(addprefix $(libubacktrace_ARCH_OUT)/*., o os oS a)
+	$(do_rm) $(addprefix $(libubacktrace_OUT)/*., o os oS a)

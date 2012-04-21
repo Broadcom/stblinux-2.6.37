@@ -520,6 +520,15 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 #define SDIO_REG(x, y)		(x + BCHP_SDIO_0_CFG_##y - \
 				 BCHP_SDIO_0_CFG_REG_START)
 
+/*
+ * The following chips have SDIO issues and will not run correctly
+ * at 50MHz so disable them.
+ */
+#if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7429A0) || \
+	defined(CONFIG_BCM7435A0)
+	printk(KERN_INFO "SDIO_%d: disabled due to chip issues\n", id);
+	return -ENODEV;
+#endif
 	if (nommc) {
 		printk(KERN_INFO "SDIO_%d: disabled via command line\n", id);
 		return -ENODEV;
