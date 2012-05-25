@@ -276,6 +276,7 @@
 #include <asm/brcmstb/7360a0/bchp_misb_bridge.h>
 #include <asm/brcmstb/7360a0/bchp_nand.h>
 #include <asm/brcmstb/7360a0/bchp_sata_top_ctrl.h>
+#include <asm/brcmstb/7360a0/bchp_sdio_0_cfg.h>
 #include <asm/brcmstb/7360a0/bchp_sun_top_ctrl.h>
 #include <asm/brcmstb/7360a0/bchp_timer.h>
 #include <asm/brcmstb/7360a0/bchp_uarta.h>
@@ -956,6 +957,10 @@ ssize_t brcm_pm_store_ddr_timeout(struct device *dev,
 ssize_t brcm_pm_show_standby_flags(struct device *dev,
 	struct device_attribute *attr, char *buf);
 ssize_t brcm_pm_store_standby_flags(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count);
+ssize_t brcm_pm_show_standby_timeout(struct device *dev,
+	struct device_attribute *attr, char *buf);
+ssize_t brcm_pm_store_standby_timeout(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count);
 ssize_t brcm_pm_show_memc1_power(struct device *dev,
 	struct device_attribute *attr, char *buf);

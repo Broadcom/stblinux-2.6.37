@@ -189,8 +189,6 @@ brcm_tp1_int_vec_end:
  * XKS01 support
  ***********************************************************************/
 
-	__CPUINIT
-
 LEAF(brcmstb_enable_xks01)
 
 #if defined(CONFIG_BRCM_UPPER_768MB)
@@ -230,5 +228,3 @@ LEAF(brcmstb_enable_xks01)
 	jr	ra
 
 END(brcmstb_enable_xks01)
-
-	.previous

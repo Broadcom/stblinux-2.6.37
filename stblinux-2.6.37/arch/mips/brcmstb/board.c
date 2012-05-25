@@ -358,7 +358,8 @@ void board_pinmux_setup(void)
 	PINMUX(18, vo_656_7, 1);	/* SDIO_CMD */
 	PINMUX(18, vo_656_6, 2);	/* SDIO_WPROT */
 
-#elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552)
+#elif defined(CONFIG_BCM7358) || defined(CONFIG_BCM7552) || \
+	defined(CONFIG_BCM7360)
 
 	PINMUX(11, gpio_89, 1);		/* UARTB TX */
 	PINMUX(11, gpio_90, 1);		/* UARTB RX */
