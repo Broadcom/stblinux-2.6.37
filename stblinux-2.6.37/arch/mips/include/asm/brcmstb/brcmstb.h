@@ -917,6 +917,8 @@ void __init board_get_ram_size(unsigned long *dram0_mb,
 	unsigned long *dram1_mb);
 int __init board_get_partition_map(struct mtd_partition **p);
 
+void ebi_restore_settings(void);
+
 int __init bchip_strap_ram_size(void);
 int __init bchip_strap_flash_type(void);
 void bchip_mips_setup(void);

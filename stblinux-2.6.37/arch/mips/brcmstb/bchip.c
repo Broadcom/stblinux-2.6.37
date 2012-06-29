@@ -515,25 +515,30 @@ static int __init nommc_setup(char *str)
 
 __setup("nommc", nommc_setup);
 
-int __init bchip_sdio_init(int id, uintptr_t cfg_base)
+int bchip_sdio_init(int id, uintptr_t cfg_base)
 {
-#define SDIO_REG(x, y)		(x + BCHP_SDIO_0_CFG_##y - \
+#define SDIO_CFG_REG(x, y)	(x + BCHP_SDIO_0_CFG_##y - \
 				 BCHP_SDIO_0_CFG_REG_START)
+#define SDIO_CFG_SET(base, reg, mask) do {				\
+		BDEV_SET(SDIO_CFG_REG(base, reg),			\
+			 BCHP_SDIO_0_CFG_##reg##_##mask##_MASK);	\
+	} while (0)
+#define SDIO_CFG_UNSET(base, reg, mask) do {				\
+		BDEV_UNSET(SDIO_CFG_REG(base, reg),			\
+			   BCHP_SDIO_0_CFG_##reg##_##mask##_MASK);	\
+	} while (0)
+#define SDIO_CFG_FIELD(base, reg, field, val) do {			\
+		BDEV_UNSET(SDIO_CFG_REG(base, reg),			\
+			   BCHP_SDIO_0_CFG_##reg##_##field##_MASK);	\
+		BDEV_SET(SDIO_CFG_REG(base, reg),			\
+		 (val) << BCHP_SDIO_0_CFG_##reg##_##field##_SHIFT);	\
+	} while (0)
 
-/*
- * The following chips have SDIO issues and will not run correctly
- * at 50MHz so disable them.
- */
-#if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7429A0) || \
-	defined(CONFIG_BCM7435A0)
-	printk(KERN_INFO "SDIO_%d: disabled due to chip issues\n", id);
-	return -ENODEV;
-#endif
 	if (nommc) {
 		printk(KERN_INFO "SDIO_%d: disabled via command line\n", id);
 		return -ENODEV;
 	}
-	if (BDEV_RD(SDIO_REG(cfg_base, SCRATCH)) & 0x01) {
+	if (BDEV_RD(SDIO_CFG_REG(cfg_base, SCRATCH)) & 0x01) {
 		printk(KERN_INFO "SDIO_%d: disabled by bootloader\n", id);
 		return -ENODEV;
 	}
@@ -542,28 +547,57 @@ int __init bchip_sdio_init(int id, uintptr_t cfg_base)
 		"disabling\n", id);
 	return -ENODEV;
 #endif
-	printk(KERN_INFO "SDIO_%d: enabling controller\n", id);
+	/*
+	 * The following chips have SDIO issues and will not run correctly
+	 * at 50MHz so disable them.
+	 */
+#if defined(CONFIG_BCM7425B0) || defined(CONFIG_BCM7429A0) || \
+	defined(CONFIG_BCM7435A0)
+	/* Enable just the 7425B2 */
+	if ((BRCM_CHIP_ID() != 0x7425) || (BRCM_CHIP_REV() < 0x12)) {
+		printk(KERN_INFO "SDIO_%d: disabled due to chip issues\n", id);
+		return -ENODEV;
+	} else {
+		/* For 7425B2, use manual input clock tuning to work */
+		/* around a chip problem, and disable UHS and TUNING. */
+		SDIO_CFG_FIELD(cfg_base, CAP_REG0, SLOT_TYPE, 1);
+		SDIO_CFG_UNSET(cfg_base, CAP_REG0, DDR50_SUPPORT);
+		SDIO_CFG_UNSET(cfg_base, CAP_REG0, SDR50);
+		SDIO_CFG_UNSET(cfg_base, CAP_REG1, USE_TUNING);
+		SDIO_CFG_SET(cfg_base, CAP_REG1, CAP_REG_OVERRIDE);
 
-	BDEV_UNSET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL1), 0xf000);
-	BDEV_UNSET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL2), 0x00ff);
+		/* enable input delay, resolution = 1, value = 8 */
+		SDIO_CFG_FIELD(cfg_base, IP_DLY, IP_TAP_DELAY, 8);
+		SDIO_CFG_FIELD(cfg_base, IP_DLY, IP_DELAY_CTRL, 1);
+		SDIO_CFG_SET(cfg_base, IP_DLY, IP_TAP_EN);
+
+		/* Use the manual clock delay */
+		SDIO_CFG_FIELD(cfg_base, SD_CLOCK_DELAY, INPUT_CLOCK_DELAY, 8);
+	}
+
+#endif
+
+	printk(KERN_INFO "SDIO_%d: enabling controller\n", id);
+	BDEV_UNSET(SDIO_CFG_REG(cfg_base, SDIO_EMMC_CTRL1), 0xf000);
+	BDEV_UNSET(SDIO_CFG_REG(cfg_base, SDIO_EMMC_CTRL2), 0x00ff);
 #ifdef CONFIG_CPU_LITTLE_ENDIAN
 	/* FRAME_NHW | BUFFER_ABO */
-	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL1), 0x3000);
+	BDEV_SET(SDIO_CFG_REG(cfg_base, SDIO_EMMC_CTRL1), 0x3000);
 #else
 	/* WORD_ABO | FRAME_NBO | FRAME_NHW */
-	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL1), 0xe000);
+	BDEV_SET(SDIO_CFG_REG(cfg_base, SDIO_EMMC_CTRL1), 0xe000);
 	/* address swap only */
-	BDEV_SET(SDIO_REG(cfg_base, SDIO_EMMC_CTRL2), 0x0050);
+	BDEV_SET(SDIO_CFG_REG(cfg_base, SDIO_EMMC_CTRL2), 0x0050);
 	sdhci_brcm_pdata.ops = &sdhci_be_ops;
 #endif
 
 #if defined(CONFIG_BCM7231B0) || defined(CONFIG_BCM7346B0)
-	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
+	BDEV_SET(SDIO_CFG_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
 #endif
 
 #if defined(CONFIG_BCM7344B0)
-	BDEV_UNSET(SDIO_REG(cfg_base, CAP_REG0), BIT(19));	/* Highspd=0 */
-	BDEV_SET(SDIO_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
+	BDEV_UNSET(SDIO_CFG_REG(cfg_base, CAP_REG0), BIT(19));	/* Highspd=0 */
+	BDEV_SET(SDIO_CFG_REG(cfg_base, CAP_REG1), BIT(31));	/* Override=1 */
 #endif
 
 	return 0;
