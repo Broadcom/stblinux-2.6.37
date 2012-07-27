@@ -17,6 +17,7 @@
 
 #include <linux/init.h>
 #include <linux/clocksource.h>
+#include <linux/printk.h>
 #include <linux/spinlock.h>
 
 #include <asm/time.h>
@@ -173,7 +174,7 @@ void __init plat_time_init(void)
 {
 	unsigned int khz;
 
-	printk(KERN_DEBUG "Measuring MIPS counter frequency...\n");
+	pr_info("Measuring MIPS counter frequency...\n");
 	mips_hpt_frequency = brcm_mips_freq();
 	khz = mips_hpt_frequency / 1000;
 #ifdef CONFIG_BMIPS5000
@@ -182,9 +183,8 @@ void __init plat_time_init(void)
 	brcm_cpu_khz = mips_hpt_frequency * 2 / 1000;
 #endif
 
-	printk(KERN_INFO "Detected MIPS clock frequency: %lu MHz "
-		"(%u.%03u MHz counter)\n", brcm_cpu_khz / 1000,
-		khz / 1000, khz % 1000);
+	pr_info("Detected MIPS clock frequency: %lu MHz (%u.%03u MHz counter)\n",
+		brcm_cpu_khz / 1000, khz / 1000, khz % 1000);
 
 #ifdef CONFIG_CSRC_WKTMR
 	init_wktmr_clocksource();
@@ -193,3 +193,87 @@ void __init plat_time_init(void)
 	init_upg_clocksource();
 #endif
 }
+
+#if defined(CONFIG_PM_OPS) && defined(CONFIG_BRCM_HAS_WKTMR)
+#include <linux/sysdev.h>
+
+static struct wktmr_time suspend_start_time;
+
+/*
+ * save time of suspend start
+ */
+static int
+timeclock_suspend(struct sys_device *dev, pm_message_t state)
+{
+	wktmr_read(&suspend_start_time);
+	return 0;
+}
+
+/*
+ *  update clock by elapsed time.
+ */
+static int
+timeclock_resume(struct sys_device *dev)
+{
+	struct timespec ts;
+	struct wktmr_time now, delta, *start;
+
+	start = &suspend_start_time;
+
+	wktmr_read(&now);
+	delta.sec = now.sec - start->sec;
+	if (now.pre > start->pre) {
+		delta.pre = now.pre - start->pre;
+	} else {
+		delta.pre = WKTMR_FREQ + now.pre - start->pre;
+		delta.sec--;
+	}
+
+	/*
+	 * update clock
+	 * Do not have to worry about the wake timer counter wrapping
+	 */
+	local_irq_enable();
+
+	getnstimeofday(&ts);
+	ts.tv_sec += delta.sec;
+	ts.tv_nsec += delta.pre * (1000000000/WKTMR_FREQ);
+	do_settimeofday(&ts);
+
+	local_irq_disable();
+
+	pr_debug("Time adjusted %d.%03d seconds, start %d.%03d end %d.%03d\n",
+	    delta.sec, delta.pre / (WKTMR_FREQ/1000),
+	    start->sec, start->pre / (WKTMR_FREQ/1000),
+	    now.sec, now.pre / (WKTMR_FREQ/1000));
+
+	return 0;
+}
+
+/* sysfs resume/suspend bits for timekeeping */
+static struct sysdev_class timeclock_sysclass = {
+	.name           = "timeclock",
+	.resume         = timeclock_resume,
+	.suspend        = timeclock_suspend,
+};
+
+static struct sys_device device_timeclock = {
+	.id             = 0,
+	.cls            = &timeclock_sysclass,
+};
+
+static int __init timeclock_init_device(void)
+{
+	int error = sysdev_class_register(&timeclock_sysclass);
+	if (!error)
+		error = sysdev_register(&device_timeclock);
+	return error;
+}
+
+/*
+ * Registration has to be later than the 'timekeeping' registration
+ * in kernel/time/timekeeping.c
+ */
+late_initcall(timeclock_init_device);
+
+#endif

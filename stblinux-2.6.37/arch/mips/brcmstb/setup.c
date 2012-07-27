@@ -998,6 +998,12 @@ static int __init nandcs_setup(char *str)
 
 __setup("nandcs", nandcs_setup);
 
+#else /* defined(CONFIG_BRCM_FLASH) */
+
+void ebi_restore_settings(void)
+{
+}
+
 #endif /* defined(CONFIG_BRCM_FLASH) */
 
 /***********************************************************************
