@@ -171,6 +171,7 @@ config BCM7358A0
 	select BRCM_HAS_NAND_MINOR_0
 	select BRCM_HAS_BSPI_V4
 	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_AON
 	select BRCM_PWR_HANDSHAKE_V0
 	select BRCM_HAS_DIGITAL_DDR_PHY
@@ -192,6 +193,7 @@ config BCM7360A0
 	select BRCM_HAS_SDIO_V1
 	select BRCM_HAS_SATA3
 	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_AON
 	select BRCM_PWR_HANDSHAKE_V0
 	select BRCM_HAS_DIGITAL_DDR_PHY
@@ -449,6 +451,7 @@ config BCM7552B0
 	select BRCM_HAS_BSPI_V4
 	select BRCM_HAS_SDIO_V1
 	select BRCM_HAS_WKTMR
+	select BRCM_HAS_UPPER_MEMORY
 	select BRCM_HAS_AON
 	select BRCM_PWR_HANDSHAKE_V1
 	select BRCM_HAS_DIGITAL_DDR_PHY
@@ -469,6 +472,7 @@ config BRCM_UPPER_MEMORY
 	depends on BRCM_HAS_UPPER_MEMORY
 	select ARCH_SPARSEMEM_ENABLE
 	select BRCM_UPPER_256MB if !BRCM_HAS_XKS01
+	select BRCM_CONSISTENT_DMA if BMIPS3300
 	select BRCM_UPPER_768MB if BRCM_HAS_XKS01
 	default y
 	help
@@ -1217,6 +1221,10 @@ config BRCM_HAS_XI
 config BRCM_HAS_DUALCORE
 	bool
 
+# MIPS: Use mappings in kseg3 for dma_alloc_coherent()
+config BRCM_CONSISTENT_DMA
+	bool
+
 config BRCM_HAS_UPPER_MEMORY
 	bool
 
@@ -1225,6 +1233,7 @@ config BRCM_UPPER_256MB
 
 config BRCM_UPPER_768MB
 	bool
+	select BRCM_CONSISTENT_DMA
 
 # physical address maps supporting 256MB, 512MB, or 1GB on MEMC0
 config BRCM_HAS_1GB_MEMC0

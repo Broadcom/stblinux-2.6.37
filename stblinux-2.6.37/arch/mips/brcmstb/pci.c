@@ -24,6 +24,7 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/clk.h>
+#include <linux/sysdev.h>
 
 #include <asm/debug.h>
 #include <asm/brcmstb/brcmstb.h>
@@ -234,6 +235,7 @@ struct brcm_pci_bus {
 	int			memory_hole;
 	unsigned long		idx_reg;
 	unsigned long		data_reg;
+	struct clk		*clk;
 };
 
 static struct brcm_pci_bus brcm_buses[] = {
@@ -451,10 +453,14 @@ void brcm_setup_pcie_bridge(void)
 		;
 
 	if (!PCIE_LINK_UP()) {
-		struct clk *clk = clk_get(NULL, "pcie");
+		struct clk *clk;
+
 		brcm_pcie_enabled = 0;
-		if (clk)
+		clk = brcm_buses[BRCM_BUSNO_PCIE].clk;
+		if (clk) {
 			clk_disable(clk);
+			clk_put(clk);
+		}
 		printk(KERN_INFO "PCI: PCIe link down\n");
 		return;
 	}
@@ -484,6 +490,47 @@ void brcm_setup_pcie_bridge(void)
 		DATA_ENDIAN);
 #endif
 }
+
+
+#if defined(CONFIG_PM) && defined(CONFIG_BRCM_HAS_PCIE)
+/*
+ * sysdev device to handle PCIe bus suspend and resume
+ */
+static inline void pcie_enable(int enable)
+{
+	struct clk *clk;
+
+	if (!brcm_pcie_enabled)
+		return;
+
+	clk = brcm_buses[BRCM_BUSNO_PCIE].clk;
+	if (clk)
+		enable ? clk_enable(clk) : clk_disable(clk);
+}
+
+static int pcie_suspend(struct sys_device *dev, pm_message_t state)
+{
+	pcie_enable(0);
+	return 0;
+}
+
+static int pcie_resume(struct sys_device *dev)
+{
+	pcie_enable(1);
+	return 0;
+}
+
+static struct sysdev_class pcie_sysclass = {
+	.name		= "PCIe",
+	.suspend	= pcie_suspend,
+	.resume		= pcie_resume,
+};
+
+static struct sys_device pcie_ctlr = {
+	.id		= 0,
+	.cls		= &pcie_sysclass,
+};
+#endif
 
 /***********************************************************************
  * PCI controller registration
@@ -531,6 +578,7 @@ static int __init brcmstb_pci_init(void)
 #endif
 #ifdef CONFIG_BRCM_HAS_PCIE
 	if (brcm_pcie_enabled) {
+		brcm_buses[BRCM_BUSNO_PCIE].clk = clk_get(NULL, "pcie");
 		brcm_setup_pcie_bridge();
 
 		request_mem_region(PCIE_IO_REG_START, PCIE_IO_REG_SIZE,
@@ -542,6 +590,11 @@ static int __init brcmstb_pci_init(void)
 		brcm_buses[BRCM_BUSNO_PCIE].data_reg = reg_base + PCIE_CFG_DATA;
 
 		register_pci_controller(&brcmstb_pcie_controller);
+
+#if defined(CONFIG_PM)
+		if (sysdev_class_register(&pcie_sysclass) == 0)
+			sysdev_register(&pcie_ctlr);
+#endif
 	}
 #endif
 	return 0;

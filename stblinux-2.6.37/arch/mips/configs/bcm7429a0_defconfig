@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-3.1pre Kernel Configuration
-# Tue May  8 11:08:35 2012
+# Linux/mips 2.6.37-3.4pre Kernel Configuration
+# Thu Sep  6 15:58:32 2012
 #
 CONFIG_MIPS=y
 
@@ -157,6 +157,7 @@ CONFIG_BRCM_ZSCM_L2=y
 CONFIG_BRCM_CPU_DIV=y
 CONFIG_BRCM_HAS_XKS01=y
 CONFIG_BRCM_HAS_XI=y
+CONFIG_BRCM_CONSISTENT_DMA=y
 CONFIG_BRCM_HAS_UPPER_MEMORY=y
 CONFIG_BRCM_UPPER_768MB=y
 CONFIG_BRCM_HAS_2GB_MEMC0=y

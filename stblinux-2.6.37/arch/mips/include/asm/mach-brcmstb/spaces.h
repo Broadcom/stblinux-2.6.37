@@ -49,6 +49,8 @@
  * fffd_8000 - fffd_ffff: FIXMAP
  *
  * PA 3000_0000 and above are accessed through HIGHMEM (BMIPS5000 only).
+ * VA d000_0000 is unmapped on BMIPS3300, to save TLB entries.
+ *   CONSISTENT_DMA is used instead, in this case.
  */
 
 #define CAC_BASE_UPPER		_AC(0xc0000000, UL)
@@ -57,6 +59,12 @@
 #define KSEG1_SIZE		_AC(0x20000000, UL)
 #define MAP_BASE		_AC(0xe0000000, UL)
 #define BRCM_MAX_UPPER_MB	_AC(256, UL)
+
+#ifdef CONFIG_BRCM_CONSISTENT_DMA
+#define FIXADDR_TOP		_AC(0xfec00000, UL)
+#define CONSISTENT_BASE		_AC(0xfec00000, UL)
+#define CONSISTENT_END		_AC(0xff000000, UL)
+#endif
 
 #elif defined(CONFIG_BRCM_UPPER_768MB)
 

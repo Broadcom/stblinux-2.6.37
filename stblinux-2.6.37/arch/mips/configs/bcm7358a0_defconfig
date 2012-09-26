@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/mips 2.6.37-3.1pre Kernel Configuration
-# Tue May  8 11:08:31 2012
+# Linux/mips 2.6.37-3.4pre Kernel Configuration
+# Thu Sep  6 15:58:28 2012
 #
 CONFIG_MIPS=y
 
@@ -77,6 +77,7 @@ CONFIG_BCM7358A0=y
 #
 # Memory map
 #
+# CONFIG_BRCM_UPPER_MEMORY is not set
 # CONFIG_BRCM_OVERRIDE_RAM_SIZE is not set
 
 #
@@ -138,6 +139,7 @@ CONFIG_BRCM_HAS_BSPI_V4=y
 CONFIG_BRCM_BSPI_MAJOR_VERS=4
 CONFIG_BRCM_HAS_WKTMR=y
 CONFIG_BRCM_CPU_DIV=y
+CONFIG_BRCM_HAS_UPPER_MEMORY=y
 CONFIG_BRCM_HAS_DIGITAL_DDR_PHY=y
 CONFIG_BRCM_HAS_STANDBY=y
 CONFIG_BRCM_HAS_AON=y

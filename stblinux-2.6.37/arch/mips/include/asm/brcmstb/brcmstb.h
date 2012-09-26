@@ -473,6 +473,7 @@
 #include <asm/brcmstb/7425b0/bchp_pcie_dma.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_intr2.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_misc.h>
+#include <asm/brcmstb/7425b0/bchp_pcie_misc_hard.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_misc_perst.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_rc_cfg_pcie.h>
 #include <asm/brcmstb/7425b0/bchp_pcie_rc_cfg_type1.h>
@@ -564,6 +565,7 @@
 #include <asm/brcmstb/7435a0/bchp_pcie_dma.h>
 #include <asm/brcmstb/7435a0/bchp_pcie_intr2.h>
 #include <asm/brcmstb/7435a0/bchp_pcie_misc.h>
+#include <asm/brcmstb/7435a0/bchp_pcie_misc_hard.h>
 #include <asm/brcmstb/7435a0/bchp_pcie_misc_perst.h>
 #include <asm/brcmstb/7435a0/bchp_pcie_rc_cfg_pcie.h>
 #include <asm/brcmstb/7435a0/bchp_pcie_rc_cfg_type1.h>

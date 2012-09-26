@@ -200,11 +200,6 @@ struct brcmstb_nand_controller {
 	u32			nand_cs_nand_xor;
 	u32			corr_stat_threshold;
 	u32			hif_intr2;
-	/* per CS */
-	u32			acc_control;
-	u32			config;
-	u32			timing_1;
-	u32			timing_2;
 };
 
 static struct brcmstb_nand_controller ctrl;
@@ -220,6 +215,11 @@ struct brcmstb_nand_cfg {
 	unsigned int		ful_adr_bytes;
 	unsigned int		sector_size_1k;
 	unsigned int		ecc_level;
+	/* use for low-power standby/resume only */
+	u32			acc_control;
+	u32			config;
+	u32			timing_1;
+	u32			timing_2;
 };
 
 struct brcmstb_nand_host {
@@ -1464,10 +1464,10 @@ static int brcmstb_nand_suspend(struct device *dev)
 			BDEV_RD(BCHP_NAND_CORR_STAT_THRESHOLD);
 		ctrl.hif_intr2 = HIF_ENABLED_IRQ(NAND_CTLRDY);
 
-		ctrl.acc_control = BDEV_RD(REG_ACC_CONTROL(host->cs));
-		ctrl.config = BDEV_RD(REG_CONFIG(host->cs));
-		ctrl.timing_1 = BDEV_RD(REG_TIMING_1(host->cs));
-		ctrl.timing_2 = BDEV_RD(REG_TIMING_2(host->cs));
+		host->hwcfg.acc_control = BDEV_RD(REG_ACC_CONTROL(host->cs));
+		host->hwcfg.config = BDEV_RD(REG_CONFIG(host->cs));
+		host->hwcfg.timing_1 = BDEV_RD(REG_TIMING_1(host->cs));
+		host->hwcfg.timing_2 = BDEV_RD(REG_TIMING_2(host->cs));
 	}
 	return 0;
 }
@@ -1477,6 +1477,7 @@ static int brcmstb_nand_resume(struct device *dev)
 	if (brcm_pm_deep_sleep()) {
 		struct brcmstb_nand_host *host = dev_get_drvdata(dev);
 		struct mtd_info *mtd = &host->mtd;
+		struct nand_chip *chip = mtd->priv;
 
 		dev_dbg(dev, "Restore state after S3 suspend\n");
 #ifdef CONFIG_BRCM_HAS_EDU
@@ -1492,16 +1493,17 @@ static int brcmstb_nand_resume(struct device *dev)
 		BDEV_WR_RB(BCHP_NAND_CORR_STAT_THRESHOLD,
 			ctrl.corr_stat_threshold);
 
-		BDEV_WR_RB(REG_ACC_CONTROL(host->cs), ctrl.acc_control);
-		BDEV_WR_RB(REG_CONFIG(host->cs), ctrl.config);
-		BDEV_WR_RB(REG_TIMING_1(host->cs), ctrl.timing_1);
-		BDEV_WR_RB(REG_TIMING_2(host->cs), ctrl.timing_2);
+		BDEV_WR_RB(REG_ACC_CONTROL(host->cs), host->hwcfg.acc_control);
+		BDEV_WR_RB(REG_CONFIG(host->cs), host->hwcfg.config);
+		BDEV_WR_RB(REG_TIMING_1(host->cs), host->hwcfg.timing_1);
+		BDEV_WR_RB(REG_TIMING_2(host->cs), host->hwcfg.timing_2);
 
 		HIF_ACK_IRQ(NAND_CTLRDY);
 		if (ctrl.hif_intr2)
 			HIF_ENABLE_IRQ(NAND_CTLRDY);
 
-		nand_scan_ident(mtd, 1, NULL);
+		/* Reset the chip, required by some chips after power-up */
+		chip->cmdfunc(mtd, NAND_CMD_RESET, -1, -1);
 	}
 	return 0;
 }
