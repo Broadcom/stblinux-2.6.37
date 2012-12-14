@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * Broadcom modified 2012/03/21
- * 
+ *
  */
 
 #define ustat __kernel_ustat

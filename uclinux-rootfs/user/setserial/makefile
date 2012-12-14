@@ -20,7 +20,7 @@ all::
 .PHONY: romfs
 romfs::
 	$(STRIP) setserial 
-	$(ROMFSINST) -e CONFIG_USER_SETSERIAL setserial /bin/setserial
+	$(ROMFSINST) -e CONFIG_USER_SETSERIAL_SETSERIAL setserial /bin/setserial
 
 # These targets must not be passed through to the original Makefile
 .PHONY: $(BOGUS_TARGETS)
