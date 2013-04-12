@@ -20,11 +20,18 @@
 #ifndef __BCMGENET_H__
 #define __BCMGENET_H__
 
+#define CARDNAME				"bcmgenet"
+#define VERSION     "2.0"
+#define VER_STR     "v" VERSION " " __DATE__ " " __TIME__
+
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 #include <linux/spinlock.h>
 #include <linux/clk.h>
+#include <linux/mii.h>
+
 #include "bcmgenet_map.h"
+
 /* total number of Buffer Descriptors, same for Rx/Tx */
 #define TOTAL_DESC				256
 /* which ring is descriptor based */
@@ -51,8 +58,8 @@
 struct Enet_CB {
 	struct sk_buff      *skb;
 	volatile struct DmaDesc    *BdAddr;
-	dma_addr_t			dma_addr;
-	int					dma_len;
+	DEFINE_DMA_UNMAP_ADDR(dma_addr);
+	DEFINE_DMA_UNMAP_LEN(dma_len);
 };
 
 /* power management mode */
@@ -148,7 +155,7 @@ struct BcmEnet_devctrl {
 };
 
 #if defined(CONFIG_BCMGENET_DUMP_TRACE)
-#define TRACE(x)        printk x
+#define TRACE(x)        (printk x)
 #else
 #define TRACE(x)
 #endif
