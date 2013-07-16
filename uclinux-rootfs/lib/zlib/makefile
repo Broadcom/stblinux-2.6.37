@@ -10,8 +10,8 @@ export CC CFLAGS
 
 .PHONY: all
 all::
-	if [ ! -e Makefile ]; then \
-		./configure --host=$(MACHINE)-linux || exit 1 ; \
+	if [ ! -e zlib.pc ]; then \
+		./configure --static || exit 1 ; \
 	fi
 	$(MAKE) -f Makefile CC=$(CC) CFLAGS=$(CFLAGS)
 

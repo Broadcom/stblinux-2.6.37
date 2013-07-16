@@ -1692,6 +1692,9 @@ static void bcmgenet_irq_task(struct work_struct *work)
 		pDevCtrl->irq0_stat &= ~(UMAC_IRQ_LINK_UP|UMAC_IRQ_LINK_DOWN);
 		bcmgenet_mii_setup(pDevCtrl->dev);
 	}
+
+	/* Re-enable interrupts */
+	pDevCtrl->intrl2_0->cpu_mask_clear = ~pDevCtrl->int_mask;
 }
 /*
  * bcmgenet_ring_rx: ring buffer rx function.
@@ -2008,7 +2011,12 @@ static irqreturn_t bcmgenet_isr0(int irq, void *dev_id)
 				UMAC_IRQ_HFB_SM |
 				UMAC_IRQ_HFB_MM |
 				UMAC_IRQ_MPD_R)) {
-		/* all other interested interrupts handled in bottom half */
+
+		/* all other interrupts are handled in the workqueue */
+		pDevCtrl->int_mask = pDevCtrl->intrl2_0->cpu_mask_status;
+		pDevCtrl->intrl2_0->cpu_mask_set = ~0;
+		mb();
+
 		schedule_work(&pDevCtrl->bcmgenet_irq_work);
 	}
 
@@ -3669,6 +3677,8 @@ static int bcmgenet_drv_resume(struct device *dev)
 
 	if (pDevCtrl->dev_opened)
 		val = bcmgenet_open(pDevCtrl->dev);
+	else
+		val = init_umac(pDevCtrl);
 	pDevCtrl->dev_asleep = 0;
 
 	return val;

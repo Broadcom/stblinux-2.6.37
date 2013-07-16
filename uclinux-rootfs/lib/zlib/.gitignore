@@ -1,4 +1,10 @@
 *.o
 *.a
+*.log
+Makefile
 example
+example64
 minigzip
+minigzip64
+zlib.pc
+zconf.h

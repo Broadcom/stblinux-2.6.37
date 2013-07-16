@@ -28,6 +28,7 @@
 #include <linux/mii.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
+#include <linux/compiler.h>
 #include <asm/brcmstb/brcmstb.h>
 
 #include "bcmgenet_map.h"
@@ -90,8 +91,8 @@ void bcmgenet_mii_write(struct net_device *dev, int phy_id,
 }
 
 /* mii register read/modify/write helper function */
-static int bcmgenet_mii_set_clr_bits(struct net_device *dev, int location,
-		     int set_mask, int clr_mask)
+static int __maybe_unused bcmgenet_mii_set_clr_bits(struct net_device *dev,
+	int location, int set_mask, int clr_mask)
 {
 	struct BcmEnet_devctrl *pDevCtrl = netdev_priv(dev);
 	int phy_id = pDevCtrl->phyAddr;
@@ -214,6 +215,7 @@ void bcmgenet_mii_setup(struct net_device *dev)
 
 void bcmgenet_ephy_workaround(struct net_device *dev)
 {
+#ifdef CONFIG_BRCM_EPHY_CLOCK_INV
 	struct BcmEnet_devctrl *pDevCtrl = netdev_priv(dev);
 	int phy_id = pDevCtrl->phyAddr;
 
@@ -239,6 +241,7 @@ void bcmgenet_ephy_workaround(struct net_device *dev)
 
 	/* reset shadow mode 2 */
 	bcmgenet_mii_set_clr_bits(dev, 0x1f, 0x0004, 0);
+#endif
 }
 
 void bcmgenet_mii_reset(struct net_device *dev)
