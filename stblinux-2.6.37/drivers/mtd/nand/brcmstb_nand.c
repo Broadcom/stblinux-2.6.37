@@ -1055,11 +1055,14 @@ static int brcmstb_nand_write_oob_raw(struct mtd_info *mtd,
 	struct nand_chip *chip, int page)
 {
 	struct brcmstb_nand_host *host = chip->priv;
+	int ret;
 
 	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 0);
-	return brcmstb_nand_write(mtd, chip, (u64)page << chip->page_shift, NULL,
+	ret = brcmstb_nand_write(mtd, chip, (u64)page << chip->page_shift, NULL,
 		(u8 *)chip->oob_poi);
 	WR_ACC_CONTROL(host->cs, WR_ECC_EN, 1);
+
+	return ret;
 }
 
 /***********************************************************************
@@ -1169,6 +1172,36 @@ static void brcmstb_nand_print_cfg(char *buf, struct brcmstb_nand_cfg *cfg)
 		sprintf(buf, ", BCH-%u\n", cfg->ecc_level);
 }
 
+/*
+ * Return true if the two configurations are basically identical. Note that we
+ * allow certain variations in spare area size.
+ */
+static bool brcmstb_nand_config_match(struct brcmstb_nand_cfg *orig,
+		struct brcmstb_nand_cfg *new)
+{
+	/* Negative matches */
+	if (orig->device_size != new->device_size)
+		return false;
+	if (orig->block_size != new->block_size)
+		return false;
+	if (orig->page_size != new->page_size)
+		return false;
+	if (orig->device_width != new->device_width)
+		return false;
+	if (orig->col_adr_bytes != new->col_adr_bytes)
+		return false;
+	if (orig->blk_adr_bytes != new->blk_adr_bytes)
+		return false;
+	if (orig->ful_adr_bytes != new->ful_adr_bytes)
+		return false;
+
+	/* Positive matches */
+	if (orig->spare_area_size == new->spare_area_size)
+		return true;
+	return orig->spare_area_size >= 27 &&
+	       orig->spare_area_size <= new->spare_area_size;
+}
+
 static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 {
 	struct mtd_info *mtd = &host->mtd;
@@ -1202,24 +1235,7 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 	if (new_cfg.spare_area_size > MAX_CONTROLLER_OOB)
 		new_cfg.spare_area_size = MAX_CONTROLLER_OOB;
 
-	/* use bootloader spare_area_size if it's "close enough" */
-	if (new_cfg.spare_area_size == orig_cfg.spare_area_size + 1) {
-		new_cfg.spare_area_size = orig_cfg.spare_area_size;
-		/*
-		 * Set oobsize to be consistent with controller's
-		 * spare_area_size. This helps nandwrite testing.
-		 */
-		mtd->oobsize = new_cfg.spare_area_size * (mtd->writesize >> FC_SHIFT);
-	}
-
-	if (orig_cfg.device_size != new_cfg.device_size ||
-			orig_cfg.block_size != new_cfg.block_size ||
-			orig_cfg.page_size != new_cfg.page_size ||
-			orig_cfg.spare_area_size != new_cfg.spare_area_size ||
-			orig_cfg.device_width != new_cfg.device_width ||
-			orig_cfg.col_adr_bytes != new_cfg.col_adr_bytes ||
-			orig_cfg.blk_adr_bytes != new_cfg.blk_adr_bytes ||
-			orig_cfg.ful_adr_bytes != new_cfg.ful_adr_bytes) {
+	if (!brcmstb_nand_config_match(&orig_cfg, &new_cfg)) {
 #if CONTROLLER_VER >= 50
 		/* default to 1K sector size (if page is large enough) */
 		new_cfg.sector_size_1k = (new_cfg.page_size >= 1024) ? 1 : 0;
@@ -1255,6 +1271,13 @@ static int __devinit brcmstb_nand_setup_dev(struct brcmstb_nand_host *host)
 			dev_info(&host->pdev->dev, "detected %s\n", msg);
 		}
 	} else {
+		/*
+		 * Set oobsize to be consistent with controller's
+		 * spare_area_size. This helps nandwrite testing.
+		 */
+		mtd->oobsize = new_cfg.spare_area_size *
+			       (mtd->writesize >> FC_SHIFT);
+
 		brcmstb_nand_print_cfg(msg, &orig_cfg);
 		dev_info(&host->pdev->dev, "%s\n", msg);
 	}
