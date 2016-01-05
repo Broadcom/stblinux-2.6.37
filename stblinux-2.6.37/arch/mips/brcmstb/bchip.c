@@ -225,6 +225,21 @@ void bchip_mips_setup(void)
 	/* enable RDHWR, BRDHWR */
 	set_c0_brcm_config(BIT(17) | BIT(21));
 
+	/* Disable JTB */
+	__asm__ __volatile__(
+	"	.set	noreorder\n"
+	"	li	$8, 0x5a455048\n"
+	"	.word	0x4088b00f\n"	/* mtc0	t0, $22, 15 */
+	"	.word	0x4008b008\n"	/* mfc0	t0, $22, 8 */
+	"	li	$9, 0x00008000\n"
+	"	or	$8, $8, $9\n"
+	"	.word	0x4088b008\n"	/* mtc0	t0, $22, 8 */
+	"	sync\n"
+	"	li	$8, 0x0\n"
+	"	.word	0x4088b00f\n"	/* mtc0	t0, $22, 15 */
+	"	.set	reorder\n"
+	: : : "$8", "$9");
+
 	if (kernel_uses_smartmips_rixi) {
 		/* XI enable */
 		set_c0_brcm_config(BIT(27));
@@ -380,13 +395,19 @@ void bchip_sata3_init(void)
 #ifdef CONFIG_BRCM_HAS_SATA3
 	int i, ports = fls(BDEV_RD(SATA_AHCI_GHC_PORTS_IMPLEMENTED));
 
+	brcm_sata3_disable_ncq();
+
+	/*
+	 * On BE systems, the AHCI register data is endian-swapped past
+	 * this point.  This affects SATA_AHCI_GHC_* and other ranges,
+	 * but not SATA_TOP_CONTROL or MDIO.
+	 */
 	BDEV_WR(BCHP_SATA_TOP_CTRL_BUS_CTRL, (DATA_ENDIAN << 4) |
 			(DATA_ENDIAN << 2) | (MMIO_ENDIAN << 0));
 
 	for (i = 0; i < ports; i++)
 		brcm_sata3_init_freq(i, sata3_enable_ssc & (1 << i));
 
-	brcm_sata3_disable_ncq();
 #endif
 }
 

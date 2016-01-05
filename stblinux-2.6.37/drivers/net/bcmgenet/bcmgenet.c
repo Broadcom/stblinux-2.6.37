@@ -1111,6 +1111,14 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 		spin_unlock_irqrestore(&pDevCtrl->lock, flags);
 		return NETDEV_TX_OK;
 	}
+
+	if (skb && skb_padto(skb, ETH_ZLEN)) {
+		spin_unlock_irqrestore(&pDevCtrl->lock, flags);
+		dev->stats.tx_errors++;
+		dev->stats.tx_dropped++;
+		return NETDEV_TX_OK;
+	}
+
 #if (CONFIG_BRCM_GENET_VERSION > 1) && defined(CONFIG_NET_SCH_MULTIQ)
 	if (skb) {
 		index = skb_get_queue_mapping(skb);
@@ -1134,6 +1142,7 @@ static int bcmgenet_xmit(struct sk_buff *skb, struct net_device *dev)
 			dev->stats.tx_dropped++;
 			return 1;
 		}
+
 		nr_frags = skb_shinfo(skb)->nr_frags;
 		if (index == DESC_INDEX) {
 			if (pDevCtrl->txFreeBds <= nr_frags + 1) {
