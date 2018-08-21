@@ -1614,7 +1614,7 @@ static int __devinit bcmemac_drv_probe(struct platform_device *pdev)
 	pDevCtrl->emac->intStatus = EMAC_MDIO_INT;
 	pDevCtrl->emac->intMask = EMAC_MDIO_INT;
 
-	if (request_irq(pDevCtrl->rxIrq, bcmemac_net_isr, IRQF_DISABLED,
+	if (request_irq(pDevCtrl->rxIrq, bcmemac_net_isr, IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
 			dev->name, pDevCtrl) < 0) {
 		printk(KERN_ERR DRV_NAME ": can't request IRQ\n");
 		goto out3;

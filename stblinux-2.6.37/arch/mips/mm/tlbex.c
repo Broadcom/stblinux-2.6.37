@@ -1394,6 +1394,20 @@ static void __cpuinit build_r4000_tlb_load_handler(void)
 
 	build_r4000_tlbchange_handler_head(&p, &l, &r, K0, K1);
 	build_pte_present(&p, &r, K0, K1, label_nopage_tlbl);
+
+#if defined(CONFIG_BMIPS4380) && \
+    (defined(CONFIG_BCM7125C0) || defined(CONFIG_BCM7340) || \
+     defined(CONFIG_BCM7405) || defined(CONFIG_BCM7408))
+	/*
+	 * CRBMIPS438X-169: CPU takes a TLBL general exception instead of a
+	 * refill exception.
+	 * If TLBP returns an error, just return and then the CPU will
+	 * immediately generate the expected TLB refill exception
+	 */
+	UASM_i_MFC0(&p, K0, C0_INDEX);
+	uasm_il_bltz(&p, &r, K0, label_leave);
+	iPTE_LW(&p, K0, K1);
+#endif
 	if (m4kc_tlbp_war())
 		build_tlb_probe_entry(&p);
 

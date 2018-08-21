@@ -583,12 +583,12 @@ static int bcmgenet_open(struct net_device *dev)
 		mod_timer(&pDevCtrl->timer, jiffies);
 	}
 
-	if (request_irq(pDevCtrl->irq0, bcmgenet_isr0, IRQF_SHARED,
+	if (request_irq(pDevCtrl->irq0, bcmgenet_isr0, IRQF_SHARED | IRQF_SAMPLE_RANDOM,
 				dev->name, pDevCtrl) < 0) {
 		printk(KERN_ERR "can't request IRQ %d\n", pDevCtrl->irq0);
 		goto err2;
 	}
-	if (request_irq(pDevCtrl->irq1, bcmgenet_isr1, IRQF_SHARED,
+	if (request_irq(pDevCtrl->irq1, bcmgenet_isr1, IRQF_SHARED | IRQF_SAMPLE_RANDOM,
 				dev->name, pDevCtrl) < 0) {
 		printk(KERN_ERR "can't request IRQ %d\n", pDevCtrl->irq1);
 		free_irq(pDevCtrl->irq0, pDevCtrl);
